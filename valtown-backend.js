@@ -54,7 +54,12 @@ import { sqlite } from 'https://esm.town/v/std/sqlite';
 const CODE_TTL   = 10 * 60 * 1000;        /* le code vit 10 minutes */
 const CODE_WAIT  = 60 * 1000;             /* 1 envoi par minute et par email */
 const CODE_TRIES = 5;                     /* au-delà, le code est brûlé */
-const SESS_TTL   = 90 * 24 * 3600 * 1000; /* session valable 90 jours */
+/* 30 jours et non 90 : le jeton vit dans le navigateur, donc plus il vit
+   longtemps, plus longtemps un appareil perdu ou prêté reste connecté.
+   Ce réglage ne s'applique qu'aux NOUVELLES sessions — personne n'est
+   déconnecté au déploiement. */
+const SESS_TTL   = 30 * 24 * 3600 * 1000;
+const SESS_MAX   = 5;                     /* appareils connectés simultanément */
 const MAX_PAYLOAD = 400_000;              /* garde-fou : ~400 Ko par compte */
 const PASS_MIN   = 8;                     /* longueur mini (recommandation NIST) */
 const PBKDF2_IT  = 210_000;               /* itérations : minimum OWASP pour SHA-256 */
@@ -315,6 +320,17 @@ export default async function (request) {
         sql: 'INSERT INTO aco_sessions(token_h, email, expires_at) VALUES(?,?,?)',
         args: [await sha256(token), email, Date.now() + SESS_TTL],
       });
+      /* On ne garde que les SESS_MAX sessions les plus récentes. Sans ça, un
+         jeton oublié sur un ancien appareil reste valable des semaines, et
+         chaque connexion en ajoute un de plus, indéfiniment. */
+      try {
+        await sqlite.execute({
+          sql: `DELETE FROM aco_sessions WHERE email = ? AND token_h NOT IN (
+                  SELECT token_h FROM aco_sessions WHERE email = ?
+                  ORDER BY expires_at DESC LIMIT ?)`,
+          args: [email, email, SESS_MAX],
+        });
+      } catch (e) { /* le plafond est un confort : il ne doit pas bloquer la connexion */ }
       return token;
     };
     /* envoie un code et l'enregistre — seulement si le mail est bien parti */
@@ -586,47 +602,138 @@ export default async function (request) {
         nouveaux30j:await cnt(`SELECT COUNT(*) AS n FROM aco_users WHERE created_at > ?`, [J30]),
       };
 
-      /* Agrégation des voyages : on lit les payloads UNIQUEMENT pour compter.
-         Rien de ce qui est lu ici ne sort de cette fonction. */
-      const dest = new Map(), modes = { avion:0, train:0, voiture:0, autre:0 };
-      let voyagesTotal = 0, avecPlan = 0;
+      /* ---- Inscriptions jour par jour sur 30 jours ----
+         Des COMPTES par jour, jamais une date rattachée à quelqu'un. Avec un
+         seul inscrit dans la journée la case vaut 1 : c'est un volume, pas une
+         identité — on ne peut pas remonter à la personne depuis un nombre. */
+      const courbe = [];
       try {
-        const rows = (await sqlite.execute(`SELECT payload FROM aco_trips`)).rows || [];
+        const jours = new Map();
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date(now - i * 864e5);
+          jours.set(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`, 0);
+        }
+        const r = await sqlite.execute({ sql: `SELECT created_at FROM aco_users WHERE created_at > ?`, args: [now - 30 * 864e5] });
+        for (const row of (r.rows || [])) {
+          const d = new Date(Number(row.created_at ?? row[0]));
+          const k = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+          if (jours.has(k)) jours.set(k, jours.get(k) + 1);
+        }
+        for (const [j, n] of jours) courbe.push({ j, n });
+      } catch (e) {}
+
+      /* ---- Agrégation des voyages ----
+         On lit les payloads UNIQUEMENT pour compter. Rien de ce qui est lu
+         ici ne sort de cette fonction : ni un nom, ni une note, ni un email. */
+      const dest = new Map(), pays = new Map();
+      const modes = { avion: 0, train: 0, voiture: 0, autre: 0 };
+      const budget = { petit: 0, moyen: 0, confort: 0, eleve: 0, inconnu: 0 };
+      const duree  = { weekend: 0, semaine: 0, deuxSemaines: 0, plus: 0, inconnu: 0 };
+      const avecQui = { solo: 0, couple: 0, amis: 0, famille: 0, collegues: 0, inconnu: 0 };
+      const sejour = { hotel: 0, appartement: 0, auberge: 0, luxe: 0, inconnu: 0 };
+      const mois = new Array(12).fill(0);
+      let voyagesTotal = 0, avecPlan = 0, actifs7j = 0, actifs30j = 0, multiBase = 0;
+
+      /* Ranger une valeur libre dans un casier fixe : on ne stocke jamais le
+         texte de l'utilisateur, seulement le casier où il tombe. */
+      const casier = (v, table) => {
+        const s = String(v || '').toLowerCase();
+        for (const [motif, cle] of table) if (motif.test(s)) return cle;
+        return 'inconnu';
+      };
+      const T_BUDGET = [[/petit|<\s*500|moins/, 'petit'], [/moyen|500/, 'moyen'], [/confort|1200/, 'confort'], [/élev|eleve|2500|luxe/, 'eleve']];
+      const T_DUREE  = [[/week|2-3/, 'weekend'], [/1 semaine|7 j|une semaine/, 'semaine'], [/2 semaines|14/, 'deuxSemaines'], [/3 semaines|21|mois|\+/, 'plus']];
+      const T_QUI    = [[/solo|seul/, 'solo'], [/couple/, 'couple'], [/ami/, 'amis'], [/famille|enfant/, 'famille'], [/collègue|collegue|travail/, 'collegues']];
+      const T_SEJOUR = [[/hôtel|hotel/, 'hotel'], [/appart|airbnb/, 'appartement'], [/auberge|hostel|éco|eco/, 'auberge'], [/luxe|luxury/, 'luxe']];
+
+      try {
+        const rows = (await sqlite.execute(`SELECT payload, updated_at FROM aco_trips`)).rows || [];
         for (const row of rows) {
           voyagesTotal++;
+          const maj = Number(row.updated_at ?? row[1]) || 0;
+          if (maj > J7) actifs7j++;
+          if (maj > J30) actifs30j++;
           try {
             const p = JSON.parse(String(row.payload ?? row[0]));
             const st = p?.trip || {};
-            const nom = st?.trip?.nom;
+            const nom = st?.trip?.nom, pa = st?.trip?.pays;
             if (nom) dest.set(String(nom).slice(0, 60), (dest.get(String(nom).slice(0, 60)) || 0) + 1);
+            if (pa) pays.set(String(pa).slice(0, 60), (pays.get(String(pa).slice(0, 60)) || 0) + 1);
             const m = st?.cache?.plan?.transport?.mode;
             if (m && modes[m] !== undefined) modes[m]++; else if (m) modes.autre++;
             if (st?.cache?.plan) avecPlan++;
+            if ((st?.cache?.plan?.logement?.etapes || []).length > 1) multiBase++;
+            const pr = st?.prefs || {};
+            budget[casier(pr.budget, T_BUDGET)]++;
+            duree[casier(pr.days, T_DUREE)]++;
+            avecQui[casier(pr.withWho, T_QUI)]++;
+            sejour[casier(pr.stay, T_SEJOUR)]++;
+            /* mois de départ : un chiffre de 1 à 12, jamais la date exacte */
+            const dep = String(pr.depart || '');
+            const mm = dep.match(/^\d{4}-(\d{2})/);
+            if (mm) { const i = +mm[1] - 1; if (i >= 0 && i < 12) mois[i]++; }
           } catch (e) { /* payload illisible : on l'ignore, il ne compte pas */ }
         }
       } catch (e) { /* table absente : aucun voyage encore */ }
 
-      /* seuil d'anonymat : en dessous de K, on ne nomme pas la destination */
-      const visibles = [], masquees = { lieux: 0, voyages: 0 };
-      for (const [nom, n] of dest) {
-        if (n >= K) visibles.push({ nom, n });
-        else { masquees.lieux++; masquees.voyages += n; }
-      }
-      visibles.sort((a, b) => b.n - a.n);
+      /* seuil d'anonymat : en dessous de K, on ne nomme pas le lieu */
+      const auSeuil = (map) => {
+        const vus = [], masq = { lieux: 0, voyages: 0 };
+        for (const [nom, n] of map) {
+          if (n >= K) vus.push({ nom, n });
+          else { masq.lieux++; masq.voyages += n; }
+        }
+        vus.sort((a, b) => b.n - a.n);
+        return { vus: vus.slice(0, 12), masq };
+      };
+      const D = auSeuil(dest), P = auSeuil(pays);
 
-      let jeu = [];
+      /* ---- GARDE-FOU « petit échantillon » ----
+         Avec très peu de voyages, même un casier fixe devient indiscret :
+         « 1 voyage en train » sur 2 voyages, et l'admin sait qui a choisi
+         quoi. En dessous du seuil, on ne renvoie AUCUNE répartition —
+         seulement les totaux. C'est la même règle que pour les lieux,
+         appliquée à tout le reste. */
+      const assezDeMonde = voyagesTotal >= K;
+
+      let jeu = [], joueurs = 0;
       try {
         const r = await sqlite.execute(`SELECT name, score FROM aco_scores ORDER BY score DESC LIMIT 10`);
         jeu = (r.rows || []).map(x => ({ name: String(x.name ?? x[0]).slice(0, 20), score: Number(x.score ?? x[1]) }));
+        joueurs = await cnt(`SELECT COUNT(*) AS n FROM aco_scores`);
+      } catch (e) {}
+
+      /* appareils connectés et appels IA de l'heure : des volumes, utiles pour
+         surveiller la charge et le coût. Aucun rattachement à un compte. */
+      let appareils = 0, iaHeure = 0, iaComptes = 0;
+      try { appareils = await cnt(`SELECT COUNT(*) AS n FROM aco_sessions WHERE expires_at > ?`, [now]); } catch (e) {}
+      try {
+        iaHeure = await cnt(`SELECT COALESCE(SUM(n),0) AS n FROM aco_ai WHERE window_start > ?`, [now - 3600 * 1000]);
+        iaComptes = await cnt(`SELECT COUNT(*) AS n FROM aco_ai WHERE window_start > ?`, [now - 3600 * 1000]);
       } catch (e) {}
 
       return json({
         comptes,
-        voyages: { total: voyagesTotal, avecPlan },
-        destinations: visibles.slice(0, 15),
-        destinationsMasquees: masquees,
-        transports: modes,
-        jeu,
+        /* multiBase est une RÉPARTITION des voyages : elle tombe donc sous le
+           même garde-fou que les autres. Sur 2 voyages, « 1 itinérant »
+           dirait ce qu'une personne précise a demandé. */
+        voyages: { total: voyagesTotal, avecPlan, actifs7j, actifs30j,
+                   multiBase: assezDeMonde ? multiBase : null },
+        courbe,
+        destinations: D.vus,
+        destinationsMasquees: D.masq,
+        pays: P.vus,
+        paysMasques: P.masq,
+        /* les répartitions ne partent QUE si l'échantillon est assez grand */
+        transports: assezDeMonde ? modes : null,
+        budget:     assezDeMonde ? budget : null,
+        duree:      assezDeMonde ? duree : null,
+        avecQui:    assezDeMonde ? avecQui : null,
+        sejour:     assezDeMonde ? sejour : null,
+        mois:       assezDeMonde ? mois : null,
+        assezDeMonde,
+        technique: { appareils, iaHeure, iaComptes },
+        jeu, joueurs,
         seuil: K,
         genere: now,
       });

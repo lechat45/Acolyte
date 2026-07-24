@@ -4608,6 +4608,15 @@ function enterApp(){
    (date au format AAAA-MM-JJ) et incrémente CACHE dans sw.js.
 ============================================================ */
 const CHANGELOG = [
+  { v:'4.9', date:'2026-07-24', titre:'Des chiffres plus clairs côté coulisses', items:[
+    '📊 Le tableau de bord montre l’essentiel d’un coup d’œil : courbe des inscriptions, parcours, saisons, budgets',
+    '🔒 Rien de personnel n’y apparaît : uniquement des totaux, et les répartitions se taisent tant que la base est petite'
+  ]},
+  { v:'4.8', date:'2026-07-24', titre:'Tes données mieux protégées', items:[
+    '🛡️ Un voyage importé (fichier, QR, lien) est désormais inspecté et nettoyé avant d’entrer dans l’app',
+    '🔐 Tes sessions durent 30 jours au lieu de 90, et seuls tes 5 derniers appareils restent connectés',
+    '🧹 Ce qui ne sert plus est effacé tout seul : sessions expirées, codes de vérification périmés'
+  ]},
   { v:'4.7', date:'2026-07-24', titre:'Une vraie salle de jeux', items:[
     '🕹️ Deux clics sur la mascotte et tu choisis parmi quatre mini-jeux',
     '🌍 « Où est-ce ? » : une photo de monument, à toi de le situer sur la carte et de le nommer',
@@ -4872,6 +4881,7 @@ function privacyHTML(){
 
     <h4>5. Hébergement & durée de conservation</h4>
     <p>Tes données de compte sont conservées tant que ton compte existe. Les données restées dans ton navigateur y demeurent jusqu'à ce que tu les effaces. Aucune donnée n'est conservée à d'autres fins que le service.</p>
+    <p>Ce qui n'a plus d'utilité est effacé automatiquement : les sessions expirées, les codes de vérification périmés, et les sessions au-delà des 5 appareils les plus récents. Une session dure 30 jours au maximum. Quand tu supprimes ton compte, chaque table qui porte ton adresse est vidée — il ne reste rien.</p>
 
     <h4>6. Sécurité</h4>
     <p>Les mots de passe sont protégés par une empreinte cryptographique renforcée. Les échanges avec nos serveurs sont chiffrés (HTTPS). Aucun système n'étant infaillible, nous ne pouvons garantir une sécurité absolue, mais nous mettons en œuvre des mesures raisonnables.</p>

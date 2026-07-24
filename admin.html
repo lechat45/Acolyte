@@ -8,42 +8,120 @@
      depuis le réseau (jamais de chiffres périmés servis hors-ligne). -->
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.val.run https://*.workers.dev https://*.deno.dev; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.val.run; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>Acolite — Statistiques</title>
 <style>
-  :root{--bg:#F4F3EF;--card:#fff;--ink:#000;--muted:#2A2A2A;--primary:#FFE600;--danger:#EF4444;--ok:#22C55E}
+  /* ============================================================
+     Design néo-brutaliste, comme le site : bordures noires épaisses,
+     ombres dures non floutées, jaune de signature.
+
+     Couleurs des graphiques : elles ne reprennent PAS les néons du site
+     (#22F5FF, #C084FC…). Ces teintes sont trop claires pour porter une
+     surface de données : deux séries voisines deviennent indistinguables,
+     en particulier pour un daltonien. Les cinq teintes ci-dessous ont été
+     validées par un outil de contrôle (bande de clarté, plancher de
+     saturation, séparation sous les trois formes de daltonisme, contraste
+     avec le fond) en clair ET en sombre. Ne les remplace pas « pour faire
+     plus Acolite » sans repasser ce contrôle.
+  ============================================================ */
+  :root{
+    color-scheme:light;
+    --bg:#F4F3EF; --card:#fff; --ink:#101010; --muted:#4A4A4A;
+    --primary:#FFE600; --danger:#EF4444; --ok:#16A34A;
+    --grid:rgba(0,0,0,.10); --track:#EDEBE4;
+    /* palette catégorielle — ordre FIXE, jamais recyclé */
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+    /* une seule teinte pour les magnitudes (« plus foncé = plus grand ») */
+    --seq:#2a78d6;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme:dark;
+      --bg:#0B0B10; --card:#16161F; --ink:#F4F3EF; --muted:#A0A2B2;
+      --grid:rgba(255,255,255,.14); --track:#24243A;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+      --seq:#3987e5;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#0B0B10; --card:#16161F; --ink:#F4F3EF; --muted:#A0A2B2;
+    --grid:rgba(255,255,255,.14); --track:#24243A;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+    --seq:#3987e5;
+  }
+
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);
-    padding:24px 16px 60px;min-height:100vh;
-    background-image:radial-gradient(rgba(0,0,0,.1) 1.5px,transparent 1.5px);background-size:18px 18px}
-  .wrap{max-width:860px;margin:0 auto}
-  header{background:var(--primary);border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);
-    padding:16px 20px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  h1{font-size:1.4rem;letter-spacing:-.02em;text-transform:uppercase}
-  .sub{font-size:.8rem;font-weight:600;opacity:.75}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
-  .stat{background:var(--card);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:14px 16px;border-radius:4px}
-  .stat .k{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);opacity:.8}
-  .stat .v{font-size:1.9rem;font-weight:900;line-height:1.1;margin-top:4px}
+    padding:20px 14px 60px;min-height:100vh;
+    background-image:radial-gradient(var(--grid) 1.5px,transparent 1.5px);background-size:18px 18px}
+  .wrap{max-width:1080px;margin:0 auto}
+
+  header{background:var(--primary);color:#101010;border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);
+    padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:1.3rem;letter-spacing:-.02em;text-transform:uppercase}
+  header .sub{font-size:.76rem;font-weight:700;opacity:.75}
+  .hbtns{display:flex;gap:8px}
+
+  /* ---- Tuiles de chiffres : un nombre qui se lit de loin ---- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+  .kpi{background:var(--card);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:12px 14px;border-radius:4px}
+  .kpi .k{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .kpi .v{font-size:1.9rem;font-weight:900;line-height:1.05;margin-top:3px;font-variant-numeric:tabular-nums}
+  .kpi .d{font-size:.72rem;font-weight:700;color:var(--muted);margin-top:2px}
+
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
   .card{background:var(--card);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
-    padding:18px;margin-bottom:18px;border-radius:4px}
-  .card h2{font-size:1rem;text-transform:uppercase;margin-bottom:10px;border-bottom:3px solid var(--ink);
-    padding-bottom:5px;display:inline-block}
-  .row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.08)}
-  .row:last-child{border-bottom:0}
-  .row .n{margin-left:auto;font-weight:900}
-  .bar{height:8px;background:var(--bg);border:2px solid var(--ink);border-radius:5px;overflow:hidden;flex:1;max-width:220px}
-  .bar i{display:block;height:100%;background:var(--primary);border-right:2px solid var(--ink)}
-  .note{font-size:.8rem;color:var(--muted);line-height:1.55;margin-top:10px}
+    padding:16px;margin-bottom:16px;border-radius:4px;overflow:hidden}
+  .card.wide{grid-column:1/-1}
+  .card h2{font-size:.92rem;text-transform:uppercase;margin-bottom:4px;border-bottom:3px solid var(--ink);
+    padding-bottom:4px;display:inline-block}
+  .card .lede{font-size:.76rem;color:var(--muted);margin:6px 0 12px;line-height:1.5}
+
+  /* ---- Barres horizontales ---- */
+  .rows{display:flex;flex-direction:column;gap:7px}
+  /* Deux lignes : le nom et le nombre en haut, la barre pleine largeur en
+     dessous. Une seule ligne obligeait à couper les noms (« Confort… ») dans
+     les cartes étroites — et une barre plus longue se compare mieux. */
+  .r{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline}
+  .r .lbl{font-size:.8rem;font-weight:700;min-width:0;overflow-wrap:anywhere}
+  .r .n{font-weight:900;font-variant-numeric:tabular-nums;font-size:.86rem;text-align:right;white-space:nowrap}
+  .r .pct{color:var(--muted);font-weight:700;font-size:.72rem}
+  .track{grid-column:1/-1;height:13px;background:var(--track);border:2px solid var(--ink);
+    border-radius:4px;overflow:hidden}
+  .track i{display:block;height:100%;border-radius:0 3px 3px 0}
+  .rows{gap:10px}
+
+  /* ---- Légende : l'identité ne repose jamais sur la couleur seule ---- */
+  .legend{display:flex;flex-wrap:wrap;gap:10px 14px;margin-top:12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;font-weight:700}
+  .swatch{width:12px;height:12px;border:2px solid var(--ink);border-radius:3px;flex:none}
+
+  svg{display:block;max-width:100%;overflow:visible}
+  .axis{font-size:9px;font-weight:700;fill:var(--muted)}
+  .vlabel{font-size:10px;font-weight:900;fill:var(--ink);font-variant-numeric:tabular-nums}
+
+  .note{font-size:.76rem;color:var(--muted);line-height:1.55;margin-top:12px;
+    border-top:2px dashed var(--grid);padding-top:10px}
+  .lock{background:var(--primary);color:#101010;border:3px solid var(--ink);padding:10px 12px;
+    font-size:.78rem;font-weight:700;line-height:1.5;border-radius:4px}
+
+  table{width:100%;border-collapse:collapse;font-size:.8rem}
+  th,td{text-align:left;padding:6px 8px;border-bottom:2px solid var(--grid)}
+  th{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:900}
+  .scroll{overflow-x:auto}
+
   .msg{background:var(--card);border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);
     padding:26px;text-align:center;border-radius:4px}
-  .msg.err{background:var(--danger);color:#fff}
-  .msg h2{font-size:1.1rem;margin-bottom:8px;text-transform:uppercase}
-  .msg p{font-size:.9rem;line-height:1.6}
+  .msg.err{background:var(--danger);color:#fff;border-color:#101010}
+  .msg h2{font-size:1.05rem;margin-bottom:8px;text-transform:uppercase}
+  .msg p{font-size:.88rem;line-height:1.6}
   .hidden{display:none}
   button{font:inherit;font-weight:800;cursor:pointer;background:var(--card);color:var(--ink);
-    border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);padding:9px 16px;border-radius:4px}
+    border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);padding:8px 14px;border-radius:4px}
   button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -53,7 +131,10 @@
       <h1>📊 Acolite — Statistiques</h1>
       <div class="sub" id="stamp">Chargement…</div>
     </div>
-    <button id="refresh">↻ Actualiser</button>
+    <div class="hbtns">
+      <button id="tables" title="Afficher les mêmes chiffres en tableaux">🔢 Tableaux</button>
+      <button id="refresh">↻ Actualiser</button>
+    </div>
   </header>
 
   <div id="state" class="msg"><h2>Vérification…</h2><p>Lecture de ta session.</p></div>
