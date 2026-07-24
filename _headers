@@ -1,3 +1,22 @@
+# ⚠️ GitHub Pages IGNORE ce fichier : il n'est lu que par Cloudflare Pages
+# ou Netlify. Le site étant aujourd'hui sur GitHub Pages, les protections
+# ci-dessous ne s'appliquent PAS encore — c'est pour ça que l'essentiel est
+# aussi posé dans la balise CSP d'index.html, qui elle marche partout.
+
+# Protections appliquées à toutes les pages
+/*
+  # Empêche d'enfermer le site dans une iframe (clickjacking : un faux bouton
+  # posé par-dessus le vrai, et l'utilisateur clique sans le savoir)
+  X-Frame-Options: DENY
+  # Interdit au navigateur de « deviner » un type de fichier différent
+  X-Content-Type-Options: nosniff
+  # L'adresse de la page ne fuite pas vers les sites tiers qu'on appelle
+  Referrer-Policy: strict-origin-when-cross-origin
+  # On ne demande aucun de ces capteurs : autant les refuser d'office
+  Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=(), usb=()
+  # Force HTTPS pendant 2 ans, sous-domaines compris
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+
 # En-têtes de cache (Cloudflare Pages / Netlify)
 # HTML/JS/CSS/SW : toujours revalidés → les mises à jour arrivent immédiatement
 # (le service worker sert la version en cache en secours hors-ligne)

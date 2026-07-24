@@ -65,6 +65,28 @@ const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+/* ============================================================
+   LANGUE — français d'origine, anglais en option
+   ------------------------------------------------------------
+   Au premier passage on suit la langue du navigateur : un visiteur
+   anglophone tombe directement sur un site en anglais, sans rien chercher.
+   Son choix explicite, lui, prime pour toujours.
+   Déclaré ICI, tout en haut : les dates et les prompts en dépendent.
+============================================================ */
+const LS_LANG = 'acolite_lang';
+function langInit(){
+  try{
+    const choisi = localStorage.getItem(LS_LANG);
+    if(choisi === 'en' || choisi === 'fr') return choisi;
+  }catch(e){}
+  const n = (navigator.language || 'fr').toLowerCase();
+  return n.startsWith('fr') ? 'fr' : 'en';
+}
+let LANG = langInit();
+const isEN = () => LANG === 'en';
+/* locale des dates et des heures : suit la langue */
+const LOC = () => LANG === 'en' ? 'en-GB' : 'fr-FR';
+
 let state = {
   step: 1,
   prefs: null,
@@ -80,6 +102,85 @@ let state = {
   planAnswers: [],    // réponses aux questions du plan
   propAnswers: []     // réponses d'affinage des propositions
 };
+
+/* ============================================================
+   ASSAINISSEMENT DES DONNÉES IMPORTÉES
+   ------------------------------------------------------------
+   Un fichier de sauvegarde, un QR ou un lien #v= viennent de l'EXTÉRIEUR.
+   Avant, restoreTrip() fusionnait le JSON tel quel dans l'état global :
+   n'importe quelle clé, n'importe quel type, n'importe quelle taille.
+   On ne fait plus confiance : liste blanche de clés, type vérifié,
+   profondeur et longueur bornées. Ce qui n'est pas reconnu est jeté.
+============================================================ */
+/* Une carte hors-ligne est une image encodée dans l'URL elle-même. On
+   n'accepte QUE ça : sans ce filtre, une sauvegarde piégée peut écrire ce
+   qu'elle veut dans l'attribut src d'une balise <img>. */
+function safeDataImg(v){
+  const s = String(v ?? '');
+  return /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]{16,}$/.test(s) && s.length < 4e6 ? s : '';
+}
+const _sTxt = (v, max = 400) => typeof v === 'string' ? v.slice(0, max) : '';
+const _sNum = (v, min, max) => { const n = +v; return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : min; };
+const _sBool = v => v === true;
+/* Recopie récursive et bornée d'une valeur venue de l'IA ou d'un import.
+   On garde la forme (objets, tableaux, textes, nombres) mais on refuse la
+   profondeur infinie, les clés dangereuses et les tailles absurdes. */
+function safeJSON(v, prof = 0){
+  if(prof > 6) return null;
+  if(v === null || typeof v === 'boolean') return v;
+  if(typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  if(typeof v === 'string') return v.slice(0, 4000);
+  if(Array.isArray(v)) return v.slice(0, 200).map(x => safeJSON(x, prof + 1));
+  if(typeof v !== 'object') return null;
+  const out = {};
+  let n = 0;
+  for(const k of Object.keys(v)){
+    /* __proto__ et compagnie n'ont rien à faire dans des données */
+    if(k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+    if(++n > 120) break;
+    out[k.slice(0, 80)] = safeJSON(v[k], prof + 1);
+  }
+  return out;
+}
+/* Le cache IA, en ne laissant passer les cartes que si ce sont de vraies images */
+function safeCache(c){
+  const o = safeJSON(c) || {};
+  if(o.maps && typeof o.maps === 'object'){
+    const m = {};
+    for(const k of Object.keys(o.maps).slice(0, 40)){
+      const img = safeDataImg(o.maps[k]);
+      if(img) m[String(k).slice(0, 8)] = img;
+    }
+    o.maps = m;
+  } else delete o.maps;
+  return o;
+}
+/* Reconstruit un état propre à partir de données non fiables.
+   On part TOUJOURS de la forme attendue : une clé inconnue est ignorée. */
+function safeState(raw){
+  const s = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+  const st = {
+    step:         _sNum(s.step, 1, 3),
+    prefs:        s.prefs && typeof s.prefs === 'object' ? safeJSON(s.prefs) : null,
+    destinations: Array.isArray(s.destinations) ? s.destinations.slice(0, 12).map(x => safeJSON(x)) : [],
+    trip:         s.trip && typeof s.trip === 'object' ? safeJSON(s.trip) : null,
+    mode:         ['plane', 'train', 'car'].includes(s.mode) ? s.mode : 'plane',
+    cache:        safeCache(s.cache),
+    checklist:    s.checklist && typeof s.checklist === 'object' ? safeJSON(s.checklist) : {},
+    spends:       Array.isArray(s.spends) ? s.spends.slice(0, 300).map(x => safeJSON(x)) : [],
+    chatLog:      Array.isArray(s.chatLog) ? s.chatLog.slice(0, 100).map(x => safeJSON(x)) : [],
+    notes:        _sTxt(s.notes, 20000),
+    resas:        Array.isArray(s.resas) ? s.resas.slice(0, 100).map(x => safeJSON(x)) : [],
+    planAnswers:  Array.isArray(s.planAnswers) ? s.planAnswers.slice(0, 30).map(x => _sTxt(x, 300)) : [],
+    propAnswers:  Array.isArray(s.propAnswers) ? s.propAnswers.slice(0, 30).map(x => _sTxt(x, 300)) : [],
+    board:        s.board && typeof s.board === 'object' ? safeJSON(s.board) : { votes:{}, comments:{} },
+    planOk:       _sBool(s.planOk),
+    modeManual:   _sBool(s.modeManual),
+    _qsDone:      _sBool(s._qsDone)
+  };
+  if(!st.trip) st.step = 1;      /* pas de voyage → on ne peut pas être à l'étape 3 */
+  return st;
+}
 
 /* Écriture localStorage tolérante : en navigation privée ou stockage plein,
    setItem lève une exception — ici on ne casse jamais le flux appelant. */
@@ -128,6 +229,16 @@ const CFG = window.ACOLITE_KEYS || {};
    Le navigateur n'en envoie aucune — c'est le mode recommandé en public. */
 const API = () => (CFG.proxy || '').replace(/\/+$/, '');
 const useBackend = () => !!API();
+/* En-têtes des appels au proxy IA. On joint le jeton de session : le serveur
+   n'accepte plus les requêtes anonymes, sinon n'importe qui connaissant
+   l'adresse du proxy (elle est dans config.js, donc publique) pourrait
+   consommer le quota des clés API. */
+const aiHeaders = () => {
+  const h = { 'Content-Type': 'application/json' };
+  const t = authToken();
+  if(t) h.Authorization = 'Bearer ' + t;
+  return h;
+};
 const gemKey  = () => CFG.gemini || localStorage.getItem(LS_GEM)  || '';
 const groqKey = () => CFG.groq || localStorage.getItem(LS_GROQ) || '';
 /* Du meilleur au plus prudent — bascule automatique si Groq retire un modèle */
@@ -206,7 +317,8 @@ async function resolveGemModel(key, force = false){
   }
   const r = await fetchT(useBackend()
     ? `${API()}/gemini/models`
-    : `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}&pageSize=100`, {}, 10000);
+    : `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}&pageSize=100`,
+    useBackend() ? { headers: aiHeaders() } : {}, 10000);
   if(!r.ok){
     const msg = await gemErrMsg(r);
     throw new Error('LIST:' + msg);
@@ -282,7 +394,7 @@ async function gemini(prompt, expectJson = true, maxTok = 4096, _retry = false, 
   const r = useBackend()
     ? await fetchT(`${API()}/gemini`, {
         method:'POST',
-        headers:{ 'Content-Type':'application/json' },
+        headers: aiHeaders(),
         body: JSON.stringify({ model, body })      /* aucune clé ne quitte le navigateur */
       })
     : await fetchT(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,{
@@ -341,7 +453,7 @@ async function groq(prompt, expectJson = true, maxTok = 2048, _retryModel = fals
   const r = useBackend()
     ? await fetchT(`${API()}/groq`, {
         method:'POST',
-        headers:{ 'Content-Type':'application/json' },
+        headers: aiHeaders(),
         body: JSON.stringify({ body })             /* la clé Groq reste sur le serveur */
       })
     : await fetchT('https://api.groq.com/openai/v1/chat/completions',{
@@ -526,8 +638,8 @@ document.addEventListener('click', e => {
   }, wait);
 })();
 
-/* ---- Easter egg : 3 clics d'affilée sur la boule du logo (PC) → mini-jeu
-   « défends la Terre » (tir sur les astéroïdes) avec classement. ---- */
+/* ---- Easter egg : 2 clics d'affilée sur la mascotte du logo (PC) → la salle
+   de jeux, où l'on choisit parmi quatre mini-jeux. ---- */
 (function gameEgg(){
   if(!window.matchMedia?.('(pointer:fine)').matches) return;   /* PC seulement */
   const logo = document.querySelector('.logo-mark');
@@ -536,7 +648,7 @@ document.addEventListener('click', e => {
   logo.addEventListener('click', () => {
     clearTimeout(resetT);
     resetT = setTimeout(() => { clicks = 0; }, 700);           /* pas « de suite » → on repart de zéro */
-    if(++clicks >= 3){ clicks = 0; openGame(); }
+    if(++clicks >= 2){ clicks = 0; openArcade(); }
   });
 })();
 
@@ -893,9 +1005,15 @@ function ctx(){
   let saison = '';
   if(p.depart){
     const mo = new Date(p.depart + 'T12:00:00');
-    if(!isNaN(mo)) saison = mo.toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+    if(!isNaN(mo)) saison = mo.toLocaleDateString(LOC(), { month:'long', year:'numeric' });
   }
-  return `Date d'aujourd'hui : ${new Date().toLocaleDateString('fr-FR')}.
+  /* La consigne de langue passe EN PREMIER : c'est la plus facile à perdre en
+     fin de prompt, et tout le contenu du voyage en dépend. Les valeurs des
+     champs JSON changent de langue, jamais leurs NOMS — le code les lit. */
+  const langue = isEN()
+    ? `ANSWER ENTIRELY IN ENGLISH. Every text value you produce is read by an English-speaking traveller: titles, summaries, advice, day programmes, everything. Address them as "you", in a warm and direct tone. Keep the JSON field NAMES exactly as specified (they are in French — never translate the keys), and keep proper nouns in their local form.\n`
+    : '';
+  return `${langue}Date d'aujourd'hui : ${new Date().toLocaleDateString(LOC())}.
 CONTEXTE VOYAGEUR :
 - Départ : ${p.from || 'non précisé'}${saison ? `\n- Mois du voyage (calculé) : ${saison} — raisonne selon cette saison précise` : ''}
 - Destination choisie : ${t.nom || '?'}, ${t.pays || ''}
@@ -908,7 +1026,7 @@ RÈGLES DE QUALITÉ (toujours valables) :
 - Uniquement des lieux, quartiers, établissements et transports RÉELS et vérifiables — au moindre doute, préfère l'option la plus connue plutôt que d'inventer.
 - Prix en euros, réalistes pour la saison et l'année indiquées ; donne des fourchettes plutôt que des chiffres trop précis.
 - Respecte STRICTEMENT le budget et les limites du voyageur.
-- TUTOIE toujours le voyageur (jamais de vouvoiement), ton chaleureux et naturel.${p.kids ? '\n- Des ENFANTS voyagent : adapte chaque conseil (rythme, distances, activités, restaurants) à leur présence.' : ''}`;
+- ${isEN() ? 'Write every text value in ENGLISH, warm and natural, addressing the traveller as "you".' : 'TUTOIE toujours le voyageur (jamais de vouvoiement), ton chaleureux et naturel.'}${p.kids ? (isEN() ? '\n- CHILDREN are travelling: adapt every piece of advice (pace, distances, activities, restaurants) to their presence.' : '\n- Des ENFANTS voyagent : adapte chaque conseil (rythme, distances, activités, restaurants) à leur présence.') : ''}`;
 }
 
 /* ============================================================
@@ -2105,7 +2223,7 @@ function panProgramme(d){
     + jours.map(jr => `
       <div class="day-block">
         <div class="day-row">
-          <span class="day-num">J${esc(String(jr.jour))}</span>
+          <span class="day-num">${isEN()?'D':'J'}${esc(String(jr.jour))}</span>
           <div class="day-txt">
             <h4>${esc(jr.resume || '')}</h4>
             ${jr.base ? `<span class="day-base">📍 ${esc(jr.base)}</span>` : ''}
@@ -2116,7 +2234,7 @@ function panProgramme(d){
           <button class="day-act" data-daydetail="${esc(String(jr.jour))}">🕘 Voir heure par heure</button>
           <button class="day-act" data-planb="${esc(String(jr.jour))}">🔄 Refaire ce jour</button>
         </div>
-        ${state.cache.maps?.[jr.jour] ? `<img class="daymap" src="${state.cache.maps[jr.jour]}" alt="Carte du jour ${esc(String(jr.jour))}">` : ''}
+        ${safeDataImg(state.cache.maps?.[jr.jour]) ? `<img class="daymap" src="${safeDataImg(state.cache.maps[jr.jour])}" alt="Carte du jour ${esc(String(jr.jour))}">` : ''}
         ${collabBarHTML(jr.jour)}
         ${(() => {
           /* une journée dépliée le reste : on la ré-affiche depuis le cache */
@@ -2957,8 +3075,8 @@ function ryDefaultDate(){
   return base.toISOString().slice(0,10);
 }
 const addDays = (iso, n) => { const d = new Date(iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
-const frDate = iso => new Date(iso).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
-const frTime = iso => new Date(iso).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+const frDate = iso => new Date(iso).toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'short'});
+const frTime = iso => new Date(iso).toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'});
 
 /* --- ✈️ Ryanair : meilleurs A/R sur une fenêtre de dates --- */
 async function ryRoundTrip(){
@@ -3004,7 +3122,7 @@ async function ryRoundTrip(){
     }).join('') + `<p class="hint">Prix réels au moment de la recherche, hors bagages/options. ${fares[0].summary?.price?.value ? 'Le moins cher : <strong>'+fares[0].summary.price.value.toFixed(2)+' € A/R</strong>.' : ''}</p>`;
     if(fares[0]?.summary?.price?.value){
       const v = +fares[0].summary.price.value.toFixed(0);
-      state.cache.realPrice = `à partir de ${v} € A/R par personne (Ryanair, ${new Date().toLocaleDateString('fr-FR')})`;
+      state.cache.realPrice = `à partir de ${v} € A/R par personne (Ryanair, ${new Date().toLocaleDateString(LOC())})`;
       trackPrice(v, 'Ryanair');
       save();
     }
@@ -3029,7 +3147,7 @@ async function ryCalendar(){
     const days = (d.outbound?.fares||[]).filter(f=>!f.unavailable && f.price);
     if(!days.length){ zone.innerHTML = errHTML(`Aucun vol ${from} → ${to} ce mois-ci (ligne non desservie ?).`); return; }
     const min = Math.min(...days.map(f=>f.price.value));
-    zone.innerHTML = `<h3 style="margin-bottom:10px">📅 Aller simple ${esc(from)} → ${esc(to)} — ${new Date(month).toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}</h3>
+    zone.innerHTML = `<h3 style="margin-bottom:10px">📅 Aller simple ${esc(from)} → ${esc(to)} — ${new Date(month).toLocaleDateString(LOC(),{month:'long',year:'numeric'})}</h3>
       <div style="display:flex;flex-wrap:wrap;gap:7px">` +
       days.map(f=>{
         const best = f.price.value === min;
@@ -3111,7 +3229,7 @@ async function tpSearch(){
       }).join('') +
       `<p class="hint">Prix issus du cache Aviasales (recherches réelles des dernières 48h, toutes compagnies confondues) — clique sur "Voir" pour le tarif à la seconde.</p>`;
     if(rows[0]?.price){
-      state.cache.realPrice = `à partir de ${rows[0].price} € A/R par personne (toutes compagnies, ${new Date().toLocaleDateString('fr-FR')})`;
+      state.cache.realPrice = `à partir de ${rows[0].price} € A/R par personne (toutes compagnies, ${new Date().toLocaleDateString(LOC())})`;
       trackPrice(+rows[0].price, 'toutes compagnies');
       save();
     }
@@ -3719,7 +3837,7 @@ function renderSpends(){
         <div class="emo" style="font-size:1rem">💳</div>
         <div style="flex:1;min-width:0">
           <p style="margin-top:2px">${esc(s.label)}</p>
-          <p class="hint" style="margin:0">${new Date(s.ts).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</p>
+          <p class="hint" style="margin:0">${new Date(s.ts).toLocaleDateString(LOC(), {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</p>
         </div>
         <div class="side row"><span class="tag money">${s.amount.toFixed(2)} €</span><span class="spend-del" data-sp="${i}">🗑</span></div>
       </div>`).join('');
@@ -3938,7 +4056,7 @@ function buildDossierHTML(){
     pl.programme.forEach(j => {
       h += `<div class="dj"><h3>Jour ${esc2(String(j.jour))} — ${esc2(j.resume || '')}${j.base ? ` <small>(${esc2(j.base)})</small>` : ''}</h3>`;
       if((j.lieux || []).length) h += `<p class="lieux">📍 ${j.lieux.map(esc2).join(' · ')}</p>`;
-      if(state.cache.maps?.[j.jour]) h += `<img class="djmap" src="${state.cache.maps[j.jour]}" alt="Carte jour ${esc2(String(j.jour))}">`;
+      if(safeDataImg(state.cache.maps?.[j.jour])) h += `<img class="djmap" src="${safeDataImg(state.cache.maps[j.jour])}" alt="Carte jour ${esc2(String(j.jour))}">`;
       const det = days[j.jour];
       if(det?.etapes?.length){
         h += `<ul class="heures">` + det.etapes.map(e =>
@@ -3999,7 +4117,9 @@ function restoreTrip(file){
       const s = (data && data.state) ? data.state : data;   /* tolère un state brut */
       const looksAcolite = data?._acolite === 'trip-backup' || (s && ['trip','prefs','cache','destinations'].some(k => k in s));
       if(!s || typeof s !== 'object' || Array.isArray(s) || !looksAcolite) throw new Error('bad');
-      state = { ...state, ...s };
+      /* on ne fusionne PLUS le JSON tel quel : il vient d'un fichier, donc
+         de l'extérieur. safeState() ne garde que des clés connues et typées. */
+      state = safeState(s);
       save();
       _pcPhotos = null;   /* invalide les photos de la carte postale */
       toast('📂 Voyage importé ✔');
@@ -4105,7 +4225,7 @@ async function loadMeteo(){
     const days = d.daily.time.map((t,i)=>{
       const w = wmo(d.daily.weather_code[i]);
       const dt = new Date(t);
-      const jour = dt.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'});
+      const jour = dt.toLocaleDateString(LOC(),{weekday:'short',day:'numeric'});
       return `<div class="item" style="flex-direction:column;align-items:center;text-align:center;min-width:92px;padding:12px 8px;box-shadow:none">
         <div style="font-size:.74rem;color:var(--txt-2);text-transform:capitalize">${jour}</div>
         <div style="font-size:1.6rem;margin:4px 0">${w[0]}</div>
@@ -4128,8 +4248,8 @@ async function loadTimeAndCurrency(){
     const d = await r.json();
     const tz = d.timezone;
     const now = new Date();
-    const localStr = now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',timeZone:tz});
-    const hereStr  = now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Paris'});
+    const localStr = now.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit',timeZone:tz});
+    const hereStr  = now.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Paris'});
     const offH = Math.round((d.utc_offset_seconds - now.getTimezoneOffset()*-60)/3600);
     const decal = offH===0 ? 'Même fuseau qu\'en France' : `${offH>0?'+':''}${offH}h par rapport à la France`;
     $('#zoneTime').innerHTML = `<div class="emo">🕐</div><div style="flex:1"><h4>Il est <span style="background:var(--primary);padding:2px 6px;border:1px solid var(--stroke)">${localStr}</span> à ${esc(t.nom)}</h4><p>${decal} · Fuseau ${esc(tz)} · (${hereStr} en France)</p></div>`;
@@ -4199,7 +4319,7 @@ function startCountdown(){
     const diff = target - new Date();
     if(diff <= 0){ zone.innerHTML = `<div class="emo">🏖️</div><p style="margin-top:4px"><strong>C'est parti — bon voyage à ${esc(state.trip.nom)} !</strong></p>`; clearInterval(countT); return; }
     const j = Math.floor(diff/864e5), h = Math.floor(diff%864e5/36e5), m = Math.floor(diff%36e5/6e4);
-    zone.innerHTML = `<div class="emo">⏳</div><div style="flex:1"><h4>Départ dans <span style="background:var(--primary);padding:2px 6px;border:1px solid var(--stroke)">${j} jours ${h}h ${m}min</span></h4><p>Le ${target.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · direction ${esc(state.trip.nom)} ${esc(state.trip.drapeau||'')}</p></div>`;
+    zone.innerHTML = `<div class="emo">⏳</div><div style="flex:1"><h4>Départ dans <span style="background:var(--primary);padding:2px 6px;border:1px solid var(--stroke)">${j} jours ${h}h ${m}min</span></h4><p>Le ${target.toLocaleDateString(LOC(),{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · direction ${esc(state.trip.nom)} ${esc(state.trip.drapeau||'')}</p></div>`;
   };
   tick(); countT = setInterval(tick, 30000);
 }
@@ -4214,7 +4334,7 @@ function initNote(){
   a.oninput = () => {
     state.notes = a.value;
     clearTimeout(noteT);
-    noteT = setTimeout(()=>{ save(); $('#noteSaved').textContent = 'Enregistré ✓ ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }, 500);
+    noteT = setTimeout(()=>{ save(); $('#noteSaved').textContent = 'Enregistré ✓ ' + new Date().toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'}); }, 500);
   };
 }
 const _e13 = $('#btnRes'); if(_e13) _e13.onclick = () => {
@@ -4488,6 +4608,17 @@ function enterApp(){
    (date au format AAAA-MM-JJ) et incrémente CACHE dans sw.js.
 ============================================================ */
 const CHANGELOG = [
+  { v:'4.7', date:'2026-07-24', titre:'Une vraie salle de jeux', items:[
+    '🕹️ Deux clics sur la mascotte et tu choisis parmi quatre mini-jeux',
+    '🌍 « Où est-ce ? » : une photo de monument, à toi de le situer sur la carte et de le nommer',
+    '🏓 « Ne me lâche pas » : un pong où la mascotte est la balle — et elle râle à chaque choc',
+    '🧳 « Bagage express » : le tapis défile, attrape ce qu’il faut emporter avant que la destination change'
+  ]},
+  { v:'4.6', date:'2026-07-24', titre:'Acolite parle anglais', items:[
+    '🇬🇧 Bascule tout Acolite en anglais depuis ton profil — interface comprise',
+    '✈️ Tes voyages sont aussi écrits en anglais : programme, conseils, budget, tout',
+    '🌍 Si ton téléphone n’est pas en français, Acolite s’ouvre directement en anglais'
+  ]},
   { v:'4.5', date:'2026-07-24', titre:'Une carte qui montre enfin ta journée', items:[
     '🗺️ Chaque journée se lit d’un coup d’œil : tes étapes numérotées, reliées dans l’ordre de la balade, avec ton hôtel repéré',
     '📍 « Où je suis » te dit à quelle distance est ta prochaine étape et en combien de minutes à pied',
@@ -4652,7 +4783,7 @@ const APP_VERSION = CHANGELOG[0].v;
 const LS_SEEN_V = 'acolite_seen_version';
 /* date longue « 20 juillet 2026 » (distincte de frDate, utilisée pour les vols) */
 const newsDate = iso => { const d = new Date(iso + 'T12:00:00');
-  return isNaN(d) ? iso : d.toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }); };
+  return isNaN(d) ? iso : d.toLocaleDateString(LOC(), { day:'numeric', month:'long', year:'numeric' }); };
 
 /* Chaque nouveauté commence par un emoji. On le détache pour qu'il serve
    de puce : sinon on lit « • 🎯 Les 3 étapes… », deux puces pour une. */
@@ -5212,11 +5343,13 @@ function acoMapCreate(el){
   let drag = null;
   const pts = new Map();
   let pinch = 0;
+  let _dragDist = 0;   /* distance du dernier glissement : sert à distinguer un clic d'un déplacement */
   el.addEventListener('pointerdown', e => {
     if(e.target.closest('.am-zb, .am-credit, .am-mark')) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if(pts.size === 2){ drag = null; pinch = pinchDist(); return; }
     drag = { x: e.clientX, y: e.clientY, moved: 0 };
+    _dragDist = 0;
     try{ el.setPointerCapture(e.pointerId); }catch(err){}
     el.classList.add('am-grab');
   });
@@ -5245,7 +5378,7 @@ function acoMapCreate(el){
   function endPointer(e){
     pts.delete(e.pointerId);
     if(pts.size < 2) pinch = 0;
-    if(drag){ drag = null; el.classList.remove('am-grab'); }
+    if(drag){ _dragDist = drag.moved; drag = null; el.classList.remove('am-grab'); }
   }
   el.addEventListener('pointerup', endPointer);
   el.addEventListener('pointercancel', endPointer);
@@ -5267,6 +5400,17 @@ function acoMapCreate(el){
     const mk = e.target.closest('.am-mark');
     if(mk){ showPop(+mk.dataset.ammark); return; }
     hidePop();
+    /* Point d'accroche : le mini-jeu des monuments s'en sert pour savoir où
+       le joueur pointe. On ignore le clic qui termine un déplacement, sinon
+       tout glissement de carte poserait un marqueur par accident. */
+    if(M.onClick && !e.target.closest('.am-credit') && _dragDist < 6){
+      const r = el.getBoundingClientRect();
+      const z = Math.round(M.zoom);
+      const c = amProject(M.center.lat, M.center.lon, z);
+      const g = amUnproject(c.x - r.width / 2 + (e.clientX - r.left),
+                            c.y - r.height / 2 + (e.clientY - r.top), z);
+      M.onClick(g.lat, g.lon);
+    }
   });
 
   /* ---- bulle d'un lieu : le nom, et de quoi s'y faire guider ---- */
@@ -5286,6 +5430,8 @@ function acoMapCreate(el){
 
   return {
     el,
+    /* le mini-jeu des monuments branche ici sa fonction de clic */
+    onClick(fn){ M.onClick = fn; },
     setView(lat, lon, z){ M.center = { lat: +lat, lon: +lon }; if(z) M.zoom = z; draw(); },
     panTo(lat, lon, z){
       M.center = { lat: +lat, lon: +lon };
@@ -5410,7 +5556,7 @@ async function buildProjectMap(){
     const marks = situes.map((s, i) => ({ lat: s.lat, lon: s.lon, kind: 'stop', n: i + 1, nom: s.nom, ville }));
     if(hotel) marks.push({ lat: hotel.lat, lon: hotel.lon, kind: 'hotel', nom: hotel.nom, ville });
     routes.push({
-      label: `J${j.jour}`,
+      label: `${isEN()?'D':'J'}${j.jour}`,
       note: `${j.base ? j.base + ' · ' : ''}${j.resume || ''}`,
       marks,
       line: situes.map(s => [s.lat, s.lon]),
@@ -5545,7 +5691,7 @@ function renderProfile(){
   /* connecté = vérifié : le serveur refuse la connexion tant que l'adresse
      n'est pas confirmée, il n'y a donc plus d'état intermédiaire à afficher */
   $('#pfMeta').innerHTML = `${esc(u.email)} · ${authToken() ? '☁️ synchronisé' : '📴 hors ligne'}`
-    + (u.created ? ` · membre depuis le ${new Date(u.created).toLocaleDateString('fr-FR')}` : '');
+    + (u.created ? ` · membre depuis le ${new Date(u.created).toLocaleDateString(LOC())}` : '');
   const _e24 = $('#pfEditPseudo'); if(_e24) _e24.onclick = () => {
     const np = prompt('Ton nouveau pseudo :', pseudo);
     if(np && np.trim()){ u.pseudo = np.trim().slice(0,20); setUser(u); renderProfile(); toast('Pseudo mis à jour ✔'); }
@@ -5693,10 +5839,15 @@ function importPayload(str){
   if(!String(str).startsWith('ACOLITE1:')) throw new Error('format');
   const o = JSON.parse(decodeURIComponent(escape(atob(str.slice(9)))));
   if(!o.trip?.nom) throw new Error('vide');
-  if(!confirm(`Importer le voyage "${o.trip.nom}, ${o.trip.pays}" ?\nTon voyage en cours sera remplacé (ton compte est conservé).`)) return false;
-  state.trip = o.trip;
-  state.prefs = { ...(state.prefs||{}), ...(o.prefs||{}) };
-  state.destinations = [o.trip];
+  /* voyage et préférences viennent d'un QR ou d'un lien : on les assainit
+     avant de les faire entrer dans l'état (mêmes raisons que restoreTrip) */
+  const trip = safeJSON(o.trip);
+  const prefs = o.prefs && typeof o.prefs === 'object' ? safeJSON(o.prefs) : null;
+  if(!trip?.nom) throw new Error('vide');
+  if(!confirm(`Importer le voyage "${String(trip.nom).slice(0, 80)}, ${String(trip.pays || '').slice(0, 80)}" ?\nTon voyage en cours sera remplacé (ton compte est conservé).`)) return false;
+  state.trip = trip;
+  state.prefs = { ...(state.prefs||{}), ...(prefs||{}) };
+  state.destinations = [trip];
   state.cache = {}; state.checklist = {}; state.spends = []; state.notes = ''; state.resas = [];
   state.planAnswers = []; state._qsDone = false; state.modeManual = false;
   _pcPhotos = null;   /* photos de carte postale liées au voyage précédent */
@@ -5704,7 +5855,7 @@ function importPayload(str){
   save(); unlockSteps();
   switchCat('trip');
   gotoStep(3);
-  toast(`🎫 Voyage importé : cap sur ${o.trip.nom} !`);
+  toast(`🎫 Voyage importé : cap sur ${trip.nom} !`);
   return true;
 }
 
@@ -6694,3 +6845,1187 @@ requireAuth();
 
 /* app.js est arrivé au bout : le vérificateur de démarrage ne déclenchera pas d'alerte */
 if(window.__ACOLITE) window.__ACOLITE.loaded = true;
+
+/* ============================================================
+   TRADUCTION — mode anglais
+   ------------------------------------------------------------
+   Pourquoi traduire le DOM plutôt que remplacer 900 chaînes par des
+   appels t('clé') : app.js écrit son interface en injectant du HTML depuis
+   des centaines d'endroits. Réécrire chaque site d'appel dans un fichier à
+   portée globale unique, c'est des centaines d'occasions de casser quelque
+   chose en silence — exactement ce que ce projet a déjà vécu.
+   Ici, un seul point d'entrée traduit ce qui apparaît, d'où qu'il vienne :
+   le HTML statique ET tout ce que le code génère ensuite.
+   La clé, c'est le texte français lui-même : rien à inventer, rien à
+   maintenir en double.
+============================================================ */
+
+/* Normalise avant comparaison : apostrophe typographique, espaces
+   insécables de la ponctuation française, retours à la ligne du HTML
+   indenté. Sans ça, « Ton voyage » et « Ton voyage » ne se ressemblent pas. */
+const i18nKey = s => String(s ?? '')
+  .replace(/[\u2019\u02bc]/g, "'")
+  .replace(/[\u00a0\u202f\u2009]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const EN_RAW = {
+  /* ---- Salle de jeux ---- */
+  '🕹️ La salle de jeux': '🕹️ The arcade',
+  "Tu m'as trouvée. Choisis à quoi on joue.": 'You found me. Pick what we play.',
+  'Défends la Terre': 'Defend the Earth',
+  'Descends les astéroïdes avant qu’ils touchent la planète.': 'Shoot the asteroids down before they reach the planet.',
+  'Où est-ce ?': 'Where is it?',
+  '🌍 Où est-ce ?': '🌍 Where is it?',
+  'Une photo, une carte : place le monument et donne son nom.': 'A photo, a map: place the monument and name it.',
+  'Ne me lâche pas': 'Don’t drop me',
+  '🏓 Ne me lâche pas': '🏓 Don’t drop me',
+  'Un pong où la balle, c’est moi. Et je n’aime pas ça.': 'A pong game where I am the ball. And I do not enjoy it.',
+  'Bagage express': 'Express packing',
+  '🧳 Bagage express': '🧳 Express packing',
+  'Le tapis défile : attrape ce qu’il faut emporter.': 'The belt keeps rolling: grab what you need to take.',
+  'Monument à reconnaître': 'Monument to identify',
+  '🖱️ Bouge la raquette avec la souris et empêche la mascotte de tomber.': '🖱️ Move the paddle with your mouse and keep the mascot off the floor.',
+  "💡 Elle n'aime pas être cognée. Au bout de 10 chocs, elle voit rouge — et ça va plus vite.": '💡 She hates being knocked about. After 10 bumps she sees red — and it speeds up.',
+  '🏓 Commencer': '🏓 Start',
+  "🖱️ Le tapis défile. Clique sur ce qu'il faut emporter, laisse passer le reste.": '🖱️ The belt rolls past. Click what you need to pack, let the rest go by.',
+  "💡 La destination change en cours de route : ce qui était utile ne l'est plus.": '💡 The destination changes mid-game: what was useful no longer is.',
+  '🧳 Commencer': '🧳 Start',
+  'Tu m’as laissée tomber !': 'You dropped me!',
+  'Valise bouclée': 'Bag packed',
+  'Partie terminée': 'Round over',
+
+  /* ---- Onglets du voyage ---- */
+  'Logement': 'Where you sleep',
+  'Événements': 'Events',
+
+  /* ---- Fragments : texte coupé par du gras en ligne ---- */
+  'Ton programme jour par jour. Une journée ne te va pas ?': 'Your day-by-day programme. A day doesn’t suit you?',
+  ', ou demande à Acolite de la': ', or ask Acolite to',
+  'refaire': 'redo it',
+  '✈️ Avant le décollage : télécharge le carnet PDF et prépare les': '✈️ Before take-off: download the PDF travel book and prepare the',
+  'cartes de chaque journée': 'maps for each day',
+  '— tout reste consultable': '— everything stays readable',
+  'sans connexion': 'offline',
+  '📬 Un code de vérification à 6 chiffres a été envoyé à': '📬 A 6-digit verification code has been sent to',
+  '. Entre-le pour sécuriser ton compte.': '. Enter it to secure your account.',
+  'politique de confidentialité': 'privacy policy',
+
+  /* ---- Collaboration ---- */
+  'planifiez à plusieurs': 'plan it together',
+  'Aucun commentaire — lance la discussion !': 'No comments yet — start the conversation!',
+
+  /* ---- Réglages : pastilles ---- */
+  '🏖️ Détente': '🏖️ Relaxing',
+  '🏛️ Culture': '🏛️ Culture',
+  '🥾 Aventure': '🥾 Adventure',
+  '🎉 Fête': '🎉 Partying',
+  '🌿 Nature': '🌿 Nature',
+  '🍽️ Gastronomie': '🍽️ Food & wine',
+  '👨‍👩‍👧 Famille': '👨‍👩‍👧 Family',
+  '🐢 Doux': '🐢 Gentle',
+  '⚖️ Équilibré': '⚖️ Balanced',
+  '⚡ Intense': '⚡ Packed',
+  '🍽️ Aucune contrainte': '🍽️ No restrictions',
+  '🥗 Végétarien': '🥗 Vegetarian',
+  '🌱 Végan': '🌱 Vegan',
+  '☪️ Halal': '☪️ Halal',
+  '✡️ Casher': '✡️ Kosher',
+  '🌾 Sans gluten': '🌾 Gluten-free',
+  '✅ Aucun besoin': '✅ No needs',
+  '♿ Mobilité réduite': '♿ Reduced mobility',
+  "✈️ Éviter l'avion": '✈️ Avoid flying',
+  '🚆 Éviter le train': '🚆 Avoid trains',
+  '🚗 Éviter la voiture': '🚗 Avoid cars',
+  '🖥️ Système': '🖥️ System',
+  '☀️ Clair': '☀️ Light',
+  '🌙 Sombre': '🌙 Dark',
+  '✨ Animations': '✨ Animations',
+  '✨ Animations ✔': '✨ Animations ✔',
+  '🔍 Double vérification du plan': '🔍 Double-check the plan',
+  '🔍 Double vérification du plan ✔': '🔍 Double-check the plan ✔',
+  '📡 Données réelles (météo, trains, fériés)': '📡 Real data (weather, trains, holidays)',
+  '📡 Données réelles (météo, trains, fériés) ✔': '📡 Real data (weather, trains, holidays) ✔',
+
+  /* ---- Réseau ---- */
+  '🐢 Réseau lent — Acolite allège les chargements': '🐢 Slow connection — Acolite is loading less',
+  '📴 Hors connexion — ton voyage reste consultable': '📴 Offline — your trip is still readable',
+
+  /* ---- Coque, navigation, démarrage ---- */
+  'COPILOTE DE VOYAGE': 'YOUR TRAVEL COPILOT',
+  'Démarrage…': 'Starting…',
+  'Carte': 'Map',
+  'Voyage': 'Trip',
+  'Profil': 'Profile',
+  'Questions': 'Questions',
+  'Les choix': 'The options',
+  'Ton voyage': 'Your trip',
+  'Ton voyage 🧳': 'Your trip 🧳',
+  'Acolite explore le monde…': 'Acolite is exploring the world…',
+
+  /* ---- Vue 1 : le questionnaire ---- */
+  '🧳 Mes voyages': '🧳 My trips',
+  'Reprends un voyage déjà exploré, ou lances-en un nouveau ci-dessous.': 'Pick up a trip you already explored, or start a new one below.',
+  "Où est-ce qu'on t'emmène ? 🌍": 'Where are we taking you? 🌍',
+  "Décris tes envies, Acolite te propose des destinations sur mesure — puis t'aide à affiner.": 'Describe what you fancy: Acolite suggests tailor-made destinations, then helps you narrow them down.',
+  'Ville de départ': 'Departure city',
+  'Destination souhaitée': 'Preferred destination',
+  'Durée': 'Length',
+  '🌤️ Week-end (2-3 j)': '🌤️ Weekend (2-3 days)',
+  '🗓️ 1 semaine': '🗓️ 1 week',
+  '🗓️ 2 semaines': '🗓️ 2 weeks',
+  '🌍 3 semaines +': '🌍 3 weeks +',
+  'Période': 'When',
+  'Date de départ (optionnel)': 'Departure date (optional)',
+  'Budget total / personne': 'Total budget / person',
+  '🪙 Petit (< 500 €)': '🪙 Small (< €500)',
+  '💶 Moyen (500 – 1200 €)': '💶 Medium (€500 – 1,200)',
+  '💳 Confort (1200 – 2500 €)': '💳 Comfortable (€1,200 – 2,500)',
+  '💎 Élevé (2500 € +)': '💎 High (€2,500 +)',
+  'Adultes': 'Adults',
+  'Enfants': 'Children',
+  'Ambiance recherchée': 'The mood you want',
+  'Peu importe — surprends-moi': 'No preference — surprise me',
+  '🏖️ Plage & détente': '🏖️ Beach & chill',
+  '🏛️ Ville & culture': '🏛️ City & culture',
+  '🥾 Nature & aventure': '🥾 Nature & adventure',
+  '🎉 Fête & vie nocturne': '🎉 Parties & nightlife',
+  '💘 Romantique': '💘 Romantic',
+  '🧘 Bien-être & repos': '🧘 Wellness & rest',
+  'Avec qui': 'Who with',
+  'Peu importe': 'No preference',
+  '🧍 En solo': '🧍 Solo',
+  '💞 En couple': '💞 As a couple',
+  '👯 Entre amis': '👯 With friends',
+  '👨‍👩‍👧 En famille': '👨‍👩‍👧 As a family',
+  '💼 Entre collègues': '💼 With colleagues',
+  'Comment tu veux voyager': 'How you want to travel',
+  '🤷 Peu importe — Acolite décide': '🤷 No preference — Acolite decides',
+  '🚆 Train': '🚆 Train',
+  '🚗 Voiture': '🚗 Car',
+  '✈️ Avion': '✈️ Plane',
+  "Style d'hébergement": 'Type of stay',
+  '🏨 Hôtel': '🏨 Hotel',
+  '🏠 Appartement / Airbnb': '🏠 Flat / Airbnb',
+  '🎒 Auberge / éco': '🎒 Hostel / budget',
+  '✨ Séjour de luxe': '✨ Luxury stay',
+  'Tes limites & conditions': 'Your limits & conditions',
+  '✨ Propose-moi des voyages': '✨ Suggest me some trips',
+  "🎯 Choisis un pays, l'IA trouve le lieu": '🎯 Pick a country, Acolite finds the spot',
+  '🎲 Surprends-moi': '🎲 Surprise me',
+  '📷 Scanner un ticket': '📷 Scan a ticket',
+  'Paris': 'Paris',
+  'Pays ou ville — vide = surprends-moi': 'Country or city — leave empty to be surprised',
+  'août 2026, vacances de la Toussaint…': 'August 2026, half-term break…',
+  "Ex : max 3h de trajet, pas d'auberge, je pars avec un bébé, je veux la plage, budget serré sur le logement…": 'E.g. max 3h travel, no hostels, travelling with a baby, I want the beach, tight budget on the room…',
+  'ex : Paris': 'e.g. Paris',
+  'ex : Sacha': 'e.g. Sacha',
+  'toi@exemple.com': 'you@example.com',
+  '8 caractères minimum': '8 characters minimum',
+
+  /* ---- Vue 2 : les propositions ---- */
+  "Remplis le questionnaire à l'étape 1 pour voir tes propositions ici.": 'Fill in the questionnaire at step 1 to see your options here.',
+  'Choisir ce voyage →': 'Choose this trip →',
+  'Choisir →': 'Choose →',
+  '📊 Comparatif': '📊 Side by side',
+  '✍️ Pas tout à fait ça ?': '✍️ Not quite it?',
+  'Reproposer →': 'Suggest again →',
+  '🎯 Précisons ton voyage': '🎯 Let’s pin down your trip',
+  'Acolite a besoin de quelques précisions pour viser juste. Réponds, et il ajuste tes propositions de voyage.': 'Acolite needs a few details to aim right. Answer, and it will adjust your options.',
+  '✅ Affiner mes propositions': '✅ Refine my options',
+  'Passer — garder ces propositions': 'Skip — keep these options',
+
+  /* ---- Vue 3 : le voyage ---- */
+  '🎫 RÉSERVER': '🎫 BOOK',
+  'Tous les liens de réservation, déjà pré-remplis avec ta destination et tes dates.': 'Every booking link, already filled in with your destination and dates.',
+  '🎫 Réserver — billets, hôtels, activités': '🎫 Book — tickets, hotels, activities',
+  '📄 Carnet (PDF)': '📄 Travel book (PDF)',
+  '🗺️ Cartes hors-ligne': '🗺️ Offline maps',
+  '🧰 GÉRER CE VOYAGE': '🧰 MANAGE THIS TRIP',
+  '🔄 Tout réorganiser': '🔄 Reorganise everything',
+  '↩ Changer de destination': '↩ Change destination',
+  '💾 Sauvegarder (fichier)': '💾 Save to a file',
+  '📂 Importer': '📂 Import',
+  '⬇ Exporter (.md)': '⬇ Export (.md)',
+  '↺ Nouveau voyage': '↺ New trip',
+  'Bon à savoir': 'Good to know',
+  'Une fois sur place': 'Once you’re there',
+  'À réserver tôt': 'Book early',
+  '🕘 Voir heure par heure': '🕘 See it hour by hour',
+  '🕘 Détailler ma journée': '🕘 Break down my day',
+  'Vois-la heure par heure': 'See it hour by hour',
+  '🔄 Refaire ce jour': '🔄 Redo this day',
+  'Envoyer': 'Send',
+  '➕ Ajouter': '➕ Add',
+  '↻ Réessayer': '↻ Try again',
+  "Le prix exact du jour s'affiche à la réservation": 'The exact price of the day shows at booking',
+  'Impact sur le climat': 'Climate impact',
+  '✈️ Billets de transport': '✈️ Travel tickets',
+  '🏨 Logement — prix réels': '🏨 Stays — real prices',
+  '🔎 Comparer tous les logements': '🔎 Compare every stay',
+  '🎡 Activités & visites': '🎡 Activities & sights',
+  'Départ': 'Departure',
+  'Arrivée': 'Arrival',
+  'Prix estimé A/R': 'Estimated return price',
+  'Chercher les billets 🎫': 'Find tickets 🎫',
+  'Distance': 'Distance',
+  'Coût estimé': 'Estimated cost',
+  'Itinéraire': 'Route',
+  'Verdict': 'Verdict',
+  'Trajet': 'Journey',
+
+  /* ---- Carte ---- */
+  'Pas encore de voyage': 'No trip yet',
+  "Choisis une destination et Acolite trace ton itinéraire, jour par jour, ici même.": 'Choose a destination and Acolite draws your route, day by day, right here.',
+  '✨ Commencer un voyage': '✨ Start a trip',
+  '🧭 Où je suis': '🧭 Where I am',
+  "↗ M'y guider": '↗ Take me there',
+  'Journées du voyage': 'Days of the trip',
+  '✈️ Aller': '✈️ Getting there',
+  'Zoomer': 'Zoom in',
+  'Dézoomer': 'Zoom out',
+  '📍 Te voilà !': '📍 There you are!',
+  'Position refusée ou introuvable': 'Location refused or unavailable',
+  'Géolocalisation indisponible sur cet appareil': 'Location is not available on this device',
+  '🧭 Recherche de ta position…': '🧭 Finding your position…',
+
+  /* ---- Profil ---- */
+  'Mon compte 👤': 'My account 👤',
+  'Aucun voyage en cours': 'No trip in progress',
+  'Lance ton premier voyage pour débloquer la carte, le programme et le ticket.': 'Start your first trip to unlock the map, the programme and the ticket.',
+  'Commencer': 'Get started',
+  '🎛️ PRÉFÉRENCES': '🎛️ PREFERENCES',
+  '🌐 Langue': '🌐 Language',
+  "Change la langue de l'interface et celle des voyages qu'Acolite écrit pour toi.": 'Changes the language of the interface and of the trips Acolite writes for you.',
+  '🧭 Ton style de voyage': '🧭 Your travel style',
+  "L'IA en tient compte à chaque proposition et à chaque plan.": 'Acolite takes this into account in every suggestion and every plan.',
+  '⚡ Ton rythme': '⚡ Your pace',
+  '🍽️ Alimentation': '🍽️ Food',
+  '♿ Accessibilité': '♿ Accessibility',
+  '🚫 Transports à éviter': '🚫 Transport to avoid',
+  "L'IA ne te proposera pas ces modes de transport (sauf s'il n'existe aucune alternative).": 'Acolite will not suggest these modes of transport (unless there is no alternative at all).',
+  "✨ Réponses d'Acolite": '✨ Acolite’s answers',
+  'Niveau de détail': 'Level of detail',
+  "✂️ Concis — l'essentiel": '✂️ Brief — the essentials',
+  '📄 Normal': '📄 Normal',
+  '📚 Détaillé — tout expliquer': '📚 Detailed — explain everything',
+  '🎨 Apparence': '🎨 Appearance',
+  '« Système » suit automatiquement le thème clair/sombre de ton appareil.': '“System” follows your device’s light/dark theme automatically.',
+  'Taille du texte :': 'Text size:',
+  '📌 Valeurs par défaut': '📌 Defaults',
+  'Pré-remplies à chaque nouveau voyage — tu peux toujours les changer dans le questionnaire.': 'Pre-filled for every new trip — you can always change them in the questionnaire.',
+  '🏠 Ville de départ': '🏠 Departure city',
+  '🧑 Adultes': '🧑 Adults',
+  '🧒 Enfants': '🧒 Children',
+  '↺ Tout réinitialiser': '↺ Reset everything',
+  '⚡ ACTIONS': '⚡ ACTIONS',
+  'Nouveautés': 'What’s new',
+  'Voir': 'View',
+  'Exporter mon voyage': 'Export my trip',
+  'Exporter': 'Export',
+  'Recommencer un voyage': 'Start a trip over',
+  'Nouveau voyage': 'New trip',
+  'Changer le mot de passe': 'Change password',
+  'Changer': 'Change',
+  "Changer d'adresse email": 'Change email address',
+  "Installer Acolite sur l'appareil": 'Install Acolite on this device',
+  'Installer': 'Install',
+  'Importer un voyage (scanner un ticket)': 'Import a trip (scan a ticket)',
+  'Ouvrir le scanner': 'Open the scanner',
+  'Régénérer les contenus IA': 'Regenerate Acolite’s content',
+  'Vider le cache IA': 'Clear the cache',
+  'Télécharger mes données': 'Download my data',
+  'Télécharger (.json)': 'Download (.json)',
+  'Mode "Vol de nuit"': '“Night flight” mode',
+  'Activer / désactiver': 'Turn on / off',
+  'Politique de confidentialité': 'Privacy policy',
+  'Consulter': 'Read',
+  'Se déconnecter': 'Sign out',
+  'Déconnexion': 'Sign out',
+  'Ton avis compte': 'Your opinion counts',
+  'Aide Acolite à grandir': 'Help Acolite grow',
+  "Pas de pub intrusive, pas de données revendues. La meilleure façon de soutenir Acolite, c'est de laisser ton avis.": 'No intrusive ads, no data sold on. The best way to support Acolite is to leave your review.',
+  '⚠️ Zone sensible': '⚠️ Danger zone',
+  'La suppression est': 'Deletion is',
+  'définitive': 'permanent',
+  ': compte, voyages, notes et souvenirs seront perdus. Aucun retour possible.': ': account, trips, notes and memories will be lost. There is no way back.',
+  '🗑 Supprimer définitivement mon compte': '🗑 Permanently delete my account',
+
+  /* ---- Compte ---- */
+  "Crée ton compte pour commencer l'aventure.": 'Create your account to start the adventure.',
+  'Ton pseudo': 'Your nickname',
+  'Adresse email': 'Email address',
+  'Mot de passe': 'Password',
+  'Confirme le mot de passe': 'Confirm password',
+  "J'ai lu et j'accepte la": 'I have read and accept the',
+  'Créer mon compte →': 'Create my account →',
+  'Déjà un compte ?': 'Already have an account?',
+  'Se connecter': 'Sign in',
+  'Se connecter →': 'Sign in →',
+  'Pas de compte ?': 'No account yet?',
+  'En créer un': 'Create one',
+  'Code de vérification': 'Verification code',
+  'Vérifier ✔': 'Verify ✔',
+  'Renvoyer le code': 'Resend the code',
+  "Changer d'email": 'Change email',
+  '⚠️ Supprimer le compte': '⚠️ Delete account',
+  'Compte, voyages, notes et préférences seront': 'Account, trips, notes and preferences will be',
+  'définitivement effacés': 'permanently erased',
+  "de cet appareil. Aucun retour possible.": 'from this device. There is no way back.',
+  'Pour confirmer, écris': 'To confirm, type',
+  'ton pseudo': 'your nickname',
+  '🗑 Supprimer définitivement': '🗑 Delete permanently',
+  'Annuler': 'Cancel',
+
+  /* ---- Modales diverses ---- */
+  'Réservation 🎫': 'Booking 🎫',
+  'Scanner un ticket 📷': 'Scan a ticket 📷',
+  "Vise le QR d'un ticket Acolite pour importer le voyage (idéal entre amis).": 'Point at the QR code on an Acolite ticket to import the trip (great between friends).',
+  '🖼 Ou choisir une photo du ticket': '🖼 Or pick a photo of the ticket',
+  'Fermer': 'Close',
+  'Ta carte postale 🖼️': 'Your postcard 🖼️',
+  'Composition…': 'Composing…',
+  'Modèle — mise en page': 'Template — layout',
+  'Style — couleurs': 'Style — colours',
+  'Disposition des photos': 'Photo layout',
+  'Photos': 'Photos',
+  '📸 Mes photos': '📸 My photos',
+  '🌐 Photos du web': '🌐 Photos from the web',
+  '⬇ Télécharger': '⬇ Download',
+  '📤 Partager': '📤 Share',
+  'Ajoute': 'Add',
+  'tes photos': 'your photos',
+  "ou laisse Acolite chercher des photos du web. Souvenir uniquement.": 'or let Acolite look for photos on the web. Keepsake only.',
+  '✨ Quoi de neuf ?': '✨ What’s new?',
+  "👍 J'ai vu": '👍 Got it',
+  '🔒 Confidentialité': '🔒 Privacy',
+  "✅ J'accepte": '✅ I accept',
+  'Passer': 'Skip',
+  'Bienvenue sur Acolite': 'Welcome to Acolite',
+  'Ton copilote de voyage.': 'Your travel copilot.',
+  'Suivant →': 'Next →',
+  "Passer l'introduction": 'Skip the intro',
+  'Aperçu de la carte postale': 'Postcard preview',
+
+  /* ---- Mini-jeu ---- */
+  '🛰️ Défends la Terre': '🛰️ Defend the Earth',
+  'Niveau 1': 'Level 1',
+  'Terre perdue !': 'Earth lost!',
+  '🔄 Rejouer': '🔄 Play again',
+  '🖱️ Clique sur les astéroïdes pour les détruire avant qu’ils touchent la Terre.': '🖱️ Click the asteroids to destroy them before they hit the Earth.',
+  "💡 Enchaîne sans laisser passer d'astéroïde : ton multiplicateur monte. Les dorés valent triple.": '💡 Keep hitting without letting one through: your multiplier climbs. Golden ones are worth triple.',
+  '🚀 Commencer': '🚀 Start',
+  '🎨 Personnaliser': '🎨 Customise',
+  '🎨 Personnalisation': '🎨 Customisation',
+  'Change le style — sans toucher à la difficulté.': 'Change the look — the difficulty stays exactly the same.',
+  '☄️ Astéroïdes': '☄️ Asteroids',
+  '🌍 Planète': '🌍 Planet',
+  '✅ Terminé': '✅ Done',
+  '🏆 Meilleurs défenseurs': '🏆 Top defenders',
+
+  /* ---- Messages : chargement, succès, erreurs ---- */
+  'Recherche des événements…': 'Looking for events…',
+  'Événements indisponibles pour le moment.': 'Events are unavailable right now.',
+  'Sélection des meilleurs logements…': 'Picking the best places to stay…',
+  'Sélection indisponible — les comparateurs ci-dessous restent pré-remplis.': 'Selection unavailable — the comparison sites below are still pre-filled.',
+  'Construction de la journée heure par heure…': 'Building your day hour by hour…',
+  'Journée indisponible pour le moment.': 'This day is unavailable right now.',
+  'Repérage des meilleurs quartiers…': 'Scouting the best neighbourhoods…',
+  'Recherche logement impossible pour le moment.': 'Can’t search for a place to stay right now.',
+  'Construction de ton programme…': 'Building your programme…',
+  'Génération impossible, réessaie.': 'Couldn’t generate it — please try again.',
+  'Trop gros pour cette fois — réessaie ou génère jour par jour.': 'Too much at once — try again, or build it day by day.',
+  'Je cherche les bonnes tables du quartier…': 'Hunting down the good tables nearby…',
+  'Impossible de charger les adresses pour le moment.': 'Can’t load the addresses right now.',
+  'Repérage des supermarchés…': 'Spotting the supermarkets…',
+  'Chargement impossible.': 'Loading failed.',
+  'Enquête gourmande…': 'Food scouting…',
+  'Préparation de ta checklist…': 'Preparing your checklist…',
+  '🎉 Valise bouclée à 100 % !': '🎉 Bag packed, 100 % done!',
+  'Traduction en cours…': 'Translating…',
+  'Traduction…': 'Translating…',
+  'Traduction impossible.': 'Translation failed.',
+  'Calcul du budget…': 'Working out the budget…',
+  'Calcul impossible pour le moment.': 'Can’t work it out right now.',
+  'Repérage des meilleures activités…': 'Scouting the best things to do…',
+  'Localisation introuvable pour la météo.': 'Couldn’t locate the place for the weather.',
+  'Météo indisponible pour le moment.': 'Weather is unavailable right now.',
+  'Taux de change indisponible.': 'Exchange rate unavailable.',
+  'Analyse impossible pour le moment.': 'Can’t analyse it right now.',
+  'Choisis d’abord un voyage.': 'Choose a trip first.',
+  'Choisis d’abord un voyage': 'Choose a trip first',
+  'Choisis d’abord un voyage 😉': 'Choose a trip first 😉',
+  'Choisis d’abord une destination': 'Choose a destination first',
+  'Choisis d’abord un des 3 voyages 😉': 'Pick one of the 3 trips first 😉',
+  'Remplis d’abord le questionnaire 😉': 'Fill in the questionnaire first 😉',
+  'Génère d’abord le programme': 'Generate the programme first',
+  'Génère d’abord le plan (étape 3) 😉': 'Generate the plan first (step 3) 😉',
+  'Destination pré-remplie 👍': 'Destination pre-filled 👍',
+  'Écris quelque chose ou ajoute une photo 😉': 'Write something or add a photo 😉',
+  '📓 Souvenir enregistré': '📓 Memory saved',
+  '🔄 Nouvelle version du jour': '🔄 New version of the day',
+  '❌ Impossible de refaire cette journée': '❌ Couldn’t redo this day',
+  '💬 Commentaire ajouté — partage la sauvegarde à ton co-voyageur': '💬 Comment added — share the save file with your travel buddy',
+  '🎯 Merci — Acolite affine tes propositions…': '🎯 Thanks — Acolite is refining your options…',
+  '🎯 Acolite réajuste ses propositions…': '🎯 Acolite is readjusting its options…',
+  'Ok, Acolite garde ses propositions actuelles 👍': 'Fine, Acolite keeps the current options 👍',
+  "Le plan n'est pas encore prêt": 'The plan isn’t ready yet',
+  'Réponse prise en compte ✔': 'Answer taken into account ✔',
+  'Entre un montant valide 💶': 'Enter a valid amount 💶',
+  'Voyage exporté 📄': 'Trip exported 📄',
+  '📄 Choisis « Enregistrer au format PDF » dans la fenêtre d’impression': '📄 Choose “Save as PDF” in the print dialogue',
+  '📴 Hors connexion — ton plan reste consultable dans Acolite': '📴 Offline — your plan is still readable in Acolite',
+  '💾 Voyage sauvegardé dans un fichier': '💾 Trip saved to a file',
+  'Sauvegarde impossible': 'Couldn’t save',
+  '📂 Voyage importé ✔': '📂 Trip imported ✔',
+  'Fichier invalide — ce n’est pas une sauvegarde Acolite': 'Invalid file — this isn’t an Acolite save',
+  'Lecture du fichier impossible': 'Couldn’t read the file',
+  'Ajoute au moins une référence': 'Add at least one reference',
+  'Réservation ajoutée 📎': 'Booking added 📎',
+  'Écris un pays dans « Destination souhaitée » 😉': 'Type a country in “Preferred destination” 😉',
+  '📬 Code envoyé — pense à regarder tes indésirables': '📬 Code sent — remember to check your spam folder',
+  '📬 Code envoyé — regarde tes indésirables': '📬 Code sent — check your spam folder',
+  '📬 Nouveau code envoyé': '📬 New code sent',
+  'Compte vérifié — bienvenue ! 🎉': 'Account verified — welcome! 🎉',
+  'Re-bonjour': 'Welcome back',
+  '🏠 Ville de départ par défaut enregistrée': '🏠 Default departure city saved',
+  '↺ Préférences réinitialisées': '↺ Preferences reset',
+  'Pseudo mis à jour ✔': 'Nickname updated ✔',
+  'À bientôt 👋': 'See you soon 👋',
+  '❌ 8 caractères minimum': '❌ 8 characters minimum',
+  '🔑 Mot de passe changé ✔': '🔑 Password changed ✔',
+  '✉️ Changement d’adresse bientôt disponible': '✉️ Changing your address is coming soon',
+  '🧹 Cache IA vidé — contenus régénérés à la prochaine visite': '🧹 Cache cleared — content will be rebuilt on your next visit',
+  '📄 Données téléchargées': '📄 Data downloaded',
+  '❌ Pseudo incorrect': '❌ Wrong nickname',
+  '⚠️ Oups, un pépin technique — recharge la page si ça persiste': '⚠️ Oops, a technical hiccup — reload the page if it keeps happening',
+  '⚠️ Une action a échoué — réessaie': '⚠️ Something failed — please try again',
+  '❌ QR illisible': '❌ Unreadable QR code',
+  '🔗 Lien copié — envoie-le à tes amis': '🔗 Link copied — send it to your friends',
+  '❌ Lien de voyage invalide': '❌ Invalid trip link',
+  'Il faut un voyage avec une date de départ': 'You need a trip with a departure date',
+  '📅 Programme exporté — ouvre-le pour l’ajouter à ton agenda': '📅 Programme exported — open it to add it to your calendar',
+  'Canvas indisponible': 'Canvas unavailable',
+  '📤 Ticket partagé — le QR est scannable dans Acolite': '📤 Ticket shared — the QR code scans inside Acolite',
+  '📷 Ticket téléchargé — le QR est scannable dans Acolite': '📷 Ticket downloaded — the QR code scans inside Acolite',
+  'Choisis des images 📷': 'Pick some images 📷',
+  'Photos illisibles': 'Couldn’t read those photos',
+  '🖼️ Carte postale téléchargée': '🖼️ Postcard downloaded',
+  'Sur iPhone : Partager → « Sur l’écran d’accueil »': 'On iPhone: Share → “Add to Home Screen”',
+  '💾 Stockage plein — cache allégé': '💾 Storage full — cache trimmed',
+  '⚠️ Sauvegarde impossible (stockage plein ou désactivé)': '⚠️ Couldn’t save (storage full or disabled)',
+  '😕 Service momentanément indisponible': '😕 Service temporarily unavailable',
+  '😕 Petit accroc — je réessaie': '😕 Small hiccup — trying again',
+  'Ticket souvenir — ne permet pas d\'embarquer. Le QR sert uniquement à importer ce voyage dans Acolite.': 'Keepsake ticket — not valid for boarding. The QR code only imports this trip into Acolite.'
+};
+
+/* On normalise les clés une fois pour toutes au démarrage */
+const EN = {};
+for(const k in EN_RAW) EN[i18nKey(k)] = EN_RAW[k];
+
+const i18nLook = s => {
+  const k = i18nKey(s);
+  return k && Object.prototype.hasOwnProperty.call(EN, k) ? EN[k] : null;
+};
+
+let _i18nMo = null;
+const I18N_ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
+/* jamais touchés : ce que le voyageur a tapé, et le code */
+const I18N_SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, INPUT: 1, CODE: 1, CANVAS: 1 };
+
+function i18nWalk(root){
+  if(!isEN() || !root) return;
+  const el = root.nodeType === 1 ? root : root.parentElement;
+  if(!el) return;
+
+  /* attributs */
+  for(const node of [el, ...el.querySelectorAll('*')]){
+    if(node.closest('[data-noi18n]')) continue;
+    for(const a of I18N_ATTRS){
+      const cur = node.getAttribute(a);
+      if(!cur) continue;
+      const tr = i18nLook(cur);
+      if(tr && tr !== cur) node.setAttribute(a, tr);
+    }
+  }
+
+  /* textes — on collecte d'abord, on écrit ensuite : modifier pendant le
+     parcours d'un TreeWalker donne des résultats imprévisibles */
+  const jobs = [];
+  const it = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let n;
+  while((n = it.nextNode())){
+    const p = n.parentElement;
+    if(!p || I18N_SKIP[p.nodeName] || p.closest('[data-noi18n]')) continue;
+    const tr = i18nLook(n.nodeValue);
+    if(tr !== null) jobs.push([n, tr]);
+  }
+  for(const [node, tr] of jobs){
+    /* on garde les espaces autour, sinon la mise en page saute */
+    const v = node.nodeValue.match(/^\s*/)[0] + tr + node.nodeValue.match(/\s*$/)[0];
+    /* n'écrire QUE si ça change vraiment : certaines entrées se traduisent
+       par elles-mêmes (« Budget », « Distance »). Réécrire à l'identique
+       déclencherait une mutation, qui relancerait la traduction, en boucle.
+       Cette garde rend la fonction idempotente — elle peut repasser autant
+       de fois qu'on veut sans rien coûter ni rien casser. */
+    if(v !== node.nodeValue) node.nodeValue = v;
+  }
+}
+
+function i18nStart(){
+  document.documentElement.lang = LANG;
+  if(!isEN()) return;
+  document.title = 'Acolite — Plan your trip: destination, transport, itinerary';
+  i18nWalk(document.body);
+  if(!window.MutationObserver) return;
+  /* app.js réécrit son interface en permanence : on traduit ce qui arrive */
+  _i18nMo = new MutationObserver(muts => {
+    for(const m of muts){
+      if(m.type === 'characterData') i18nWalk(m.target.parentElement);
+      else for(const nd of m.addedNodes) i18nWalk(nd);
+    }
+  });
+  _i18nMo.observe(document.body, { childList: true, subtree: true, characterData: true });
+}
+
+/* Sélecteur de langue (profil). Un changement recharge la page : c'est le
+   seul moyen sûr de repartir d'un DOM propre, et l'état vit dans
+   localStorage — rien n'est perdu. */
+function renderLangChips(){
+  $$('#stLang [data-lang], #stLangAuth [data-lang]')
+    .forEach(b => b.classList.toggle('on', b.dataset.lang === LANG));
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('#stLang [data-lang], #stLangAuth [data-lang]');
+  if(!b) return;
+  const v = b.dataset.lang;
+  if(v === LANG) return;
+  lsSet(LS_LANG, v);
+  location.reload();
+});
+
+i18nStart();
+renderLangChips();
+
+/* ============================================================
+   LA SALLE DE JEUX — 2 clics sur la mascotte (PC)
+   ------------------------------------------------------------
+   Quatre jeux, quatre fenêtres séparées. Le carrousel de choix vit dans
+   #ovArcade ; chaque jeu garde son propre overlay et sa propre boucle.
+   Règle commune : à la fermeture, on ARRÊTE la boucle. Un requestAnimationFrame
+   oublié continue de tourner dans le vide et mange la batterie.
+============================================================ */
+const ARCADE_JEUX = [
+  { id:'ast',  ico:'🛰️', nom:'Défends la Terre', desc:'Descends les astéroïdes avant qu’ils touchent la planète.' },
+  { id:'geo',  ico:'🌍', nom:'Où est-ce ?',      desc:'Une photo, une carte : place le monument et donne son nom.' },
+  { id:'pong', ico:'🏓', nom:'Ne me lâche pas',  desc:'Un pong où la balle, c’est moi. Et je n’aime pas ça.' },
+  { id:'pack', ico:'🧳', nom:'Bagage express',   desc:'Le tapis défile : attrape ce qu’il faut emporter.' }
+];
+
+function openArcade(){
+  const ov = $('#ovArcade'); if(!ov) return;
+  const grid = $('#arcadeGrid');
+  if(grid){
+    grid.innerHTML = ARCADE_JEUX.map(j => `
+      <button class="arcade-card" data-arcade="${j.id}">
+        <span class="ac-ico">${j.ico}</span>
+        <span class="ac-nom">${esc(j.nom)}</span>
+        <span class="ac-desc">${esc(j.desc)}</span>
+      </button>`).join('');
+  }
+  ov.classList.add('show');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-arcade]');
+  if(!b) return;
+  $('#ovArcade')?.classList.remove('show');
+  ({ ast: openGame, geo: openGeo, pong: openPong, pack: openPack })[b.dataset.arcade]?.();
+});
+
+/* ============================================================
+   JEU 2 — « Où est-ce ? »
+   ------------------------------------------------------------
+   Photos et coordonnées relevées sur Wikipédia (largeurs de vignette
+   imposées par Wikimedia : ne change pas le « 960px- », les autres tailles
+   sont refusées avec une erreur 400).
+============================================================ */
+const GEO_LIEUX = [
+  { fr:"Colisée", en:"Colosseum", lat:41.8905, lon:12.4926, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/960px-Colosseo_2020.jpg" },
+  { fr:"Tour Eiffel", en:"Eiffel Tower", lat:48.8583, lon:2.2945, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg/960px-Tour_Eiffel_Wikimedia_Commons.jpg" },
+  { fr:"Taj Mahal", en:"Taj Mahal", lat:27.175, lon:78.0419, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Taj_Mahal%2C_Agra%2C_India_edit3.jpg/960px-Taj_Mahal%2C_Agra%2C_India_edit3.jpg" },
+  { fr:"Palais de Westminster", en:"Big Ben", lat:51.4994, lon:-0.1242, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Houses_of_Parliament_in_2022_%28cropped%29.jpg/960px-Houses_of_Parliament_in_2022_%28cropped%29.jpg" },
+  { fr:"Statue de la Liberté", en:"Statue of Liberty", lat:40.6892, lon:-74.0444, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Statue_of_Liberty%2C_statue%2C_Liberty_Island%2C_New_York.jpg/960px-Statue_of_Liberty%2C_statue%2C_Liberty_Island%2C_New_York.jpg" },
+  { fr:"Machu Picchu", en:"Machu Picchu", lat:-13.1633, lon:-72.5456, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Before_Machu_Picchu.jpg/960px-Before_Machu_Picchu.jpg" },
+  { fr:"Sagrada Família", en:"Sagrada Família", lat:41.4034, lon:2.1744, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/SF_maig_2026.jpg/960px-SF_maig_2026.jpg" },
+  { fr:"Opéra de Sydney", en:"Sydney Opera House", lat:-33.8571, lon:151.2149, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Sydney_Opera_House_from_Circular_Quay%2C_2023%2C_10.jpg/960px-Sydney_Opera_House_from_Circular_Quay%2C_2023%2C_10.jpg" },
+  { fr:"Pyramide de Khéops", en:"Great Pyramid of Giza", lat:29.9789, lon:31.1339, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Great_Pyramid_of_Giza.jpg/960px-Great_Pyramid_of_Giza.jpg" },
+  { fr:"Tour de Pise", en:"Leaning Tower of Pisa", lat:43.723, lon:10.3966, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Exterior_of_the_Leaning_Tower_%28Pisa%29_in_April_2024.jpg/960px-Exterior_of_the_Leaning_Tower_%28Pisa%29_in_April_2024.jpg" },
+  { fr:"Parthénon", en:"Parthenon", lat:37.9715, lon:23.7267, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/The_Parthenon_in_Athens.jpg/960px-The_Parthenon_in_Athens.jpg" },
+  { fr:"Mont Saint-Michel", en:"Mont-Saint-Michel", lat:48.6361, lon:-1.5114, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Mont_St_Michel_in_the_afternoon.jpg/960px-Mont_St_Michel_in_the_afternoon.jpg" },
+  { fr:"Château de Neuschwanstein", en:"Neuschwanstein Castle", lat:47.5578, lon:10.7499, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Schloss_Neuschwanstein_2013.jpg/960px-Schloss_Neuschwanstein_2013.jpg" },
+  { fr:"Pétra", en:"Petra", lat:30.3292, lon:35.4436, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/View_of_Petra.jpg/960px-View_of_Petra.jpg" },
+  { fr:"Angkor Vat", en:"Angkor Wat", lat:13.4125, lon:103.8668, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Angkor_Wat.jpg/960px-Angkor_Wat.jpg" },
+  { fr:"Grande Muraille", en:"Great Wall of China", lat:40.3347, lon:116.045, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Great_Wall_of_China_July_2006.JPG/960px-Great_Wall_of_China_July_2006.JPG" },
+  { fr:"Chichén Itzá", en:"Chichén Itzá", lat:20.6829, lon:-88.5687, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/El_Castillo_Stitch_2008_Edit_1.jpg/960px-El_Castillo_Stitch_2008_Edit_1.jpg" },
+  { fr:"Basilique Saint-Marc", en:"St Mark's Basilica", lat:45.4344, lon:12.3398, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Venezia_Basilica_di_San_Marco_Fassade_2.jpg/960px-Venezia_Basilica_di_San_Marco_Fassade_2.jpg" },
+  { fr:"Alhambra", en:"Alhambra", lat:37.1769, lon:-3.5899, img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Dawn_Charles_V_Palace_Alhambra_Granada_Andalusia_Spain.jpg/960px-Dawn_Charles_V_Palace_Alhambra_Granada_Andalusia_Spain.jpg" }
+];
+const geoNom = m => isEN() ? m.en : m.fr;
+const LS_GEOBEST = 'acolite_geo_best';
+const GEO_MANCHES = 5;
+
+let _geoMap = null, _geo = null;
+
+function geoMelange(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){ const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+function openGeo(){
+  const ov = $('#ovGeo'); if(!ov) return;
+  ov.classList.add('show');
+  if(!_geoMap){
+    _geoMap = acoMapCreate($('#geoMap'));
+    _geoMap.onClick((lat, lon) => geoPose(lat, lon));
+  }
+  geoNouvellePartie();
+}
+function geoNouvellePartie(){
+  _geo = { manche: 0, score: 0, lieux: geoMelange(GEO_LIEUX).slice(0, GEO_MANCHES), pose: null };
+  $('#geoOver').hidden = true;
+  geoManche();
+}
+function geoManche(){
+  const m = _geo.lieux[_geo.manche];
+  _geo.pose = null;
+  $('#geoPhoto').src = m.img;
+  $('#geoPhoto').alt = isEN() ? 'Monument to identify' : 'Monument à reconnaître';
+  $('#geoRound').textContent = (isEN() ? 'Round ' : 'Manche ') + (_geo.manche + 1) + ' / ' + GEO_MANCHES;
+  $('#geoScore').textContent = (isEN() ? 'Score: ' : 'Score : ') + _geo.score;
+  $('#geoHint').hidden = false;
+  $('#geoHint').textContent = isEN()
+    ? 'Click the map where you think this monument stands.'
+    : "Clique sur la carte à l'endroit où se trouve ce monument.";
+  $('#geoNames').hidden = true;
+  $('#geoResult').hidden = true;
+  $('#geoNext').hidden = true;
+  _geoMap.setMarks([]);
+  _geoMap.setLine([]);
+  _geoMap.setView(20, 5, 2);
+}
+/* 1re étape : situer sur la carte */
+function geoPose(lat, lon){
+  if(!_geo || _geo.pose) return;                 /* une seule tentative par manche */
+  _geo.pose = { lat, lon };
+  _geoMap.setMarks([{ lat, lon, kind:'me', nom: isEN() ? 'Your guess' : 'Ta réponse' }]);
+  $('#geoHint').hidden = true;
+  /* 2e étape : nommer, parmi 4 propositions */
+  const bon = _geo.lieux[_geo.manche];
+  const leurres = geoMelange(GEO_LIEUX.filter(x => x.fr !== bon.fr)).slice(0, 3);
+  const choix = geoMelange([bon, ...leurres]);
+  const zone = $('#geoNames');
+  zone.innerHTML = `<p class="geo-q">${isEN() ? 'And what is it called?' : 'Et ça s’appelle comment ?'}</p>`
+    + choix.map(c => `<button class="geo-name" data-geoname="${esc(c.fr)}">${esc(geoNom(c))}</button>`).join('');
+  zone.hidden = false;
+}
+/* 2e étape : nommer — puis on révèle tout */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-geoname]');
+  if(!b || !_geo || !_geo.pose) return;
+  const bon = _geo.lieux[_geo.manche];
+  const juste = b.dataset.geoname === bon.fr;
+  const km = Math.round(havKm(
+    { latitude: _geo.pose.lat, longitude: _geo.pose.lon },
+    { latitude: bon.lat, longitude: bon.lon }));
+  /* le score de distance décroît jusqu'à 5 000 km, au-delà c'est zéro */
+  const ptsDist = Math.max(0, Math.round(1000 * (1 - km / 5000)));
+  const ptsNom = juste ? 500 : 0;
+  _geo.score += ptsDist + ptsNom;
+
+  _geoMap.setMarks([
+    { lat: _geo.pose.lat, lon: _geo.pose.lon, kind:'me', nom: isEN() ? 'Your guess' : 'Ta réponse' },
+    { lat: bon.lat, lon: bon.lon, kind:'end', nom: geoNom(bon) }
+  ]);
+  _geoMap.setLine([[_geo.pose.lat, _geo.pose.lon], [bon.lat, bon.lon]]);
+  _geoMap.fit([[_geo.pose.lat, _geo.pose.lon], [bon.lat, bon.lon]], 60);
+
+  $('#geoNames').hidden = true;
+  const res = $('#geoResult');
+  res.innerHTML = isEN()
+    ? `<b>${esc(bon.en)}</b> — you were <b>${km} km</b> off (+${ptsDist})`
+      + `<br>${juste ? '✅ Right name (+500)' : '❌ Wrong name'}`
+    : `<b>${esc(bon.fr)}</b> — tu étais à <b>${km} km</b> (+${ptsDist})`
+      + `<br>${juste ? '✅ Bon nom (+500)' : '❌ Mauvais nom'}`;
+  res.hidden = false;
+  $('#geoScore').textContent = (isEN() ? 'Score: ' : 'Score : ') + _geo.score;
+  $('#geoNext').hidden = false;
+  $('#geoNext').textContent = _geo.manche + 1 >= GEO_MANCHES
+    ? (isEN() ? 'See my result →' : 'Voir mon résultat →')
+    : (isEN() ? 'Next round →' : 'Manche suivante →');
+});
+const _geoNextBtn = $('#geoNext'); if(_geoNextBtn) _geoNextBtn.onclick = () => {
+  if(_geo.manche + 1 >= GEO_MANCHES){ geoFin(); return; }
+  _geo.manche++;
+  geoManche();
+};
+const _geoReplay = $('#geoReplay'); if(_geoReplay) _geoReplay.onclick = geoNouvellePartie;
+function geoFin(){
+  let best = 0;
+  try{ best = parseInt(localStorage.getItem(LS_GEOBEST), 10) || 0; }catch(e){}
+  const record = _geo.score > best;
+  if(record) lsSet(LS_GEOBEST, String(_geo.score));
+  $('#geoOverTitle').textContent = _geo.score >= 4000
+    ? (isEN() ? '🏆 Globe-trotter!' : '🏆 Grand voyageur !')
+    : (isEN() ? '🌍 Round over' : '🌍 Partie terminée');
+  $('#geoOverScore').textContent = record
+    ? (isEN() ? '🎉 New best: ' : '🎉 Nouveau record : ') + _geo.score
+    : (isEN() ? 'Score: ' : 'Score : ') + _geo.score + (isEN() ? '  ·  your best: ' : '  ·  ton record : ') + best;
+  $('#geoOver').hidden = false;
+}
+
+/* ============================================================
+   JEU 3 — « Ne me lâche pas » : un pong dont la balle est la mascotte,
+   qui se plaint à chaque choc et finit par se vexer pour de bon.
+============================================================ */
+const LS_PONGBEST = 'acolite_pong_best';
+const PONG_RALE = {
+  fr: ['Aïe !', 'Non mais oh !', 'Doucement !', 'Ça tourne…', 'Arrête ça !',
+       'Je suis pas une balle !', 'Tu vas me décoiffer !', 'Encore ?', 'Ouille !', 'Pas la tête !'],
+  en: ['Ouch!', 'Hey!', 'Gently!', 'I’m dizzy…', 'Stop that!',
+       'I am not a ball!', 'Mind my hair!', 'Again?', 'Oof!', 'Not the face!']
+};
+const PONG_FACHE = {
+  fr: ['JE SUIS PAS UNE BALLE !', 'ÇA SUFFIT !', 'REPOSE-MOI !', 'TU VAS VOIR !', 'J’EN AI ASSEZ !'],
+  en: ['I AM NOT A BALL!', 'ENOUGH!', 'PUT ME DOWN!', 'YOU’LL SEE!', 'I’VE HAD IT!']
+};
+const PONG_SEUIL = 10;   /* nombre de chocs avant que la mascotte voie rouge */
+
+function openPong(){
+  const ov = $('#ovPong'); if(!ov) return;
+  ov.classList.add('show');
+  pongInit();
+}
+
+let _pongStop = null;
+function pongInit(){
+  const cv = $('#pongCanvas'); if(!cv) return;
+  const g = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  let ball, pad, chocs, renvois, vies, running, raf, bulle, secousse;
+
+  let best = 0;
+  try{ best = parseInt(localStorage.getItem(LS_PONGBEST), 10) || 0; }catch(e){}
+  const bd = $('#pongBest');
+  if(bd){ bd.hidden = !best; bd.textContent = (isEN() ? 'Your best: ' : 'Ton record : ') + best; }
+
+  const fache = () => chocs >= PONG_SEUIL;
+
+  function reset(){
+    pad = { x: W / 2, w: 118, h: 15, y: H - 28 };
+    ball = { x: W / 2, y: H / 2, r: 24, vx: 3.4 * (Math.random() < .5 ? 1 : -1), vy: -3.6 };
+    chocs = 0; renvois = 0; vies = 3; bulle = null; secousse = 0;
+    running = true;
+    hud();
+  }
+  function relance(){
+    ball = { x: W / 2, y: H / 2, r: 24, vx: 3.4 * (Math.random() < .5 ? 1 : -1), vy: -3.6 };
+  }
+  function hud(){
+    $('#pongScore').textContent = (isEN() ? 'Returns: ' : 'Renvois : ') + renvois;
+    $('#pongBumps').textContent = (isEN() ? 'Bumps: ' : 'Chocs : ') + chocs;
+    $('#pongLives').textContent = '❤️'.repeat(Math.max(0, vies)) || '💀';
+  }
+  function rale(){
+    const src = fache() ? PONG_FACHE : PONG_RALE;
+    const l = isEN() ? src.en : src.fr;
+    bulle = { txt: l[(Math.random() * l.length) | 0], t: 1 };
+  }
+  function choc(){
+    chocs++;
+    rale();
+    if(chocs === PONG_SEUIL) secousse = 18;      /* le moment où elle se vexe */
+    /* elle s'énerve : ça accélère, mais d'un coup net et plafonné */
+    const k = fache() ? 1.035 : 1.012;
+    ball.vx = Math.max(-9, Math.min(9, ball.vx * k));
+    ball.vy = Math.max(-9, Math.min(9, ball.vy * k));
+    hud();
+  }
+
+  cv.onmousemove = e => {
+    const r = cv.getBoundingClientRect();
+    pad.x = (e.clientX - r.left) * (W / r.width);
+  };
+
+  function pas(){
+    ball.x += ball.vx; ball.y += ball.vy;
+    if(ball.x - ball.r < 0){ ball.x = ball.r; ball.vx *= -1; choc(); }
+    if(ball.x + ball.r > W){ ball.x = W - ball.r; ball.vx *= -1; choc(); }
+    if(ball.y - ball.r < 0){ ball.y = ball.r; ball.vy *= -1; choc(); }
+    /* raquette */
+    if(ball.vy > 0 && ball.y + ball.r >= pad.y && ball.y + ball.r <= pad.y + pad.h + 12
+       && ball.x > pad.x - pad.w / 2 - ball.r && ball.x < pad.x + pad.w / 2 + ball.r){
+      ball.y = pad.y - ball.r;
+      ball.vy *= -1;
+      /* l'angle dépend du point d'impact : c'est ce qui rend le jeu jouable */
+      ball.vx += ((ball.x - pad.x) / (pad.w / 2)) * 1.6;
+      renvois++;
+      choc();
+    }
+    if(ball.y - ball.r > H){
+      vies--;
+      hud();
+      if(vies <= 0){ fin(); return; }
+      relance();
+    }
+    if(bulle) bulle.t -= 0.016;
+    if(bulle && bulle.t <= 0) bulle = null;
+    if(secousse > 0) secousse--;
+  }
+
+  function mascotte(x, y, r, enColere){
+    const ocean = enColere ? '#E23B3B' : '#3E93C9';
+    const terre = enColere ? '#B22222' : '#6FBE5C';
+    const bord  = enColere ? '#7A1414' : '#1C5A78';
+    g.save();
+    g.translate(x, y);
+    g.beginPath(); g.arc(0, 0, r, 0, 7); g.fillStyle = ocean; g.fill();
+    g.save(); g.clip();
+    g.fillStyle = terre;
+    g.beginPath(); g.ellipse(-r * .45, -r * .35, r * .34, r * .24, -.35, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(r * .40, r * .38, r * .26, r * .32, .2, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(r * .38, -r * .5, r * .34, r * .18, .1, 0, 7); g.fill();
+    g.restore();
+    g.lineWidth = Math.max(2, r * .11); g.strokeStyle = bord;
+    g.beginPath(); g.arc(0, 0, r, 0, 7); g.stroke();
+    /* yeux */
+    g.fillStyle = '#fff';
+    g.beginPath(); g.ellipse(-r * .28, -r * .06, r * .30, r * .38, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(r * .30, -r * .06, r * .28, r * .36, 0, 0, 7); g.fill();
+    g.fillStyle = '#0B0B10';
+    g.beginPath(); g.arc(-r * .24, r * .02, r * .16, 0, 7); g.fill();
+    g.beginPath(); g.arc(r * .34, r * .02, r * .15, 0, 7); g.fill();
+    if(enColere){
+      /* sourcils en accent circonflexe inversé : la colère se lit d'un coup */
+      g.strokeStyle = '#7A1414'; g.lineWidth = Math.max(3, r * .13); g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-r * .62, -r * .52); g.lineTo(-r * .05, -r * .28); g.stroke();
+      g.beginPath(); g.moveTo(r * .62, -r * .52);  g.lineTo(r * .05, -r * .28);  g.stroke();
+    }
+    g.restore();
+  }
+
+  function dessine(){
+    g.clearRect(0, 0, W, H);
+    const sx = secousse > 0 ? (Math.random() - .5) * 7 : 0;
+    const sy = secousse > 0 ? (Math.random() - .5) * 7 : 0;
+    g.save(); g.translate(sx, sy);
+
+    /* fond : vire au rouge sombre quand elle est fâchée */
+    g.fillStyle = fache() ? '#2A0E0E' : '#0E1726';
+    g.fillRect(-10, -10, W + 20, H + 20);
+
+    /* raquette */
+    g.fillStyle = '#FFE600';
+    g.strokeStyle = '#101010'; g.lineWidth = 4;
+    g.fillRect(pad.x - pad.w / 2, pad.y, pad.w, pad.h);
+    g.strokeRect(pad.x - pad.w / 2, pad.y, pad.w, pad.h);
+
+    mascotte(ball.x, ball.y, ball.r, fache());
+
+    /* bulle de bande dessinée : c'est la mascotte qui parle */
+    if(bulle){
+      g.font = '900 16px Sora, sans-serif';
+      const w = g.measureText(bulle.txt).width + 22;
+      const bx = Math.max(8, Math.min(W - w - 8, ball.x - w / 2));
+      const by = Math.max(8, ball.y - ball.r - 42);
+      g.globalAlpha = Math.max(0, Math.min(1, bulle.t * 1.6));
+      g.fillStyle = '#fff'; g.strokeStyle = '#101010'; g.lineWidth = 3;
+      g.beginPath(); g.roundRect(bx, by, w, 30, 9); g.fill(); g.stroke();
+      g.fillStyle = fache() ? '#C81E1E' : '#101010';
+      g.fillText(bulle.txt, bx + 11, by + 21);
+      g.globalAlpha = 1;
+    }
+    g.restore();
+  }
+
+  function boucle(){
+    if(!running) return;
+    pas();
+    if(!running) return;
+    dessine();
+    raf = requestAnimationFrame(boucle);
+  }
+  function fin(){
+    running = false;
+    cancelAnimationFrame(raf);
+    const record = renvois > best;
+    if(record) lsSet(LS_PONGBEST, String(renvois));
+    $('#pongOverTitle').textContent = fache()
+      ? (isEN() ? 'She’d had enough.' : 'Elle en avait assez.')
+      : (isEN() ? 'You dropped me!' : 'Tu m’as laissée tomber !');
+    $('#pongOverScore').textContent = record
+      ? (isEN() ? '🎉 New best: ' : '🎉 Nouveau record : ') + renvois
+      : (isEN() ? 'Returns: ' : 'Renvois : ') + renvois + (isEN() ? '  ·  your best: ' : '  ·  ton record : ') + best;
+    $('#pongOver').hidden = false;
+  }
+  function demarre(){
+    $('#pongStart').hidden = true;
+    $('#pongOver').hidden = true;
+    reset();
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(boucle);
+  }
+  const go = $('#pongGo'); if(go) go.onclick = demarre;
+  const rj = $('#pongReplay'); if(rj) rj.onclick = demarre;
+
+  $('#pongStart').hidden = false;
+  $('#pongOver').hidden = true;
+  g.clearRect(0, 0, W, H);
+  g.fillStyle = '#0E1726'; g.fillRect(0, 0, W, H);
+
+  _pongStop = () => { running = false; cancelAnimationFrame(raf); };
+}
+
+/* ============================================================
+   JEU 4 — « Bagage express »
+   ------------------------------------------------------------
+   Le tapis défile, la destination change en cours de route : ce qui était
+   indispensable devient inutile. C'est tout le sel du jeu.
+============================================================ */
+const LS_PACKBEST = 'acolite_pack_best';
+/* fractions de la durée où la destination bascule */
+const PACK_VIRAGES = [2/3, 1/3];
+const PACK_DEST = [
+  { id:'plage',    ico:'🏖️', fr:'Plage',      en:'Beach' },
+  { id:'montagne', ico:'⛰️', fr:'Montagne',   en:'Mountains' },
+  { id:'ville',    ico:'🏙️', fr:'Ville',      en:'City' },
+  { id:'froid',    ico:'❄️', fr:'Grand froid', en:'Deep cold' }
+];
+/* pour[] = destinations où l'objet est utile. Vide = jamais (les pièges). */
+const PACK_OBJETS = [
+  { ico:'🩱', fr:'Maillot',        en:'Swimsuit',      pour:['plage'] },
+  { ico:'🩴', fr:'Tongs',          en:'Flip-flops',    pour:['plage'] },
+  { ico:'🕶️', fr:'Lunettes',       en:'Sunglasses',    pour:['plage','montagne'] },
+  { ico:'🧴', fr:'Crème solaire',  en:'Sunscreen',     pour:['plage','montagne'] },
+  { ico:'🥾', fr:'Chaussures',     en:'Hiking boots',  pour:['montagne'] },
+  { ico:'🎿', fr:'Skis',           en:'Skis',          pour:['montagne','froid'] },
+  { ico:'🧤', fr:'Gants',          en:'Gloves',        pour:['montagne','froid'] },
+  { ico:'🧣', fr:'Écharpe',        en:'Scarf',         pour:['montagne','froid'] },
+  { ico:'🧥', fr:'Doudoune',       en:'Down jacket',   pour:['froid','montagne'] },
+  { ico:'🧦', fr:'Chaussettes',    en:'Warm socks',    pour:['froid','montagne'] },
+  { ico:'👔', fr:'Chemise',        en:'Shirt',         pour:['ville'] },
+  { ico:'☂️', fr:'Parapluie',      en:'Umbrella',      pour:['ville'] },
+  { ico:'🎫', fr:'Billets',        en:'Tickets',       pour:['ville'] },
+  { ico:'📷', fr:'Appareil photo', en:'Camera',        pour:['plage','montagne','ville','froid'] },
+  { ico:'🔌', fr:'Adaptateur',     en:'Adapter',       pour:['plage','montagne','ville','froid'] },
+  { ico:'💊', fr:'Pharmacie',      en:'First aid',     pour:['plage','montagne','ville','froid'] },
+  { ico:'🍳', fr:'Poêle',          en:'Frying pan',    pour:[] },
+  { ico:'🪑', fr:'Chaise',         en:'Chair',         pour:[] },
+  { ico:'🕯️', fr:'Bougie',         en:'Candle',        pour:[] },
+  { ico:'🪴', fr:'Plante verte',   en:'House plant',   pour:[] }
+];
+
+let _packStop = null;
+function openPack(){
+  const ov = $('#ovPack'); if(!ov) return;
+  ov.classList.add('show');
+  packInit();
+}
+function packInit(){
+  const cv = $('#packCanvas'); if(!cv) return;
+  const g = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const DUREE = 40;              /* secondes */
+  const BANDE = 150;             /* hauteur de la zone du tapis */
+  let objets, score, dest, running, raf, reste, spawn, dernier, flashs, changeT, virages;
+
+  let best = 0;
+  try{ best = parseInt(localStorage.getItem(LS_PACKBEST), 10) || 0; }catch(e){}
+  const bd = $('#packBest');
+  if(bd){ bd.hidden = !best; bd.textContent = (isEN() ? 'Your best: ' : 'Ton record : ') + best; }
+
+  const utile = o => o.pour.includes(dest.id);
+  const destNom = d => isEN() ? d.en : d.fr;
+
+  function hud(){
+    $('#packDest').textContent = (isEN() ? 'Destination: ' : 'Destination : ') + dest.ico + ' ' + destNom(dest);
+    $('#packScore').textContent = (isEN() ? 'Score: ' : 'Score : ') + score;
+    $('#packTime').textContent = Math.max(0, Math.ceil(reste)) + ' s';
+  }
+  function changeDest(){
+    const autres = PACK_DEST.filter(d => !dest || d.id !== dest.id);
+    dest = autres[(Math.random() * autres.length) | 0];
+    changeT = 1.4;               /* durée du bandeau d'annonce */
+    hud();
+  }
+  function reset(){
+    objets = []; score = 0; running = true; reste = DUREE;
+    spawn = 0; dernier = performance.now(); flashs = [];
+    virages = 0; dest = null; changeDest();
+  }
+  function pousse(){
+    const o = PACK_OBJETS[(Math.random() * PACK_OBJETS.length) | 0];
+    objets.push({ o, x: W + 40, y: H - BANDE / 2 + (Math.random() * 26 - 13), pris: false, r: 30 });
+  }
+  function flash(x, y, txt, bon){ flashs.push({ x, y, txt, bon, t: 1 }); }
+
+  cv.onclick = e => {
+    if(!running) return;
+    const r = cv.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (W / r.width);
+    const my = (e.clientY - r.top) * (H / r.height);
+    for(const it of objets){
+      if(it.pris) continue;
+      if(Math.hypot(it.x - mx, it.y - my) > it.r + 6) continue;
+      it.pris = true;
+      if(utile(it.o)){ score += 100; flash(it.x, it.y, '+100', true); }
+      else { score = Math.max(0, score - 60); flash(it.x, it.y, '-60', false); }
+      hud();
+      return;
+    }
+  };
+
+  function pas(dt){
+    reste -= dt;
+    if(reste <= 0){ fin(); return; }
+    if(changeT > 0) changeT -= dt;
+    /* La destination change deux fois dans la partie. On compare avec un SEUIL
+       FRANCHI, pas avec une égalité approchée : une comparaison à ± une demi-
+       image ne tombe presque jamais juste, et le changement — qui fait tout
+       l'intérêt du jeu — ne se déclenchait qu'au hasard. */
+    while(virages < PACK_VIRAGES.length && reste <= PACK_VIRAGES[virages] * DUREE){
+      virages++;
+      changeDest();
+    }
+
+    spawn += dt;
+    /* le tapis accélère doucement : la fin est plus nerveuse que le début */
+    const cadence = 0.95 - (1 - reste / DUREE) * 0.35;
+    if(spawn >= cadence){ spawn = 0; pousse(); }
+
+    const v = 118 + (1 - reste / DUREE) * 70;
+    for(const it of objets){
+      it.x -= v * dt;
+      /* un objet utile qu'on laisse filer, ça coûte */
+      if(!it.pris && it.x < -40){
+        it.pris = true;
+        if(utile(it.o)){ score = Math.max(0, score - 40); flash(30, it.y, '-40', false); hud(); }
+      }
+    }
+    objets = objets.filter(it => it.x > -80 && !(it.pris && it.x < -40));
+    for(const f of flashs) f.t -= dt * 1.6;
+    flashs = flashs.filter(f => f.t > 0);
+  }
+
+  function dessine(){
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#0E1726'; g.fillRect(0, 0, W, H);
+
+    /* la valise, à gauche : c'est la cible mentale du joueur */
+    g.font = '54px serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+    g.globalAlpha = .25; g.fillText('🧳', 12, H - BANDE / 2); g.globalAlpha = 1;
+
+    /* tapis roulant */
+    g.fillStyle = '#1B2740';
+    g.fillRect(0, H - BANDE, W, BANDE);
+    g.strokeStyle = '#101010'; g.lineWidth = 4;
+    g.strokeRect(0, H - BANDE, W, BANDE);
+    g.strokeStyle = '#2C3B5C'; g.lineWidth = 3;
+    for(let x = -((performance.now() / 14) % 44); x < W; x += 44){
+      g.beginPath(); g.moveTo(x, H - BANDE + 6); g.lineTo(x, H - 6); g.stroke();
+    }
+
+    /* objets */
+    g.textAlign = 'center';
+    for(const it of objets){
+      if(it.pris) continue;
+      g.font = '40px serif';
+      g.fillText(it.o.ico, it.x, it.y - 6);
+      g.font = '900 12px Sora, sans-serif';
+      g.fillStyle = '#F4F3EF';
+      g.fillText(isEN() ? it.o.en : it.o.fr, it.x, it.y + 26);
+    }
+
+    /* gains et pertes */
+    for(const f of flashs){
+      g.globalAlpha = Math.max(0, f.t);
+      g.font = '900 20px Sora, sans-serif';
+      g.fillStyle = f.bon ? '#4ADE80' : '#FF5F5F';
+      g.fillText(f.txt, f.x, f.y - 40 - (1 - f.t) * 26);
+      g.globalAlpha = 1;
+    }
+
+    /* bandeau d'annonce quand la destination change */
+    if(changeT > 0){
+      g.globalAlpha = Math.min(1, changeT);
+      g.fillStyle = '#FFE600';
+      g.fillRect(0, H / 2 - 42, W, 74);
+      g.strokeStyle = '#101010'; g.lineWidth = 4;
+      g.strokeRect(0, H / 2 - 42, W, 74);
+      g.fillStyle = '#101010';
+      g.font = '900 26px Sora, sans-serif';
+      g.fillText((isEN() ? 'Now: ' : 'Cap sur : ') + dest.ico + ' ' + destNom(dest), W / 2, H / 2 - 4);
+      g.globalAlpha = 1;
+    }
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  }
+
+  function boucle(t){
+    if(!running) return;
+    const dt = Math.min(0.05, (t - dernier) / 1000);
+    dernier = t;
+    pas(dt);
+    if(!running) return;
+    dessine();
+    hud();
+    raf = requestAnimationFrame(boucle);
+  }
+  function fin(){
+    running = false;
+    cancelAnimationFrame(raf);
+    const record = score > best;
+    if(record) lsSet(LS_PACKBEST, String(score));
+    $('#packOverTitle').textContent = score >= 900
+      ? (isEN() ? '🏆 Packed like a pro' : '🏆 Valise de pro')
+      : (isEN() ? '🧳 Bag closed' : '🧳 Valise bouclée');
+    $('#packOverScore').textContent = record
+      ? (isEN() ? '🎉 New best: ' : '🎉 Nouveau record : ') + score
+      : (isEN() ? 'Score: ' : 'Score : ') + score + (isEN() ? '  ·  your best: ' : '  ·  ton record : ') + best;
+    $('#packOver').hidden = false;
+  }
+  function demarre(){
+    $('#packStart').hidden = true;
+    $('#packOver').hidden = true;
+    reset(); hud();
+    cancelAnimationFrame(raf);
+    dernier = performance.now();
+    raf = requestAnimationFrame(boucle);
+  }
+  const go = $('#packGo'); if(go) go.onclick = demarre;
+  const rj = $('#packReplay'); if(rj) rj.onclick = demarre;
+
+  $('#packStart').hidden = false;
+  $('#packOver').hidden = true;
+  g.fillStyle = '#0E1726'; g.fillRect(0, 0, W, H);
+
+  _packStop = () => { running = false; cancelAnimationFrame(raf); };
+}
+
+/* Fermeture : on coupe TOUJOURS la boucle du jeu concerné. Sans ça elle
+   continue de tourner sur un canvas invisible. */
+function arcadeStop(id){
+  if(id === 'ovPong') _pongStop?.();
+  if(id === 'ovPack') _packStop?.();
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-close]');
+  if(c) arcadeStop(c.dataset.close);
+  else if(e.target.classList?.contains('overlay')) arcadeStop(e.target.id);
+});
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Escape') return;
+  for(const id of ['ovArcade', 'ovGeo', 'ovPong', 'ovPack']){
+    const ov = $('#' + id);
+    if(ov?.classList.contains('show')){ arcadeStop(id); ov.classList.remove('show'); }
+  }
+});

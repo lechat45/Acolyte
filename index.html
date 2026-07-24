@@ -2,7 +2,14 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://photo.hotellook.com https://upload.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://api.travelpayouts.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://engine.hotellook.com https://corsproxy.io https://api.allorigins.win https://*.workers.dev https://*.deno.dev https://*.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<!-- Politique de sécurité du contenu.
+     Principe : n'autoriser QUE les hôtes réellement appelés par le code.
+     Chaque hôte listé est une porte ouverte ; ceux qui ne servent plus
+     (Hotellook, Travelpayouts, corsproxy, allorigins, workers.dev, deno.dev)
+     ont été retirés. Avant d'ajouter un domaine, vérifie qu'il est appelé.
+     ⚠️ Pas de 'unsafe-inline' dans script-src : c'est CE réglage qui empêche
+     un texte piégé de devenir du code exécutable. Ne l'affaiblis jamais. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://upload.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://*.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#FFE600" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B0B10" media="(prefers-color-scheme: dark)">
@@ -345,6 +352,15 @@
 
           <div class="divider"></div>
 
+          <h3 style="margin:0 0 6px">🌐 Langue</h3>
+          <p class="hint" style="margin:0 0 8px">Change la langue de l'interface et celle des voyages qu'Acolite écrit pour toi.</p>
+          <div class="chips" id="stLang" data-noi18n>
+            <button class="chip" data-lang="fr">🇫🇷 Français</button>
+            <button class="chip" data-lang="en">🇬🇧 English</button>
+          </div>
+
+          <div class="divider"></div>
+
           <h3 style="margin:0 0 6px">🎨 Apparence</h3>
           <p class="hint" style="margin:0 0 8px">« Système » suit automatiquement le thème clair/sombre de ton appareil.</p>
           <div class="chips" id="stTheme"></div>
@@ -461,6 +477,12 @@
 <div class="auth-wrap hidden" id="authWrap">
   <div class="auth-card">
     <div class="auth-logo"><span class="logo-mark"></span>Acolite</div>
+    <!-- Le sélecteur du profil est derrière l'inscription : sans celui-ci, un
+         visiteur anglophone n'aurait aucun moyen de changer de langue. -->
+    <div class="auth-lang" id="stLangAuth" data-noi18n>
+      <button type="button" class="chip" data-lang="fr">🇫🇷 FR</button>
+      <button type="button" class="chip" data-lang="en">🇬🇧 EN</button>
+    </div>
     <p class="sub" id="authSub">Crée ton compte pour commencer l'aventure.</p>
 
     <div id="authSignup">
@@ -658,6 +680,103 @@
         <div class="gc-group"><span class="gc-label">☄️ Astéroïdes</span><div class="gc-swatches" id="gcAsteroids"></div></div>
         <div class="gc-group"><span class="gc-label">🌍 Planète</span><div class="gc-swatches" id="gcPlanets"></div></div>
         <button class="btn" id="gameCustomDone" style="justify-content:center;margin-top:6px">✅ Terminé</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SALLE DE JEUX (2 clics sur la mascotte, PC) ================= -->
+<div class="overlay" id="ovArcade">
+  <div class="modal arcade-modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h2 style="margin:0">🕹️ La salle de jeux</h2>
+      <button class="close-btn" data-close="ovArcade" aria-label="Fermer">✕</button>
+    </div>
+    <p class="sub" style="margin:0 0 14px">Tu m'as trouvée. Choisis à quoi on joue.</p>
+    <div class="arcade-grid" id="arcadeGrid"></div>
+  </div>
+</div>
+
+<!-- ================= JEU 2 : OÙ EST-CE ? ================= -->
+<div class="overlay" id="ovGeo">
+  <div class="modal game-modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">🌍 Où est-ce ?</h2>
+      <button class="close-btn" data-close="ovGeo" aria-label="Fermer">✕</button>
+    </div>
+    <div class="game-hud">
+      <span id="geoRound">Manche 1 / 5</span>
+      <span id="geoScore">Score : 0</span>
+    </div>
+    <div class="geo-stage">
+      <img id="geoPhoto" class="geo-photo" alt="Monument à reconnaître">
+      <div id="geoMap" class="geo-map"></div>
+      <p class="geo-hint" id="geoHint">Clique sur la carte à l'endroit où se trouve ce monument.</p>
+      <div class="geo-names" id="geoNames" hidden></div>
+      <div class="geo-result" id="geoResult" hidden></div>
+      <button class="btn" id="geoNext" hidden style="justify-content:center">Manche suivante →</button>
+      <div class="game-over" id="geoOver" hidden>
+        <h3 id="geoOverTitle">Partie terminée</h3>
+        <p id="geoOverScore">Score : 0</p>
+        <button class="btn" id="geoReplay" style="justify-content:center">🔄 Rejouer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= JEU 3 : PONG AVEC LA MASCOTTE ================= -->
+<div class="overlay" id="ovPong">
+  <div class="modal game-modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">🏓 Ne me lâche pas</h2>
+      <button class="close-btn" data-close="ovPong" aria-label="Fermer">✕</button>
+    </div>
+    <div class="game-hud">
+      <span id="pongScore">Renvois : 0</span>
+      <span id="pongBumps">Chocs : 0</span>
+      <span id="pongLives">❤️❤️❤️</span>
+    </div>
+    <div class="game-stage">
+      <canvas id="pongCanvas" width="640" height="460"></canvas>
+      <div class="game-over" id="pongOver" hidden>
+        <h3 id="pongOverTitle">Tu m'as laissée tomber !</h3>
+        <p id="pongOverScore">Renvois : 0</p>
+        <button class="btn" id="pongReplay" style="justify-content:center">🔄 Rejouer</button>
+      </div>
+      <div class="game-start" id="pongStart">
+        <p>🖱️ Bouge la raquette avec la souris et empêche la mascotte de tomber.</p>
+        <p class="game-tip">💡 Elle n'aime pas être cognée. Au bout de 10 chocs, elle voit rouge — et ça va plus vite.</p>
+        <p class="game-best" id="pongBest" hidden></p>
+        <button class="btn" id="pongGo" style="justify-content:center">🏓 Commencer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= JEU 4 : BAGAGE EXPRESS ================= -->
+<div class="overlay" id="ovPack">
+  <div class="modal game-modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">🧳 Bagage express</h2>
+      <button class="close-btn" data-close="ovPack" aria-label="Fermer">✕</button>
+    </div>
+    <div class="game-hud">
+      <span id="packDest">Destination : —</span>
+      <span id="packScore">Score : 0</span>
+      <span id="packTime">30 s</span>
+    </div>
+    <div class="game-stage">
+      <canvas id="packCanvas" width="640" height="460"></canvas>
+      <div class="game-over" id="packOver" hidden>
+        <h3 id="packOverTitle">Valise bouclée</h3>
+        <p id="packOverScore">Score : 0</p>
+        <button class="btn" id="packReplay" style="justify-content:center">🔄 Rejouer</button>
+      </div>
+      <div class="game-start" id="packStart">
+        <p>🖱️ Le tapis défile. Clique sur ce qu'il faut emporter, laisse passer le reste.</p>
+        <p class="game-tip">💡 La destination change en cours de route : ce qui était utile ne l'est plus.</p>
+        <p class="game-best" id="packBest" hidden></p>
+        <button class="btn" id="packGo" style="justify-content:center">🧳 Commencer</button>
       </div>
     </div>
   </div>

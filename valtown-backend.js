@@ -31,6 +31,12 @@
 
 const RELAY_HOSTS = ['engine.hotellook.com', 'yasen.hotellook.com', 'api.travelpayouts.com'];
 
+/* Plafond d'appels IA par compte et par heure.
+   Pourquoi : l'adresse du proxy est publique (elle est dans config.js), donc
+   sans compteur un seul compte suffirait à vider le quota des clés API — et
+   quand le quota est vide, le service est mort pour tout le monde. */
+const AI_MAX_H = 120;
+
 /* ============================================================
    COMPTES & SYNCHRONISATION
    ------------------------------------------------------------
@@ -157,6 +163,43 @@ async function diagTable() {
   await sqlite.execute(
     `CREATE TABLE IF NOT EXISTS aco_diag(k TEXT PRIMARY KEY, v TEXT NOT NULL, ts INTEGER NOT NULL)`);
 }
+/* ---- Garde d'accès aux proxys IA ----
+   Deux conditions : une session valable, et un quota horaire pas dépassé.
+   Renvoie { email } si ça passe, sinon { err, status }. */
+async function aiGuard(request) {
+  const email = await sessionEmail(request);
+  if (!email) return { err: 'Connecte-toi pour utiliser Acolite', status: 401 };
+  try {
+    await sqlite.execute(`CREATE TABLE IF NOT EXISTS aco_ai(
+      email TEXT PRIMARY KEY, n INTEGER NOT NULL, window_start INTEGER NOT NULL)`);
+    const now = Date.now(), H = 3600 * 1000;
+    const r = await sqlite.execute({ sql: 'SELECT n, window_start FROM aco_ai WHERE email = ?', args: [email] });
+    const row = r.rows[0];
+    const debut = row ? Number(row[1]) : 0;
+    /* fenêtre glissante d'une heure : passé ce délai, le compteur repart de zéro */
+    const n = (row && now - debut < H) ? Number(row[0]) : 0;
+    const fenetre = (row && now - debut < H) ? debut : now;
+    if (n >= AI_MAX_H) return { err: 'Beaucoup de demandes d’un coup — réessaie dans un moment', status: 429 };
+    await sqlite.execute({
+      sql: `INSERT INTO aco_ai(email, n, window_start) VALUES(?,?,?)
+            ON CONFLICT(email) DO UPDATE SET n = excluded.n, window_start = excluded.window_start`,
+      args: [email, n + 1, fenetre],
+    });
+  } catch (e) { /* un compteur en panne ne doit pas bloquer un utilisateur légitime */ }
+  return { email };
+}
+
+/* Purge des lignes périmées. Garder des sessions et des codes expirés, c'est
+   garder des données personnelles dont on n'a plus l'usage. */
+async function purge() {
+  try {
+    const now = Date.now();
+    await sqlite.execute({ sql: 'DELETE FROM aco_sessions WHERE expires_at < ?', args: [now] });
+    await sqlite.execute({ sql: 'DELETE FROM aco_codes WHERE expires_at < ?', args: [now - 3600 * 1000] });
+    await sqlite.execute({ sql: 'DELETE FROM aco_logins WHERE locked_until < ? AND fails > 0', args: [now - 24 * 3600 * 1000] });
+  } catch (e) {}
+}
+
 async function noteMail(msg) {
   try {
     await diagTable();
@@ -247,6 +290,13 @@ export default async function (request) {
        N'expose aucune clé — seulement les identifiants publics (déjà connus
        du navigateur) et le message d'erreur renvoyé. ---- */
     if (path === '/maildiag') {
+      /* Réservé à l'administrateur. Avant, cette route était ouverte : elle
+         disait publiquement quelles variables sont configurées et ce qu'a
+         répondu EmailJS au dernier envoi. C'est une aide au diagnostic pour
+         toi, donc une aide à la reconnaissance pour n'importe qui d'autre. */
+      const adm = env('ADMIN_EMAIL').trim().toLowerCase();
+      const who = await sessionEmail(request);
+      if (!adm || !who || !safeEqual(who, adm)) return json({ error: 'Accès refusé' }, 403);
       return json({
         variables: {
           EMAILJS_PUBLIC: !!env('EMAILJS_PUBLIC'),
@@ -415,6 +465,7 @@ export default async function (request) {
          c'est le premier réflexe quand on se croit piraté */
       await sqlite.execute({ sql: 'DELETE FROM aco_sessions WHERE email = ?', args: [email] });
       await sqlite.execute({ sql: 'DELETE FROM aco_logins WHERE email = ?', args: [email] });
+      purge();                       /* ménage à l'occasion d'une connexion réussie */
       return json({ token: await newSession(email), email });
     }
 
@@ -462,8 +513,15 @@ export default async function (request) {
     if (path === '/account' && request.method === 'DELETE') {
       const email = await sessionEmail(request);
       if (!email) return json({ error: 'Session expirée — reconnecte-toi' }, 401);
-      for (const t of ['aco_trips', 'aco_sessions', 'aco_codes', 'aco_logins', 'aco_users', 'aco_scores'])
-        await sqlite.execute({ sql: `DELETE FROM ${t} WHERE email = ?`, args: [email] });
+      /* TOUTE table qui porte l'email doit figurer ici : « supprimer mon
+         compte » doit vraiment ne rien laisser derrière. Si tu ajoutes une
+         table avec une colonne email un jour, ajoute-la dans cette liste. */
+      for (const t of ['aco_trips', 'aco_sessions', 'aco_codes', 'aco_logins', 'aco_users', 'aco_scores', 'aco_ai']) {
+        /* try/catch par table : une table pas encore créée ne doit pas
+           interrompre la suppression des autres */
+        try { await sqlite.execute({ sql: `DELETE FROM ${t} WHERE email = ?`, args: [email] }); }
+        catch (e) {}
+      }
       return json({ ok: true });
     }
 
@@ -574,7 +632,14 @@ export default async function (request) {
       });
     }
 
+    /* ---- Les trois routes ci-dessous consomment TES clés API. Elles étaient
+       ouvertes à tous : l'adresse du proxy est publique, donc n'importe qui
+       pouvait s'en servir gratuitement jusqu'à épuiser le quota. Désormais
+       il faut une session Acolite valable, et le nombre d'appels par heure
+       est plafonné par compte. ---- */
     if (path === '/gemini/models') {
+      const g = await aiGuard(request);
+      if (g.err) return json({ error: g.err }, g.status);
       if (!env('GEMINI_KEY')) return json({ error: 'GEMINI_KEY non configurée' }, 501);
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${env('GEMINI_KEY')}&pageSize=100`);
       return new Response(await r.text(), { status: r.status, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -582,6 +647,8 @@ export default async function (request) {
 
     /* ---- Génération Gemini : POST {model, body} ---- */
     if (path === '/gemini') {
+      const g = await aiGuard(request);
+      if (g.err) return json({ error: g.err }, g.status);
       if (!env('GEMINI_KEY')) return json({ error: 'GEMINI_KEY non configurée' }, 501);
       const { model, body } = await request.json();
       const m = String(model || 'gemini-2.5-flash').replace(/[^a-zA-Z0-9.\-_]/g, '');
@@ -594,6 +661,8 @@ export default async function (request) {
 
     /* ---- Génération Groq : POST {body} ---- */
     if (path === '/groq') {
+      const g = await aiGuard(request);
+      if (g.err) return json({ error: g.err }, g.status);
       if (!env('GROQ_KEY')) return json({ error: 'GROQ_KEY non configurée' }, 501);
       const { body } = await request.json();
       const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -606,6 +675,8 @@ export default async function (request) {
 
     /* ---- Prix d'hôtels : le token est injecté ICI, jamais dans le navigateur ---- */
     if (path === '/hotels') {
+      const g = await aiGuard(request);
+      if (g.err) return json({ error: g.err }, g.status);
       if (!env('TRAVELPAYOUTS_KEY')) return json({ error: 'TRAVELPAYOUTS_KEY non configurée' }, 501);
       const p = url.searchParams;
       const api = new URL('https://engine.hotellook.com/api/v2/cache.json');
@@ -620,6 +691,9 @@ export default async function (request) {
     /* ---- Relais CORS générique (compat : ?url=…) ---- */
     const target = url.searchParams.get('url');
     if (target) {
+      /* relais générique : session obligatoire aussi, et liste blanche d'hôtes */
+      const g = await aiGuard(request);
+      if (g.err) return json({ error: g.err }, g.status);
       let u;
       try { u = new URL(target); } catch { return json({ error: 'URL invalide' }, 400); }
       if (!RELAY_HOSTS.includes(u.hostname)) return json({ error: 'Domaine non autorisé : ' + u.hostname }, 403);
