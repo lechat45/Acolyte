@@ -9,11 +9,11 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.val.run; object-src 'none'; base-uri 'self'; form-action 'none'">
-<title>Acolite — Statistiques</title>
+<title>Acolyte — Statistiques</title>
 <style>
   /* ============================================================
-     Design néo-brutaliste, comme le site : bordures noires épaisses,
-     ombres dures non floutées, jaune de signature.
+     Même dessin que le site : surfaces charbon, filets d'un pixel, grands
+     rayons, ombres douces. Le jaune est un ACCENT, pas un fond.
 
      Couleurs des graphiques : elles ne reprennent PAS les néons du site
      (#22F5FF, #C084FC…). Ces teintes sont trop claires pour porter une
@@ -22,42 +22,55 @@
      validées par un outil de contrôle (bande de clarté, plancher de
      saturation, séparation sous les trois formes de daltonisme, contraste
      avec le fond) en clair ET en sombre. Ne les remplace pas « pour faire
-     plus Acolite » sans repasser ce contrôle.
+     plus Acolyte » sans repasser ce contrôle.
   ============================================================ */
+  /* Sombre par défaut, comme le site. Le clair est une variante, pas un
+     autre dessin. */
   :root{
-    color-scheme:light;
-    --bg:#F4F3EF; --card:#fff; --ink:#101010; --muted:#4A4A4A;
-    --primary:#FFE600; --danger:#EF4444; --ok:#16A34A;
-    --grid:rgba(0,0,0,.10); --track:#EDEBE4;
+    color-scheme:dark;
+    --bg:#121212; --bg-2:#171717; --card:#1C1C1C; --surface-2:#232323;
+    --ink:#F2F1EC; --muted:#97968F;
+    --primary:#FFE600; --primary-ink:#141414;
+    --danger:#E9695F; --ok:#5BC98B;
+    --stroke:rgba(255,255,255,.11); --stroke-2:rgba(255,255,255,.20);
+    --grid:rgba(255,255,255,.10); --track:#232323;
+    --shadow:0 6px 18px rgba(0,0,0,.35); --shadow-lg:0 18px 44px rgba(0,0,0,.48);
+    --r-lg:20px; --r-md:14px; --r-sm:10px;
     /* palette catégorielle — ordre FIXE, jamais recyclé */
-    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
     /* une seule teinte pour les magnitudes (« plus foncé = plus grand ») */
-    --seq:#2a78d6;
+    --seq:#3987e5;
   }
-  @media (prefers-color-scheme:dark){
-    :root:where(:not([data-theme="light"])){
-      color-scheme:dark;
-      --bg:#0B0B10; --card:#16161F; --ink:#F4F3EF; --muted:#A0A2B2;
-      --grid:rgba(255,255,255,.14); --track:#24243A;
-      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
-      --seq:#3987e5;
+  @media (prefers-color-scheme:light){
+    :root:where(:not([data-theme="dark"])){
+      color-scheme:light;
+      --bg:#F5F4F0; --bg-2:#EFEEE9; --card:#FFFFFF; --surface-2:#F7F6F2;
+      --ink:#16160F; --muted:#63625B;
+      --stroke:rgba(0,0,0,.12); --stroke-2:rgba(0,0,0,.24);
+      --grid:rgba(0,0,0,.10); --track:#EDEBE4;
+      --shadow:0 4px 14px rgba(20,20,15,.10); --shadow-lg:0 16px 40px rgba(20,20,15,.16);
+      --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+      --seq:#2a78d6;
     }
   }
-  :root[data-theme="dark"]{
-    color-scheme:dark;
-    --bg:#0B0B10; --card:#16161F; --ink:#F4F3EF; --muted:#A0A2B2;
-    --grid:rgba(255,255,255,.14); --track:#24243A;
-    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
-    --seq:#3987e5;
+  :root[data-theme="light"]{
+    color-scheme:light;
+    --bg:#F5F4F0; --bg-2:#EFEEE9; --card:#FFFFFF; --surface-2:#F7F6F2;
+    --ink:#16160F; --muted:#63625B;
+    --stroke:rgba(0,0,0,.12); --stroke-2:rgba(0,0,0,.24);
+    --grid:rgba(0,0,0,.10); --track:#EDEBE4;
+    --shadow:0 4px 14px rgba(20,20,15,.10); --shadow-lg:0 16px 40px rgba(20,20,15,.16);
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+    --seq:#2a78d6;
   }
 
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);
     padding:20px 14px 60px;min-height:100vh;
-    background-image:radial-gradient(var(--grid) 1.5px,transparent 1.5px);background-size:18px 18px}
+    }
   .wrap{max-width:1080px;margin:0 auto}
 
-  header{background:var(--primary);color:#101010;border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);
+  header{background:var(--card);color:var(--ink);border:1px solid var(--stroke);box-shadow:var(--shadow);
     padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
   h1{font-size:1.3rem;letter-spacing:-.02em;text-transform:uppercase}
   header .sub{font-size:.76rem;font-weight:700;opacity:.75}
@@ -65,16 +78,16 @@
 
   /* ---- Tuiles de chiffres : un nombre qui se lit de loin ---- */
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
-  .kpi{background:var(--card);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:12px 14px;border-radius:4px}
+  .kpi{background:var(--card);border:1px solid var(--stroke);box-shadow:var(--shadow);padding:12px 14px;border-radius:var(--r-md)}
   .kpi .k{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
   .kpi .v{font-size:1.9rem;font-weight:900;line-height:1.05;margin-top:3px;font-variant-numeric:tabular-nums}
   .kpi .d{font-size:.72rem;font-weight:700;color:var(--muted);margin-top:2px}
 
   .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
-  .card{background:var(--card);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
-    padding:16px;margin-bottom:16px;border-radius:4px;overflow:hidden}
+  .card{background:var(--card);border:1px solid var(--stroke);box-shadow:var(--shadow);
+    padding:16px;margin-bottom:16px;border-radius:var(--r-md);overflow:hidden}
   .card.wide{grid-column:1/-1}
-  .card h2{font-size:.92rem;text-transform:uppercase;margin-bottom:4px;border-bottom:3px solid var(--ink);
+  .card h2{font-size:.92rem;text-transform:uppercase;margin-bottom:4px;border-bottom:1px solid var(--stroke);
     padding-bottom:4px;display:inline-block}
   .card .lede{font-size:.76rem;color:var(--muted);margin:6px 0 12px;line-height:1.5}
 
@@ -87,15 +100,15 @@
   .r .lbl{font-size:.8rem;font-weight:700;min-width:0;overflow-wrap:anywhere}
   .r .n{font-weight:900;font-variant-numeric:tabular-nums;font-size:.86rem;text-align:right;white-space:nowrap}
   .r .pct{color:var(--muted);font-weight:700;font-size:.72rem}
-  .track{grid-column:1/-1;height:13px;background:var(--track);border:2px solid var(--ink);
-    border-radius:4px;overflow:hidden}
+  .track{grid-column:1/-1;height:13px;background:var(--track);border:1px solid var(--stroke);
+    border-radius:var(--r-md);overflow:hidden}
   .track i{display:block;height:100%;border-radius:0 3px 3px 0}
   .rows{gap:10px}
 
   /* ---- Légende : l'identité ne repose jamais sur la couleur seule ---- */
   .legend{display:flex;flex-wrap:wrap;gap:10px 14px;margin-top:12px}
   .legend span{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;font-weight:700}
-  .swatch{width:12px;height:12px;border:2px solid var(--ink);border-radius:3px;flex:none}
+  .swatch{width:12px;height:12px;border:1px solid var(--stroke);border-radius:3px;flex:none}
 
   svg{display:block;max-width:100%;overflow:visible}
   .axis{font-size:9px;font-weight:700;fill:var(--muted)}
@@ -103,24 +116,24 @@
 
   .note{font-size:.76rem;color:var(--muted);line-height:1.55;margin-top:12px;
     border-top:2px dashed var(--grid);padding-top:10px}
-  .lock{background:var(--primary);color:#101010;border:3px solid var(--ink);padding:10px 12px;
-    font-size:.78rem;font-weight:700;line-height:1.5;border-radius:4px}
+  .lock{background:var(--primary);color:#101010;border:1px solid var(--stroke);padding:10px 12px;
+    font-size:.78rem;font-weight:700;line-height:1.5;border-radius:var(--r-md)}
 
   table{width:100%;border-collapse:collapse;font-size:.8rem}
-  th,td{text-align:left;padding:6px 8px;border-bottom:2px solid var(--grid)}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid)}
   th{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:900}
   .scroll{overflow-x:auto}
 
-  .msg{background:var(--card);border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);
-    padding:26px;text-align:center;border-radius:4px}
-  .msg.err{background:var(--danger);color:#fff;border-color:#101010}
+  .msg{background:var(--card);border:1px solid var(--stroke);box-shadow:var(--shadow);
+    padding:26px;text-align:center;border-radius:var(--r-md)}
+  .msg.err{background:var(--danger);color:#fff;border-color:transparent}
   .msg h2{font-size:1.05rem;margin-bottom:8px;text-transform:uppercase}
   .msg p{font-size:.88rem;line-height:1.6}
   .hidden{display:none}
   button{font:inherit;font-weight:800;cursor:pointer;background:var(--card);color:var(--ink);
-    border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);padding:8px 14px;border-radius:4px}
-  button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+    border:1px solid var(--stroke);box-shadow:var(--shadow);padding:8px 14px;border-radius:var(--r-md)}
+  button:active{transform:translateY(1px);box-shadow:var(--shadow)}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -128,7 +141,7 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>📊 Acolite — Statistiques</h1>
+      <h1>📊 Acolyte — Statistiques</h1>
       <div class="sub" id="stamp">Chargement…</div>
     </div>
     <div class="hbtns">

@@ -1,5 +1,5 @@
 /* ============================================================
-   ACOLITE — Vérificateur de démarrage
+   ACOLYTE — Vérificateur de démarrage
    Chargé AVANT app.js. Si app.js n'arrive pas (fichier absent,
    mauvais dossier, cache périmé), il l'affiche clairement
    au lieu de laisser l'app figée sur l'écran de démarrage.

@@ -1,5 +1,5 @@
 /* ============================================================
-   ACOLITE — Backend (Val Town, 100 % gratuit)
+   ACOLYTE — Backend (Val Town, 100 % gratuit)
    ============================================================
    RÔLE : garder tes clés API SECRÈTES (même rôle que worker.js).
 
@@ -14,7 +14,7 @@
         TRAVELPAYOUTS_KEY = ton token
         ALLOWED_ORIGIN    = https://lechat45.github.io
       Pour le panel admin (sans ça, /admin/stats répond 403 à TOUT LE MONDE) :
-        ADMIN_EMAIL       = l'adresse EXACTE de ton compte Acolite
+        ADMIN_EMAIL       = l'adresse EXACTE de ton compte Acolyte
       Pour les comptes (SANS ÇA, aucune inscription possible) :
         EMAILJS_PUBLIC    = Public Key   (dashboard.emailjs.com/admin/account)
         EMAILJS_PRIVATE   = Private Key  (même page — à ne JAMAIS mettre côté navigateur)
@@ -25,7 +25,7 @@
          sinon l'appel depuis Val Town est refusé.
       Le template doit utiliser {{to_email}} et {{code}}.
    5. Copie l'URL du val (en haut à droite, format
-      https://tonpseudo--acolite.web.val.run) dans config.js → proxy
+      https://tonpseudo--acolyte.web.val.run) dans config.js → proxy
    6. VIDE les clés de config.js : elles ne servent plus !
 ============================================================ */
 
@@ -173,7 +173,7 @@ async function diagTable() {
    Renvoie { email } si ça passe, sinon { err, status }. */
 async function aiGuard(request) {
   const email = await sessionEmail(request);
-  if (!email) return { err: 'Connecte-toi pour utiliser Acolite', status: 401 };
+  if (!email) return { err: 'Connecte-toi pour utiliser Acolyte', status: 401 };
   try {
     await sqlite.execute(`CREATE TABLE IF NOT EXISTS aco_ai(
       email TEXT PRIMARY KEY, n INTEGER NOT NULL, window_start INTEGER NOT NULL)`);
@@ -246,12 +246,12 @@ async function sendCodeMail(env, email, code) {
     });
     const txt = await r.text().catch(() => '');
     const why = `HTTP ${r.status} · ${txt.slice(0, 200) || '(corps vide)'}`;
-    console.log('[acolite] EmailJS →', why);        /* visible dans les logs Val Town */
+    console.log('[acolyte] EmailJS →', why);        /* visible dans les logs Val Town */
     await noteMail(why);
     return r.ok;
   } catch (e) {
     const why = 'appel impossible : ' + String(e).slice(0, 120);
-    console.log('[acolite] EmailJS →', why);
+    console.log('[acolyte] EmailJS →', why);
     await noteMail(why);
     return false;
   }
@@ -742,7 +742,7 @@ export default async function (request) {
     /* ---- Les trois routes ci-dessous consomment TES clés API. Elles étaient
        ouvertes à tous : l'adresse du proxy est publique, donc n'importe qui
        pouvait s'en servir gratuitement jusqu'à épuiser le quota. Désormais
-       il faut une session Acolite valable, et le nombre d'appels par heure
+       il faut une session Acolyte valable, et le nombre d'appels par heure
        est plafonné par compte. ---- */
     if (path === '/gemini/models') {
       const g = await aiGuard(request);

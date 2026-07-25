@@ -1,6 +1,6 @@
 {
-  "name": "Acolite — Copilote de voyage",
-  "short_name": "Acolite",
+  "name": "Acolyte — Copilote de voyage",
+  "short_name": "Acolyte",
   "description": "Ton copilote de voyage IA : propositions, plan organisé, billets réels, hors-ligne.",
   "start_url": "./index.html",
   "scope": "./",

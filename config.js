@@ -1,12 +1,12 @@
 /* ============================================================
-   ACOLITE — config.js
+   ACOLYTE — config.js
    ============================================================
    DEUX MODES :
 
    ▸ MODE SÉCURISÉ (recommandé si ton site est public)
      Déploie worker.js sur Cloudflare (gratuit), mets tes clés
      DANS LE WORKER (Settings → Variables and Secrets), puis :
-        proxy: 'https://acolite.ton-compte.workers.dev'
+        proxy: 'https://acolyte.ton-compte.workers.dev'
      et LAISSE LES CLÉS VIDES ci-dessous.
      → Aucune clé ne quitte le navigateur. Personne ne peut les voler.
 

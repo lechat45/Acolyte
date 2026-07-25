@@ -1,5 +1,5 @@
 /* ============================================================
-   ACOLITE — DESIGN
+   ACOLYTE — DESIGN
    ------------------------------------------------------------
    Direction : sombre, calme, aéré. Surfaces charbon, filets d'un pixel,
    grands rayons, ombres douces et diffuses. Le jaune de la marque ne sert
@@ -183,20 +183,27 @@ header{
    le clignement — sa signature — mais pas le balancement : un logo qui
    tangue en permanence fatigue l'œil. */
 .logo span{color:var(--txt)}
-/* Logo intégré : le globe coiffe le « i » d'ACOLITE, comme un point animé.
+/* Logo intégré : le globe coiffe le « i » d'ACOLYTE, comme un point animé.
    On réserve de la place au-dessus du mot pour que le globe ne soit pas rogné. */
 .logo{padding-top:20px}
 /* Chaque lettre est un élément à part (nécessaire à l'easter egg bowling). */
 .logo-word{display:inline-flex;align-items:flex-end;position:relative}
 .logo-word i{display:inline-block;font-style:normal;will-change:transform;position:relative}
 /* la lettre « i » porte le globe au-dessus d'elle, en guise de point */
-.i-dot{overflow:visible}
-.logo-mark{
-  position:absolute;left:50%;bottom:100%;
-  width:32px;height:32px;transform:translate(-50%,20%);
-  display:grid;place-items:center;pointer-events:auto;
+/* Le globe REMPLACE le « o » d'ACOLYTE : une lettre ronde par une planète
+   ronde. Il n'est donc plus posé au-dessus d'une lettre, il EST la lettre —
+   d'où la mise en place en flux plutôt qu'en absolu.
+   La largeur suit la taille du texte (em) : le logo reste juste à toutes les
+   tailles, du bandeau de démarrage à la colonne de gauche. */
+.o-mark{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:.92em;height:.92em;vertical-align:-.06em;margin:0 .02em;
 }
-.logo-mark .mascot{width:32px;height:32px;animation:none}
+.logo-mark{
+  display:block;width:100%;height:100%;
+  pointer-events:auto;cursor:pointer;
+}
+.logo-mark .mascot{width:100%;height:100%;display:block;animation:none}
 
 .icon-btn{
   background:var(--secondary);border:1px solid var(--stroke);color:var(--txt);
@@ -264,7 +271,9 @@ select option{background:var(--secondary);color:var(--txt)}
   transition:all .1s ease;user-select:none;box-shadow:var(--shadow);
 }
 .chip:hover{background:var(--bg);transform:translate(-1px,-1px);box-shadow:var(--shadow)}
-.chip.on{background:var(--primary);color:var(--txt);box-shadow:var(--shadow)}
+/* ⚠️ encre FONCÉE sur le jaune : en thème sombre, var(--txt) est presque
+   blanc et devenait illisible. C'est le défaut le plus visible qu'on ait eu. */
+.chip.on{background:var(--primary);color:var(--primary-ink);box-shadow:var(--shadow)}
 .chip.on.warn{background:var(--accent-orange);color:#fff}
 /* ===== Accessibilité : focus clavier net & visible partout ===== */
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
@@ -278,7 +287,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   border:1px solid var(--stroke);cursor:pointer;font-family:'Sora',sans-serif;font-weight:900;
   font-size:1rem;text-transform:uppercase;padding:14px 28px;border-radius:var(--r-md);
   transition:all .1s ease;display:inline-flex;align-items:center;gap:10px;
-  color:var(--txt);background:var(--primary);box-shadow:var(--shadow);text-decoration:none;
+  color:var(--primary-ink);background:var(--primary);box-shadow:var(--shadow);text-decoration:none;
 }
 .btn:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow)}
 .btn:active{transform:translateY(1px);box-shadow:var(--shadow)}
@@ -308,7 +317,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .loader{display:flex;align-items:center;gap:14px;padding:26px 8px;color:var(--txt);font-size:1rem;font-weight:700}
 /* la mascotte seule du chargement standard */
 .mascot.loader-solo{width:52px;height:52px;flex-shrink:0}
-/* ===== Mascotte Acolite : la Terre aux grands yeux ===== */
+/* ===== Mascotte Acolyte : la Terre aux grands yeux ===== */
 .mascot{width:46px;height:46px;flex-shrink:0;overflow:visible;animation:mBob 2.6s ease-in-out infinite}
 .m-ocean{fill:#3E93C9}
 .m-land{fill:#6FBE5C}
@@ -1231,7 +1240,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .chat-in input{flex:1;box-shadow:none}
 .chat-in button{
   width:46px;border-radius:var(--r-sm);border:1px solid var(--stroke);cursor:pointer;
-  font-size:1.1rem;background:var(--primary);color:var(--txt);box-shadow:var(--shadow);
+  font-size:1.1rem;background:var(--primary);color:var(--primary-ink);box-shadow:var(--shadow);
 }
 
 /* ===== Toast ===== */
@@ -1511,7 +1520,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   font-family:'Sora',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;
   letter-spacing:-.03em;margin-bottom:4px;display:flex;align-items:center;gap:10px;
 }
-.auth-logo .logo-mark{width:42px;height:42px}
+.auth-logo .logo-mark{width:42px;height:42px;flex:none}
 .auth-logo .logo-mark .mascot{width:42px;height:42px}
 .auth-switch{font-size:.85rem;font-weight:700;margin-top:14px}
 .auth-switch a{color:var(--accent-orange);cursor:pointer;text-decoration:underline}
@@ -2133,8 +2142,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   .rail[aria-hidden="true"]{display:flex}
 
   /* ---- Bloc identité : le seul aplat jaune de la page ----
-     Il porte le VRAI logo : le globe coiffe le « i ». D'où le padding
-     généreux en haut — le globe dépasse du mot, il lui faut de la place. */
+     Il porte le VRAI logo : le globe REMPLACE le « o » d'ACOLYTE. */
   .rail-logo{
     display:block;
     background:var(--primary);border-radius:var(--r-lg);
@@ -2149,6 +2157,14 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   .rail-tag{
     display:block;font-style:normal;font-size:.7rem;font-weight:700;
     color:rgba(20,20,20,.62);margin-top:2px;
+  }
+
+  /* Titre de la colonne : il annonce ce qu'elle montre, et change avec la
+     catégorie (Étapes / Journées du voyage / Mon compte). */
+  .rail-title{
+    font-family:'Sora',sans-serif;font-weight:900;font-size:.66rem;
+    text-transform:uppercase;letter-spacing:.1em;color:var(--txt-2);
+    margin:0 0 -14px 2px;opacity:.75;
   }
 
   /* ---- Fil du parcours : le trait relie les étapes ---- */

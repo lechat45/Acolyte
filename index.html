@@ -26,8 +26,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Acolite — Planifie ton voyage : destination, transport, itinéraire</title>
-<meta name="description" content="Décris ton envie de voyage : Acolite choisit la destination, le transport et le logement, puis construit ton programme jour par jour. Consultable hors-ligne.">
+<title>Acolyte — Planifie ton voyage : destination, transport, itinéraire</title>
+<meta name="description" content="Décris ton envie de voyage : Acolyte choisit la destination, le transport et le logement, puis construit ton programme jour par jour. Consultable hors-ligne.">
 <!-- Canonique : sans elle, Google choisit lui-même l'adresse de référence.
      Elle doit être ABSOLUE et pointer sur le sous-chemin GitHub Pages. -->
 <link rel="canonical" href="https://lechat45.github.io/Acolyte.github.io/">
@@ -35,15 +35,15 @@
 <!-- Aperçu de lien (réseaux sociaux). Les URL doivent être absolues : un
      chemin relatif n'est pas résolu par les robots de partage. -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Acolite">
+<meta property="og:site_name" content="Acolyte">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:url" content="https://lechat45.github.io/Acolyte.github.io/">
-<meta property="og:title" content="Acolite — Ton copilote de voyage">
+<meta property="og:title" content="Acolyte — Ton copilote de voyage">
 <meta property="og:description" content="D'une simple envie à un programme jour par jour : destination, transport, logement et itinéraire, organisés pour toi.">
 <meta property="og:image" content="https://lechat45.github.io/Acolyte.github.io/logo-acolite.png">
-<meta property="og:image:alt" content="Logo Acolite : le globe mascotte coiffe le i d'ACOLITE">
+<meta property="og:image:alt" content="Logo Acolyte : le globe mascotte remplace le o d'ACOLYTE">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Acolite — Ton copilote de voyage">
+<meta name="twitter:title" content="Acolyte — Ton copilote de voyage">
 <meta name="twitter:description" content="D'une simple envie à un programme jour par jour : destination, transport, logement et itinéraire, organisés pour toi.">
 <meta name="twitter:image" content="https://lechat45.github.io/Acolyte.github.io/logo-acolite.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,14 +56,14 @@
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "Acolite",
-  "alternateName": "Acolite — copilote de voyage",
+  "name": "Acolyte",
+  "alternateName": "Acolyte — copilote de voyage",
   "url": "https://lechat45.github.io/Acolyte.github.io/",
   "image": "https://lechat45.github.io/Acolyte.github.io/logo-acolite.png",
   "applicationCategory": "TravelApplication",
   "operatingSystem": "Web, Android, iOS",
   "inLanguage": "fr-FR",
-  "description": "Décris ton envie de voyage : Acolite choisit la destination, le transport et le logement, puis construit ton programme jour par jour. Consultable hors-ligne.",
+  "description": "Décris ton envie de voyage : Acolyte choisit la destination, le transport et le logement, puis construit ton programme jour par jour. Consultable hors-ligne.",
   "featureList": [
     "Choix de la destination à partir d'une envie",
     "Comparaison des transports sur le prix, la durée et le CO₂",
@@ -80,7 +80,7 @@
 <div id="boot">
   <div class="boot-in">
     <div class="boot-mark">
-      <svg class="mascot" viewBox="0 0 100 100" role="img" aria-label="Acolite">
+      <svg class="mascot" viewBox="0 0 100 100" role="img" aria-label="Acolyte">
         <defs><clipPath id="mGlobeClipBoot"><circle cx="50" cy="50" r="45"/></clipPath></defs>
         <circle class="m-ocean" cx="50" cy="50" r="45"/>
         <g clip-path="url(#mGlobeClipBoot)" class="m-land">
@@ -103,7 +103,7 @@
         </g>
       </svg>
     </div>
-    <div class="boot-word">ACOLITE</div>
+    <div class="boot-word">ACOLYTE</div>
     <div class="boot-sub">COPILOTE DE VOYAGE</div>
     <div class="boot-bar"><i></i></div>
     <div class="boot-step" id="bootStep">Démarrage…</div>
@@ -115,18 +115,19 @@
      disparaît : la barre du bas et le fil d'étapes horizontal reprennent le
      relais — le dessin mobile reste la référence. -->
 <aside class="rail" aria-hidden="true">
-  <!-- Le logo de la marque : le globe COIFFE le « i » d'ACOLITE. C'est la
-       signature d'Acolite, on ne la remplace pas par une mascotte posée à
-       côté du mot. Chaque lettre reste un élément séparé. -->
+  <!-- Le logo : le globe REMPLACE le « o » d'ACOLYTE — une lettre ronde par
+       une planète ronde. Chaque lettre reste un élément séparé, et le globe
+       est la mascotte du site (2 clics dessus = la salle de jeux). -->
   <div class="rail-logo">
-    <span class="logo-word rail-logoword" aria-label="Acolite"><i>A</i><i>c</i><i>o</i><i>l</i><i class="i-dot">i<span class="logo-mark"></span></i><i>t</i><i>e</i></span>
+    <span class="logo-word rail-logoword" aria-label="Acolyte"><i>A</i><i>c</i><i class="o-mark"><span class="logo-mark"></span></i><i>l</i><i>y</i><i>t</i><i>e</i></span>
     <em class="rail-tag">Ton assistant voyage</em>
   </div>
 
+  <!-- Le titre dit ce que la colonne montre : il change avec la catégorie
+       (Étapes / Journées du voyage / Mon compte). -->
+  <p class="rail-title" id="railTitle">Étapes</p>
   <ol class="rail-steps" id="railSteps">
-    <li data-railstep="1"><span class="rs-n">01</span><span class="rs-t"><b>Questions</b><em>Dis-nous tout sur ton voyage</em></span></li>
-    <li data-railstep="2"><span class="rs-n">02</span><span class="rs-t"><b>Les choix</b><em>Nos suggestions pour toi</em></span></li>
-    <li data-railstep="3"><span class="rs-n">03</span><span class="rs-t"><b>Ton voyage</b><em>Ton itinéraire personnalisé</em></span></li>
+    <!-- rempli par renderRail() : le contenu dépend de la catégorie -->
   </ol>
 
   <!-- Décor : la route en pointillé d'un avion. Dessiné en SVG, donc net à
@@ -152,14 +153,14 @@
 
   <div class="rail-note">
     <span class="rn-ico">✨</span>
-    <p>Acolite crée ton voyage sur mesure en quelques secondes.</p>
+    <p>Acolyte crée ton voyage sur mesure en quelques secondes.</p>
     <p class="rn-sub">L'aventure commence ici 👋</p>
   </div>
 </aside>
 
 <div class="wrap">
   <header>
-    <div class="logo"><span class="logo-word" aria-label="Acolite"><i>A</i><i>c</i><i>o</i><i>l</i><i class="i-dot">i<span class="logo-mark"></span></i><i>t</i><i>e</i></span></div>
+    <div class="logo"><span class="logo-word" aria-label="Acolyte"><i>A</i><i>c</i><i class="o-mark"><span class="logo-mark"></span></i><i>l</i><i>y</i><i>t</i><i>e</i></span></div>
     <!-- La nav vit ici dans le HTML, mais sur téléphone elle est en
          position:fixed en bas : le parent n'a alors aucun effet sur elle.
          Sur ordinateur elle repasse en flux et devient la barre du haut. -->
@@ -188,7 +189,7 @@
       <div class="hero-in">
         <!-- h1 de la page : titre principal pour Google et les lecteurs d'écran -->
         <h1>Où est-ce qu'on t'emmène ?</h1>
-        <p class="sub">Décris tes envies, Acolite te propose des destinations sur mesure — puis t'aide à affiner.</p>
+        <p class="sub">Décris tes envies, Acolyte te propose des destinations sur mesure — puis t'aide à affiner.</p>
       </div>
       <svg class="hero-globe" viewBox="0 0 90 90" aria-hidden="true">
         <circle cx="45" cy="46" r="23" fill="none" stroke="currentColor" stroke-width="2.4"/>
@@ -253,7 +254,7 @@
         </div>
         <div class="field"><label for="fTransport">Comment tu veux voyager</label>
           <select id="fTransport">
-            <option value="" selected>🤷 Peu importe — Acolite décide</option>
+            <option value="" selected>🤷 Peu importe — Acolyte décide</option>
             <option value="train">🚆 Train</option>
             <option value="voiture">🚗 Voiture</option>
             <option value="avion">✈️ Avion</option>
@@ -266,7 +267,7 @@
             <input type="checkbox" id="fMulti">
             <span>
               <b>🌍 Traverser plusieurs pays</b>
-              <em>Acolite construit un itinéraire de 2 à 3 pays, avec les trajets entre étapes comptés dans le budget.</em>
+              <em>Acolyte construit un itinéraire de 2 à 3 pays, avec les trajets entre étapes comptés dans le budget.</em>
             </span>
           </label>
           <!-- N'apparaît QUE si la case est cochée : sinon c'est un champ qui
@@ -279,7 +280,7 @@
               <button type="button" class="btn sm" id="btnPaysAdd">➕ Ajouter</button>
             </div>
             <div class="pays-tags" id="paysTags"></div>
-            <p class="hint" id="paysHint">Laisse vide et Acolite choisit les pays pour toi.</p>
+            <p class="hint" id="paysHint">Laisse vide et Acolyte choisit les pays pour toi.</p>
           </div>
         </div>
         <div class="field"><label for="fStay">Style d'hébergement</label>
@@ -395,7 +396,7 @@
       <div class="cat-empty-card">
         <div class="ce-emoji">🗺️</div>
         <h3>Pas encore de voyage</h3>
-        <p>Choisis une destination et Acolite trace ton itinéraire, jour par jour, ici même.</p>
+        <p>Choisis une destination et Acolyte trace ton itinéraire, jour par jour, ici même.</p>
         <button class="btn" id="mapEmptyGo">✨ Commencer un voyage</button>
       </div>
     </div>
@@ -447,7 +448,7 @@
 
           <div class="divider"></div>
 
-          <h3 style="margin:0 0 6px">✨ Réponses d'Acolite</h3>
+          <h3 style="margin:0 0 6px">✨ Réponses d'Acolyte</h3>
           <div class="field">
             <label for="stDetail">Niveau de détail</label>
             <select id="stDetail">
@@ -461,7 +462,7 @@
           <div class="divider"></div>
 
           <h3 style="margin:0 0 6px">🌐 Langue</h3>
-          <p class="hint" style="margin:0 0 8px">Change la langue de l'interface et celle des voyages qu'Acolite écrit pour toi.</p>
+          <p class="hint" style="margin:0 0 8px">Change la langue de l'interface et celle des voyages qu'Acolyte écrit pour toi.</p>
           <div class="chips" id="stLang" data-noi18n>
             <button class="chip" data-lang="fr">🇫🇷 Français</button>
             <button class="chip" data-lang="en">🇬🇧 English</button>
@@ -527,7 +528,7 @@
         <div class="side"><button class="btn sm ghost" id="pfChangeEmail">Changer</button></div>
       </div>
       <div class="item act" id="pwaItem" style="display:none">
-        <div class="head"><div class="emo">📲</div><h4>Installer Acolite sur l'appareil</h4></div>
+        <div class="head"><div class="emo">📲</div><h4>Installer Acolyte sur l'appareil</h4></div>
         <div class="side"><button class="btn sm ghost" id="pfInstall">Installer</button></div>
       </div>
       <div class="item act">
@@ -563,12 +564,12 @@
     <div class="ph-card">
       <div class="ph-txt">
         <span class="ph-eyebrow">Ton avis compte</span>
-        <h3>Aide Acolite à grandir</h3>
-        <p>Pas de pub intrusive, pas de données revendues. La meilleure façon de soutenir Acolite, c'est de laisser ton avis.</p>
+        <h3>Aide Acolyte à grandir</h3>
+        <p>Pas de pub intrusive, pas de données revendues. La meilleure façon de soutenir Acolyte, c'est de laisser ton avis.</p>
       </div>
-      <a class="ph-link" href="https://www.producthunt.com/products/acolite/reviews/new?utm_source=badge-product_review&amp;utm_medium=badge&amp;utm_source=badge-acolite" target="_blank" rel="noopener">
+      <a class="ph-link" href="https://www.producthunt.com/products/acolyte/reviews/new?utm_source=badge-product_review&amp;utm_medium=badge&amp;utm_source=badge-acolyte" target="_blank" rel="noopener">
         <img src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1273558&amp;theme=light"
-             alt="Donner son avis sur Acolite — Product Hunt" width="250" height="54" loading="lazy">
+             alt="Donner son avis sur Acolyte — Product Hunt" width="250" height="54" loading="lazy">
       </a>
     </div>
 
@@ -584,7 +585,7 @@
 <!-- ===== Auth (création de compte / connexion / vérification) ===== -->
 <div class="auth-wrap hidden" id="authWrap">
   <div class="auth-card">
-    <div class="auth-logo"><span class="logo-mark"></span>Acolite</div>
+    <div class="auth-logo"><span class="logo-mark"></span>Acolyte</div>
     <!-- Le sélecteur du profil est derrière l'inscription : sans celui-ci, un
          visiteur anglophone n'aurait aucun moyen de changer de langue. -->
     <div class="auth-lang" id="stLangAuth" data-noi18n>
@@ -626,7 +627,7 @@
 <div class="overlay" id="ovQs">
   <div class="modal" style="max-height:88vh;overflow-y:auto">
     <h2 style="margin:0 0 4px">🎯 Précisons ton voyage</h2>
-    <p class="sub">Acolite a besoin de quelques précisions pour viser juste. Réponds, et il ajuste tes propositions de voyage.</p>
+    <p class="sub">Acolyte a besoin de quelques précisions pour viser juste. Réponds, et il ajuste tes propositions de voyage.</p>
     <div id="zoneQs"></div>
     <div id="qsProg" class="qs-prog"></div>
     <button class="btn" id="btnQsGo" style="width:100%;justify-content:center;margin-top:14px" disabled>✅ Affiner mes propositions</button>
@@ -641,7 +642,7 @@
       <h2 style="margin:0">Scanner un ticket 📷</h2>
       <button class="close-btn" data-closescan aria-label="Fermer">✕</button>
     </div>
-    <p class="sub">Vise le QR d'un ticket Acolite pour importer le voyage (idéal entre amis).</p>
+    <p class="sub">Vise le QR d'un ticket Acolyte pour importer le voyage (idéal entre amis).</p>
     <video id="scanVideo" playsinline muted style="width:100%;border:3px solid var(--stroke);border-radius:var(--r);background:#101010;min-height:200px"></video>
     <p id="scanMsg" class="hint" style="margin-top:10px"></p>
     <label class="btn ghost sm" style="width:100%;justify-content:center;margin-top:8px">🖼 Ou choisir une photo du ticket
@@ -703,7 +704,7 @@
 <div class="searchbar" id="searchBar" hidden>
   <div class="sb-mark" id="sbMascot"></div>
   <div class="sb-body">
-    <div class="sb-text" id="sbText">Acolite explore le monde…</div>
+    <div class="sb-text" id="sbText">Acolyte explore le monde…</div>
     <div class="sb-track"><i></i></div>
   </div>
 </div>
@@ -730,7 +731,7 @@
       <button class="btn sm" id="pcDownload">⬇ Télécharger</button>
       <button class="btn sm ghost" id="pcShare">📤 Partager</button>
     </div>
-    <p class="hint" style="margin-top:8px">Ajoute <strong>tes photos</strong> ou laisse Acolite chercher des photos du web. Souvenir uniquement.</p>
+    <p class="hint" style="margin-top:8px">Ajoute <strong>tes photos</strong> ou laisse Acolyte chercher des photos du web. Souvenir uniquement.</p>
   </div>
 </div>
 
@@ -907,7 +908,7 @@
   <div class="onboard-card">
     <button class="onboard-skip" id="onboardSkip" aria-label="Passer l'introduction">Passer</button>
     <div class="onboard-emoji" id="onboardEmoji">🌍</div>
-    <h2 id="onboardTitle">Bienvenue sur Acolite</h2>
+    <h2 id="onboardTitle">Bienvenue sur Acolyte</h2>
     <p id="onboardText">Ton copilote de voyage.</p>
     <div class="onboard-foot">
       <span class="onboard-dots" id="onboardDots"></span>

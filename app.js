@@ -1,5 +1,5 @@
 /* ============================================================
-   ACOLITE v2 — copilote de voyage dual-AI
+   ACOLYTE v2 — copilote de voyage dual-AI
    ✦ Gemini = tâches lourdes (destinations, itinéraires, budget…)
    ⚡ Groq   = tâches simples déléguées (valise, phrases, infos, concierge)
    Fichier unique · zéro backend · localStorage
@@ -47,7 +47,7 @@
     }
     setTimeout(hide, 2500);
   });
-  window.__acoliteBoot = { hide: hide };
+  window.__acolyteBoot = { hide: hide };
 })();
 
 const LS_GEM   = 'acolite_gemini_key';
@@ -288,7 +288,7 @@ function updateNetBadge(){
   b.className = 'net-badge' + (off ? ' off' : '');
   b.textContent = off
     ? `📴 Hors connexion${_netQueue.length ? ` · ${_netQueue.length} en attente` : ''} — ton voyage reste consultable`
-    : `🐢 Réseau lent — Acolite allège les chargements`;
+    : `🐢 Réseau lent — Acolyte allège les chargements`;
 }
 addEventListener('online',  () => { _netFails = 0; updateNetBadge(); flushNetQueue(); });
 addEventListener('offline', () => { updateNetBadge(); });
@@ -352,7 +352,7 @@ function nextGemModel(current){
 async function gemErrMsg(r){
   let apiMsg = '';
   try{ const j = await r.json(); apiMsg = j.error?.message || ''; }catch(e){}
-  console.warn('[acolite] moteur IA', r.status, apiMsg);   /* pour le débogage, pas pour l'utilisateur */
+  console.warn('[acolyte] moteur IA', r.status, apiMsg);   /* pour le débogage, pas pour l'utilisateur */
   if(r.status === 429) return 'Beaucoup de monde en ce moment — réessaie dans une minute';
   if(r.status === 503) return 'Service momentanément surchargé — réessaie dans quelques secondes';
   return 'Un souci technique est survenu';
@@ -517,10 +517,10 @@ async function ai(kind, prompt, expectJson = true, maxTok = 4096){
   return { data, via:'gemini' };
 }
 
-/* ---- Mascotte Acolite : la Terre aux grands yeux, qui regarde autour d'elle
+/* ---- Mascotte Acolyte : la Terre aux grands yeux, qui regarde autour d'elle
    pendant que l'IA réfléchit. SVG inline → net partout, zéro fichier, hors-ligne. ---- */
 function mascotSVG(cls = ''){
-  return `<svg class="mascot ${cls}" viewBox="0 0 100 100" role="img" aria-label="Acolite réfléchit">
+  return `<svg class="mascot ${cls}" viewBox="0 0 100 100" role="img" aria-label="Acolyte réfléchit">
     <defs><clipPath id="mGlobeClip"><circle cx="50" cy="50" r="45"/></clipPath></defs>
     <circle class="m-ocean" cx="50" cy="50" r="45"/>
     <g clip-path="url(#mGlobeClip)" class="m-land">
@@ -594,8 +594,8 @@ function travelSceneHTML(){
    de destinations après le questionnaire (voir la barre searchBar). */
 function loaderHTML(msg){ return `<div class="loader">${mascotSVG('loader-solo')}<div class="speech loader-msg">${esc(msg)}</div></div>`; }
 /* La mascotte tient lieu de logo. On masque le SVG aux lecteurs d'écran :
-   le mot « Acolite » juste à côté dit déjà de quoi il s'agit, et l'étiquette
-   par défaut du SVG (« Acolite réfléchit ») serait fausse ici. */
+   le mot « Acolyte » juste à côté dit déjà de quoi il s'agit, et l'étiquette
+   par défaut du SVG (« Acolyte réfléchit ») serait fausse ici. */
 document.querySelectorAll('.logo-mark').forEach(el => {
   el.innerHTML = mascotSVG();
   el.setAttribute('aria-hidden', 'true');
@@ -955,10 +955,10 @@ if(window.matchMedia?.('(pointer:fine)').matches && !motionOff()){
 const _retryFns = {};
 const SUPPORT_MAIL = 'sacha.pellerin.45@icloud.com';
 /* Lien « Signaler » : l'utilisateur n'a aucun détail technique à comprendre,
-   il envoie simplement un mail au créateur d'Acolite. */
+   il envoie simplement un mail au créateur d'Acolyte. */
 function reportMailLink(what){
-  const subject = 'Acolite — un souci technique';
-  const body = `Bonjour,\n\nJ'ai rencontré un problème dans Acolite${what ? ' (' + what + ')' : ''}.\n\nCe que je faisais : \n\n`;
+  const subject = 'Acolyte — un souci technique';
+  const body = `Bonjour,\n\nJ'ai rencontré un problème dans Acolyte${what ? ' (' + what + ')' : ''}.\n\nCe que je faisais : \n\n`;
   return `mailto:${SUPPORT_MAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 function errHTML(msg, retryId){
@@ -974,7 +974,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-retry]');
   if(b && typeof _retryFns[b.dataset.retry] === 'function') _retryFns[b.dataset.retry]();
 });
-/* Plus aucune mention du moteur : pour l'utilisateur, c'est Acolite (la
+/* Plus aucune mention du moteur : pour l'utilisateur, c'est Acolyte (la
    mascotte) qui travaille. Le détail vit uniquement dans la politique de
    confidentialité. On garde la fonction pour ne pas toucher les appels. */
 function badge(){ return ''; }
@@ -1076,7 +1076,7 @@ function readPrefs(extra){
     withWho:$('#fWith')?.value || '',
     stay:  $('#fStay')?.value || '',
     transport: $('#fTransport')?.value || '',
-    /* case cochée → itinéraire multi-pays ; décochée → Acolite décide seul */
+    /* case cochée → itinéraire multi-pays ; décochée → Acolyte décide seul */
     itin:  $('#fMulti')?.checked ? 'pays' : '',
     /* pays imposés — n'a de sens que si la case est cochée */
     pays:  $('#fMulti')?.checked ? _paysChoisis.slice(0, PAYS_MAX) : [],
@@ -1093,17 +1093,17 @@ async function proposeTrips(extra = '', lucky = false, country = ''){
   state.prefs = prefs; save();
   const zone = $('#zoneResults');
   const msgs = country
-    ? [`Acolite cherche LE bon coin en/au ${country}… 🎯`, 'Il compare les villes et les ambiances…', 'Vérification budget, saison & accès…', 'Presque prêt…']
+    ? [`Acolyte cherche LE bon coin en/au ${country}… 🎯`, 'Il compare les villes et les ambiances…', 'Vérification budget, saison & accès…', 'Presque prêt…']
     : lucky
     ? ['Roulette mondiale en cours… 🎲', 'Tirage de destinations inattendues…', 'Vérification budget & saison…', 'Presque prêt…']
-    : ['Acolite explore le monde pour toi… 🌍', 'Analyse de tes envies & ton budget…', 'Sélection de destinations réelles…', 'Transport & quartier pour chacune…', 'Presque prêt…'];
+    : ['Acolyte explore le monde pour toi… 🌍', 'Analyse de tes envies & ton budget…', 'Sélection de destinations réelles…', 'Transport & quartier pour chacune…', 'Presque prêt…'];
   zone.innerHTML = `<div class="card">${loaderHTML(msgs[0])}</div>` + skelCards(3);
   let mi = 0;
   const msgTimer = setInterval(() => { mi++; const m = zone.querySelector('.loader-msg'); if(m) m.textContent = msgs[mi % msgs.length]; }, 2600);
-  searchBar(true, lucky ? 'Roulette mondiale en cours… 🎲' : 'Acolite explore le monde…');
+  searchBar(true, lucky ? 'Roulette mondiale en cours… 🎲' : 'Acolyte explore le monde…');
   $('#btnGo').disabled = true; $('#btnLucky').disabled = true; if($('#btnCountry')) $('#btnCountry').disabled = true;
 
-  const prompt = `Tu es Acolite, un expert voyage français, chaleureux et concret.
+  const prompt = `Tu es Acolyte, un expert voyage français, chaleureux et concret.
 ${ctx()}
 ${lucky ? 'MODE SURPRISE : propose des destinations inattendues, originales, auxquelles le voyageur ne penserait jamais, mais qui collent quand même au budget et à la période.' : ''}
 ${country ? `MODE « SURPRISE DANS UN PAYS » : le voyageur veut absolument voyager en/au ${country}, mais il te laisse CHOISIR l'endroit précis. Propose UNE SEULE destination : une ville, une région ou un lieu PRÉCIS et RÉEL de ${country} — de préférence pas le plus évident/touristique — parfaitement adapté à son budget, sa période et ses envies. Dans "resume", explique clairement POURQUOI c'est LE bon choix surprise dans ce pays. Ignore la règle du nombre de propositions ci-dessous : ici, exactement UNE.` : ''}
@@ -1189,7 +1189,7 @@ function renderDestinations(d){
   const zone = $('#zoneResults');
   const n = (d.destinations||[]).length;
   let html = `<div class="card"><h2>${n > 1 ? 'Compare tes voyages' : 'Ton voyage sur mesure'} 🎒</h2>
-  <p class="sub">${n > 1 ? 'Des propositions volontairement différentes. Compare-les point par point et clique sur celle qui te fait vibrer.' : 'Acolite a concentré ses efforts sur la formule idéale pour ta destination. Clique dessus pour lancer l\'organisation.'}</p>
+  <p class="sub">${n > 1 ? 'Des propositions volontairement différentes. Compare-les point par point et clique sur celle qui te fait vibrer.' : 'Acolyte a concentré ses efforts sur la formule idéale pour ta destination. Clique dessus pour lancer l\'organisation.'}</p>
   <div class="dest-grid">`;
   (d.destinations||[]).forEach((x,i)=>{
     const tIco = ({avion:'✈️',train:'🚆',voiture:'🚗'})[x.transport_conseille]||'✈️';
@@ -1240,7 +1240,7 @@ function renderDestinations(d){
   /* Affinage en langage libre : « pas tout à fait ça… » → relance en tenant compte du feedback */
   html += `<div class="card">
     <h3 style="margin:0 0 4px">✍️ Pas tout à fait ça ?</h3>
-    <p class="sub" style="margin:0 0 10px">Dis à Acolite ce qui cloche, il repropose en en tenant compte.</p>
+    <p class="sub" style="margin:0 0 10px">Dis à Acolyte ce qui cloche, il repropose en en tenant compte.</p>
     <div class="refine-bar">
       <input id="refineInp" class="refine-inp" type="text" placeholder="ex : plus près de la mer, moins cher, plus animé…" aria-label="Ce qui ne va pas dans les propositions">
       <button class="btn sm" id="refineGo">Reproposer →</button>
@@ -1255,7 +1255,7 @@ function renderDestinations(d){
     if(!v) return;
     state.propAnswers = [...(state.propAnswers || []), 'Précision : ' + v].slice(-12);
     save();
-    toast('🎯 Acolite réajuste ses propositions…');
+    toast('🎯 Acolyte réajuste ses propositions…');
     proposeTrips(state.propAnswers.join(' · '));
   };
   const rgo = $('#refineGo'); if(rgo) rgo.onclick = doRefine;
@@ -1417,7 +1417,7 @@ function passHTML(){
         <button class="pact" data-ics title="Ajouter le programme à ton agenda">📅<span>Agenda</span></button>
       </div>
     </div>
-    <p class="pass-note">Ticket souvenir — ne permet pas d'embarquer. Le QR sert uniquement à importer ce voyage dans Acolite.</p>
+    <p class="pass-note">Ticket souvenir — ne permet pas d'embarquer. Le QR sert uniquement à importer ce voyage dans Acolyte.</p>
   </div>`;
 }
 function changeDest(){ gotoStep(1); }
@@ -1442,22 +1442,6 @@ function openSub(t){
   $$('.subtab').forEach(x => x.classList.toggle('on', x.dataset.t === t));
   Object.entries(TAB_PANELS).forEach(([k, sel]) => $(sel)?.classList.toggle('hidden', k !== t));
 }
-/* Colonne de gauche : reflète l'étape en cours et ce qui est verrouillé.
-   Elle ne DÉCIDE de rien — elle affiche l'état, et déléguer le clic à
-   gotoStep() garantit qu'on ne peut pas contourner ses garde-fous. */
-function syncRail(n){
-  $$('#railSteps li').forEach(li => {
-    const s = +li.dataset.railstep;
-    const bloque = (s === 2 && !(state.destinations || []).length) || (s === 3 && !state.trip);
-    li.classList.toggle('on', s === n);
-    li.classList.toggle('off', bloque);
-    li.setAttribute('aria-current', s === n ? 'step' : 'false');
-  });
-}
-document.addEventListener('click', e => {
-  const li = e.target.closest('#railSteps li');
-  if(li && !li.classList.contains('off')) gotoStep(+li.dataset.railstep);
-});
 
 function gotoStep(n, sub){
   n = Math.min(n, 3);
@@ -1467,7 +1451,7 @@ function gotoStep(n, sub){
   $$('.step').forEach(s => s.classList.toggle('active', +s.dataset.step === n));
   /* la colonne de gauche porte le même parcours : elle doit rester d'accord
      avec le fil horizontal, sinon on lit deux états contradictoires */
-  syncRail(n);
+  renderRail();
   [1,2,3].forEach(i => $('#view'+i).classList.toggle('hidden', i !== n));
   refreshPasses();
   window.scrollTo({top:0, behavior:'smooth'});
@@ -1824,10 +1808,10 @@ function paysRender(){
   const h = $('#paysHint');
   if(h){
     h.textContent = !_paysChoisis.length
-      ? (isEN() ? 'Leave empty and Acolite picks the countries for you.' : 'Laisse vide et Acolite choisit les pays pour toi.')
+      ? (isEN() ? 'Leave empty and Acolyte picks the countries for you.' : 'Laisse vide et Acolyte choisit les pays pour toi.')
       : _paysChoisis.length === 1
-        ? (isEN() ? 'Add at least a second country, or Acolite will pick the next ones.' : 'Ajoute au moins un deuxième pays, sinon Acolite choisira les suivants.')
-        : (isEN() ? `${_paysChoisis.length} countries — Acolite works out the best order.` : `${_paysChoisis.length} pays — Acolite trouve le meilleur ordre.`);
+        ? (isEN() ? 'Add at least a second country, or Acolyte will pick the next ones.' : 'Ajoute au moins un deuxième pays, sinon Acolyte choisira les suivants.')
+        : (isEN() ? `${_paysChoisis.length} countries — Acolyte works out the best order.` : `${_paysChoisis.length} pays — Acolyte trouve le meilleur ordre.`);
   }
 }
 function paysAdd(brut){
@@ -2026,7 +2010,7 @@ async function loadPlan(force = false){
   _genBusy = true;
   _retryFns.plan = () => loadPlan(true);
   const p = state.prefs || {};   /* prefs peut être null (voyage rouvert sans préférences) */
-  const msgs = ['Acolite organise ton voyage de A à Z… 🧭', 'Comparaison des transports (prix / durée)…', 'Choix du quartier idéal…', 'Programme jour par jour…',
+  const msgs = ['Acolyte organise ton voyage de A à Z… 🧭', 'Comparaison des transports (prix / durée)…', 'Choix du quartier idéal…', 'Programme jour par jour…',
     ...(SET?.verif !== false ? ['Relecture par une 2ᵉ IA…'] : []), 'Presque prêt…'];
   zone.innerHTML = `<div class="card">${loaderHTML(msgs[0])}</div>` + skelPlan();
   let mi = 0;
@@ -2054,7 +2038,7 @@ TON TRAVAIL : approfondir (détails pratiques, programme jour par jour, budget p
   const co2Ctx = _dist
     ? `CO₂ ESTIMÉ pour ${Math.round(_dist)} km (aller-retour, par personne, calcul réel) : avion ~${Math.round(_dist*2*CO2_G_KM.avion/1000)} kg · train ~${Math.round(_dist*2*CO2_G_KM.train/1000)} kg · voiture ~${Math.round(_dist*2*CO2_G_KM.voiture/Math.max(1,_A)/1000)} kg (partagée entre ${_A} voyageur(s)).`
     : '';
-  const prompt = `Tu es Acolite, organisateur de voyage expert. ${ctx()}
+  const prompt = `Tu es Acolyte, organisateur de voyage expert. ${ctx()}
 ${realCtx}${sightCtx}${co2Ctx ? co2Ctx + '\n' : ''}${dejaTrouve}
 Destination validée : ${t.nom} (${t.pays})${t.ville_aeroport ? ` · point d'arrivée probable : ${t.ville_aeroport}${t.iata ? ' (' + t.iata + ')' : ''}` : ''}.
 RÈGLE ABSOLUE : ne cite que des quartiers, lieux et établissements RÉELS et vérifiables. En cas de doute, omets plutôt qu'inventer.
@@ -2136,7 +2120,7 @@ async function loadEvents(){
   _retryFns.events = loadEvents;
   if(zone) zone.innerHTML = loaderHTML('Recherche des événements…');
   const when = d ? `entre le ${d.in} et le ${d.out}` : (state.prefs?.when || 'à la période prévue');
-  const prompt = `Tu es Acolite, connaisseur de ${t.nom} (${t.pays}). ${ctx()}
+  const prompt = `Tu es Acolyte, connaisseur de ${t.nom} (${t.pays}). ${ctx()}
 Liste les ÉVÉNEMENTS marquants à ${t.nom} pendant le séjour (${when}) : festivals, fêtes locales, grands marchés, matchs importants, expositions, ET jours fériés (musées/commerces fermés).
 N'indique QUE des événements plausibles et récurrents à cette période. Si tu n'es pas certain d'une date, reste vague sur la date plutôt que d'inventer. Maximum 6.
 Réponds UNIQUEMENT en JSON : {"events":[{"nom":"...","quand":"date ou période","type":"festival|fête|marché|sport|expo|férié","note":"1 phrase : intérêt ou impact pratique"}]}`;
@@ -2227,7 +2211,7 @@ async function loadHotels(force = false){
     const g = await geoPlace(quartier ? `${quartier} ${ville}` : ville, ccFor(t.pays)) || await geoPlace(ville, ccFor(t.pays));
     if(g) osmCtx = osmStayCtx(await osmStays(+g.latitude, +g.longitude));
   }catch(e){}
-  const prompt = `Tu es Acolite, connaisseur de l'hébergement à ${ville}${quartier ? ` (quartier ${quartier})` : ''}. ${ctx()}${osmCtx}
+  const prompt = `Tu es Acolyte, connaisseur de l'hébergement à ${ville}${quartier ? ` (quartier ${quartier})` : ''}. ${ctx()}${osmCtx}
 Propose les 4 MEILLEURS hébergements RÉELS et vérifiables pour ce séjour${nuits ? ` de ${nuits} nuit(s)` : ''}, ${A} adulte(s)${K ? ` et ${K} enfant(s)` : ''}.
 Uniquement des établissements qui EXISTENT vraiment (nom exact tel qu'il apparaît sur Booking). Priorité au quartier conseillé${quartier ? ` (${quartier})` : ''}, puis à la proximité des lieux du programme.
 Varie les gammes en restant dans le budget. Classe-les du meilleur rapport qualité/prix au plus haut de gamme.
@@ -2388,7 +2372,7 @@ function panProgramme(d){
   const tip = d.conseil_cle ? `<div class="key-tip"><span class="kt-emo">💡</span><p>${esc(d.conseil_cle)}</p></div>` : '';
   if(!jours.length) return tip + `<p class="hint">Aucune journée planifiée pour l'instant.</p>`;
   return tip
-    + `<p class="pan-intro">Ton programme jour par jour. Une journée ne te va pas ? <strong>Vois-la heure par heure</strong>, ou demande à Acolite de la <strong>refaire</strong>.</p>`
+    + `<p class="pan-intro">Ton programme jour par jour. Une journée ne te va pas ? <strong>Vois-la heure par heure</strong>, ou demande à Acolyte de la <strong>refaire</strong>.</p>`
     + jours.map(jr => `
       <div class="day-block">
         <div class="day-row">
@@ -2830,7 +2814,7 @@ async function loadDayDetail(jour){
   box.innerHTML = loaderHTML('Construction de la journée heure par heure…');
   const jr = (state.cache.plan?.programme || []).find(x => String(x.jour) === String(jour)) || {};
   const pace = { doux:'doux (peu d\'activités, du temps libre)', equilibre:'équilibré (2-3 activités)', intense:'intense (programme dense)' }[SET?.rythme] || 'équilibré';
-  const prompt = `Tu es Acolite, guide local expert de ${t.nom} (${t.pays}). ${ctx()}
+  const prompt = `Tu es Acolyte, guide local expert de ${t.nom} (${t.pays}). ${ctx()}
 Détaille HEURE PAR HEURE le JOUR ${jour} du séjour.
 Thème de la journée : ${jr.resume || 'à toi de le définir'}
 Lieux déjà prévus ce jour (à intégrer, dans un ordre logique et géographiquement cohérent) : ${(jr.lieux || []).join(', ') || 'à toi de choisir'}
@@ -2902,14 +2886,14 @@ document.addEventListener('click', e => {
     state.propAnswers = (state.propAnswers || []).slice(-12);
     state._qsDone = true; save();
     $('#ovQs').classList.remove('show');
-    toast('🎯 Merci — Acolite affine tes propositions…');
+    toast('🎯 Merci — Acolyte affine tes propositions…');
     proposeTrips(state.propAnswers.join(' · '));   /* on relance les PROPOSITIONS avec les réponses */
     return;
   }
   if(e.target.id === 'btnQsSkip'){
     state._qsDone = true; save();
     $('#ovQs').classList.remove('show');
-    toast('Ok, Acolite garde ses propositions actuelles 👍');
+    toast('Ok, Acolyte garde ses propositions actuelles 👍');
   }
 });
 
@@ -3024,7 +3008,7 @@ async function loadTransport(){
 
   let prompt;
   if(state.mode === 'plane'){
-    prompt = `Tu es Acolite, expert voyage. ${ctx()}
+    prompt = `Tu es Acolyte, expert voyage. ${ctx()}
 Le voyageur part en AVION de ${p.from} vers ${t.nom} (${t.pays}).
 Réponds UNIQUEMENT en JSON :
 {
@@ -3038,7 +3022,7 @@ Réponds UNIQUEMENT en JSON :
  "conseils":["4 conseils concrets : quand réserver, quel jour partir moins cher, bagages, transfert aéroport→centre-ville avec prix"]
 }`;
   } else if(state.mode === 'car'){
-    prompt = `Tu es Acolite, expert voyage. ${ctx()}
+    prompt = `Tu es Acolyte, expert voyage. ${ctx()}
 Le voyageur part en VOITURE de ${p.from} vers ${t.nom} (${t.pays}).
 Réponds UNIQUEMENT en JSON :
 {
@@ -3050,7 +3034,7 @@ Réponds UNIQUEMENT en JSON :
  "conseils":["4 conseils concrets : vignettes/péages du pays, meilleure heure de départ, stationnement sur place, points de vigilance"]
 }`;
   } else {
-    prompt = `Tu es Acolite, expert voyage. ${ctx()}
+    prompt = `Tu es Acolyte, expert voyage. ${ctx()}
 Le voyageur part en TRAIN de ${p.from} vers ${t.nom} (${t.pays}).
 Réponds UNIQUEMENT en JSON :
 {
@@ -3478,7 +3462,7 @@ async function loadStay(){
   zone.innerHTML = loaderHTML('Repérage des meilleurs quartiers…');
   const t = state.trip;
   const styp = $('#stayType').value, sprio = $('#stayPrio').value;
-  const prompt = `Tu es Acolite, expert voyage. ${ctx()}
+  const prompt = `Tu es Acolyte, expert voyage. ${ctx()}
 Recommande où loger à ${t.nom} (${t.pays}) pour ce profil.
 ${state.cache.plan?.logement ? 'PLAN VALIDÉ — le voyageur a accepté : ' + state.cache.plan.logement.type + ' dans le quartier ' + state.cache.plan.logement.quartier + ' (~' + state.cache.plan.logement.prix_nuit + '). Mets ce quartier en premier et propose 2 alternatives.' : ''}
 ${styp ? 'Type de logement souhaité : ' + styp + '.' : ''}
@@ -3565,7 +3549,7 @@ function itiPrompt(day){
   const t = state.trip;
   const pace = $('#itiPace').value, wish = $('#itiWish').value.trim();
   const start = $('#itiStart').value, end = $('#itiEnd').value, move = $('#itiMove').value;
-  return `Tu es Acolite, guide local expert de ${t.nom} (${t.pays}). ${ctx()}
+  return `Tu es Acolyte, guide local expert de ${t.nom} (${t.pays}). ${ctx()}
 Construis le programme du JOUR ${day} du séjour.
 - Rythme : ${pace} · Journée de ${start} à ${end} · Déplacements : ${move}
 ${wish ? '- Envie particulière : '+wish : ''}
@@ -3584,7 +3568,7 @@ Entre 6 et 9 étapes.`;
 /* ============================================================
    JOURNÉE HEURE PAR HEURE — modifiable et réorganisable
    ------------------------------------------------------------
-   Le programme d'Acolite est un point de départ, pas un ordre : le voyageur
+   Le programme d'Acolyte est un point de départ, pas un ordre : le voyageur
    doit pouvoir déplacer un moment, corriger une heure, en ajouter un ou en
    retirer un. Tout est écrit dans state.cache.days[jour].etapes et sauvé.
    ⚠️ Comme les commentaires (_comDrafts), la saisie en cours DOIT survivre à
@@ -3759,7 +3743,7 @@ const _e8 = $('#btnItiAll'); if(_e8) _e8.onclick = async () => {
   zone.innerHTML = loaderHTML(`Planification des ${n} jours… (ça peut prendre ~30s)`);
   $('#btnItiAll').disabled = true;
   const pace = $('#itiPace').value, move = $('#itiMove').value;
-  const prompt = `Tu es Acolite, guide local expert de ${t.nom} (${t.pays}). ${ctx()}
+  const prompt = `Tu es Acolyte, guide local expert de ${t.nom} (${t.pays}). ${ctx()}
 Construis le programme COMPLET du séjour sur ${n} jours. Rythme : ${pace}. Déplacements : ${move}.
 Chaque jour a un thème différent, sans répéter les lieux. Jour 1 = incontournables. Prévois une demi-journée détente vers le milieu.
 Réponds UNIQUEMENT en JSON :
@@ -3814,7 +3798,7 @@ async function loadFood(){
     }
   }catch(e){}
 
-  const prompt = `Tu es Acolite, fin connaisseur des bonnes tables de ${t.nom} (${t.pays}). ${ctx()}${foodCtx}
+  const prompt = `Tu es Acolyte, fin connaisseur des bonnes tables de ${t.nom} (${t.pays}). ${ctx()}${foodCtx}
 ${fb ? 'Budget souhaité : ' + fb + '.' : ''}
 ${ft ? 'Envie : ' + ft + '.' : ''}
 OBJECTIF : des adresses où l'on mange BIEN sans payer le prix touristique.
@@ -3868,8 +3852,8 @@ function renderFood(d){
       </div>
     </div>`).join('')
     + `<p class="hint" style="margin-top:12px">${d._verifies
-        ? '✅ Adresses <strong>relevées sur OpenStreetMap</strong> : elles existent bel et bien. Acolite a choisi parmi elles.'
-        : 'Sélection d\'Acolite — vérifie les horaires avant de t\'y rendre.'} Les avis se consultent en un clic.</p>`;
+        ? '✅ Adresses <strong>relevées sur OpenStreetMap</strong> : elles existent bel et bien. Acolyte a choisi parmi elles.'
+        : 'Sélection d\'Acolyte — vérifie les horaires avant de t\'y rendre.'} Les avis se consultent en un clic.</p>`;
 }
 
 /* ============================================================
@@ -3880,7 +3864,7 @@ async function loadShop(){
   if(state.cache.shop){ renderShop(state.cache.shop, state.cache.shopVia); return; }
   zone.innerHTML = loaderHTML('Repérage des supermarchés…');
   const t = state.trip;
-  const prompt = `Tu es Acolite, expert du quotidien à ${t.nom} (${t.pays}). ${ctx()}
+  const prompt = `Tu es Acolyte, expert du quotidien à ${t.nom} (${t.pays}). ${ctx()}
 Réponds UNIQUEMENT en JSON :
 {
  "supermarches":[{"nom":"chaîne réelle du pays","niveau":"discount|standard|premium","astuce":"1 phrase utile (horaires, ce qu'on y trouve, prix)"}],
@@ -3921,7 +3905,7 @@ async function loadSpec(){
   if(state.cache.spec){ renderSpec(state.cache.spec, state.cache.specVia); return; }
   zone.innerHTML = loaderHTML('Enquête gourmande…');
   const t = state.trip;
-  const prompt = `Tu es Acolite, passionné de gastronomie de ${t.nom} (${t.pays}). ${ctx()}
+  const prompt = `Tu es Acolyte, passionné de gastronomie de ${t.nom} (${t.pays}). ${ctx()}
 Réponds UNIQUEMENT en JSON :
 {
  "specialites":[{"nom":"plat/produit local","emoji":"1 emoji","description":"c'est quoi, en 1-2 phrases appétissantes","ou_gouter":"type d'endroit ou lieu précis","prix":"fourchette locale"}],
@@ -3957,7 +3941,7 @@ async function loadBag(){
   const R = state.cache._real || {};
   const d = stayDates();
   const nuits = d ? Math.max(1, Math.round((new Date(d.out) - new Date(d.in)) / 86400000)) : null;
-  const prompt = `Tu es Acolite. ${ctx()}
+  const prompt = `Tu es Acolyte. ${ctx()}
 Génère la checklist valise idéale pour ce voyage à ${t.nom} (${t.pays}).
 ${R.meteo ? `MÉTÉO RÉELLE MESURÉE (adapte les vêtements À CES CHIFFRES, ne les contredis pas) : ${R.meteo}` : ''}
 ${nuits ? `DURÉE EXACTE : ${nuits} nuit(s) — dimensionne les quantités (nombre de t-shirts, sous-vêtements…) sur cette durée précise.` : ''}
@@ -4018,7 +4002,7 @@ async function loadTalk(){
   if(state.cache.talk){ renderTalk(state.cache.talk, state.cache.talkVia); return; }
   zone.innerHTML = loaderHTML('Traduction en cours…');
   const t = state.trip;
-  const prompt = `Tu es Acolite. Destination : ${t.nom} (${t.pays}), langue locale : ${t.langue || 'langue du pays'}.
+  const prompt = `Tu es Acolyte. Destination : ${t.nom} (${t.pays}), langue locale : ${t.langue || 'langue du pays'}.
 Si la langue locale est le français, donne plutôt les expressions/argot local typiques de la région.
 Réponds UNIQUEMENT en JSON :
 {"langue":"nom de la langue","phrases":[
@@ -4052,7 +4036,7 @@ async function loadBudget(){
   if(state.cache.bud){ renderBudget(state.cache.bud); return; }
   zone.innerHTML = loaderHTML('Calcul du budget…');
   const t = state.trip;
-  const prompt = `Tu es Acolite, expert budget voyage. ${ctx()}
+  const prompt = `Tu es Acolyte, expert budget voyage. ${ctx()}
 Estime le budget TOTAL réaliste par personne pour ce séjour à ${t.nom} (${t.pays}), en euros.
 Réponds UNIQUEMENT en JSON :
 {
@@ -4133,7 +4117,7 @@ function renderSpends(){
       ${pct > 100 ? `<p class="hint" style="margin-top:6px;font-weight:800;color:var(--accent-orange)">🚨 Budget dépassé de ${Math.round(total - est)} €.</p>` : ''}`;
   }
   if(!state.spends.length){
-    zone.innerHTML = bar + `<p class="hint">Aucune dépense enregistrée. Ajoute-les au fil du séjour : Acolite compare en direct avec le budget prévu par l'IA et te prévient si tu dérives.</p>`;
+    zone.innerHTML = bar + `<p class="hint">Aucune dépense enregistrée. Ajoute-les au fil du séjour : Acolyte compare en direct avec le budget prévu par l'IA et te prévient si tu dérives.</p>`;
     return;
   }
   zone.innerHTML = bar + state.spends.map((s, i) => `
@@ -4161,11 +4145,11 @@ document.addEventListener('click', e => {
 const _e11 = $('#btnExport'); if(_e11) _e11.onclick = () => {
   if(!state.trip){ toast('Choisis d’abord une destination'); return; }
   const t = state.trip, p = state.prefs || {}, c = state.cache;
-  let md = `# ✈️ Voyage Acolite — ${t.nom}, ${t.pays}\n\n`;
+  let md = `# ✈️ Voyage Acolyte — ${t.nom}, ${t.pays}\n\n`;
   md += `- **Départ :** ${p.from||''}\n- **Durée :** ${p.days||''}\n- **Période :** ${p.when||'flexible'}\n- **Budget :** ${t.budget_estime||''}\n- **Voyageurs :** ${p.who||''}\n\n${t.resume||''}\n`;
   if(c.plan){
     const pl = c.plan;
-    md += `\n## 🤖 Plan Acolite${state.planOk ? ' (validé ✅)' : ''}\n`;
+    md += `\n## 🤖 Plan Acolyte${state.planOk ? ' (validé ✅)' : ''}\n`;
     md += `- **Transport choisi :** ${pl.transport?.mode||''} — ${pl.transport?.pourquoi||''} (${pl.transport?.prix_estime||''})\n`;
     md += `- **Logement :** ${pl.logement?.type||''} à ${pl.logement?.quartier||''} (${pl.logement?.prix_nuit||''}/nuit)\n`;
     md += `- **Budget total :** ${pl.budget?.total||''} €/pers — ${pl.budget?.repartition||''}\n`;
@@ -4214,11 +4198,11 @@ const _e11 = $('#btnExport'); if(_e11) _e11.onclick = () => {
     md += `\n## 💳 Dépenses réelles : ${tot.toFixed(2)} €\n`;
     state.spends.forEach(s=> md += `- ${s.label} : ${s.amount.toFixed(2)} €\n`);
   }
-  md += `\n---\n_Généré par Acolite ✦ Gemini ⚡ Groq_\n`;
+  md += `\n---\n_Généré par Acolyte ✦ Gemini ⚡ Groq_\n`;
   const blob = new Blob([md], {type:'text/markdown'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `acolite-${t.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-')}.md`;
+  a.download = `acolyte-${t.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-')}.md`;
   a.click();
   URL.revokeObjectURL(a.href);
   toast('Voyage exporté 📄');
@@ -4334,7 +4318,7 @@ function buildDossierHTML(){
   const dates = d ? `${d.in} → ${d.out}` : (p.when || 'dates flexibles');
   const A = `${p.adults || 2} adulte(s)${p.kids ? ' + ' + p.kids + ' enfant(s)' : ''}`;
   let h = `<div class="cover">
-    <p class="brand">ACOLITE · CARNET DE VOYAGE</p>
+    <p class="brand">ACOLYTE · CARNET DE VOYAGE</p>
     <h1>${esc2(t.nom)}</h1>
     <div class="rule"></div>
     <p class="meta">${esc2(t.pays || '')}${t.pays ? ' · ' : ''}${esc2(dates)}<br>${esc2(A)} · départ de ${esc2(p.from || '—')}</p>
@@ -4381,7 +4365,7 @@ function buildDossierHTML(){
   }
   if(pl.conseil_cle) h += `<section><h2>Le conseil à retenir</h2><p>${esc2(pl.conseil_cle)}</p></section>`;
   if((state.notes || '').trim()) h += `<section><h2>Mes notes</h2><p>${esc2(state.notes).replace(/\n/g, '<br>')}</p></section>`;
-  h += `<footer>Ticket souvenir — ne permet pas d'embarquer. Prix et horaires : estimations à vérifier. acolite</footer>`;
+  h += `<footer>Ticket souvenir — ne permet pas d'embarquer. Prix et horaires : estimations à vérifier. acolyte</footer>`;
   return h;
 }
 function openDossier(){
@@ -4398,17 +4382,17 @@ function openDossier(){
 const _eDos = $('#btnDossier'); if(_eDos) _eDos.onclick = openDossier;
 
 /* --- Signal hors-ligne : rassure le voyageur, son plan reste là --- */
-window.addEventListener('offline', () => toast('📴 Hors connexion — ton plan reste consultable dans Acolite'));
+window.addEventListener('offline', () => toast('📴 Hors connexion — ton plan reste consultable dans Acolyte'));
 
 /* --- Sauvegarde / restauration du voyage complet (fichier .json) ---
    Sécurise les données contre un vidage du localStorage / changement d'appareil. */
 function backupTrip(){
   try{
-    const data = { _acolite: 'trip-backup', v: 1, when: Date.now(), state };
+    const data = { _acolyte: 'trip-backup', v: 1, when: Date.now(), state };
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `acolite-voyage-${String(state.trip?.nom || 'brouillon').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`;
+    a.download = `acolyte-voyage-${String(state.trip?.nom || 'brouillon').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`;
     a.click(); URL.revokeObjectURL(a.href);
     toast('💾 Voyage sauvegardé dans un fichier');
   }catch(e){ toast('Sauvegarde impossible'); }
@@ -4419,8 +4403,8 @@ function restoreTrip(file){
     try{
       const data = JSON.parse(rd.result);
       const s = (data && data.state) ? data.state : data;   /* tolère un state brut */
-      const looksAcolite = data?._acolite === 'trip-backup' || (s && ['trip','prefs','cache','destinations'].some(k => k in s));
-      if(!s || typeof s !== 'object' || Array.isArray(s) || !looksAcolite) throw new Error('bad');
+      const looksAcolyte = data?._acolyte === 'trip-backup' || (s && ['trip','prefs','cache','destinations'].some(k => k in s));
+      if(!s || typeof s !== 'object' || Array.isArray(s) || !looksAcolyte) throw new Error('bad');
       /* on ne fusionne PLUS le JSON tel quel : il vient d'un fichier, donc
          de l'extérieur. safeState() ne garde que des clés connues et typées. */
       state = safeState(s);
@@ -4430,7 +4414,7 @@ function restoreTrip(file){
       renderGallery();
       if(state.trip){ unlockSteps(); gotoStep(Math.min(3, state.step || 3)); }
       else gotoStep(1);
-    }catch(e){ toast('Fichier invalide — ce n’est pas une sauvegarde Acolite'); }
+    }catch(e){ toast('Fichier invalide — ce n’est pas une sauvegarde Acolyte'); }
   };
   rd.onerror = () => toast('Lecture du fichier impossible');
   rd.readAsText(file);
@@ -4447,7 +4431,7 @@ async function loadAct(){
   const t = state.trip;
   // liens de résa (toujours dispo)
   const gyg = `https://www.getyourguide.fr/-l0/?q=${encodeURIComponent(t.nom)}`;
-  const civ = `https://www.civitatis.com/fr/?ns_campaign=acolite#s=${encodeURIComponent(t.nom)}`;
+  const civ = `https://www.civitatis.com/fr/?ns_campaign=acolyte#s=${encodeURIComponent(t.nom)}`;
   const tam = `https://www.tripadvisor.fr/Search?q=${encodeURIComponent(t.nom + ' activités')}`;
   $('#actLinks').innerHTML = `
     <a class="btn" href="${gyg}" target="_blank" rel="noopener">GetYourGuide</a>
@@ -4455,7 +4439,7 @@ async function loadAct(){
     <a class="btn ghost" href="${tam}" target="_blank" rel="noopener">Tripadvisor</a>`;
   if(state.cache.act){ renderAct(state.cache.act); return; }
   zone.innerHTML = loaderHTML('Repérage des meilleures activités…');
-  const prompt = `Tu es Acolite, guide local de ${t.nom} (${t.pays}). ${ctx()}
+  const prompt = `Tu es Acolyte, guide local de ${t.nom} (${t.pays}). ${ctx()}
 Liste les meilleures activités et expériences à vivre sur place, adaptées au profil.
 Réponds UNIQUEMENT en JSON :
 {"activites":[
@@ -4913,10 +4897,10 @@ function enterApp(){
 ============================================================ */
 const CHANGELOG = [
   { v:'5.0', date:'2026-07-24', titre:'Des voyages à travers plusieurs pays', items:[
-    '🌍 Une case à cocher dans le questionnaire : « Traverser plusieurs pays », et Acolite construit un grand itinéraire',
-    '🧭 Acolite enchaîne alors les étapes dans un ordre logique, avec les trajets entre elles comptés dans le budget',
+    '🌍 Une case à cocher dans le questionnaire : « Traverser plusieurs pays », et Acolyte construit un grand itinéraire',
+    '🧭 Acolyte enchaîne alors les étapes dans un ordre logique, avec les trajets entre elles comptés dans le budget',
     '📷 Le QR de ton ticket s’ouvre maintenant avec l’appareil photo de n’importe quel téléphone — plus besoin de passer par l’app',
-    '🔗 Un lien de voyage reçu quand Acolite est déjà ouvert s’importe tout de suite'
+    '🔗 Un lien de voyage reçu quand Acolyte est déjà ouvert s’importe tout de suite'
   ]},
   { v:'4.9', date:'2026-07-24', titre:'Des chiffres plus clairs côté coulisses', items:[
     '📊 Le tableau de bord montre l’essentiel d’un coup d’œil : courbe des inscriptions, parcours, saisons, budgets',
@@ -4933,10 +4917,10 @@ const CHANGELOG = [
     '🏓 « Ne me lâche pas » : un pong où la mascotte est la balle — et elle râle à chaque choc',
     '🧳 « Bagage express » : le tapis défile, attrape ce qu’il faut emporter avant que la destination change'
   ]},
-  { v:'4.6', date:'2026-07-24', titre:'Acolite parle anglais', items:[
-    '🇬🇧 Bascule tout Acolite en anglais depuis ton profil — interface comprise',
+  { v:'4.6', date:'2026-07-24', titre:'Acolyte parle anglais', items:[
+    '🇬🇧 Bascule tout Acolyte en anglais depuis ton profil — interface comprise',
     '✈️ Tes voyages sont aussi écrits en anglais : programme, conseils, budget, tout',
-    '🌍 Si ton téléphone n’est pas en français, Acolite s’ouvre directement en anglais'
+    '🌍 Si ton téléphone n’est pas en français, Acolyte s’ouvre directement en anglais'
   ]},
   { v:'4.5', date:'2026-07-24', titre:'Une carte qui montre enfin ta journée', items:[
     '🗺️ Chaque journée se lit d’un coup d’œil : tes étapes numérotées, reliées dans l’ordre de la balade, avec ton hôtel repéré',
@@ -4945,7 +4929,7 @@ const CHANGELOG = [
     '📴 La carte reste consultable sans connexion une fois que tu l’as ouverte — pratique en avion ou à l’étranger'
   ]},
   { v:'4.4', date:'2026-07-24', titre:'Des restaurants qui existent vraiment', items:[
-    '🍽️ Acolite relève les vraies adresses du quartier et choisit parmi elles — fini les restaurants inventés',
+    '🍽️ Acolyte relève les vraies adresses du quartier et choisit parmi elles — fini les restaurants inventés',
     '💶 Il vise le bon rapport qualité/prix : cuisine locale, menu du midi, loin des pièges à touristes',
     '🍴 Chaque adresse indique le plat à commander, une fourchette de prix chiffrée et pourquoi elle vaut le détour'
   ]},
@@ -4965,9 +4949,9 @@ const CHANGELOG = [
     '🏨 Les logements ont de vraies fiches : étoiles, prix par nuit, et Airbnb pour les appartements'
   ]},
   { v:'4.0', date:'2026-07-24', titre:'Nouveau look et voyage en temps réel', items:[
-    '🌍 Le globe coiffe désormais le « i » d’ACOLITE — un vrai logo',
+    '🌍 Le globe coiffe désormais le « i » d’ACOLYTE — un vrai logo',
     '✨ Écran de démarrage à l’effigie de la mascotte, et transitions plus douces entre les écrans',
-    '📍 Pendant ton séjour, Acolite s’ouvre directement sur la journée du moment'
+    '📍 Pendant ton séjour, Acolyte s’ouvre directement sur la journée du moment'
   ]},
   { v:'3.8', date:'2026-07-24', titre:'Un titre, et un secret bien caché', items:[
     '🧳 La barre de ton voyage a désormais un titre « Ton voyage »',
@@ -4998,7 +4982,7 @@ const CHANGELOG = [
   ]},
   { v:'3.3', date:'2026-07-23', titre:'Un bandeau de trajet plus clair et des événements automatiques', items:[
     '🧭 Le bandeau de ton trajet est redessiné : le départ et l’arrivée en grand, les infos en étiquettes lisibles',
-    '🎉 Plus besoin de cliquer « Voir les événements » : Acolite les cherche dès qu’il organise ton voyage',
+    '🎉 Plus besoin de cliquer « Voir les événements » : Acolyte les cherche dès qu’il organise ton voyage',
     '➕ Ils sont prêts dans l’onglet Événements, à ajouter à ton programme en un clic'
   ]},
   { v:'3.2', date:'2026-07-23', titre:'La page « Ton voyage » remise au clair', items:[
@@ -5023,13 +5007,13 @@ const CHANGELOG = [
     '💛 Le bloc « donne ton avis » a été redessiné'
   ]},
   { v:'2.3', date:'2026-07-22', titre:'Tu choisis comment tu voyages', items:[
-    '🚆 Nouveau choix dans le questionnaire : train, voiture, avion ou peu importe — Acolite construit le trajet avec ce que tu as choisi',
+    '🚆 Nouveau choix dans le questionnaire : train, voiture, avion ou peu importe — Acolyte construit le trajet avec ce que tu as choisi',
     '🌍 Le logo est plus grand, la mascotte se voit enfin',
-    '🧳 Quand Acolite ne propose qu’un seul voyage, il se déploie en largeur sur ordinateur',
+    '🧳 Quand Acolyte ne propose qu’un seul voyage, il se déploie en largeur sur ordinateur',
     '🧹 La fiche pratique a été retirée'
   ]},
   { v:'2.2', date:'2026-07-22', titre:'Des logements qui existent vraiment', items:[
-    '🏨 Acolite relève les hébergements réels autour de ton quartier sur OpenStreetMap, puis choisit dedans',
+    '🏨 Acolyte relève les hébergements réels autour de ton quartier sur OpenStreetMap, puis choisit dedans',
     '📍 Chaque proposition existe donc pour de vrai, avec sa distance au quartier conseillé',
     '🔗 Les liens Airbnb, Booking et Abritel restent pré-remplis avec tes dates pour voir les prix du jour'
   ]},
@@ -5055,14 +5039,14 @@ const CHANGELOG = [
     '🌙 L’étape verrouillée et les cartes survolées ne s’éclairent plus en blanc non plus',
     '📱 Sur téléphone, la barre reste en bas, à portée de pouce'
   ]},
-  { v:'1.7', date:'2026-07-22', titre:'Acolite s’installe enfin sur grand écran', items:[
+  { v:'1.7', date:'2026-07-22', titre:'Acolyte s’installe enfin sur grand écran', items:[
     '🖥️ Sur ordinateur, la barre du bas devient un petit îlot posé au centre — fini le bandeau qui traverse tout l’écran',
     '🧳 Dans « Ton voyage », « Réserver » et « À savoir avant de partir » se placent côte à côte : deux fois moins à faire défiler',
     '💶 Le budget s’affiche sur une seule ligne au lieu de deux',
     '📱 Rien ne change sur téléphone'
   ]},
   { v:'1.6', date:'2026-07-22', titre:'Une mascotte pendant les chargements', items:[
-    '🌍 Le globe d’Acolite tourne les yeux partout pendant que l’IA réfléchit',
+    '🌍 Le globe d’Acolyte tourne les yeux partout pendant que l’IA réfléchit',
     '✨ Il remplace l’ancien rond qui tournait, sur tous les écrans de chargement',
     '♿ Animation coupée automatiquement si tu as réduit les animations sur ton appareil'
   ]},
@@ -5135,7 +5119,7 @@ function openNews(all){
   const body = $('#newsBody');
   const intro = all
     ? `<p class="news-intro">Tout ce qui a changé depuis le début, du plus récent au plus ancien.</p>`
-    : `<div class="news-hello">${mascotSVG()}<p>Acolite a été mis à jour pendant ton absence — voici ce qui change.</p></div>`;
+    : `<div class="news-hello">${mascotSVG()}<p>Acolyte a été mis à jour pendant ton absence — voici ce qui change.</p></div>`;
   if(body) body.innerHTML = intro + `<div class="news-rail">${newsHTML(list)}</div>`;
   $('#ovNews')?.classList.add('show');
 }
@@ -5169,21 +5153,21 @@ const LS_PRIVACY = 'acolite_privacy';
 const privacyAccepted = () => { try{ return localStorage.getItem(LS_PRIVACY) === PRIVACY_VERSION; }catch(e){ return false; } };
 function privacyHTML(){
   return `
-  <p class="sub" style="margin:0 0 14px">En vigueur au ${esc(PRIVACY_VERSION)}. Acolite protège tes données : pas de publicité ciblée et <strong>sans revente d'aucune donnée</strong>. Pour toute question : <a href="${reportMailLink('confidentialité')}">${esc(SUPPORT_MAIL)}</a>.</p>
+  <p class="sub" style="margin:0 0 14px">En vigueur au ${esc(PRIVACY_VERSION)}. Acolyte protège tes données : pas de publicité ciblée et <strong>sans revente d'aucune donnée</strong>. Pour toute question : <a href="${reportMailLink('confidentialité')}">${esc(SUPPORT_MAIL)}</a>.</p>
   <div class="legal">
     <h4>1. Responsable du traitement</h4>
-    <p>Acolite est une application de préparation de voyage, éditée à titre personnel et proposée « en l'état ». Contact : <a href="${reportMailLink('confidentialité')}">${esc(SUPPORT_MAIL)}</a>.</p>
+    <p>Acolyte est une application de préparation de voyage, éditée à titre personnel et proposée « en l'état ». Contact : <a href="${reportMailLink('confidentialité')}">${esc(SUPPORT_MAIL)}</a>.</p>
 
     <h4>2. Les données que nous traitons</h4>
     <p>• <strong>Compte</strong> : ton adresse email et une empreinte chiffrée de ton mot de passe (le mot de passe lui-même n'est jamais stocké ni lisible, y compris par nous).<br>
-    • <strong>Contenu de voyage</strong> : ce que tu saisis (destinations, dates, notes, dépenses, préférences) et ce qu'Acolite génère pour toi. Enregistré dans ton navigateur, et — si tu as un compte — copié sur notre serveur pour te suivre d'un appareil à l'autre.<br>
+    • <strong>Contenu de voyage</strong> : ce que tu saisis (destinations, dates, notes, dépenses, préférences) et ce qu'Acolyte génère pour toi. Enregistré dans ton navigateur, et — si tu as un compte — copié sur notre serveur pour te suivre d'un appareil à l'autre.<br>
     • <strong>Aucune</strong> localisation précise, aucun accès à tes contacts, aucun traceur ni cookie publicitaire.</p>
 
     <h4>3. Finalités & base légale</h4>
     <p>Tes données servent uniquement à faire fonctionner le service que tu demandes : créer ton compte, construire et retrouver tes voyages. La base légale est l'exécution du service et ton consentement, que tu peux retirer à tout moment en supprimant ton compte.</p>
 
     <h4>4. Prestataires techniques (transparence complète)</h4>
-    <p>Pour fonctionner, Acolite transmet le strict nécessaire à des prestataires, sans jamais leur transmettre ton mot de passe :</p>
+    <p>Pour fonctionner, Acolyte transmet le strict nécessaire à des prestataires, sans jamais leur transmettre ton mot de passe :</p>
     <p>• <strong>Intelligence artificielle</strong> — la préparation de ton voyage s'appuie sur les modèles <strong>Google Gemini</strong> (raisonnement) et <strong>Groq</strong> (tâches rapides). Ce que tu écris pour décrire ton voyage leur est envoyé afin de générer des propositions. Nos clés d'accès sont gardées secrètes sur notre serveur ; elles ne transitent jamais par ton navigateur.<br>
     • <strong>Envoi d'emails</strong> — les codes de vérification sont expédiés via <strong>EmailJS</strong>.<br>
     • <strong>Données ouvertes</strong> — météo et géocodage (Open-Meteo), horaires et prix de transport (Deutsche Bahn, Ryanair), jours fériés (Nager.Date), taux de change (Frankfurter), lieux et cartes (OpenStreetMap, Wikipédia, Wikivoyage).<br>
@@ -5200,10 +5184,10 @@ function privacyHTML(){
     <p>Tu peux consulter, corriger ou effacer tes données directement dans l'application. La <strong>suppression de ton compte</strong> (depuis ton profil) efface définitivement tout ce qui est associé à ton compte, côté serveur comme dans ce navigateur. Pour exercer un autre droit (accès, opposition, portabilité), écris à <a href="${reportMailLink('mes données')}">${esc(SUPPORT_MAIL)}</a>.</p>
 
     <h4>8. Mineurs</h4>
-    <p>Acolite n'est pas destiné aux personnes de moins de 15 ans sans l'accord d'un représentant légal.</p>
+    <p>Acolyte n'est pas destiné aux personnes de moins de 15 ans sans l'accord d'un représentant légal.</p>
 
     <h4>9. Limites & responsabilité</h4>
-    <p>Les destinations, itinéraires, prix, horaires et conseils sont <strong>générés automatiquement</strong> et peuvent comporter des <strong>erreurs, approximations ou informations périmées</strong>. Ils sont fournis à titre purement indicatif : <strong>vérifie toujours</strong> les informations essentielles (documents de voyage, horaires, disponibilités, tarifs, conditions sanitaires et de sécurité) auprès des transporteurs, hébergeurs et autorités officielles avant de réserver ou de partir. Dans les limites permises par la loi, Acolite et son éditeur ne sauraient être tenus responsables d'un dommage, d'une perte, d'une dépense ou d'un préjudice, direct ou indirect, résultant de l'usage du service, d'une information erronée, d'une décision prise sur cette base, ou d'une interruption du service. Tu utilises Acolite sous ta seule responsabilité.</p>
+    <p>Les destinations, itinéraires, prix, horaires et conseils sont <strong>générés automatiquement</strong> et peuvent comporter des <strong>erreurs, approximations ou informations périmées</strong>. Ils sont fournis à titre purement indicatif : <strong>vérifie toujours</strong> les informations essentielles (documents de voyage, horaires, disponibilités, tarifs, conditions sanitaires et de sécurité) auprès des transporteurs, hébergeurs et autorités officielles avant de réserver ou de partir. Dans les limites permises par la loi, Acolyte et son éditeur ne sauraient être tenus responsables d'un dommage, d'une perte, d'une dépense ou d'un préjudice, direct ou indirect, résultant de l'usage du service, d'une information erronée, d'une décision prise sur cette base, ou d'une interruption du service. Tu utilises Acolyte sous ta seule responsabilité.</p>
 
     <h4>10. Évolutions</h4>
     <p>Cette politique peut évoluer. En cas de changement important, ton acceptation te sera redemandée à l'ouverture de l'application.</p>
@@ -5241,7 +5225,7 @@ function requirePrivacy(){
 /* --- Onboarding première visite (3 slides, mémorisé) --- */
 const ONB_KEY = 'acolite_onboarded';
 const ONB_STEPS = [
-  { emoji:'🌍', title:'Décris tes envies', text:'Ton budget, tes dates, ton ambiance. Acolite imagine des destinations sur mesure — jamais une liste générique.' },
+  { emoji:'🌍', title:'Décris tes envies', text:'Ton budget, tes dates, ton ambiance. Acolyte imagine des destinations sur mesure — jamais une liste générique.' },
   { emoji:'🧭', title:'Compare & choisis', text:'Des propositions volontairement différentes, alignées point par point. Tu choisis celle qui te fait vibrer.' },
   { emoji:'🎒', title:'Ton voyage clé en main', text:'Programme jour par jour, budget, hôtels et vols réels, ticket d’embarquement… et tout reste accessible hors-ligne.' }
 ];
@@ -5295,7 +5279,92 @@ function switchCat(cat){
   $('#catMap')?.classList.toggle('empty', noTrip);
   const me = $('#mapEmpty'); if(me) me.hidden = !noTrip;
   const pe = $('#profileEmpty'); if(pe) pe.hidden = !noTrip;
+  _cat = cat;
+  renderRail();
 }
+
+/* ============================================================
+   COLONNE DE GAUCHE — son contenu suit la catégorie
+   ------------------------------------------------------------
+   Afficher « Questions · Les choix · Ton voyage » pendant qu'on regarde la
+   carte n'a aucun sens : ces étapes ne mènent nulle part depuis là. La
+   colonne montre donc ce qui est utile ICI :
+   · Voyage  → les 3 étapes du parcours
+   · Carte   → les journées du voyage, pour sauter de l'une à l'autre
+   · Profil  → les deux sections de la page, pour y aller directement
+============================================================ */
+let _cat = 'trip';
+function renderRail(){
+  const box = $('#railSteps');
+  if(!box) return;
+  const T = isEN()
+    ? { etapes:'Steps', jours:'Days of the trip', sections:'My account',
+        q:['Questions','Tell us all about your trip'], c:['The options','Our suggestions for you'],
+        v:['Your trip','Your tailor-made route'],
+        aller:['Getting there','Departure → arrival'], vide:'No trip yet',
+        act:['Actions','Export, install, sign out'], pref:['Preferences','Style, pace, appearance'] }
+    : { etapes:'Étapes', jours:'Journées du voyage', sections:'Mon compte',
+        q:['Questions','Dis-nous tout sur ton voyage'], c:['Les choix','Nos suggestions pour toi'],
+        v:['Ton voyage','Ton itinéraire personnalisé'],
+        aller:['Aller','Départ → arrivée'], vide:'Pas encore de voyage',
+        act:['Actions','Export, installation, déconnexion'], pref:['Préférences','Style, rythme, apparence'] };
+
+  const ligne = (cle, num, titre, sous, actif, bloque) =>
+    `<li data-rail="${esc(cle)}"${actif ? ' class="on"' : (bloque ? ' class="off"' : '')}
+        aria-current="${actif ? 'step' : 'false'}">
+      <span class="rs-n">${esc(num)}</span>
+      <span class="rs-t"><b>${esc(titre)}</b><em>${esc(sous)}</em></span>
+    </li>`;
+
+  let titre = T.etapes, html = '';
+
+  if(_cat === 'map'){
+    titre = T.jours;
+    const routes = window._projRoutes || [];
+    if(!routes.length){
+      html = `<li class="off"><span class="rs-n">—</span><span class="rs-t"><b>${esc(T.vide)}</b></span></li>`;
+    }else{
+      html = routes.map((r, i) => {
+        /* le libellé du trajet fait déjà « J1 », « ✈️ Aller » : on le reprend
+           tel quel, et le résumé de la journée sert de sous-titre */
+        const est0 = i === 0 && !/^\s*[JD]\d/.test(r.label);
+        const num = est0 ? '✈' : String(i).padStart(2, '0');
+        const nom = est0 ? T.aller[0] : r.label;
+        const sous = (r.note || (est0 ? T.aller[1] : '')).slice(0, 60);
+        return ligne('day:' + i, num, nom, sous, i === _mapIdx, false);
+      }).join('');
+    }
+  }else if(_cat === 'profile'){
+    titre = T.sections;
+    html = ligne('sec:actions', '01', T.act[0], T.act[1], false, false)
+         + ligne('sec:prefs',   '02', T.pref[0], T.pref[1], false, false);
+  }else{
+    const n = state.step || 1;
+    const bloque2 = !(state.destinations || []).length, bloque3 = !state.trip;
+    html = ligne('step:1', '01', T.q[0], T.q[1], n === 1, false)
+         + ligne('step:2', '02', T.c[0], T.c[1], n === 2, bloque2)
+         + ligne('step:3', '03', T.v[0], T.v[1], n === 3, bloque3);
+  }
+  box.innerHTML = html;
+  const h = $('#railTitle');
+  if(h) h.textContent = titre;
+}
+/* Un seul écouteur pour les trois formes de la colonne. Il ne DÉCIDE de rien :
+   il délègue à gotoStep / showRoute, qui gardent leurs garde-fous. */
+document.addEventListener('click', e => {
+  const li = e.target.closest('#railSteps li[data-rail]');
+  if(!li || li.classList.contains('off')) return;
+  const [genre, val] = li.dataset.rail.split(':');
+  if(genre === 'step') gotoStep(+val);
+  else if(genre === 'day'){ showRoute(+val); renderRail(); }
+  else if(genre === 'sec'){
+    const cible = val === 'prefs' ? $('#accPrefs') || $('#stStyle') : $('#accActions') || $('#pfExport');
+    /* si la section est dans un accordéon replié, on l'ouvre avant de viser */
+    const acc = cible?.closest('.acc');
+    if(acc && !acc.classList.contains('open')) acc.classList.add('open');
+    cible?.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+});
 $$('.catnav button').forEach(b => b.onclick = () => switchCat(b.dataset.cat));
 document.addEventListener('click', e => {
   if(e.target.id === 'mapEmptyGo' || e.target.id === 'profileEmptyGo'){ switchCat('trip'); gotoStep(1); }
@@ -5935,6 +6004,7 @@ async function buildProjectMap(){
   });
 
   window._projRoutes = routes;
+  renderRail();   /* la colonne liste les journées : elle suit */
   _mapIdx = Math.min(_mapIdx, Math.max(0, routes.length - 1));
   bar.innerHTML = routes.map((r, i) =>
     `<button type="button" class="rt${i === _mapIdx ? ' on' : ''}" data-mapday="${i}">${esc(r.label)}</button>`
@@ -6179,7 +6249,7 @@ document.addEventListener('click', async e => {
     if(!r.ok){ toast('❌ ' + (r.data.error || 'Suppression impossible — réessaie')); return; }
   }
   Object.keys(localStorage)
-    .filter(k => k.startsWith('acolite_'))
+    .filter(k => k.startsWith('acolyte_'))
     .forEach(k => localStorage.removeItem(k));
   location.reload();
 });
@@ -6243,7 +6313,7 @@ function tripPayload(){
   return 'ACO2' + b64url(unescape(encodeURIComponent(JSON.stringify(o))));
 }
 /* L'URL que porte le QR : scannée avec l'appareil photo du téléphone, elle
-   OUVRE Acolite et importe le voyage. Un QR contenant « ACOLITE1:… » ne
+   OUVRE Acolyte et importe le voyage. Un QR contenant « ACOLITE1:… » ne
    donnait qu'un texte incompréhensible dans l'appareil photo — c'était
    l'autre moitié du problème « ça ne se scanne pas ». */
 function tripURL(){
@@ -6362,7 +6432,7 @@ const _cscanFile = $('#scanFile'); if(_cscanFile) _cscanFile.onchange = async e 
     g.drawImage(img, 0, 0);
     const q = window.jsQR(g.getImageData(0,0,cv.width,cv.height).data, cv.width, cv.height);
     if(q && q.data.startsWith('ACOLITE1:')){ closeScan(); try{ importPayload(q.data); }catch(er){ toast('❌ QR illisible'); } }
-    else $('#scanMsg').textContent = '❌ Aucun QR Acolite détecté sur cette photo.';
+    else $('#scanMsg').textContent = '❌ Aucun QR Acolyte détecté sur cette photo.';
   };
   img.src = URL.createObjectURL(f);
 };
@@ -6376,9 +6446,9 @@ async function shareLink(){
   const pl = tripPayload();
   if(!pl){ toast('Choisis d’abord un voyage'); return; }
   const url = tripURL();      /* base64url : rien à échapper */
-  const txt = `Mon voyage à ${state.trip.nom} sur Acolite ✈️`;
+  const txt = `Mon voyage à ${state.trip.nom} sur Acolyte ✈️`;
   try{
-    if(navigator.share){ await navigator.share({ title:'Acolite', text:txt, url }); return; }
+    if(navigator.share){ await navigator.share({ title:'Acolyte', text:txt, url }); return; }
     await navigator.clipboard.writeText(url);
     toast('🔗 Lien copié — envoie-le à tes amis');
   }catch(e){
@@ -6395,7 +6465,7 @@ function checkImportHash(){
   try{ importPayload(decodeURIComponent(m[1])); }
   catch(e){ toast('❌ Lien de voyage invalide'); }
 }
-/* Le lien peut arriver alors qu'Acolite est DÉJÀ ouvert : dans ce cas le
+/* Le lien peut arriver alors qu'Acolyte est DÉJÀ ouvert : dans ce cas le
    navigateur change juste l'ancre, sans recharger la page — et rien ne se
    passait. C'est le cas courant quand on scanne un QR depuis son téléphone
    avec l'app déjà dans un onglet. */
@@ -6413,7 +6483,7 @@ function exportICS(){
     const end = new Date(day.getTime() + 86400000);
     const lieux = (j.lieux||[]).join(', ');
     return ['BEGIN:VEVENT',
-      `UID:acolite-${Date.now()}-${i}@acolite`,
+      `UID:acolyte-${Date.now()}-${i}@acolyte`,
       `DTSTAMP:${fmt(new Date())}T000000Z`,
       `DTSTART;VALUE=DATE:${fmt(day)}`,
       `DTEND;VALUE=DATE:${fmt(end)}`,
@@ -6422,11 +6492,11 @@ function exportICS(){
       `LOCATION:${String(t.nom).replace(/[,;\\]/g,' ')}`,
       'END:VEVENT'].filter(Boolean).join('\r\n');
   };
-  const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Acolite//FR','CALSCALE:GREGORIAN',
+  const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Acolyte//FR','CALSCALE:GREGORIAN',
     ...plan.programme.map((j, i) => ev(i, j)), 'END:VCALENDAR'].join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([ics], { type:'text/calendar' }));
-  a.download = `acolite-${String(t.nom).toLowerCase().replace(/[^a-z0-9]+/g,'-')}.ics`;
+  a.download = `acolyte-${String(t.nom).toLowerCase().replace(/[^a-z0-9]+/g,'-')}.ics`;
   a.click(); URL.revokeObjectURL(a.href);
   toast('📅 Programme exporté — ouvre-le pour l’ajouter à ton agenda');
 }
@@ -6473,7 +6543,7 @@ async function passPNG(){
   g.textAlign = 'left';
   g.fillStyle = K;
   g.font = '900 26px Sora, Arial';
-  g.fillText('ACOLITE · BOARDING PASS', M + 96, M + 58);
+  g.fillText('ACOLYTE · BOARDING PASS', M + 96, M + 58);
   g.fillRect(M + 96, M + 68, 372, 5);
   /* route : départ à gauche, arrivée alignée à droite, avion au centre */
   const from = (p.from || 'PAR').slice(0, 3).toUpperCase();
@@ -6540,7 +6610,7 @@ async function passPNG(){
   g.fillText("TICKET SOUVENIR — NE PERMET PAS D'EMBARQUER NI DE VOYAGER.", M + 34, M + CH - 34);
   g.fillStyle = WH;
   g.font = '600 13px Inter, Arial';
-  g.fillText("Le QR sert uniquement à importer ce voyage dans l'application Acolite.", M + 34, M + CH - 14);
+  g.fillText("Le QR sert uniquement à importer ce voyage dans l'application Acolyte.", M + 34, M + CH - 14);
 
   /* bord du ticket */
   g.strokeStyle = K; g.lineWidth = 7; g.strokeRect(M, M, CW, CH);
@@ -6561,7 +6631,7 @@ async function passPNG(){
     await loadQRGen();
     const tmp = document.createElement('div');
     /* On encode une URL, pas un texte maison : ainsi l'appareil photo du
-       téléphone propose d'ouvrir Acolite, qui importe le voyage tout seul.
+       téléphone propose d'ouvrir Acolyte, qui importe le voyage tout seul.
        On génère GRAND (600 px) puis on réduit à l'affichage : les carrés
        restent nets, alors qu'un QR généré petit puis agrandi devient flou. */
     new QRCode(tmp, { text: tripURL(), width: 600, height: 600, correctLevel: QRCode.CorrectLevel.M });
@@ -6620,11 +6690,11 @@ async function passPNG(){
   g.textAlign = 'left';
 
   cv.toBlob(async b => {
-    const name = `acolite-${t.nom.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
+    const name = `acolyte-${t.nom.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
     const file = typeof File !== 'undefined' ? new File([b], name, { type: 'image/png' }) : null;
     if(file && navigator.canShare?.({ files: [file] })){
       try{
-        await navigator.share({ files: [file], title: 'Mon ticket Acolite', text: `Mon voyage à ${t.nom} ✈️` });
+        await navigator.share({ files: [file], title: 'Mon ticket Acolyte', text: `Mon voyage à ${t.nom} ✈️` });
         toast('📤 Ticket partagé — le QR s’ouvre avec l’appareil photo');
         return;
       }catch(e){ if(e.name === 'AbortError') return; }
@@ -6856,7 +6926,7 @@ function tplClassique(g, W, H, { S, I, style, layout, photos }){
   g.fillText(`${I.pays}  ·  ${I.dates}`, tx, by + 124);
   if(I.hl.length){ g.font = '700 17px Inter, Arial'; g.fillStyle = S.hlt; g.fillText('📍 ' + I.hl.slice(0,3).join('  ·  ').slice(0,62), tx, by + 152); }
   g.textAlign = 'right'; g.font = '900 19px Sora, Arial'; g.fillStyle = S.bandInk;
-  g.fillText('ACOLITE ✈', W - pad - 20, by + bandH - 14); g.textAlign = 'left';
+  g.fillText('ACOLYTE ✈', W - pad - 20, by + bandH - 14); g.textAlign = 'left';
 }
 
 /* ---- MODÈLE 2 : Magazine (photo plein cadre, titre en surimpression) ---- */
@@ -6879,7 +6949,7 @@ function tplMagazine(g, W, H, { S, I, layout, photos, style }){
   if(I.hl.length){ g.font = '700 18px Inter, Arial'; g.fillStyle = 'rgba(255,255,255,.72)'; g.fillText('📍 ' + I.hl.slice(0,3).join('  ·  ').slice(0,64), tx, H - 22); }
   pcStamp(g, W - 132, 32);
   g.textAlign = 'right'; g.font = '900 18px Sora, Arial'; g.fillStyle = 'rgba(255,255,255,.85)';
-  g.fillText('ACOLITE ✈', W - 40, H - 22); g.textAlign = 'left';
+  g.fillText('ACOLYTE ✈', W - 40, H - 22); g.textAlign = 'left';
 }
 
 /* ---- MODÈLE 3 : Dos de carte (message à gauche, timbre + adresse à droite) ---- */
@@ -6919,7 +6989,7 @@ function tplDos(g, W, H, { S, I, photos, style }){
   g.fillText(I.pays, rx + 6, H / 2 + 34);
   g.fillText(I.dates, rx + 6, H / 2 + 80);
   g.textAlign = 'right'; g.font = '900 17px Sora, Arial'; g.fillStyle = S.ink;
-  g.fillText('ACOLITE ✈', W - pad, H - pad + 10); g.textAlign = 'left';
+  g.fillText('ACOLYTE ✈', W - pad, H - pad + 10); g.textAlign = 'left';
 }
 
 /* ---- MODÈLE 4 : Pellicule (bande de film + infos dessous) ---- */
@@ -6930,7 +7000,7 @@ function tplPellicule(g, W, H, { S, I, layout, photos, style }){
   for(let x = 16; x < W - 12; x += 44){ g.fillRect(x, sy + 13, 23, 16); g.fillRect(x, sy + sh - 29, 23, 16); }
   /* marquages de pellicule (numéros de vue + marque du film) */
   g.fillStyle = '#E8A33D'; g.font = '700 12px monospace'; g.textAlign = 'left';
-  g.fillText('ACOLITE 400  ·  12A   13   13A   14', 30, sy + 40);
+  g.fillText('ACOLYTE 400  ·  12A   13   13A   14', 30, sy + 40);
   g.fillText('→  ' + I.dates, 30, sy + sh - 34);
   const n = layout === 'grande' ? 1 : layout === 'duo' ? 2 : 4;
   const gp = 12, iw = (W - 60 - gp * (n - 1)) / n, iy = sy + 44, ih = sh - 88;
@@ -6946,7 +7016,7 @@ function tplPellicule(g, W, H, { S, I, layout, photos, style }){
   if(I.hl.length){ g.font = '700 17px Inter, Arial'; g.fillStyle = S.hlt; g.fillText('📍 ' + I.hl.slice(0,3).join('  ·  ').slice(0,58), tx, y + 88); }
   pcStamp(g, W - 138, H - 156);
   g.textAlign = 'right'; g.font = '900 17px Sora, Arial'; g.fillStyle = S.ink;
-  g.fillText('ACOLITE ✈', W - 44, H - 26); g.textAlign = 'left';
+  g.fillText('ACOLYTE ✈', W - 44, H - 26); g.textAlign = 'left';
 }
 
 /* ---- MODÈLE 5 : Mosaïque (1 grande + 2 petites, bloc d'infos en surimpression) ---- */
@@ -6971,8 +7041,8 @@ function tplMosaique(g, W, H, { S, I, photos, style }){
   pcStamp(g, W - pad - 100, pad + 14);
   /* signature posée sur une photo → blanc + ombre pour rester lisible */
   g.textAlign = 'right'; g.font = '900 16px Sora, Arial';
-  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText('ACOLITE ✈', W - pad - 11, H - pad - 7);
-  g.fillStyle = '#fff'; g.fillText('ACOLITE ✈', W - pad - 12, H - pad - 8); g.textAlign = 'left';
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText('ACOLYTE ✈', W - pad - 11, H - pad - 7);
+  g.fillStyle = '#fff'; g.fillText('ACOLYTE ✈', W - pad - 12, H - pad - 8); g.textAlign = 'left';
 }
 
 /* ---- MODÈLE 6 : Passeport (page de passeport + tampon d'entrée) ---- */
@@ -7018,7 +7088,7 @@ function tplMinimal(g, W, H, { S, I, photos, style }){
   g.font = '700 20px Inter, Arial'; g.fillStyle = S.sub;
   g.fillText(`${I.pays}  ·  ${I.dates}`, W / 2, cy + 60);
   if(I.hl.length){ g.font = '600 16px Inter, Arial'; g.fillStyle = S.hlt; g.fillText(I.hl.slice(0,3).join('   ·   ').slice(0,56), W / 2, cy + 92); }
-  g.font = '900 15px Sora, Arial'; g.fillStyle = S.ink; g.fillText('ACOLITE ✈', W / 2, H - 34);
+  g.font = '900 15px Sora, Arial'; g.fillStyle = S.ink; g.fillText('ACOLYTE ✈', W / 2, H - 34);
   g.textAlign = 'left';
 }
 
@@ -7040,7 +7110,7 @@ function tplVertical(g, W, H, { S, I, layout, photos, style }){
   I.hl.slice(0, 4).forEach(l => { if(ly < H - 70){ g.fillText('📍 ' + String(l).slice(0, 28), tx, ly); ly += 30; } });
   pcStamp(g, W - pad - 96, pad + pzh + 16);
   g.textAlign = 'right'; g.font = '900 17px Sora, Arial'; g.fillStyle = S.ink;
-  g.fillText('ACOLITE ✈', W - pad - 8, H - 28); g.textAlign = 'left';
+  g.fillText('ACOLYTE ✈', W - pad - 8, H - 28); g.textAlign = 'left';
 }
 
 function drawPostcard(g, W, H, style, layout, photos, t){
@@ -7113,7 +7183,7 @@ const _ePcD = $('#pcDownload'); if(_ePcD) _ePcD.onclick = () => {
   window._pcCanvas.toBlob(b => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(b);
-    a.download = `acolite-postcard-${String(state.trip?.nom||'voyage').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.png`;
+    a.download = `acolyte-postcard-${String(state.trip?.nom||'voyage').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.png`;
     a.click(); URL.revokeObjectURL(a.href);
     toast('🖼️ Carte postale téléchargée');
   }, 'image/png');
@@ -7123,7 +7193,7 @@ const _ePcS = $('#pcShare'); if(_ePcS) _ePcS.onclick = () => {
   window._pcCanvas.toBlob(async b => {
     const file = typeof File !== 'undefined' ? new File([b], 'postcard.png', { type:'image/png' }) : null;
     if(file && navigator.canShare?.({ files:[file] })){
-      try{ await navigator.share({ files:[file], title:'Ma carte postale Acolite', text:`Mon voyage à ${state.trip?.nom} ✈️` }); return; }
+      try{ await navigator.share({ files:[file], title:'Ma carte postale Acolyte', text:`Mon voyage à ${state.trip?.nom} ✈️` }); return; }
       catch(e){ if(e.name === 'AbortError') return; }
     }
     _ePcD.click();
@@ -7362,7 +7432,7 @@ const EN_RAW = {
 
   /* ---- Fragments : texte coupé par du gras en ligne ---- */
   'Ton programme jour par jour. Une journée ne te va pas ?': 'Your day-by-day programme. A day doesn’t suit you?',
-  ', ou demande à Acolite de la': ', or ask Acolite to',
+  ', ou demande à Acolyte de la': ', or ask Acolyte to',
   'refaire': 'redo it',
   '✈️ Avant le décollage : télécharge le carnet PDF et prépare les': '✈️ Before take-off: download the PDF travel book and prepare the',
   'cartes de chaque journée': 'maps for each day',
@@ -7409,7 +7479,7 @@ const EN_RAW = {
   '📡 Données réelles (météo, trains, fériés) ✔': '📡 Real data (weather, trains, holidays) ✔',
 
   /* ---- Réseau ---- */
-  '🐢 Réseau lent — Acolite allège les chargements': '🐢 Slow connection — Acolite is loading less',
+  '🐢 Réseau lent — Acolyte allège les chargements': '🐢 Slow connection — Acolyte is loading less',
   '📴 Hors connexion — ton voyage reste consultable': '📴 Offline — your trip is still readable',
 
   /* ---- Coque, navigation, démarrage ---- */
@@ -7422,13 +7492,13 @@ const EN_RAW = {
   'Les choix': 'The options',
   'Ton voyage': 'Your trip',
   'Ton voyage 🧳': 'Your trip 🧳',
-  'Acolite explore le monde…': 'Acolite is exploring the world…',
+  'Acolyte explore le monde…': 'Acolyte is exploring the world…',
 
   /* ---- Vue 1 : le questionnaire ---- */
   '🧳 Mes voyages': '🧳 My trips',
   'Reprends un voyage déjà exploré, ou lances-en un nouveau ci-dessous.': 'Pick up a trip you already explored, or start a new one below.',
   "Où est-ce qu'on t'emmène ? 🌍": 'Where are we taking you? 🌍',
-  "Décris tes envies, Acolite te propose des destinations sur mesure — puis t'aide à affiner.": 'Describe what you fancy: Acolite suggests tailor-made destinations, then helps you narrow them down.',
+  "Décris tes envies, Acolyte te propose des destinations sur mesure — puis t'aide à affiner.": 'Describe what you fancy: Acolyte suggests tailor-made destinations, then helps you narrow them down.',
   'Ville de départ': 'Departure city',
   'Destination souhaitée': 'Preferred destination',
   'Durée': 'Length',
@@ -7464,8 +7534,8 @@ const EN_RAW = {
   '🌍 Traverser plusieurs pays': '🌍 Travel across several countries',
   'Quels pays ?': 'Which countries?',
   'ex : Italie': 'e.g. Italy',
-  'Acolite construit un itinéraire de 2 à 3 pays, avec les trajets entre étapes comptés dans le budget.': 'Acolite builds a 2 to 3 country route, with the journeys between stops counted in the budget.',
-  '🤷 Peu importe — Acolite décide': '🤷 No preference — Acolite decides',
+  'Acolyte construit un itinéraire de 2 à 3 pays, avec les trajets entre étapes comptés dans le budget.': 'Acolyte builds a 2 to 3 country route, with the journeys between stops counted in the budget.',
+  '🤷 Peu importe — Acolyte décide': '🤷 No preference — Acolyte decides',
   '🚆 Train': '🚆 Train',
   '🚗 Voiture': '🚗 Car',
   '✈️ Avion': '✈️ Plane',
@@ -7476,7 +7546,7 @@ const EN_RAW = {
   '✨ Séjour de luxe': '✨ Luxury stay',
   'Tes limites & conditions': 'Your limits & conditions',
   '✨ Propose-moi des voyages': '✨ Suggest me some trips',
-  "🎯 Choisis un pays, l'IA trouve le lieu": '🎯 Pick a country, Acolite finds the spot',
+  "🎯 Choisis un pays, l'IA trouve le lieu": '🎯 Pick a country, Acolyte finds the spot',
   '🎲 Surprends-moi': '🎲 Surprise me',
   '📷 Scanner un ticket': '📷 Scan a ticket',
   'Paris': 'Paris',
@@ -7496,7 +7566,7 @@ const EN_RAW = {
   '✍️ Pas tout à fait ça ?': '✍️ Not quite it?',
   'Reproposer →': 'Suggest again →',
   '🎯 Précisons ton voyage': '🎯 Let’s pin down your trip',
-  'Acolite a besoin de quelques précisions pour viser juste. Réponds, et il ajuste tes propositions de voyage.': 'Acolite needs a few details to aim right. Answer, and it will adjust your options.',
+  'Acolyte a besoin de quelques précisions pour viser juste. Réponds, et il ajuste tes propositions de voyage.': 'Acolyte needs a few details to aim right. Answer, and it will adjust your options.',
   '✅ Affiner mes propositions': '✅ Refine my options',
   'Passer — garder ces propositions': 'Skip — keep these options',
 
@@ -7541,7 +7611,7 @@ const EN_RAW = {
 
   /* ---- Carte ---- */
   'Pas encore de voyage': 'No trip yet',
-  "Choisis une destination et Acolite trace ton itinéraire, jour par jour, ici même.": 'Choose a destination and Acolite draws your route, day by day, right here.',
+  "Choisis une destination et Acolyte trace ton itinéraire, jour par jour, ici même.": 'Choose a destination and Acolyte draws your route, day by day, right here.',
   '✨ Commencer un voyage': '✨ Start a trip',
   '🧭 Où je suis': '🧭 Where I am',
   "↗ M'y guider": '↗ Take me there',
@@ -7561,15 +7631,15 @@ const EN_RAW = {
   'Commencer': 'Get started',
   '🎛️ PRÉFÉRENCES': '🎛️ PREFERENCES',
   '🌐 Langue': '🌐 Language',
-  "Change la langue de l'interface et celle des voyages qu'Acolite écrit pour toi.": 'Changes the language of the interface and of the trips Acolite writes for you.',
+  "Change la langue de l'interface et celle des voyages qu'Acolyte écrit pour toi.": 'Changes the language of the interface and of the trips Acolyte writes for you.',
   '🧭 Ton style de voyage': '🧭 Your travel style',
-  "L'IA en tient compte à chaque proposition et à chaque plan.": 'Acolite takes this into account in every suggestion and every plan.',
+  "L'IA en tient compte à chaque proposition et à chaque plan.": 'Acolyte takes this into account in every suggestion and every plan.',
   '⚡ Ton rythme': '⚡ Your pace',
   '🍽️ Alimentation': '🍽️ Food',
   '♿ Accessibilité': '♿ Accessibility',
   '🚫 Transports à éviter': '🚫 Transport to avoid',
-  "L'IA ne te proposera pas ces modes de transport (sauf s'il n'existe aucune alternative).": 'Acolite will not suggest these modes of transport (unless there is no alternative at all).',
-  "✨ Réponses d'Acolite": '✨ Acolite’s answers',
+  "L'IA ne te proposera pas ces modes de transport (sauf s'il n'existe aucune alternative).": 'Acolyte will not suggest these modes of transport (unless there is no alternative at all).',
+  "✨ Réponses d'Acolyte": '✨ Acolyte’s answers',
   'Niveau de détail': 'Level of detail',
   "✂️ Concis — l'essentiel": '✂️ Brief — the essentials',
   '📄 Normal': '📄 Normal',
@@ -7593,11 +7663,11 @@ const EN_RAW = {
   'Changer le mot de passe': 'Change password',
   'Changer': 'Change',
   "Changer d'adresse email": 'Change email address',
-  "Installer Acolite sur l'appareil": 'Install Acolite on this device',
+  "Installer Acolyte sur l'appareil": 'Install Acolyte on this device',
   'Installer': 'Install',
   'Importer un voyage (scanner un ticket)': 'Import a trip (scan a ticket)',
   'Ouvrir le scanner': 'Open the scanner',
-  'Régénérer les contenus IA': 'Regenerate Acolite’s content',
+  'Régénérer les contenus IA': 'Regenerate Acolyte’s content',
   'Vider le cache IA': 'Clear the cache',
   'Télécharger mes données': 'Download my data',
   'Télécharger (.json)': 'Download (.json)',
@@ -7608,8 +7678,8 @@ const EN_RAW = {
   'Se déconnecter': 'Sign out',
   'Déconnexion': 'Sign out',
   'Ton avis compte': 'Your opinion counts',
-  'Aide Acolite à grandir': 'Help Acolite grow',
-  "Pas de pub intrusive, pas de données revendues. La meilleure façon de soutenir Acolite, c'est de laisser ton avis.": 'No intrusive ads, no data sold on. The best way to support Acolite is to leave your review.',
+  'Aide Acolyte à grandir': 'Help Acolyte grow',
+  "Pas de pub intrusive, pas de données revendues. La meilleure façon de soutenir Acolyte, c'est de laisser ton avis.": 'No intrusive ads, no data sold on. The best way to support Acolyte is to leave your review.',
   '⚠️ Zone sensible': '⚠️ Danger zone',
   'La suppression est': 'Deletion is',
   'définitive': 'permanent',
@@ -7645,7 +7715,7 @@ const EN_RAW = {
   /* ---- Modales diverses ---- */
   'Réservation 🎫': 'Booking 🎫',
   'Scanner un ticket 📷': 'Scan a ticket 📷',
-  "Vise le QR d'un ticket Acolite pour importer le voyage (idéal entre amis).": 'Point at the QR code on an Acolite ticket to import the trip (great between friends).',
+  "Vise le QR d'un ticket Acolyte pour importer le voyage (idéal entre amis).": 'Point at the QR code on an Acolyte ticket to import the trip (great between friends).',
   '🖼 Ou choisir une photo du ticket': '🖼 Or pick a photo of the ticket',
   'Fermer': 'Close',
   'Ta carte postale 🖼️': 'Your postcard 🖼️',
@@ -7660,13 +7730,13 @@ const EN_RAW = {
   '📤 Partager': '📤 Share',
   'Ajoute': 'Add',
   'tes photos': 'your photos',
-  "ou laisse Acolite chercher des photos du web. Souvenir uniquement.": 'or let Acolite look for photos on the web. Keepsake only.',
+  "ou laisse Acolyte chercher des photos du web. Souvenir uniquement.": 'or let Acolyte look for photos on the web. Keepsake only.',
   '✨ Quoi de neuf ?': '✨ What’s new?',
   "👍 J'ai vu": '👍 Got it',
   '🔒 Confidentialité': '🔒 Privacy',
   "✅ J'accepte": '✅ I accept',
   'Passer': 'Skip',
-  'Bienvenue sur Acolite': 'Welcome to Acolite',
+  'Bienvenue sur Acolyte': 'Welcome to Acolyte',
   'Ton copilote de voyage.': 'Your travel copilot.',
   'Suivant →': 'Next →',
   "Passer l'introduction": 'Skip the intro',
@@ -7731,19 +7801,19 @@ const EN_RAW = {
   '🔄 Nouvelle version du jour': '🔄 New version of the day',
   '❌ Impossible de refaire cette journée': '❌ Couldn’t redo this day',
   '💬 Commentaire ajouté — partage la sauvegarde à ton co-voyageur': '💬 Comment added — share the save file with your travel buddy',
-  '🎯 Merci — Acolite affine tes propositions…': '🎯 Thanks — Acolite is refining your options…',
-  '🎯 Acolite réajuste ses propositions…': '🎯 Acolite is readjusting its options…',
-  'Ok, Acolite garde ses propositions actuelles 👍': 'Fine, Acolite keeps the current options 👍',
+  '🎯 Merci — Acolyte affine tes propositions…': '🎯 Thanks — Acolyte is refining your options…',
+  '🎯 Acolyte réajuste ses propositions…': '🎯 Acolyte is readjusting its options…',
+  'Ok, Acolyte garde ses propositions actuelles 👍': 'Fine, Acolyte keeps the current options 👍',
   "Le plan n'est pas encore prêt": 'The plan isn’t ready yet',
   'Réponse prise en compte ✔': 'Answer taken into account ✔',
   'Entre un montant valide 💶': 'Enter a valid amount 💶',
   'Voyage exporté 📄': 'Trip exported 📄',
   '📄 Choisis « Enregistrer au format PDF » dans la fenêtre d’impression': '📄 Choose “Save as PDF” in the print dialogue',
-  '📴 Hors connexion — ton plan reste consultable dans Acolite': '📴 Offline — your plan is still readable in Acolite',
+  '📴 Hors connexion — ton plan reste consultable dans Acolyte': '📴 Offline — your plan is still readable in Acolyte',
   '💾 Voyage sauvegardé dans un fichier': '💾 Trip saved to a file',
   'Sauvegarde impossible': 'Couldn’t save',
   '📂 Voyage importé ✔': '📂 Trip imported ✔',
-  'Fichier invalide — ce n’est pas une sauvegarde Acolite': 'Invalid file — this isn’t an Acolite save',
+  'Fichier invalide — ce n’est pas une sauvegarde Acolyte': 'Invalid file — this isn’t an Acolyte save',
   'Lecture du fichier impossible': 'Couldn’t read the file',
   'Ajoute au moins une référence': 'Add at least one reference',
   'Réservation ajoutée 📎': 'Booking added 📎',
@@ -7781,7 +7851,7 @@ const EN_RAW = {
   '⚠️ Sauvegarde impossible (stockage plein ou désactivé)': '⚠️ Couldn’t save (storage full or disabled)',
   '😕 Service momentanément indisponible': '😕 Service temporarily unavailable',
   '😕 Petit accroc — je réessaie': '😕 Small hiccup — trying again',
-  'Ticket souvenir — ne permet pas d\'embarquer. Le QR sert uniquement à importer ce voyage dans Acolite.': 'Keepsake ticket — not valid for boarding. The QR code only imports this trip into Acolite.'
+  'Ticket souvenir — ne permet pas d\'embarquer. Le QR sert uniquement à importer ce voyage dans Acolyte.': 'Keepsake ticket — not valid for boarding. The QR code only imports this trip into Acolyte.'
 };
 
 /* On normalise les clés une fois pour toutes au démarrage */
@@ -7840,7 +7910,7 @@ function i18nWalk(root){
 function i18nStart(){
   document.documentElement.lang = LANG;
   if(!isEN()) return;
-  document.title = 'Acolite — Plan your trip: destination, transport, itinerary';
+  document.title = 'Acolyte — Plan your trip: destination, transport, itinerary';
   i18nWalk(document.body);
   if(!window.MutationObserver) return;
   /* app.js réécrit son interface en permanence : on traduit ce qui arrive */

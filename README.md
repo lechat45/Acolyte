@@ -1,4 +1,4 @@
-# ✈️ Acolite — ton copilote de voyage IA
+# ✈️ Acolyte — ton copilote de voyage IA
 
 Application web (PWA) qui **imagine, compare et organise un voyage de A à Z** :
 propositions de destinations sur mesure, plan complet (transport, logement,

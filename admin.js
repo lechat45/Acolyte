@@ -1,5 +1,5 @@
 /* ============================================================
-   Acolite — Panel admin (page autonome, hors application).
+   Acolyte — Panel admin (page autonome, hors application).
 
    La sécurité NE REPOSE PAS sur ce fichier : il se contente d'afficher ce
    que le serveur veut bien lui donner. C'est le backend qui vérifie que la
@@ -434,7 +434,7 @@
     var base = ((window.ACOLITE_KEYS && window.ACOLITE_KEYS.proxy) || '').replace(/\/+$/, '');
     if (!base) { show('err', 'Serveur non configuré', "L'adresse du serveur est absente de config.js."); return; }
     var tok = token();
-    if (!tok) { show('err', 'Accès refusé', "Connecte-toi d'abord sur Acolite avec le compte administrateur, puis reviens sur cette page."); return; }
+    if (!tok) { show('err', 'Accès refusé', "Connecte-toi d'abord sur Acolyte avec le compte administrateur, puis reviens sur cette page."); return; }
 
     show('', 'Chargement…', 'Récupération des statistiques.');
     fetch(base + '/admin/stats', { headers: { Authorization: 'Bearer ' + tok } })
