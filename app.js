@@ -1012,8 +1012,17 @@ function itinCtx(p){
     return `\n- FORME IMPOSÉE : UNE SEULE VILLE. Le voyageur veut poser ses valises une seule fois. N'utilise PAS "logement.etapes", ne propose aucune ville-étape : un seul logement pour tout le séjour, et des excursions à la journée si besoin.`;
   if(p.itin === 'multi')
     return `\n- FORME IMPOSÉE : PLUSIEURS VILLES dans un même pays (ou une même région). Découpe le séjour en ${nuits === 'court' ? '2' : '2 à 3'} villes-étapes, remplis OBLIGATOIREMENT "logement.etapes", et donne à chaque journée du programme son champ "base". Ordre géographique logique, jamais de retour en arrière, minimum 2 nuits par étape. Compte les trajets entre étapes dans le budget et décris-les dans "transport.details".`;
-  if(p.itin === 'pays')
-    return `\n- FORME IMPOSÉE : PLUSIEURS PAYS. Construis un vrai itinéraire qui traverse ${nuits === 'court' ? '2 pays voisins' : '2 à 3 pays'}, avec une ville-étape par pays au minimum. Remplis OBLIGATOIREMENT "logement.etapes" et le champ "base" de chaque journée. Choisis des pays réellement enchaînables dans le temps imparti (frontières proches, liaisons directes) — mieux vaut 2 pays bien vus que 4 traversés en courant. Minimum 2 nuits par étape, ordre géographique logique. Les trajets entre pays (mode, durée, prix réels) vont dans "transport.details" et comptent dans le budget.`;
+  if(p.itin === 'pays'){
+    const liste = (p.pays || []).filter(Boolean);
+    /* Pays désignés par le voyageur : ils sont IMPOSÉS. On laisse quand même
+       l'IA fixer l'ordre — c'est elle qui évite les zigzags — et on lui
+       demande de le dire franchement si le compte ne tient pas dans la durée,
+       plutôt que de bâcler un itinéraire intenable. */
+    const impose = liste.length
+      ? ` PAYS IMPOSÉS PAR LE VOYAGEUR, à visiter TOUS et UNIQUEMENT ceux-ci : ${liste.join(', ')}. Tu choisis l'ORDRE le plus logique géographiquement (pas de retour en arrière) et la ville-étape de chaque pays. Si ce nombre de pays ne tient honnêtement pas dans la durée du séjour, construis quand même le meilleur itinéraire possible ET dis-le clairement dans "conseil_cle".`
+      : ` Tu choisis toi-même ${nuits === 'court' ? '2 pays voisins' : '2 à 3 pays'} réellement enchaînables dans le temps imparti (frontières proches, liaisons directes) — mieux vaut 2 pays bien vus que 4 traversés en courant.`;
+    return `\n- FORME IMPOSÉE : PLUSIEURS PAYS.${impose} Une ville-étape par pays au minimum. Remplis OBLIGATOIREMENT "logement.etapes" et le champ "base" de chaque journée. Minimum 2 nuits par étape. Les trajets entre pays (mode, durée, prix réels) vont dans "transport.details" et comptent dans le budget.`;
+  }
   return '';
 }
 
@@ -1065,6 +1074,8 @@ function readPrefs(extra){
     transport: $('#fTransport')?.value || '',
     /* case cochée → itinéraire multi-pays ; décochée → Acolite décide seul */
     itin:  $('#fMulti')?.checked ? 'pays' : '',
+    /* pays imposés — n'a de sens que si la case est cochée */
+    pays:  $('#fMulti')?.checked ? _paysChoisis.slice(0, PAYS_MAX) : [],
     free:  $('#fFree').value.trim().slice(0,600) + (extra ? ' | Affinage : ' + String(extra).slice(0,600) : '')
   };
 }
@@ -1098,7 +1109,9 @@ QUESTIONS DE PRÉCISION : si des infos te manquent pour viser juste (rythme, amb
 
 ${(state.seen||[]).length && !prefs.dest ? 'DÉJÀ PROPOSÉ à ce voyageur (ne PAS reproposer sauf s\'il le demande) : ' + state.seen.join(', ') + '.' : ''}
 ${(getHistory()||[]).length ? 'VOYAGES DÉJÀ CHOISIS par ce voyageur par le passé : ' + getHistory().map(h=>h.nom).join(', ') + ' — ne les repropose pas, mais inspire-toi de ses goûts.' : ''}
-${prefs.itin === 'multi' || prefs.itin === 'pays' ? `FORME D'ITINÉRAIRE IMPOSÉE (voir contexte) : chaque proposition doit être un ITINÉRAIRE, pas une ville unique. Dans "nom", écris le parcours (ex : « Rome → Florence → Venise »${prefs.itin === 'pays' ? ', et pour plusieurs pays : « Vienne → Bratislava → Budapest »' : ''}), et dans "pays" ${prefs.itin === 'pays' ? 'liste les pays traversés (ex : « Autriche, Slovaquie, Hongrie »)' : 'le pays concerné'}. Le "budget_estime" doit inclure les trajets entre étapes. Dans "resume", dis en une phrase pourquoi CET enchaînement se tient dans le temps imparti.\n` : ''}${prefs.itin === 'mono' ? 'FORME IMPOSÉE : le voyageur veut UNE SEULE ville par proposition — pas d’itinéraire, pas d’enchaînement.\n' : ''}DÉCIDE toi-même du NOMBRE de propositions (1 à 3) selon la demande :
+${prefs.itin === 'multi' || prefs.itin === 'pays' ? `FORME D'ITINÉRAIRE IMPOSÉE (voir contexte) : chaque proposition doit être un ITINÉRAIRE, pas une ville unique. Dans "nom", écris le parcours (ex : « Rome → Florence → Venise »${prefs.itin === 'pays' ? ', et pour plusieurs pays : « Vienne → Bratislava → Budapest »' : ''}), et dans "pays" ${prefs.itin === 'pays' ? 'liste les pays traversés (ex : « Autriche, Slovaquie, Hongrie »)' : 'le pays concerné'}. Le "budget_estime" doit inclure les trajets entre étapes. Dans "resume", dis en une phrase pourquoi CET enchaînement se tient dans le temps imparti.
+${(prefs.pays || []).length ? `Les pays sont IMPOSÉS : ${prefs.pays.join(', ')}. Chaque proposition doit couvrir TOUS ces pays et AUCUN autre — ce qui change d'une proposition à l'autre, c'est l'ordre, les villes-étapes choisies et la répartition des nuits. Ne propose donc qu'UNE à DEUX variantes, vraiment différentes.` : ''}
+` : ''}${prefs.itin === 'mono' ? 'FORME IMPOSÉE : le voyageur veut UNE SEULE ville par proposition — pas d’itinéraire, pas d’enchaînement.\n' : ''}DÉCIDE toi-même du NOMBRE de propositions (1 à 3) selon la demande :
 - La demande désigne UNE VILLE précise → UNE SEULE proposition : la meilleure formule pour cette ville, très travaillée.
 - Un PAYS ou une région → 2 ou 3 villes/zones DIFFÉRENTES de ce pays.
 - Demande ouverte → 3 destinations VRAIMENT différentes.
@@ -1721,6 +1734,93 @@ function havKm(a, b){
 const _avg = arr => Math.round(arr.reduce((x,y)=>x+y,0) / arr.length);
 
 const COUNTRY_CC = { 'france':'FR','italie':'IT','espagne':'ES','portugal':'PT','allemagne':'DE','autriche':'AT','belgique':'BE','pays-bas':'NL','suisse':'CH','royaume-uni':'GB','angleterre':'GB','irlande':'IE','écosse':'GB','grèce':'GR','croatie':'HR','slovénie':'SI','hongrie':'HU','pologne':'PL','tchéquie':'CZ','république tchèque':'CZ','slovaquie':'SK','roumanie':'RO','bulgarie':'BG','suède':'SE','norvège':'NO','danemark':'DK','finlande':'FI','islande':'IS','estonie':'EE','lettonie':'LV','lituanie':'LT','luxembourg':'LU','malte':'MT','chypre':'CY','états-unis':'US','etats-unis':'US','canada':'CA','mexique':'MX','brésil':'BR','argentine':'AR','chili':'CL','japon':'JP','corée du sud':'KR','chine':'CN','inde':'IN','thaïlande':'TH','vietnam':'VN','indonésie':'ID','malaisie':'MY','singapour':'SG','australie':'AU','nouvelle-zélande':'NZ','maroc':'MA','tunisie':'TN','égypte':'EG','afrique du sud':'ZA','turquie':'TR','albanie':'AL','serbie':'RS','monténégro':'ME','bosnie-herzégovine':'BA','macédoine du nord':'MK','ukraine':'UA','géorgie':'GE','arménie':'AM' };
+
+/* ============================================================
+   CHOIX DES PAYS DE L'ITINÉRAIRE
+   ------------------------------------------------------------
+   Quand le voyageur coche « traverser plusieurs pays », il doit pouvoir dire
+   LESQUELS. La liste d'autocomplétion est construite depuis COUNTRY_CC, qui
+   existait déjà pour biaiser le géocodage — pas de deuxième liste à tenir à
+   jour. Le champ reste libre : un pays absent du dictionnaire est accepté.
+   L'ORDRE est laissé à l'IA : c'est elle qui sait enchaîner sans zigzag.
+============================================================ */
+const PAYS_MAX = 6;              /* au-delà, on passe son voyage en transport */
+/* joli nom : « pays-bas » → « Pays-Bas », « corée du sud » → « Corée du Sud » */
+const paysJoli = s => String(s || '').trim().toLowerCase()
+  .replace(/(^|[\s-])([a-zà-ÿ])/g, (m, sep, c) => sep + c.toUpperCase())
+  .replace(/\bDu\b/g, 'du').replace(/\bDe\b/g, 'de').replace(/\bLa\b/g, 'la');
+/* Une entrée par PAYS et non par alias : COUNTRY_CC contient « angleterre »
+   et « royaume-uni » pour le même code, inutile de proposer les deux. */
+const PAYS_LISTE = (() => {
+  const vus = new Set(), out = [];
+  for(const nom of Object.keys(COUNTRY_CC)){
+    const cc = COUNTRY_CC[nom];
+    if(vus.has(cc)) continue;
+    vus.add(cc);
+    out.push(paysJoli(nom));
+  }
+  return out.sort((a, b) => a.localeCompare(b, 'fr'));
+})();
+
+let _paysChoisis = [];
+function paysRender(){
+  const box = $('#paysTags');
+  if(box){
+    box.innerHTML = _paysChoisis.map((p, i) =>
+      `<span class="pays-tag"><span class="num">${i + 1}</span>${esc(p)}` +
+      `<button type="button" data-paysdel="${i}" aria-label="${isEN() ? 'Remove' : 'Retirer'} ${esc(p)}" title="${isEN() ? 'Remove' : 'Retirer'}">✕</button></span>`
+    ).join('');
+  }
+  const h = $('#paysHint');
+  if(h){
+    h.textContent = !_paysChoisis.length
+      ? (isEN() ? 'Leave empty and Acolite picks the countries for you.' : 'Laisse vide et Acolite choisit les pays pour toi.')
+      : _paysChoisis.length === 1
+        ? (isEN() ? 'Add at least a second country, or Acolite will pick the next ones.' : 'Ajoute au moins un deuxième pays, sinon Acolite choisira les suivants.')
+        : (isEN() ? `${_paysChoisis.length} countries — Acolite works out the best order.` : `${_paysChoisis.length} pays — Acolite trouve le meilleur ordre.`);
+  }
+}
+function paysAdd(brut){
+  const nom = paysJoli(brut);
+  if(!nom || nom.length < 3) return;
+  if(_paysChoisis.length >= PAYS_MAX){ toast(isEN() ? `${PAYS_MAX} countries maximum` : `${PAYS_MAX} pays au maximum`); return; }
+  /* doublon : on compare sans accents ni casse, « Grece » = « Grèce » */
+  if(_paysChoisis.some(p => normPlace(p) === normPlace(nom))){ toast(isEN() ? 'Already in the list' : 'Déjà dans la liste'); return; }
+  _paysChoisis.push(nom);
+  paysRender();
+  const inp = $('#fPaysAdd');
+  if(inp){ inp.value = ''; inp.focus(); }
+}
+function paysBoxSync(){
+  const on = !!$('#fMulti')?.checked;
+  $('#paysBox')?.classList.toggle('hidden', !on);
+  if(on) paysRender();
+}
+{
+  const dl = $('#paysList');
+  if(dl) dl.innerHTML = PAYS_LISTE.map(p => `<option value="${esc(p)}"></option>`).join('');
+  const cb = $('#fMulti');
+  if(cb) cb.addEventListener('change', paysBoxSync);
+  const btn = $('#btnPaysAdd');
+  if(btn) btn.onclick = () => paysAdd($('#fPaysAdd')?.value);
+  const inp = $('#fPaysAdd');
+  if(inp){
+    /* Entrée ajoute le pays — et ne valide SURTOUT pas le formulaire */
+    inp.addEventListener('keydown', e => {
+      if(e.key === 'Enter'){ e.preventDefault(); paysAdd(inp.value); }
+    });
+    /* choisir dans la liste d'autocomplétion ajoute directement */
+    inp.addEventListener('change', () => {
+      if(PAYS_LISTE.some(p => normPlace(p) === normPlace(inp.value))) paysAdd(inp.value);
+    });
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-paysdel]');
+    if(!b) return;
+    _paysChoisis.splice(+b.dataset.paysdel, 1);
+    paysRender();
+  });
+}
 
 async function realData(){
   if(SET?.reels === false) return '';   /* le voyageur a désactivé les données réelles */
@@ -5899,6 +5999,10 @@ function tripPayload(){
   if(p.kids) o.k = p.kids;
   if(p.budget) o.u = p.budget;
   if(p.itin) o.r = p.itin;
+  /* Les pays imposés ne sont PAS transmis à part : pour un itinéraire
+     multi-pays, le champ « pays » du voyage les liste déjà (« Autriche,
+     Slovaquie, Hongrie »). Les envoyer deux fois allongeait la charge de
+     30 caractères pour rien — et chaque caractère compte ici. */
   return 'ACO2' + b64url(unescape(encodeURIComponent(JSON.stringify(o))));
 }
 /* L'URL que porte le QR : scannée avec l'appareil photo du téléphone, elle
@@ -5925,7 +6029,12 @@ function importPayload(str){
     trip:  { nom:brut.n, pays:brut.p, drapeau:brut.d, iata:brut.i,
              budget_estime:brut.b, transport_conseille:brut.c },
     prefs: { from:brut.f, days:brut.j, when:brut.w, depart:brut.t,
-             adults:brut.a, kids:brut.k, budget:brut.u, itin:brut.r }
+             adults:brut.a, kids:brut.k, budget:brut.u, itin:brut.r,
+             /* on reconstitue la liste depuis le champ « pays » du voyage,
+                seul endroit où elle est transportée */
+             pays: brut.r === 'pays'
+               ? String(brut.p || '').split(/\s*[,;/]\s*/).filter(Boolean).slice(0, 6)
+               : [] }
   };
   if(!o.trip?.nom) throw new Error('vide');
   /* voyage et préférences viennent d'un QR ou d'un lien : on les assainit
@@ -6931,6 +7040,8 @@ if(state.prefs){
   if(state.prefs.free) $('#fFree').value = (state.prefs.free||'').split(' | Affinage :')[0];
   if(state.prefs.transport) $('#fTransport').value = state.prefs.transport;
   if($('#fMulti')) $('#fMulti').checked = state.prefs.itin === 'pays';
+  if(Array.isArray(state.prefs.pays)) _paysChoisis = state.prefs.pays.slice(0, PAYS_MAX);
+  paysBoxSync();
 }else{
   applyTripDefaults();   /* pas encore de voyage → on pré-remplit avec les valeurs par défaut */
 }
@@ -7114,6 +7225,8 @@ const EN_RAW = {
   '💼 Entre collègues': '💼 With colleagues',
   'Comment tu veux voyager': 'How you want to travel',
   '🌍 Traverser plusieurs pays': '🌍 Travel across several countries',
+  'Quels pays ?': 'Which countries?',
+  'ex : Italie': 'e.g. Italy',
   'Acolite construit un itinéraire de 2 à 3 pays, avec les trajets entre étapes comptés dans le budget.': 'Acolite builds a 2 to 3 country route, with the journeys between stops counted in the budget.',
   '🤷 Peu importe — Acolite décide': '🤷 No preference — Acolite decides',
   '🚆 Train': '🚆 Train',

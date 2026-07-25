@@ -546,6 +546,40 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .field label.opt-check:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--stroke)}
 @media (prefers-reduced-motion:reduce){.field label.opt-check{transition:none}}
 
+/* ===== Choix des pays de l'itinéraire ===== */
+.pays-box{margin-top:12px}
+.pays-box.hidden{display:none}
+.pays-box > label{
+  display:block;font-size:.78rem;font-weight:800;color:var(--txt);
+  text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;
+}
+.pays-add{display:flex;gap:8px;align-items:stretch}
+.pays-add input{flex:1;min-width:0}
+.pays-add .btn{flex:none;white-space:nowrap}
+/* Les pays choisis, sous forme d'étiquettes retirables. Le ✕ est un vrai
+   bouton : il doit être atteignable au doigt comme au clavier. */
+.pays-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pays-tags:empty{display:none}
+.pays-tag{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--primary);color:#101010;
+  border:3px solid var(--stroke);box-shadow:3px 3px 0 var(--stroke);
+  border-radius:var(--r-md);padding:6px 8px 6px 11px;
+  font-family:'Sora',sans-serif;font-weight:900;font-size:.8rem;
+}
+.pays-tag .num{
+  background:#101010;color:var(--primary);
+  width:18px;height:18px;display:grid;place-items:center;
+  border-radius:50%;font-size:.66rem;flex:none;
+}
+.pays-tag button{
+  all:unset;cursor:pointer;width:20px;height:20px;
+  display:grid;place-items:center;flex:none;
+  border:2px solid #101010;border-radius:5px;
+  font-weight:900;font-size:.72rem;line-height:1;color:#101010;
+}
+.pays-tag button:hover{background:#101010;color:var(--primary)}
+
 /* ===== Affinage libre des propositions ===== */
 .refine-bar{display:flex;gap:8px;flex-wrap:wrap}
 .refine-inp{flex:1;min-width:180px;padding:11px 14px;border:3px solid var(--stroke);border-radius:var(--r-md);background:var(--secondary);color:var(--txt);font-family:inherit;font-size:.9rem;font-weight:600}

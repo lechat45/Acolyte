@@ -200,6 +200,18 @@
               <em>Acolite construit un itinéraire de 2 à 3 pays, avec les trajets entre étapes comptés dans le budget.</em>
             </span>
           </label>
+          <!-- N'apparaît QUE si la case est cochée : sinon c'est un champ qui
+               ne sert à rien et qui alourdit le questionnaire. -->
+          <div class="pays-box hidden" id="paysBox">
+            <label for="fPaysAdd">Quels pays ?</label>
+            <div class="pays-add">
+              <input id="fPaysAdd" list="paysList" placeholder="ex : Italie" autocomplete="off" maxlength="40">
+              <datalist id="paysList"></datalist>
+              <button type="button" class="btn sm" id="btnPaysAdd">➕ Ajouter</button>
+            </div>
+            <div class="pays-tags" id="paysTags"></div>
+            <p class="hint" id="paysHint">Laisse vide et Acolite choisit les pays pour toi.</p>
+          </div>
         </div>
         <div class="field"><label for="fStay">Style d'hébergement</label>
           <select id="fStay">
