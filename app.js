@@ -642,14 +642,18 @@ document.addEventListener('click', e => {
    de jeux, où l'on choisit parmi quatre mini-jeux. ---- */
 (function gameEgg(){
   if(!window.matchMedia?.('(pointer:fine)').matches) return;   /* PC seulement */
-  const logo = document.querySelector('.logo-mark');
-  if(!logo) return;
+  /* TOUTES les mascottes du logo, pas seulement la première : selon la
+     largeur de l'écran, c'est celle de la colonne de gauche OU celle de
+     l'en-tête qui est visible. N'en écouter qu'une rendait l'easter egg
+     introuvable dans l'autre cas. */
+  const logos = document.querySelectorAll('.logo-mark');
+  if(!logos.length) return;
   let clicks = 0, resetT = 0;
-  logo.addEventListener('click', () => {
+  logos.forEach(logo => logo.addEventListener('click', () => {
     clearTimeout(resetT);
     resetT = setTimeout(() => { clicks = 0; }, 700);           /* pas « de suite » → on repart de zéro */
     if(++clicks >= 2){ clicks = 0; openArcade(); }
-  });
+  }));
 })();
 
 /* ============================================================
@@ -1300,12 +1304,38 @@ function renderGallery(){
         <span>${esc(x.pays || '')}${x.budget_estime ? ' · ' + esc(x.budget_estime) : ''}</span>
       </div>
       <button class="btn sm ghost gal-open" data-gi="${i}">${x.trip ? 'Rouvrir →' : 'Reproposer'}</button>
+      <button class="gal-del" data-galdel="${i}" title="${isEN() ? 'Remove from my trips' : 'Retirer de mes voyages'}"
+        aria-label="${isEN() ? 'Remove' : 'Retirer'} ${esc(x.nom)}">🗑</button>
     </div>`).join('')
     + (trop ? `<button class="btn ghost sm gal-toggle" id="galToggle">${
         _galExpanded ? '▲ Afficher moins' : `▼ Voir tous mes voyages (${h.length})`}</button>` : '');
 }
 document.addEventListener('click', e => {
   if(e.target.id === 'galToggle'){ _galExpanded = !_galExpanded; renderGallery(); }
+});
+/* Retirer un voyage de la galerie. Confirmation demandée : c'est irréversible,
+   et le souvenir d'un voyage passé a de la valeur. On ne touche PAS au voyage
+   en cours — seulement à la liste des voyages déjà explorés. */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-galdel]');
+  if(!b) return;
+  /* l'index est celui de la liste AFFICHÉE (la plus récente d'abord) */
+  const liste = getHistory();
+  const idxAffiche = +b.dataset.galdel;
+  const cible = liste.slice().reverse()[idxAffiche];
+  if(!cible) return;
+  const q = isEN()
+    ? `Remove “${cible.nom}” from your trips?\nThis only clears the memory of it — your current trip is untouched.`
+    : `Retirer « ${cible.nom} » de tes voyages ?\nÇa n'efface que ce souvenir — ton voyage en cours n'est pas touché.`;
+  if(!confirm(q)) return;
+  /* on retire par NOM : c'est la clé qu'utilise déjà pushHistory pour dédoublonner */
+  const reste = liste.filter(x => x.nom !== cible.nom);
+  try{ localStorage.setItem(LS_HIST, JSON.stringify(reste)); }catch(err){}
+  /* la liste dépliée n'a plus lieu d'être si tout tient désormais */
+  if(reste.length <= 3) _galExpanded = false;
+  renderGallery();
+  pushSync();                 /* la galerie fait partie de ce qui se synchronise */
+  toast(isEN() ? '🗑 Trip removed' : '🗑 Voyage retiré');
 });
 function reopenTrip(i){
   const x = getHistory().slice().reverse()[i];
@@ -1412,12 +1442,32 @@ function openSub(t){
   $$('.subtab').forEach(x => x.classList.toggle('on', x.dataset.t === t));
   Object.entries(TAB_PANELS).forEach(([k, sel]) => $(sel)?.classList.toggle('hidden', k !== t));
 }
+/* Colonne de gauche : reflète l'étape en cours et ce qui est verrouillé.
+   Elle ne DÉCIDE de rien — elle affiche l'état, et déléguer le clic à
+   gotoStep() garantit qu'on ne peut pas contourner ses garde-fous. */
+function syncRail(n){
+  $$('#railSteps li').forEach(li => {
+    const s = +li.dataset.railstep;
+    const bloque = (s === 2 && !(state.destinations || []).length) || (s === 3 && !state.trip);
+    li.classList.toggle('on', s === n);
+    li.classList.toggle('off', bloque);
+    li.setAttribute('aria-current', s === n ? 'step' : 'false');
+  });
+}
+document.addEventListener('click', e => {
+  const li = e.target.closest('#railSteps li');
+  if(li && !li.classList.contains('off')) gotoStep(+li.dataset.railstep);
+});
+
 function gotoStep(n, sub){
   n = Math.min(n, 3);
   if(n === 2 && !(state.destinations||[]).length){ toast('Remplis d’abord le questionnaire 😉'); return; }
   if(n === 3 && !state.trip){ toast('Choisis d’abord un des 3 voyages 😉'); return; }
   state.step = n; save();
   $$('.step').forEach(s => s.classList.toggle('active', +s.dataset.step === n));
+  /* la colonne de gauche porte le même parcours : elle doit rester d'accord
+     avec le fil horizontal, sinon on lit deux états contradictoires */
+  syncRail(n);
   [1,2,3].forEach(i => $('#view'+i).classList.toggle('hidden', i !== n));
   refreshPasses();
   window.scrollTo({top:0, behavior:'smooth'});
@@ -2359,7 +2409,7 @@ function panProgramme(d){
           /* une journée dépliée le reste : on la ré-affiche depuis le cache */
           const ouvert = _openDays.has(String(jr.jour)) && state.cache.days?.[jr.jour];
           return `<div class="day-detail" data-daybox="${esc(String(jr.jour))}" data-open="${ouvert ? '1' : '0'}">${
-            ouvert ? timelineHTML(state.cache.days[jr.jour]) : ''}</div>`;
+            ouvert ? timelineHTML(state.cache.days[jr.jour], jr.jour) : ''}</div>`;
         })()}
       </div>`).join('');
 }
@@ -2776,7 +2826,7 @@ async function loadDayDetail(jour){
   box.dataset.open = '1';
   _openDays.add(String(jour));   /* mémorisé : survit à un changement d'onglet */
   state.cache.days = state.cache.days || {};
-  if(state.cache.days[jour]){ box.innerHTML = timelineHTML(state.cache.days[jour]); return; }
+  if(state.cache.days[jour]){ box.innerHTML = timelineHTML(state.cache.days[jour], jour); return; }
   box.innerHTML = loaderHTML('Construction de la journée heure par heure…');
   const jr = (state.cache.plan?.programme || []).find(x => String(x.jour) === String(jour)) || {};
   const pace = { doux:'doux (peu d\'activités, du temps libre)', equilibre:'équilibré (2-3 activités)', intense:'intense (programme dense)' }[SET?.rythme] || 'équilibré';
@@ -2792,7 +2842,7 @@ Entre 6 et 9 étapes.`;
   try{
     const d = await gemini(prompt, true, 4096, false, 0.5);
     state.cache.days[jour] = d; save();
-    box.innerHTML = timelineHTML(d);
+    box.innerHTML = timelineHTML(d, jour);
   }catch(e){
     if(e.message !== 'NO_KEY') box.innerHTML = errHTML('Journée indisponible pour le moment.', 'day' + jour);
     _retryFns['day' + jour] = () => { box.dataset.open = '0'; loadDayDetail(jour); };
@@ -3531,18 +3581,153 @@ Réponds UNIQUEMENT en JSON :
 Entre 6 et 9 étapes.`;
 }
 
-function timelineHTML(d){
-  const icons = {visite:'🏛️', repas:'🍽️', pause:'☕', trajet:'🚶'};
-  return `<div class="timeline">
-    ${(d.etapes||[]).map((e,i)=>`
-      <div class="tl-item" style="animation-delay:${i*0.06}s">
-        <div class="tl-time">${esc(e.heure)} ${icons[e.type]||'📍'}</div>
-        <div class="tl-title">${esc(e.titre)}</div>
-        <div class="tl-desc">${esc(e.description)}</div>
-        ${e.lieu ? `<span class="tl-loc" data-loc="${esc(e.lieu)}">📍 Voir sur la carte</span>` : ''}
-      </div>`).join('')}
+/* ============================================================
+   JOURNÉE HEURE PAR HEURE — modifiable et réorganisable
+   ------------------------------------------------------------
+   Le programme d'Acolite est un point de départ, pas un ordre : le voyageur
+   doit pouvoir déplacer un moment, corriger une heure, en ajouter un ou en
+   retirer un. Tout est écrit dans state.cache.days[jour].etapes et sauvé.
+   ⚠️ Comme les commentaires (_comDrafts), la saisie en cours DOIT survivre à
+   un changement d'onglet : c'est une régression déjà vécue sur ce projet.
+============================================================ */
+const TL_TYPES = { visite:'🏛️', repas:'🍽️', pause:'☕', trajet:'🚶' };
+let _tlEdit = null;                 /* { jour, i } — moment en cours d'édition */
+const _tlDraft = {};                /* saisie en cours, par « jour:index:champ » */
+const tlDraftKey = (jour, i, champ) => `${jour}:${i}:${champ}`;
+/* valeur à afficher dans le champ : le brouillon s'il existe, sinon la donnée */
+function tlVal(jour, i, champ, e){
+  const k = tlDraftKey(jour, i, champ);
+  return Object.prototype.hasOwnProperty.call(_tlDraft, k) ? _tlDraft[k] : (e?.[champ] ?? '');
+}
+function tlEtapes(jour){
+  return state.cache.days?.[jour]?.etapes || null;
+}
+/* Formulaire d'un moment en cours de modification */
+function tlFormHTML(jour, i, e){
+  const T = isEN()
+    ? { h:'Time', t:'What', d:'Details', l:'Place (for the map)', ok:'✅ Save', no:'Cancel', ty:'Kind' }
+    : { h:'Heure', t:'Quoi', d:'Détails', l:'Lieu (pour la carte)', ok:'✅ Enregistrer', no:'Annuler', ty:'Genre' };
+  const opts = Object.keys(TL_TYPES).map(k =>
+    `<option value="${k}"${tlVal(jour, i, 'type', e) === k ? ' selected' : ''}>${TL_TYPES[k]} ${k}</option>`).join('');
+  return `<div class="tl-form" data-tlform="${i}">
+    <div class="tl-fr">
+      <label>${T.h}<input type="time" data-tlinp="heure" value="${esc(tlVal(jour, i, 'heure', e))}"></label>
+      <label>${T.ty}<select data-tlinp="type">${opts}</select></label>
+    </div>
+    <label>${T.t}<input type="text" maxlength="80" data-tlinp="titre" value="${esc(tlVal(jour, i, 'titre', e))}"></label>
+    <label>${T.d}<textarea rows="2" maxlength="300" data-tlinp="description">${esc(tlVal(jour, i, 'description', e))}</textarea></label>
+    <label>${T.l}<input type="text" maxlength="80" data-tlinp="lieu" value="${esc(tlVal(jour, i, 'lieu', e))}"></label>
+    <div class="tl-fbtn">
+      <button class="btn sm" data-tlsave="${i}">${T.ok}</button>
+      <button class="btn sm ghost" data-tlcancel="${i}">${T.no}</button>
+    </div>
   </div>`;
 }
+function timelineHTML(d, jour){
+  const ed = jour != null;          /* pas de boutons si on n'est pas dans une journée */
+  const n = (d.etapes || []).length;
+  const T = isEN()
+    ? { up:'Move earlier', dn:'Move later', mod:'Edit', del:'Remove', add:'➕ Add a moment', map:'📍 See on the map', vide:'This day is empty — add a first moment.' }
+    : { up:'Monter', dn:'Descendre', mod:'Modifier', del:'Retirer', add:'➕ Ajouter un moment', map:'📍 Voir sur la carte', vide:'Journée vide — ajoute un premier moment.' };
+  const items = (d.etapes || []).map((e, i) => {
+    if(ed && _tlEdit && String(_tlEdit.jour) === String(jour) && _tlEdit.i === i)
+      return `<div class="tl-item tl-editing">${tlFormHTML(jour, i, e)}</div>`;
+    return `<div class="tl-item">
+      <div class="tl-time">${esc(e.heure || '')} ${TL_TYPES[e.type] || '📍'}</div>
+      <div class="tl-title">${esc(e.titre || '')}</div>
+      <div class="tl-desc">${esc(e.description || '')}</div>
+      ${e.lieu ? `<span class="tl-loc" data-loc="${esc(e.lieu)}">${T.map}</span>` : ''}
+      ${ed ? `<div class="tl-acts">
+        <button class="tl-act" data-tlup="${i}" title="${T.up}" aria-label="${T.up}"${i === 0 ? ' disabled' : ''}>▲</button>
+        <button class="tl-act" data-tldn="${i}" title="${T.dn}" aria-label="${T.dn}"${i === n - 1 ? ' disabled' : ''}>▼</button>
+        <button class="tl-act" data-tlmod="${i}" title="${T.mod}" aria-label="${T.mod}">✏️</button>
+        <button class="tl-act tl-danger" data-tldel="${i}" title="${T.del}" aria-label="${T.del}">🗑</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="timeline">${items || (ed ? `<p class="hint" style="margin:0 0 10px">${T.vide}</p>` : '')}</div>`
+    + (ed ? `<button class="btn sm ghost tl-add" data-tladd="${esc(String(jour))}">${T.add}</button>` : '');
+}
+/* Re-rend UNIQUEMENT la journée concernée : re-rendre tout le plan perdrait
+   les autres journées dépliées et les commentaires en cours de frappe. */
+function tlRender(jour){
+  const box = document.querySelector(`[data-daybox="${jour}"]`);
+  const d = state.cache.days?.[jour];
+  if(box && d) box.innerHTML = timelineHTML(d, jour);
+}
+function tlSwap(jour, i, j){
+  const et = tlEtapes(jour);
+  if(!et || !et[i] || !et[j]) return;
+  [et[i], et[j]] = [et[j], et[i]];
+  save();
+  tlRender(jour);
+}
+document.addEventListener('click', e => {
+  const box = e.target.closest('[data-daybox]');
+  if(!box) return;
+  const jour = box.dataset.daybox;
+  const et = tlEtapes(jour);
+  const up = e.target.closest('[data-tlup]');
+  if(up && et){ tlSwap(jour, +up.dataset.tlup, +up.dataset.tlup - 1); return; }
+  const dn = e.target.closest('[data-tldn]');
+  if(dn && et){ tlSwap(jour, +dn.dataset.tldn, +dn.dataset.tldn + 1); return; }
+  const mod = e.target.closest('[data-tlmod]');
+  if(mod){ _tlEdit = { jour, i:+mod.dataset.tlmod }; tlRender(jour); return; }
+  const cancel = e.target.closest('[data-tlcancel]');
+  if(cancel){
+    /* on abandonne la saisie : les brouillons de CE moment sont effacés */
+    for(const k of Object.keys(_tlDraft)) if(k.startsWith(`${jour}:${cancel.dataset.tlcancel}:`)) delete _tlDraft[k];
+    _tlEdit = null; tlRender(jour); return;
+  }
+  const save2 = e.target.closest('[data-tlsave]');
+  if(save2 && et){
+    const i = +save2.dataset.tlsave;
+    const form = save2.closest('.tl-form');
+    const lu = {};
+    form?.querySelectorAll('[data-tlinp]').forEach(inp => { lu[inp.dataset.tlinp] = inp.value.trim(); });
+    et[i] = { ...et[i], heure: lu.heure || et[i].heure, titre: lu.titre || et[i].titre,
+              description: lu.description || '', lieu: lu.lieu || null, type: lu.type || et[i].type };
+    for(const k of Object.keys(_tlDraft)) if(k.startsWith(`${jour}:${i}:`)) delete _tlDraft[k];
+    _tlEdit = null; save(); tlRender(jour);
+    toast(isEN() ? '✔ Moment updated' : '✔ Moment mis à jour');
+    return;
+  }
+  const del = e.target.closest('[data-tldel]');
+  if(del && et){
+    const i = +del.dataset.tldel;
+    const nom = String(et[i]?.titre || '').slice(0, 60);
+    if(!confirm(isEN() ? `Remove “${nom}” from this day?` : `Retirer « ${nom} » de cette journée ?`)) return;
+    et.splice(i, 1);
+    _tlEdit = null; save(); tlRender(jour);
+    return;
+  }
+  const add = e.target.closest('[data-tladd]');
+  if(add){
+    state.cache.days = state.cache.days || {};
+    const d = state.cache.days[jour] = state.cache.days[jour] || { etapes: [] };
+    d.etapes = d.etapes || [];
+    /* on part de l'heure du dernier moment + 1 h : le plus souvent, on ajoute
+       à la suite. C'est modifiable juste après, le formulaire s'ouvre. */
+    const last = d.etapes[d.etapes.length - 1]?.heure || '09:00';
+    const h = Math.min(23, (parseInt(String(last).slice(0, 2), 10) || 9) + 1);
+    d.etapes.push({ heure: String(h).padStart(2, '0') + ':00',
+                    titre: isEN() ? 'New moment' : 'Nouveau moment',
+                    description: '', lieu: null, type: 'visite' });
+    _tlEdit = { jour, i: d.etapes.length - 1 };
+    save(); tlRender(jour);
+    return;
+  }
+});
+/* la saisie en cours est mémorisée à chaque frappe → elle survit à un
+   changement d'onglet, comme les commentaires */
+document.addEventListener('input', e => {
+  const inp = e.target.closest('[data-tlinp]');
+  if(!inp) return;
+  const box = inp.closest('[data-daybox]');
+  const form = inp.closest('[data-tlform]');
+  if(!box || !form) return;
+  _tlDraft[tlDraftKey(box.dataset.daybox, form.dataset.tlform, inp.dataset.tlinp)] = inp.value;
+});
 
 const _e7 = $('#btnIti'); if(_e7) _e7.onclick = async () => {
   const zone = $('#zoneIti');
@@ -5317,6 +5502,9 @@ function searchBar(on, first){
    Projection Web Mercator, la même que celle des tuiles.
 ============================================================ */
 const AM_TS = 256, AM_ZMIN = 3, AM_ZMAX = 18;
+/* Couronne de tuiles posée AUTOUR du visible : on peut se déplacer de cette
+   distance sans rien recalculer ni rien recharger. Une tuile entière. */
+const AM_BUF = 256;
 function amProject(lat, lon, z){
   const s = AM_TS * Math.pow(2, z);
   const la = Math.max(-85.0511, Math.min(85.0511, +lat || 0)) * Math.PI / 180;
@@ -5361,19 +5549,35 @@ function acoMapCreate(el){
     line: [],           /* [[lat,lon], …] */
     dash: [],           /* trait pointillé (position → prochaine étape) */
     tiles: new Map(),
+    lay: null,          /* origine de la dernière mise en place des tuiles */
     raf: 0
   };
 
   /* ---- tuiles ---- */
+  /* ---- Couche de tuiles ----------------------------------------------------
+     Trois règles apprises à la dure :
+     1. On dessine une COURONNE de tuiles autour de ce qui est visible (AM_BUF).
+        Ainsi un petit déplacement révèle des tuiles déjà chargées, au lieu de
+        montrer du vide puis d'attendre le réseau.
+     2. Pendant un déplacement, on ne recalcule PAS la position de chaque
+        tuile : on translate le CONTENEUR, ce qui ne coûte qu'une composition
+        GPU. On ne refait la mise en place que si on sort de la couronne.
+     3. On ne supprime jamais une tuile pendant un geste : jeter une tuile
+        chargée pour la redemander une seconde plus tard, c'est ce qui donnait
+        l'impression d'une carte lente. Le ménage se fait à l'arrêt.
+  ------------------------------------------------------------------------- */
+  function tileURL(z, xw, y){ return `https://tile.openstreetmap.org/${z}/${xw}/${y}.png`; }
   function drawTiles(w, h, z, ox, oy){
     const n = Math.pow(2, z);
-    const x0 = Math.floor(ox / AM_TS), x1 = Math.floor((ox + w) / AM_TS);
-    const y0 = Math.max(0, Math.floor(oy / AM_TS)), y1 = Math.min(n - 1, Math.floor((oy + h) / AM_TS));
+    const B = AM_BUF;
+    const x0 = Math.floor((ox - B) / AM_TS), x1 = Math.floor((ox + w + B) / AM_TS);
+    const y0 = Math.max(0, Math.floor((oy - B) / AM_TS)), y1 = Math.min(n - 1, Math.floor((oy + h + B) / AM_TS));
     const garde = new Set();
     for(let x = x0; x <= x1; x++){
       for(let y = y0; y <= y1; y++){
-        const xw = ((x % n) + n) % n;
-        const k = `${z}:${xw}:${y}:${x}`;
+        /* la clé porte x NON replié : c'est lui qui donne la position, et deux
+           positions différentes ne doivent jamais partager le même nœud */
+        const k = `${z}:${x}:${y}`;
         garde.add(k);
         let img = M.tiles.get(k);
         if(!img){
@@ -5381,21 +5585,34 @@ function acoMapCreate(el){
           img.className = 'am-tile';
           img.alt = '';
           img.decoding = 'async';
+          /* ⚠️ draggable=false : sans ça le navigateur lance SON glisser-déposer
+             d'image dès qu'on tire sur la carte, et le déplacement ne marche
+             plus — la carte semblait « collée ». C'était le vrai bug. */
+          img.draggable = false;
           /* CORS explicite : sans ça la réponse est « opaque », le service
              worker ne peut ni la lire ni la juger valide, et la carte hors-ligne
              ne marche pas. OpenStreetMap renvoie bien Access-Control-Allow-Origin. */
           img.crossOrigin = 'anonymous';
           img.addEventListener('load', () => img.classList.add('on'), { once: true });
-          img.src = `https://tile.openstreetmap.org/${z}/${xw}/${y}.png`;
+          img.src = tileURL(z, ((x % n) + n) % n, y);
           elTiles.appendChild(img);
           M.tiles.set(k, img);
         }
         img.style.transform = `translate3d(${Math.round(x * AM_TS - ox)}px,${Math.round(y * AM_TS - oy)}px,0)`;
       }
     }
+    /* Cette fonction fait AUTORITÉ sur ce qui est affiché : toute tuile
+       absente de la couronne part. Garder une tuile sans la repositionner la
+       laissait dessinée à son ancienne place — d'où des morceaux de carte
+       décalés. Comme drawTiles n'est plus appelée à chaque image (le
+       déplacement passe par la translation du conteneur), ce ménage ne coûte
+       plus rien. */
     for(const [k, img] of M.tiles){
       if(!garde.has(k)){ img.remove(); M.tiles.delete(k); }
     }
+    /* origine de cette mise en place : le déplacement s'y réfère */
+    M.lay = { z, ox, oy, x0, x1, y0, y1, w, h };
+    elTiles.style.transform = '';
   }
 
   /* ---- marqueurs : le DOM n'est reconstruit que si la liste change ---- */
@@ -5445,7 +5662,14 @@ function acoMapCreate(el){
     const z = Math.round(M.zoom);
     const c = amProject(M.center.lat, M.center.lon, z);
     const ox = c.x - w / 2, oy = c.y - h / 2;
-    drawTiles(w, h, z, ox, oy);
+    /* Tant qu'on reste dans la couronne déjà posée, on se contente de
+       translater le conteneur : aucun calcul par tuile, aucune écriture DOM.
+       C'est ce qui rend le déplacement fluide. */
+    const L = M.lay;
+    const dedans = L && L.z === z && L.w === w && L.h === h
+      && Math.abs(ox - L.ox) < AM_BUF && Math.abs(oy - L.oy) < AM_BUF;
+    if(dedans) elTiles.style.transform = `translate3d(${Math.round(L.ox - ox)}px,${Math.round(L.oy - oy)}px,0)`;
+    else drawTiles(w, h, z, ox, oy);
     drawLines(w, h, z, ox, oy);
     placeMarks(w, h, z, ox, oy);
     if(!elPop.hidden && elPop._i != null){
@@ -5513,7 +5737,17 @@ function acoMapCreate(el){
   function endPointer(e){
     pts.delete(e.pointerId);
     if(pts.size < 2) pinch = 0;
-    if(drag){ _dragDist = drag.moved; drag = null; el.classList.remove('am-grab'); }
+    if(drag){
+      _dragDist = drag.moved; drag = null; el.classList.remove('am-grab');
+      /* Le geste est fini : on repose proprement les tuiles autour de la
+         nouvelle position. Pendant le geste, on ne touche pas au DOM. */
+      const w = el.clientWidth, h = el.clientHeight;
+      if(w && h){
+        const z = Math.round(M.zoom);
+        const c = amProject(M.center.lat, M.center.lon, z);
+        drawTiles(w, h, z, c.x - w / 2, c.y - h / 2);
+      }
+    }
   }
   el.addEventListener('pointerup', endPointer);
   el.addEventListener('pointercancel', endPointer);
@@ -5854,11 +6088,14 @@ function themeMode(){
 function applyTheme(){
   const mode = themeMode();
   const dark = mode === 'dark' || (mode === 'auto' && _sysDark());
-  document.documentElement.dataset.theme = dark ? 'dark' : '';
+  /* ⚠️ Le SOMBRE est désormais le thème par défaut du CSS : c'est donc le
+     CLAIR qui doit être annoncé explicitement. Écrire une chaîne vide, comme
+     avant, laissait le site en sombre alors que l'appareil demandait le clair. */
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove());
   const m = document.createElement('meta');
   m.name = 'theme-color';
-  m.content = dark ? '#0B0B10' : '#FFE600';
+  m.content = dark ? '#121212' : '#F5F4F0';
   document.head.appendChild(m);
 }
 /* le mode « Système » réagit en direct au changement de thème de l'appareil */

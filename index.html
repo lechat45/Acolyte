@@ -8,13 +8,21 @@
      (Hotellook, Travelpayouts, corsproxy, allorigins, workers.dev, deno.dev)
      ont été retirés. Avant d'ajouter un domaine, vérifie qu'il est appelé.
      ⚠️ Pas de 'unsafe-inline' dans script-src : c'est CE réglage qui empêche
-     un texte piégé de devenir du code exécutable. Ne l'affaiblis jamais. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://upload.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://*.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+     un texte piégé de devenir du code exécutable. Ne l'affaiblis jamais.
+     ⚠️ N'ajoute PAS 'frame-ancestors' ici : cette directive n'existe QUE dans
+     un en-tête HTTP, le navigateur l'ignore dans une balise <meta> et le
+     signale dans la console. La protection contre l'encadrement passe par
+     X-Frame-Options dans le fichier _headers. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://upload.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://*.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta name="theme-color" content="#FFE600" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0B0B10" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F5F4F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
+<!-- Les DEUX sont nécessaires : la version standard (que Chrome réclame
+     désormais) et la variante Apple, encore lue par les anciens iOS. Retirer
+     celle d'Apple ferait perdre le mode plein écran sur iPhone. -->
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -102,6 +110,45 @@
   </div>
 </div>
 
+<!-- ===== Colonne de gauche (ordinateur) =====
+     Elle porte l'identité et le fil du parcours. Sur téléphone elle
+     disparaît : la barre du bas et le fil d'étapes horizontal reprennent le
+     relais — le dessin mobile reste la référence. -->
+<aside class="rail" aria-hidden="true">
+  <div class="rail-logo">
+    <span class="rail-mark logo-mark"></span>
+    <span class="rail-word">
+      <b>ACOLITE</b>
+      <em>Ton assistant voyage</em>
+    </span>
+  </div>
+
+  <ol class="rail-steps" id="railSteps">
+    <li data-railstep="1"><span class="rs-n">01</span><span class="rs-t"><b>Questions</b><em>Dis-nous tout sur ton voyage</em></span></li>
+    <li data-railstep="2"><span class="rs-n">02</span><span class="rs-t"><b>Les choix</b><em>Nos suggestions pour toi</em></span></li>
+    <li data-railstep="3"><span class="rs-n">03</span><span class="rs-t"><b>Ton voyage</b><em>Ton itinéraire personnalisé</em></span></li>
+  </ol>
+
+  <!-- Décor : la route en pointillé d'un avion. Dessiné en SVG, donc net à
+       toute taille et sans image à télécharger. Coupé si l'utilisateur a
+       réduit les animations n'a pas de sens : il ne bouge pas. -->
+  <svg class="rail-art" viewBox="0 0 200 190" aria-hidden="true">
+    <path d="M8 22 C70 8 120 44 108 84 C98 118 44 118 40 88 C36 58 92 44 140 66 C172 80 182 116 168 150"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 8" stroke-linecap="round"/>
+    <path d="M150 44 l22 10 -8 3 -2 9 -5 -9 -9 2 z" fill="currentColor" transform="rotate(18 160 52)"/>
+    <path d="M168 150 a7 7 0 1 0 -0.1 0 z" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M168 143 c-7 0 -12 5 -12 11 c0 8 12 20 12 20 s12 -12 12 -20 c0 -6 -5 -11 -12 -11 z"
+          fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="168" cy="154" r="3.4" fill="currentColor"/>
+  </svg>
+
+  <div class="rail-note">
+    <span class="rn-ico">✨</span>
+    <p>Acolite crée ton voyage sur mesure en quelques secondes.</p>
+    <p class="rn-sub">L'aventure commence ici 👋</p>
+  </div>
+</aside>
+
 <div class="wrap">
   <header>
     <div class="logo"><span class="logo-word" aria-label="Acolite"><i>A</i><i>c</i><i>o</i><i>l</i><i class="i-dot">i<span class="logo-mark"></span></i><i>t</i><i>e</i></span></div>
@@ -129,11 +176,25 @@
       <p class="sub" style="margin:0 0 12px">Reprends un voyage déjà exploré, ou lances-en un nouveau ci-dessous.</p>
       <div class="gallery" id="galleryList"></div>
     </div>
+    <!-- Bandeau d'accueil : le titre posé sur un décor. Le décor est une
+         composition CSS/SVG et non une photo — aucun fichier à télécharger,
+         rien à autoriser dans la politique de sécurité, et il reste net sur
+         tous les écrans. -->
+    <div class="hero">
+      <div class="hero-deco" aria-hidden="true"></div>
+      <div class="hero-in">
+        <!-- h1 de la page : titre principal pour Google et les lecteurs d'écran -->
+        <h1>Où est-ce qu'on t'emmène ?</h1>
+        <p class="sub">Décris tes envies, Acolite te propose des destinations sur mesure — puis t'aide à affiner.</p>
+      </div>
+      <svg class="hero-globe" viewBox="0 0 90 90" aria-hidden="true">
+        <circle cx="45" cy="46" r="23" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <ellipse cx="45" cy="46" rx="9" ry="23" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <path d="M23 39 h44 M23 53 h44" stroke="currentColor" stroke-width="2.4" fill="none"/>
+        <path d="M45 14 v-9 M69 24 l7 -7 M21 24 l-7 -7 M78 46 h9 M3 46 h9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+    </div>
     <div class="card">
-      <!-- h1 de la page : c'est le titre principal du site pour Google et pour
-           les lecteurs d'écran. Il est stylé exactement comme les h2. -->
-      <h1>Où est-ce qu'on t'emmène ? 🌍</h1>
-      <p class="sub">Décris tes envies, Acolite te propose des destinations sur mesure — puis t'aide à affiner.</p>
       <div class="grid">
         <div class="field"><label for="fFrom">Ville de départ</label><input id="fFrom" placeholder="Paris" autocomplete="off"></div>
         <div class="field"><label for="fDest">Destination souhaitée</label><input id="fDest" placeholder="Pays ou ville — vide = surprends-moi" autocomplete="off"></div>
