@@ -509,6 +509,43 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .legal h4{font-family:'Sora',sans-serif;font-size:.9rem;margin:14px 0 4px}
 .legal h4:first-child{margin-top:0}
 .legal p{font-size:.84rem;line-height:1.55;color:var(--txt-2);margin:0}
+/* ===== Case à cocher d'option (questionnaire) =====
+   Assez visible pour qu'on la remarque : encadrée comme une carte, elle
+   s'allume en jaune quand elle est cochée. Une option cachée au fond d'une
+   liste déroulante, personne ne la trouve. */
+.field.wide{grid-column:1/-1}
+/* ⚠️ Sélecteur `.field label.opt-check` et non `.opt-check` seul : la règle
+   `.field label` impose display:block ET text-transform:uppercase, et elle est
+   plus spécifique. Sans ce préfixe, la case tombait sur sa propre ligne et la
+   phrase d'explication s'affichait TOUT EN MAJUSCULES. */
+.field label.opt-check{
+  display:flex;align-items:flex-start;gap:12px;cursor:pointer;
+  border:3px solid var(--stroke);border-radius:var(--r-md);
+  background:var(--secondary);box-shadow:4px 4px 0 var(--stroke);
+  padding:14px 16px;margin:0;
+  text-transform:none;letter-spacing:normal;font-size:1rem;
+  transition:background .12s ease;
+}
+.field label.opt-check input{
+  width:auto;flex:none;margin:2px 0 0;box-shadow:none;transform:scale(1.4);
+  accent-color:var(--primary);cursor:pointer;
+}
+.field label.opt-check b{
+  display:block;font-family:'Sora',sans-serif;font-weight:900;font-size:.92rem;
+  text-transform:none;letter-spacing:0;color:var(--txt);
+}
+.field label.opt-check em{
+  display:block;font-style:normal;font-size:.78rem;font-weight:600;
+  text-transform:none;letter-spacing:normal;
+  color:var(--txt-2);line-height:1.45;margin-top:4px;
+}
+/* cochée : l'aplat jaune de la marque, et l'encre repasse en foncé */
+.field label.opt-check:has(input:checked){background:var(--primary)}
+.field label.opt-check:has(input:checked) b,
+.field label.opt-check:has(input:checked) em{color:#101010}
+.field label.opt-check:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--stroke)}
+@media (prefers-reduced-motion:reduce){.field label.opt-check{transition:none}}
+
 /* ===== Affinage libre des propositions ===== */
 .refine-bar{display:flex;gap:8px;flex-wrap:wrap}
 .refine-inp{flex:1;min-width:180px;padding:11px 14px;border:3px solid var(--stroke);border-radius:var(--r-md);background:var(--secondary);color:var(--txt);font-family:inherit;font-size:.9rem;font-weight:600}

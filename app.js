@@ -1000,6 +1000,23 @@ function progress(el, msgs){
 }
 
 /* ---------- Contexte voyage ---------- */
+/* ---- Forme de l'itinéraire : une ville, plusieurs villes, plusieurs pays ----
+   Le moteur savait déjà découper un voyage en villes-étapes, mais il décidait
+   seul. Ici le voyageur tranche, et sa consigne est IMPÉRATIVE : c'est ce qui
+   fait la différence entre « une semaine à Rome » et « Rome, Florence, Venise ».
+   Le nombre d'étapes reste borné : au-delà de 4 bases sur une semaine, on passe
+   son voyage dans les trains. */
+function itinCtx(p){
+  const nuits = /week|2-3/i.test(String(p.days || '')) ? 'court' : 'normal';
+  if(p.itin === 'mono')
+    return `\n- FORME IMPOSÉE : UNE SEULE VILLE. Le voyageur veut poser ses valises une seule fois. N'utilise PAS "logement.etapes", ne propose aucune ville-étape : un seul logement pour tout le séjour, et des excursions à la journée si besoin.`;
+  if(p.itin === 'multi')
+    return `\n- FORME IMPOSÉE : PLUSIEURS VILLES dans un même pays (ou une même région). Découpe le séjour en ${nuits === 'court' ? '2' : '2 à 3'} villes-étapes, remplis OBLIGATOIREMENT "logement.etapes", et donne à chaque journée du programme son champ "base". Ordre géographique logique, jamais de retour en arrière, minimum 2 nuits par étape. Compte les trajets entre étapes dans le budget et décris-les dans "transport.details".`;
+  if(p.itin === 'pays')
+    return `\n- FORME IMPOSÉE : PLUSIEURS PAYS. Construis un vrai itinéraire qui traverse ${nuits === 'court' ? '2 pays voisins' : '2 à 3 pays'}, avec une ville-étape par pays au minimum. Remplis OBLIGATOIREMENT "logement.etapes" et le champ "base" de chaque journée. Choisis des pays réellement enchaînables dans le temps imparti (frontières proches, liaisons directes) — mieux vaut 2 pays bien vus que 4 traversés en courant. Minimum 2 nuits par étape, ordre géographique logique. Les trajets entre pays (mode, durée, prix réels) vont dans "transport.details" et comptent dans le budget.`;
+  return '';
+}
+
 function ctx(){
   const p = state.prefs || {}, t = state.trip || {};
   let saison = '';
@@ -1020,7 +1037,7 @@ CONTEXTE VOYAGEUR :
 - Durée : ${p.days || '?'} · Période : ${p.when || 'flexible'}
 - Budget/pers : ${p.budget || '?'} · Voyageurs : ${p.adults||2} adulte(s)${p.kids ? ' + ' + p.kids + ' enfant(s)' : ''}
 - Destination souhaitée : ${p.dest || 'libre, à proposer'}${p.vibe ? `\n- Ambiance recherchée : ${p.vibe}` : ''}${p.withWho ? `\n- Voyage ${p.withWho}` : ''}${p.stay ? `\n- Style d'hébergement préféré : ${p.stay}` : ''}${p.transport ? `\n- MOYEN DE TRANSPORT IMPOSÉ par le voyageur : ${p.transport}. Construis le trajet avec ce mode, même s'il n'est pas le plus rapide. S'il est réellement impossible (mer à traverser, distance absurde), dis-le franchement et explique pourquoi avant de proposer autre chose.` : ''}
-- Limites & conditions : ${p.free || 'aucune'}
+- Limites & conditions : ${p.free || 'aucune'}${itinCtx(p)}
 ${prefsBlock()}
 RÈGLES DE QUALITÉ (toujours valables) :
 - Uniquement des lieux, quartiers, établissements et transports RÉELS et vérifiables — au moindre doute, préfère l'option la plus connue plutôt que d'inventer.
@@ -1046,6 +1063,8 @@ function readPrefs(extra){
     withWho:$('#fWith')?.value || '',
     stay:  $('#fStay')?.value || '',
     transport: $('#fTransport')?.value || '',
+    /* case cochée → itinéraire multi-pays ; décochée → Acolite décide seul */
+    itin:  $('#fMulti')?.checked ? 'pays' : '',
     free:  $('#fFree').value.trim().slice(0,600) + (extra ? ' | Affinage : ' + String(extra).slice(0,600) : '')
   };
 }
@@ -1079,7 +1098,7 @@ QUESTIONS DE PRÉCISION : si des infos te manquent pour viser juste (rythme, amb
 
 ${(state.seen||[]).length && !prefs.dest ? 'DÉJÀ PROPOSÉ à ce voyageur (ne PAS reproposer sauf s\'il le demande) : ' + state.seen.join(', ') + '.' : ''}
 ${(getHistory()||[]).length ? 'VOYAGES DÉJÀ CHOISIS par ce voyageur par le passé : ' + getHistory().map(h=>h.nom).join(', ') + ' — ne les repropose pas, mais inspire-toi de ses goûts.' : ''}
-DÉCIDE toi-même du NOMBRE de propositions (1 à 3) selon la demande :
+${prefs.itin === 'multi' || prefs.itin === 'pays' ? `FORME D'ITINÉRAIRE IMPOSÉE (voir contexte) : chaque proposition doit être un ITINÉRAIRE, pas une ville unique. Dans "nom", écris le parcours (ex : « Rome → Florence → Venise »${prefs.itin === 'pays' ? ', et pour plusieurs pays : « Vienne → Bratislava → Budapest »' : ''}), et dans "pays" ${prefs.itin === 'pays' ? 'liste les pays traversés (ex : « Autriche, Slovaquie, Hongrie »)' : 'le pays concerné'}. Le "budget_estime" doit inclure les trajets entre étapes. Dans "resume", dis en une phrase pourquoi CET enchaînement se tient dans le temps imparti.\n` : ''}${prefs.itin === 'mono' ? 'FORME IMPOSÉE : le voyageur veut UNE SEULE ville par proposition — pas d’itinéraire, pas d’enchaînement.\n' : ''}DÉCIDE toi-même du NOMBRE de propositions (1 à 3) selon la demande :
 - La demande désigne UNE VILLE précise → UNE SEULE proposition : la meilleure formule pour cette ville, très travaillée.
 - Un PAYS ou une région → 2 ou 3 villes/zones DIFFÉRENTES de ce pays.
 - Demande ouverte → 3 destinations VRAIMENT différentes.
@@ -1894,7 +1913,7 @@ ${answers ? 'RÉPONSES du voyageur à tes questions précédentes (à intégrer 
 
 MISSION : organise TOUT le voyage en suivant STRICTEMENT cet ordre d'analyse, chaque étape s'appuyant sur la précédente :
 ÉTAPE 1 — LE LIEU EXACT : si la destination est un pays ou une zone large, choisis LA ville/zone précise où aller (et dis pourquoi). Sinon, confirme la ville et identifie le point d'arrivée concret (aéroport, gare).
-CAS MULTI-PAYS / ITINÉRANT : si le voyage couvre PLUSIEURS pays ou villes (ex : « Italie puis Slovénie », roadtrip), découpe-le en 2-3 BASES maximum (villes-étapes dans un ordre géographique logique, JAMAIS de retour en arrière, minimum 2 nuits par base). Remplis alors "logement.etapes" (une entrée par base) et donne à chaque jour du programme son champ "base". Les trajets ENTRE bases (mode, durée, prix réels) vont dans "transport.details" et comptent dans le budget.
+CAS MULTI-PAYS / ITINÉRANT : si le voyageur a imposé une forme d'itinéraire (voir CONTEXTE VOYAGEUR ci-dessus), RESPECTE-LA — elle prime sur ton jugement. Sinon, si le voyage couvre PLUSIEURS pays ou villes (ex : « Italie puis Slovénie », roadtrip), découpe-le en 2-3 BASES maximum (villes-étapes dans un ordre géographique logique, JAMAIS de retour en arrière, minimum 2 nuits par base). Remplis alors "logement.etapes" (une entrée par base) et donne à chaque jour du programme son champ "base". Les trajets ENTRE bases (mode, durée, prix réels) vont dans "transport.details" et comptent dans le budget.
 ÉTAPE 2 — LE TRANSPORT : compare avion / train / voiture sur QUATRE critères : pollution (utilise les chiffres CO₂ ci-dessus), temps de trajet porte-à-porte, prix, et conditions du voyageur (budget, enfants, transports à éviter, météo/saison). Tranche et justifie.
 ÉTAPE 3 — LES LIEUX PRINCIPAUX : liste les 5 à 8 endroits incontournables de la ville/zone (monuments, quartiers, sites naturels), avec leur position relative (nord/sud/centre…).
 ÉTAPE 4 — LE LOGEMENT : choisis le quartier en croisant DEUX critères : la proximité/liaison avec le point d'arrivée de l'étape 1-2 (aéroport/gare) ET l'accès facile aux lieux principaux de l'étape 3. Explique ce compromis.
@@ -4608,6 +4627,12 @@ function enterApp(){
    (date au format AAAA-MM-JJ) et incrémente CACHE dans sw.js.
 ============================================================ */
 const CHANGELOG = [
+  { v:'5.0', date:'2026-07-24', titre:'Des voyages à travers plusieurs pays', items:[
+    '🌍 Une case à cocher dans le questionnaire : « Traverser plusieurs pays », et Acolite construit un grand itinéraire',
+    '🧭 Acolite enchaîne alors les étapes dans un ordre logique, avec les trajets entre elles comptés dans le budget',
+    '📷 Le QR de ton ticket s’ouvre maintenant avec l’appareil photo de n’importe quel téléphone — plus besoin de passer par l’app',
+    '🔗 Un lien de voyage reçu quand Acolite est déjà ouvert s’importe tout de suite'
+  ]},
   { v:'4.9', date:'2026-07-24', titre:'Des chiffres plus clairs côté coulisses', items:[
     '📊 Le tableau de bord montre l’essentiel d’un coup d’œil : courbe des inscriptions, parcours, saisons, budgets',
     '🔒 Rien de personnel n’y apparaît : uniquement des totaux, et les répartitions se taisent tant que la base est petite'
@@ -5836,18 +5861,72 @@ window.addEventListener('unhandledrejection', e => {
 });
 
 /* --- Voyage <-> QR : encodage compact + import --- */
+/* ============================================================
+   CHARGE PARTAGEABLE (lien + QR du ticket)
+   ------------------------------------------------------------
+   ⚠️ La TAILLE est ici une contrainte de premier ordre, pas un détail :
+   plus la charge est longue, plus le QR a de modules, et plus les carrés
+   deviennent petits. Mesuré : l'ancienne version faisait 477 caractères,
+   soit un QR de 87×87 modules — moins de 2 pixels par carré sur le ticket,
+   donc INSCANNABLE par un téléphone.
+   D'où le format court « ACO2 » : clés d'une lettre, et on ne transporte
+   QUE ce qui est nécessaire pour rouvrir le voyage. Le texte libre (jusqu'à
+   120 caractères à lui seul) a été retiré : il ne sert pas à l'import, et
+   c'était le plus gros contributeur.
+   base64url (« - » et « _ » au lieu de « + » et « / ») : pas d'échappement
+   %XX dans l'URL, donc pas de caractères gaspillés.
+============================================================ */
+const b64url = s => btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64url = s => {
+  const t = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  return atob(t + '==='.slice(0, (4 - t.length % 4) % 4));
+};
 function tripPayload(){
   const t = state.trip, p = state.prefs || {};
   if(!t) return null;
-  const o = { v:1,
-    trip: { nom:t.nom, pays:t.pays, drapeau:t.drapeau, iata:t.iata, budget_estime:t.budget_estime, langue:t.langue, monnaie:t.monnaie, transport_conseille:t.transport_conseille },
-    prefs: { from:p.from, days:p.days, when:p.when, depart:p.depart, adults:p.adults, kids:p.kids, budget:p.budget, free:(String(p.free||'').split(' | Affinage')[0]).slice(0,120) }
-  };
-  return 'ACOLITE1:' + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+  /* clés courtes : n=nom, p=pays, d=drapeau, i=iata, b=budget, c=transport conseillé
+     f=départ, j=durée, w=période, t=date, a=adultes, k=enfants, u=budget, r=forme */
+  const o = { n:t.nom, p:t.pays };
+  if(t.drapeau) o.d = t.drapeau;
+  if(t.iata) o.i = t.iata;
+  if(t.budget_estime) o.b = String(t.budget_estime).slice(0, 40);
+  if(t.transport_conseille) o.c = t.transport_conseille;
+  if(p.from) o.f = p.from;
+  if(p.days) o.j = p.days;
+  if(p.when) o.w = String(p.when).slice(0, 40);
+  if(p.depart) o.t = p.depart;
+  if(p.adults) o.a = p.adults;
+  if(p.kids) o.k = p.kids;
+  if(p.budget) o.u = p.budget;
+  if(p.itin) o.r = p.itin;
+  return 'ACO2' + b64url(unescape(encodeURIComponent(JSON.stringify(o))));
+}
+/* L'URL que porte le QR : scannée avec l'appareil photo du téléphone, elle
+   OUVRE Acolite et importe le voyage. Un QR contenant « ACOLITE1:… » ne
+   donnait qu'un texte incompréhensible dans l'appareil photo — c'était
+   l'autre moitié du problème « ça ne se scanne pas ». */
+function tripURL(){
+  const pl = tripPayload();
+  return pl ? location.origin + location.pathname + '#v=' + pl : null;
 }
 function importPayload(str){
-  if(!String(str).startsWith('ACOLITE1:')) throw new Error('format');
-  const o = JSON.parse(decodeURIComponent(escape(atob(str.slice(9)))));
+  const s = String(str);
+  let json;
+  if(s.startsWith('ACO2')){
+    json = decodeURIComponent(escape(unb64url(s.slice(4))));
+  }else if(s.startsWith('ACOLITE1:')){
+    /* ancien format : les tickets et liens déjà partagés doivent continuer
+       de fonctionner, on ne casse pas ce qui circule */
+    json = decodeURIComponent(escape(atob(s.slice(9))));
+  }else throw new Error('format');
+  const brut = JSON.parse(json);
+  /* on ramène le format court vers la forme attendue par le reste du code */
+  const o = brut.trip ? brut : {
+    trip:  { nom:brut.n, pays:brut.p, drapeau:brut.d, iata:brut.i,
+             budget_estime:brut.b, transport_conseille:brut.c },
+    prefs: { from:brut.f, days:brut.j, when:brut.w, depart:brut.t,
+             adults:brut.a, kids:brut.k, budget:brut.u, itin:brut.r }
+  };
   if(!o.trip?.nom) throw new Error('vide');
   /* voyage et préférences viennent d'un QR ou d'un lien : on les assainit
      avant de les faire entrer dans l'état (mêmes raisons que restoreTrip) */
@@ -5885,7 +5964,10 @@ function loadLib(name, src, test){
   return _lib[name];
 }
 const loadQRGen  = () => loadLib('qrgen', 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js', () => !!window.QRCode);
-const loadQRRead = () => loadLib('qrread', 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js', () => !!window.jsQR);
+/* ⚠️ jsQR n'est PAS hébergé par cdnjs : l'ancienne adresse répondait 404, et
+   le scanner de tickets était donc silencieusement inutilisable. jsDelivr le
+   sert bien — vérifié. Si tu changes cette adresse, teste le scanner. */
+const loadQRRead = () => loadLib('qrread', 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js', () => !!window.jsQR);
 
 /* --- Scanner : caméra ou photo -> import du voyage --- */
 let _scanStream = null, _scanRun = false;
@@ -5947,7 +6029,7 @@ document.addEventListener('click', e => {
 async function shareLink(){
   const pl = tripPayload();
   if(!pl){ toast('Choisis d’abord un voyage'); return; }
-  const url = location.origin + location.pathname + '#v=' + encodeURIComponent(pl);
+  const url = tripURL();      /* base64url : rien à échapper */
   const txt = `Mon voyage à ${state.trip.nom} sur Acolite ✈️`;
   try{
     if(navigator.share){ await navigator.share({ title:'Acolite', text:txt, url }); return; }
@@ -5967,6 +6049,11 @@ function checkImportHash(){
   try{ importPayload(decodeURIComponent(m[1])); }
   catch(e){ toast('❌ Lien de voyage invalide'); }
 }
+/* Le lien peut arriver alors qu'Acolite est DÉJÀ ouvert : dans ce cas le
+   navigateur change juste l'ancre, sans recharger la page — et rien ne se
+   passait. C'est le cas courant quand on scanne un QR depuis son téléphone
+   avec l'app déjà dans un onglet. */
+addEventListener('hashchange', checkImportHash);
 
 /* --- Export .ics : le programme dans ton agenda (Google/Apple/Outlook) --- */
 function exportICS(){
@@ -6127,14 +6214,28 @@ async function passPNG(){
   try{
     await loadQRGen();
     const tmp = document.createElement('div');
-    new QRCode(tmp, { text: tripPayload(), width: 170, height: 170, correctLevel: QRCode.CorrectLevel.M });
-    await new Promise(r => setTimeout(r, 80));
+    /* On encode une URL, pas un texte maison : ainsi l'appareil photo du
+       téléphone propose d'ouvrir Acolite, qui importe le voyage tout seul.
+       On génère GRAND (600 px) puis on réduit à l'affichage : les carrés
+       restent nets, alors qu'un QR généré petit puis agrandi devient flou. */
+    new QRCode(tmp, { text: tripURL(), width: 600, height: 600, correctLevel: QRCode.CorrectLevel.M });
+    await new Promise(r => setTimeout(r, 120));
     const q = tmp.querySelector('canvas') || tmp.querySelector('img');
     if(q){
-      g.fillStyle = K; g.fillRect(sx - 92 + 7, M + 60 + 7, 190, 190);   /* ombre dure */
-      g.fillStyle = WH; g.fillRect(sx - 92, M + 60, 190, 190);
-      g.strokeStyle = K; g.lineWidth = 4; g.strokeRect(sx - 92, M + 60, 190, 190);
-      g.drawImage(q, sx - 85, M + 70, 170, 170);
+      /* QR agrandi de 170 à 230 px : à densité égale, chaque carré gagne
+         un tiers de sa taille — c'est ce qui fait la différence entre « ça
+         ne scanne pas » et « ça scanne du premier coup ». */
+      const QS = 230, QB = QS + 20;
+      const qx = sx - QB / 2, qy = M + 52;
+      g.fillStyle = K; g.fillRect(qx + 7, qy + 7, QB, QB);              /* ombre dure */
+      g.fillStyle = WH; g.fillRect(qx, qy, QB, QB);
+      g.strokeStyle = K; g.lineWidth = 4; g.strokeRect(qx, qy, QB, QB);
+      /* la marge blanche autour du QR (« quiet zone ») fait partie du code :
+         sans elle, un lecteur ne trouve pas les bords. Elle est ici assurée
+         par le cadre blanc, plus large que le QR. */
+      g.imageSmoothingEnabled = false;
+      g.drawImage(q, sx - QS / 2, qy + 10, QS, QS);
+      g.imageSmoothingEnabled = true;
       qrOK = true;
     }
   }catch(e){}
@@ -6147,10 +6248,11 @@ async function passPNG(){
     g.fillText('hors-ligne — regénère le ticket', sx, M + 172);
   }
   g.font = '900 16px Sora, Arial';
-  g.fillText('SCANNE-MOI', sx, M + 296);
+  /* le texte reflète le nouveau comportement : n'importe quel téléphone suffit */
+  g.fillText('SCANNE-MOI', sx, M + 306);
   g.font = '600 12px Inter, Arial';
-  g.fillText('dans l\'application Acolite', sx, M + 316);
-  g.fillText('pour importer ce voyage', sx, M + 334);
+  g.fillText('avec l\'appareil photo de ton', sx, M + 326);
+  g.fillText('téléphone pour ouvrir ce voyage', sx, M + 344);
   /* séparateur pointillé + route + numéro de ticket */
   g.setLineDash([10, 8]); g.lineWidth = 3;
   g.beginPath(); g.moveTo(sx - 105, M + 358); g.lineTo(sx + 105, M + 358); g.stroke();
@@ -6177,7 +6279,7 @@ async function passPNG(){
     if(file && navigator.canShare?.({ files: [file] })){
       try{
         await navigator.share({ files: [file], title: 'Mon ticket Acolite', text: `Mon voyage à ${t.nom} ✈️` });
-        toast('📤 Ticket partagé — le QR est scannable dans Acolite');
+        toast('📤 Ticket partagé — le QR s’ouvre avec l’appareil photo');
         return;
       }catch(e){ if(e.name === 'AbortError') return; }
     }
@@ -6186,7 +6288,7 @@ async function passPNG(){
     a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
-    toast('📷 Ticket téléchargé — le QR est scannable dans Acolite');
+    toast('📷 Ticket téléchargé — le QR s’ouvre avec l’appareil photo');
   }, 'image/png');
 }
 document.addEventListener('click', e => { if(e.target.closest('[data-passpng]')) passPNG(); });
@@ -6828,6 +6930,7 @@ if(state.prefs){
   if(state.prefs.kids !== undefined) $('#fKids').value = state.prefs.kids;
   if(state.prefs.free) $('#fFree').value = (state.prefs.free||'').split(' | Affinage :')[0];
   if(state.prefs.transport) $('#fTransport').value = state.prefs.transport;
+  if($('#fMulti')) $('#fMulti').checked = state.prefs.itin === 'pays';
 }else{
   applyTripDefaults();   /* pas encore de voyage → on pré-remplit avec les valeurs par défaut */
 }
@@ -7010,6 +7113,8 @@ const EN_RAW = {
   '👨‍👩‍👧 En famille': '👨‍👩‍👧 As a family',
   '💼 Entre collègues': '💼 With colleagues',
   'Comment tu veux voyager': 'How you want to travel',
+  '🌍 Traverser plusieurs pays': '🌍 Travel across several countries',
+  'Acolite construit un itinéraire de 2 à 3 pays, avec les trajets entre étapes comptés dans le budget.': 'Acolite builds a 2 to 3 country route, with the journeys between stops counted in the budget.',
   '🤷 Peu importe — Acolite décide': '🤷 No preference — Acolite decides',
   '🚆 Train': '🚆 Train',
   '🚗 Voiture': '🚗 Car',
@@ -7316,8 +7421,8 @@ const EN_RAW = {
   'Il faut un voyage avec une date de départ': 'You need a trip with a departure date',
   '📅 Programme exporté — ouvre-le pour l’ajouter à ton agenda': '📅 Programme exported — open it to add it to your calendar',
   'Canvas indisponible': 'Canvas unavailable',
-  '📤 Ticket partagé — le QR est scannable dans Acolite': '📤 Ticket shared — the QR code scans inside Acolite',
-  '📷 Ticket téléchargé — le QR est scannable dans Acolite': '📷 Ticket downloaded — the QR code scans inside Acolite',
+  '📤 Ticket partagé — le QR s’ouvre avec l’appareil photo': '📤 Ticket shared — the QR opens with any phone camera',
+  '📷 Ticket téléchargé — le QR s’ouvre avec l’appareil photo': '📷 Ticket downloaded — the QR opens with any phone camera',
   'Choisis des images 📷': 'Pick some images 📷',
   'Photos illisibles': 'Couldn’t read those photos',
   '🖼️ Carte postale téléchargée': '🖼️ Postcard downloaded',

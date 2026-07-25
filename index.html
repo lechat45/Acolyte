@@ -9,7 +9,7 @@
      ont été retirés. Avant d'ajouter un domaine, vérifie qu'il est appelé.
      ⚠️ Pas de 'unsafe-inline' dans script-src : c'est CE réglage qui empêche
      un texte piégé de devenir du code exécutable. Ne l'affaiblis jamais. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://upload.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://*.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://upload.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://*.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#FFE600" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B0B10" media="(prefers-color-scheme: dark)">
@@ -189,6 +189,17 @@
             <option value="voiture">🚗 Voiture</option>
             <option value="avion">✈️ Avion</option>
           </select>
+        </div>
+        <!-- Une case à cocher plutôt qu'une option au fond d'une liste : le
+             voyageur doit VOIR qu'il peut traverser plusieurs pays. -->
+        <div class="field wide">
+          <label class="opt-check" for="fMulti">
+            <input type="checkbox" id="fMulti">
+            <span>
+              <b>🌍 Traverser plusieurs pays</b>
+              <em>Acolite construit un itinéraire de 2 à 3 pays, avec les trajets entre étapes comptés dans le budget.</em>
+            </span>
+          </label>
         </div>
         <div class="field"><label for="fStay">Style d'hébergement</label>
           <select id="fStay">
