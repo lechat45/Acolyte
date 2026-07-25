@@ -1471,28 +1471,18 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .item.act .side .btn{width:100%;justify-content:center;white-space:normal}
 
 /* Carte plein écran : recouvre tout sauf la barre du bas */
-#catMap{position:fixed;left:0;right:0;top:0;bottom:72px;z-index:30;background:var(--bg)}
 #catMap.hidden{display:none}
-/* la carte devient une vraie « fiche » encadrée, cohérente avec le reste du site */
-#catMap #projMap{
-  position:absolute;top:110px;left:12px;
-  width:calc(100% - 24px);height:calc(100% - 124px);
-  border:1px solid var(--stroke);border-radius:var(--r-lg);
-  box-shadow:var(--shadow);
-  background:#e9e5dc;                 /* teinte des tuiles OSM avant chargement */
-  overflow:hidden;
-}
 /* ===== États vides (carte + profil) ===== */
 .cat-empty{
-  position:absolute;top:66px;left:12px;right:12px;bottom:14px;z-index:6;
   display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--stroke);border-radius:var(--r-lg);box-shadow:var(--shadow);
-  background:var(--secondary);
-  background-size:22px 22px;
+  border:1px solid var(--stroke);border-radius:var(--r-lg);
+  background:var(--secondary);box-shadow:var(--shadow);
+  min-height:min(58vh,520px);
 }
 .cat-empty[hidden]{display:none}
-#catMap.empty .mapbar,#catMap.empty .mapnote,#catMap.empty #projMap,#catMap.empty .mapstops{display:none}
-#catMap.empty .cat-empty{top:12px}
+/* état vide : on cache les deux cartes, pas des morceaux */
+#catMap.empty .map-head,#catMap.empty .map-card{display:none}
+
 .cat-empty-card{text-align:center;max-width:330px;padding:24px}
 .cat-empty-card .ce-emoji{font-size:3rem;line-height:1;margin-bottom:10px}
 .cat-empty-card h3{font-family:'Sora',sans-serif;font-weight:900;font-size:1.1rem;margin:0 0 6px;text-transform:uppercase}
@@ -1795,48 +1785,6 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .auth-lang{display:flex;gap:6px;justify-content:center;margin:0 0 12px}
 .auth-lang .chip{padding:5px 10px;font-size:.72rem}
 
-/* ===== Carte : bande des journées ===== */
-.mapbar{
-  position:absolute;top:12px;left:12px;right:12px;z-index:5;
-  display:flex;gap:8px;align-items:center;
-  overflow-x:auto;scrollbar-width:none;padding:2px;
-}
-.mapbar::-webkit-scrollbar{display:none}
-.mapbar .rt{
-  flex-shrink:0;
-  background:var(--secondary);color:var(--txt);
-  border:1px solid var(--stroke);box-shadow:var(--shadow);border-radius:var(--r-md);
-  padding:11px 14px;font-family:'Sora',sans-serif;font-weight:900;font-size:.78rem;
-  text-transform:uppercase;text-decoration:none;white-space:nowrap;cursor:pointer;
-}
-.mapbar .rt.on{background:var(--primary);color:#101010}
-.mapbar .rt:active{transform:translateY(1px);box-shadow:var(--shadow)}
-
-/* La ligne de contexte : ce que raconte la journée + les deux actions */
-.mapnote{
-  position:absolute;top:64px;left:12px;right:12px;z-index:5;
-  display:flex;gap:8px;align-items:center;min-width:0;
-}
-.mapnote-txt{
-  flex:1;min-width:0;font-size:.8rem;font-weight:700;color:var(--txt-2);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.mapnote-warn{
-  flex-shrink:0;font-size:.66rem;font-weight:800;color:var(--danger);white-space:nowrap;
-}
-.mapnote-warn:empty{display:none}
-.mapnote .rt{
-  flex-shrink:0;
-  background:var(--secondary);color:var(--txt);
-  border:1px solid var(--stroke);box-shadow:var(--shadow);border-radius:var(--r-md);
-  padding:8px 10px;font-family:'Sora',sans-serif;font-weight:900;font-size:.7rem;
-  text-decoration:none;white-space:nowrap;cursor:pointer;
-}
-.mapnote .rt:active{transform:translateY(1px);box-shadow:var(--shadow)}
-@media(max-width:560px){
-  .mapnote-txt{font-size:.72rem}
-  .mapnote .rt{padding:8px 9px;font-size:.66rem}
-}
 
 /* ===== Moteur de carte (tuiles OSM) =====
    ⚠️ Les tuiles OSM sont TOUJOURS claires, y compris en thème sombre. Tout ce
@@ -1981,28 +1929,9 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 /* ===== Safe area : la nav ne chevauche jamais l'indicateur gestuel ===== */
 .catnav{padding-bottom:calc(9px + env(safe-area-inset-bottom, 0px))}
 .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom, 0px))}
-#catMap{bottom:calc(72px + env(safe-area-inset-bottom, 0px))}
 
 
 
-/* ===== Étapes du jour, sous la carte ===== */
-.mapstops{
-  /* remontées de quelques pixels pour ne pas recouvrir l'attribution OSM */
-  position:absolute;left:24px;right:24px;bottom:40px;z-index:5;
-  display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px;
-}
-.mapstops::-webkit-scrollbar{display:none}
-.mapstops:empty{display:none}
-.stop{
-  flex-shrink:0;display:flex;align-items:center;gap:6px;
-  background:var(--secondary);color:var(--txt);text-decoration:none;
-  border:1px solid var(--stroke);box-shadow:var(--shadow);
-  padding:8px 11px;font-family:inherit;font-weight:800;font-size:.78rem;
-  white-space:nowrap;cursor:pointer;
-}
-/* étape que le relevé OSM n'a pas su situer : on la montre, en retrait */
-.stop.off{opacity:.55;cursor:not-allowed}
-.stop.off b{background:var(--secondary);color:var(--txt-2)}
 .stop b{
   background:var(--primary);color:#101010;
   width:20px;height:20px;display:grid;place-items:center;
@@ -2071,8 +2000,6 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   .wrap{padding-bottom:48px}
 
   /* la carte plein écran s'arrête sous la barre du haut */
-  #catMap{top:89px;bottom:0}
-  #catMap iframe{height:calc(100% - 96px)}
 
   /* --- les 3 étapes occupent la largeur, bien détachées les unes des autres --- */
   .steps{gap:18px}
@@ -2270,7 +2197,6 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
      neutralisé à droite, sinon le bloc resterait centré dans l'espace
      restant et laisserait un grand vide contre le bord droit. */
   .wrap{margin-left:265px;margin-right:0;max-width:1240px;padding:14px 30px 120px}
-  #catMap{left:265px}
   /* le logo en haut à gauche ferait doublon avec la colonne */
   header .logo{display:none}
   header{justify-content:flex-end}
@@ -2308,10 +2234,21 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .hero-deco{
   position:absolute;inset:0;z-index:-1;
   background:
-    radial-gradient(120% 90% at 88% 0%,   rgba(91,214,232,.30) 0%, transparent 62%),
-    radial-gradient(90% 80% at 100% 40%,  rgba(27,143,166,.42) 0%, transparent 70%),
-    radial-gradient(70% 70% at 62% 110%,  rgba(91,214,232,.12) 0%, transparent 70%),
-    linear-gradient(105deg, var(--secondary) 0%, var(--secondary) 46%, rgba(16,58,68,.55) 100%);
+    /* écume et hauts-fonds, en haut à droite */
+    radial-gradient(38% 46% at 92% 6%,   rgba(226,248,250,.55) 0%, transparent 70%),
+    radial-gradient(46% 52% at 74% 0%,   rgba(120,225,232,.42) 0%, transparent 72%),
+    /* le grand bleu, qui s'assombrit vers le bord */
+    radial-gradient(78% 96% at 104% 46%, rgba(14,120,142,.78) 0%, transparent 74%),
+    radial-gradient(60% 80% at 88% 96%,  rgba(9,74,92,.62) 0%, transparent 76%),
+    /* un voile turquoise qui relie le tout */
+    radial-gradient(90% 70% at 62% 30%,  rgba(63,186,203,.22) 0%, transparent 78%),
+    linear-gradient(102deg, var(--secondary) 0%, var(--secondary) 40%, rgba(17,88,104,.72) 100%);
+}
+/* Grain très léger : sans lui, les dégradés font « plastique ». Dessiné en
+   SVG dans l'URL même, donc aucun fichier à charger. */
+.hero-deco::after{
+  content:'';position:absolute;inset:0;opacity:.32;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.5'/></svg>");
 }
 .hero-in{position:relative;max-width:34rem}
 .hero h1{
@@ -2364,4 +2301,96 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .field label.opt-check:has(input:checked) em{color:var(--txt-2)}
 @media (prefers-reduced-motion:reduce){
   .field label.opt-check input,.field label.opt-check input::after{transition:none}
+}
+
+/* ============================================================
+   VUE CARTE — deux cartes dans le flux de la page
+   ------------------------------------------------------------
+   Avant : tout était en position absolue par-dessus l'écran. Les pastilles
+   de journée, le texte et les deux boutons flottaient sans support, la
+   bande d'étapes recouvrait le terrain, et rien ne s'alignait sur la
+   colonne de contenu. D'où l'impression de bricolage.
+   Maintenant : une carte d'en-tête (titre, actions, journées) puis une
+   grande carte qui contient le terrain et ses étapes.
+============================================================ */
+#catMap{display:block}
+
+/* ---- En-tête ---- */
+.map-head{
+  display:grid;grid-template-columns:1fr auto;align-items:start;
+  gap:14px 18px;margin-bottom:14px;
+}
+.map-title{min-width:0}
+.map-title h2{margin:0}
+/* Le résumé de la journée peut être long : il passe à la ligne au lieu
+   d'être coupé par des points de suspension. */
+.map-title .sub{margin:6px 0 0;font-size:.86rem;line-height:1.5}
+.map-title .sub:empty{display:none}
+
+.map-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.mapnote-warn{
+  font-size:.7rem;font-weight:800;color:var(--danger);
+  white-space:nowrap;align-self:center;
+}
+.mapnote-warn:empty{display:none}
+
+/* ---- Pastilles de journée : même langage que la navigation du site ---- */
+.mapbar{
+  grid-column:1/-1;
+  display:flex;gap:8px;align-items:center;
+  overflow-x:auto;scrollbar-width:none;
+  padding:4px;margin:-4px;
+  border-top:1px solid var(--stroke);padding-top:14px;
+}
+.mapbar::-webkit-scrollbar{display:none}
+.mapbar .rt{
+  flex:none;cursor:pointer;
+  background:var(--surface-2);color:var(--txt-2);
+  border:1px solid var(--stroke);border-radius:999px;
+  padding:9px 16px;
+  font-family:'Sora',sans-serif;font-weight:800;font-size:.74rem;
+  text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;
+  transition:background .12s ease,color .12s ease;
+}
+.mapbar .rt:hover:not(.on){color:var(--txt);border-color:var(--stroke-2)}
+.mapbar .rt.on{background:var(--primary);color:var(--primary-ink);border-color:transparent}
+
+/* ---- La carte elle-même ---- */
+.map-card{padding:0;overflow:hidden}
+#catMap #projMap{
+  /* hauteur généreuse mais bornée : la carte doit dominer sans pousser les
+     étapes hors de l'écran */
+  height:clamp(320px,58vh,620px);
+  background:#e9e5dc;              /* teinte des tuiles OSM avant chargement */
+}
+/* ---- Étapes du jour, SOUS le terrain ---- */
+.mapstops{
+  display:flex;gap:8px;align-items:center;
+  overflow-x:auto;scrollbar-width:none;
+  padding:12px 14px;border-top:1px solid var(--stroke);
+  background:var(--secondary);
+}
+.mapstops::-webkit-scrollbar{display:none}
+.mapstops:empty{display:none}
+.stop{
+  flex:none;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  background:var(--surface-2);color:var(--txt);text-decoration:none;
+  border:1px solid var(--stroke);border-radius:999px;
+  padding:8px 14px 8px 8px;
+  font-family:inherit;font-weight:700;font-size:.78rem;white-space:nowrap;
+}
+.stop:hover{border-color:var(--stroke-2)}
+.stop b{
+  flex:none;width:22px;height:22px;display:grid;place-items:center;
+  border-radius:50%;background:var(--primary);color:var(--primary-ink);
+  font-family:'Sora',sans-serif;font-size:.68rem;font-weight:900;
+}
+/* étape que le relevé n'a pas su situer : montrée, mais clairement inactive */
+.stop.off{opacity:.5;cursor:not-allowed}
+.stop.off b{background:var(--surface-2);color:var(--txt-2);border:1px solid var(--stroke)}
+
+@media (max-width:720px){
+  .map-head{grid-template-columns:1fr}
+  .map-acts{justify-content:flex-start}
+  #catMap #projMap{height:clamp(300px,52vh,460px)}
 }

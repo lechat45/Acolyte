@@ -364,17 +364,33 @@
   </div><!-- /catTrip -->
 
   <!-- ================= CATÉGORIE : CARTE ================= -->
+  <!-- ===== CARTE =====
+       Elle vit DANS le flux de la page, comme les autres vues : deux cartes
+       posées l'une sous l'autre. Avant, tout était en position absolue par
+       dessus l'écran — les pastilles et les boutons flottaient sans support
+       et ne s'alignaient sur rien. -->
   <section class="hidden" id="catMap">
-    <!-- une pastille par journée : c'est la navigation principale de la carte -->
-    <div class="mapbar" id="mapDays" role="tablist" aria-label="Journées du voyage"></div>
-    <div class="mapnote">
-      <span class="mapnote-txt" id="mapNote"></span>
-      <span class="mapnote-warn" id="mapWarn"></span>
-      <button class="rt" id="mapLocate">🧭 Où je suis</button>
-      <a class="rt" id="projOpen" href="#" target="_blank" rel="noopener">↗ M'y guider</a>
+    <div class="card map-head">
+      <div class="map-title">
+        <h2>Ta carte 🗺️</h2>
+        <p class="sub" id="mapNote"></p>
+      </div>
+      <div class="map-acts">
+        <span class="mapnote-warn" id="mapWarn"></span>
+        <button class="btn ghost sm" id="mapLocate">🧭 Où je suis</button>
+        <a class="btn sm" id="projOpen" href="#" target="_blank" rel="noopener">↗ M'y guider</a>
+      </div>
+      <!-- une pastille par journée : la navigation principale de la carte -->
+      <div class="mapbar" id="mapDays" role="tablist" aria-label="Journées du voyage"></div>
     </div>
-    <div id="projMap"></div>
-    <div class="mapstops" id="zoneStops"></div>
+
+    <div class="card map-card">
+      <div id="projMap"></div>
+      <!-- les étapes sous la carte, et non posées dessus : elles ne masquent
+           plus le terrain ni l'attribution OpenStreetMap -->
+      <div class="mapstops" id="zoneStops"></div>
+    </div>
+
     <div class="cat-empty" id="mapEmpty" hidden>
       <div class="cat-empty-card">
         <div class="ce-emoji">🗺️</div>
