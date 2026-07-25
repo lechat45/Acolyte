@@ -115,12 +115,12 @@
      disparaît : la barre du bas et le fil d'étapes horizontal reprennent le
      relais — le dessin mobile reste la référence. -->
 <aside class="rail" aria-hidden="true">
+  <!-- Le logo de la marque : le globe COIFFE le « i » d'ACOLITE. C'est la
+       signature d'Acolite, on ne la remplace pas par une mascotte posée à
+       côté du mot. Chaque lettre reste un élément séparé. -->
   <div class="rail-logo">
-    <span class="rail-mark logo-mark"></span>
-    <span class="rail-word">
-      <b>ACOLITE</b>
-      <em>Ton assistant voyage</em>
-    </span>
+    <span class="logo-word rail-logoword" aria-label="Acolite"><i>A</i><i>c</i><i>o</i><i>l</i><i class="i-dot">i<span class="logo-mark"></span></i><i>t</i><i>e</i></span>
+    <em class="rail-tag">Ton assistant voyage</em>
   </div>
 
   <ol class="rail-steps" id="railSteps">
@@ -132,14 +132,22 @@
   <!-- Décor : la route en pointillé d'un avion. Dessiné en SVG, donc net à
        toute taille et sans image à télécharger. Coupé si l'utilisateur a
        réduit les animations n'a pas de sens : il ne bouge pas. -->
-  <svg class="rail-art" viewBox="0 0 200 190" aria-hidden="true">
-    <path d="M8 22 C70 8 120 44 108 84 C98 118 44 118 40 88 C36 58 92 44 140 66 C172 80 182 116 168 150"
-          fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 8" stroke-linecap="round"/>
-    <path d="M150 44 l22 10 -8 3 -2 9 -5 -9 -9 2 z" fill="currentColor" transform="rotate(18 160 52)"/>
-    <path d="M168 150 a7 7 0 1 0 -0.1 0 z" fill="none" stroke="currentColor" stroke-width="2"/>
-    <path d="M168 143 c-7 0 -12 5 -12 11 c0 8 12 20 12 20 s12 -12 12 -20 c0 -6 -5 -11 -12 -11 z"
-          fill="none" stroke="currentColor" stroke-width="2"/>
-    <circle cx="168" cy="154" r="3.4" fill="currentColor"/>
+  <!-- Décor : la trace d'un avion qui rejoint une destination.
+       Dessiné en SVG (net à toute taille, rien à télécharger).
+       ⚠️ Un seul tracé pour la goutte du repère : la version précédente en
+       superposait deux, ce qui donnait une forme brouillonne. -->
+  <svg class="rail-art" viewBox="0 0 200 200" aria-hidden="true" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 30 C64 14 112 44 104 78 C97 106 52 108 48 84 C44 58 96 46 138 70 C166 86 176 116 168 142"
+          stroke-dasharray="5 9"/>
+    <!-- l'avion, vu de dessus, orienté dans le sens de la trace -->
+    <g transform="translate(150 52) rotate(38)">
+      <path d="M0 -11 L3 -3 L15 4 L15 7 L3 4 L2 10 L6 14 L6 16 L0 14 L-6 16 L-6 14 L-2 10 L-2 4 L-15 7 L-15 4 L-3 -3 Z"
+            fill="currentColor" stroke="none"/>
+    </g>
+    <!-- le repère de destination : une goutte et son point -->
+    <path d="M168 152 c-8.5 0 -14 6 -14 13.5 c0 10 14 24.5 14 24.5 s14 -14.5 14 -24.5 c0 -7.5 -5.5 -13.5 -14 -13.5 z"/>
+    <circle cx="168" cy="165" r="4" fill="currentColor" stroke="none"/>
   </svg>
 
   <div class="rail-note">
@@ -171,11 +179,6 @@
 
   <!-- ================= VUE 1 : ENVIES ================= -->
   <section class="view" id="view1">
-    <div class="card" id="tripGallery" hidden>
-      <h3 style="margin:0 0 4px">🧳 Mes voyages</h3>
-      <p class="sub" style="margin:0 0 12px">Reprends un voyage déjà exploré, ou lances-en un nouveau ci-dessous.</p>
-      <div class="gallery" id="galleryList"></div>
-    </div>
     <!-- Bandeau d'accueil : le titre posé sur un décor. Le décor est une
          composition CSS/SVG et non une photo — aucun fichier à télécharger,
          rien à autoriser dans la politique de sécurité, et il reste net sur
@@ -193,6 +196,11 @@
         <path d="M23 39 h44 M23 53 h44" stroke="currentColor" stroke-width="2.4" fill="none"/>
         <path d="M45 14 v-9 M69 24 l7 -7 M21 24 l-7 -7 M78 46 h9 M3 46 h9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
       </svg>
+    </div>
+    <div class="card" id="tripGallery" hidden>
+      <h3 style="margin:0 0 4px">🧳 Mes voyages</h3>
+      <p class="sub" style="margin:0 0 12px">Reprends un voyage déjà exploré, ou lances-en un nouveau ci-dessous.</p>
+      <div class="gallery" id="galleryList"></div>
     </div>
     <div class="card">
       <div class="grid">
