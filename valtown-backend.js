@@ -85,6 +85,13 @@ function db() {
       token_h TEXT PRIMARY KEY, email TEXT NOT NULL, expires_at INTEGER NOT NULL)`);
     await sqlite.execute(`CREATE TABLE IF NOT EXISTS aco_trips(
       email TEXT PRIMARY KEY, payload TEXT NOT NULL, updated_at INTEGER NOT NULL)`);
+    /* Articles du blog. Ils n'appartiennent à personne : pas de colonne email,
+       donc rien à effacer quand un compte est supprimé. */
+    await sqlite.execute(`CREATE TABLE IF NOT EXISTS aco_posts(
+      slug TEXT PRIMARY KEY, sujet TEXT NOT NULL, categorie TEXT NOT NULL,
+      titre TEXT NOT NULL, sous_titre TEXT, resume TEXT, lecture TEXT,
+      corps TEXT NOT NULL, image TEXT, credit TEXT,
+      statut TEXT NOT NULL DEFAULT 'brouillon', created_at INTEGER NOT NULL)`);
   })();
   return _dbReady;
 }
@@ -281,6 +288,229 @@ export default async function (request) {
 
   try {
     /* ---- Ce que le backend sait faire (le front l'interroge au démarrage) ---- */
+
+    /* ============================================================
+       BLOG — génération d'articles par IA, pilotée depuis le panel admin
+       ------------------------------------------------------------
+       Le générateur d'origine était une application React + Vite + Bun à part.
+       Acolyte n'a pas de compilation : on n'a donc gardé que ce qui compte,
+       la CONSIGNE DE RÉDACTION, et on l'a branchée ici. Trois raisons de la
+       mettre côté serveur plutôt que dans le navigateur :
+       · un article est écrit UNE fois et lu par tout le monde ;
+       · il doit survivre au navigateur de celui qui l'a généré ;
+       · la clé Gemini reste secrète.
+
+       ⚠️ SÉCURITÉ — deux décisions à ne pas défaire :
+       1. On ne stocke NI ne renvoie le HTML rédigé par le modèle. On garde des
+          champs structurés (titre, sections, faits) et le navigateur les met en
+          forme en échappant tout. Injecter du HTML écrit par un modèle, c'est
+          rouvrir la porte au XSS que la CSP nous ferme.
+       2. Les clés API du projet d'origine étaient ÉCRITES EN DUR dans son code.
+          Elles ne sont pas reprises : on utilise GEMINI_KEY, la variable
+          d'environnement déjà en place.
+    ============================================================ */
+    const BLOG_CATS = { nature:'Merveille naturelle', bati:'Merveille bâtie', ville:'Grande ville' };
+    /* Un identifiant d'URL lisible et stable, dérivé du sujet. */
+    const slugify = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70);
+
+    async function blogTable() {
+      await sqlite.execute(`CREATE TABLE IF NOT EXISTS aco_posts(
+        slug TEXT PRIMARY KEY, sujet TEXT NOT NULL, categorie TEXT NOT NULL,
+        titre TEXT NOT NULL, sous_titre TEXT, resume TEXT, lecture TEXT,
+        corps TEXT NOT NULL, image TEXT, credit TEXT,
+        statut TEXT NOT NULL DEFAULT 'brouillon', created_at INTEGER NOT NULL)`);
+    }
+
+    /* ---- Illustration : Wikipédia uniquement ----
+       Le générateur d'origine tapait aussi dans Unsplash. Ici ce serait un
+       domaine de plus à autoriser dans la CSP pour rien : Wikipédia est déjà
+       autorisé, gratuit et sans clé.
+       ⚠️ La largeur 960 n'est pas décorative : Wikimedia REFUSE la plupart des
+       autres tailles avec une erreur 400 (vérifié). Ne la change pas au hasard. */
+    async function blogImage(sujet) {
+      try {
+        const r = await fetch('https://fr.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(sujet));
+        if (!r.ok) return { url: '', credit: '' };
+        const d = await r.json();
+        const src = d?.originalimage?.source || d?.thumbnail?.source || '';
+        if (!src) return { url: '', credit: '' };
+        return { url: src.replace(/\/\d+px-/, '/960px-'), credit: 'Wikipédia' };
+      } catch (e) { return { url: '', credit: '' }; }
+    }
+
+    /* ---- La consigne de rédaction, reprise du générateur d'origine ---- */
+    function blogPrompt(sujet, categorie, ton) {
+      const cat = BLOG_CATS[categorie] || 'Merveille du monde';
+      const tons = { vivant:'vivant et immersif', sobre:'informatif et sobre',
+                     poetique:'poétique et évocateur', concis:'concis et direct' };
+      return `Tu es grand reporter, géographe et historien, et tu écris pour le magazine Acolyte.
+Rédige un grand article de fond sur : ${sujet}.
+Catégorie : ${cat}. Ton : ${tons[ton] || tons.vivant}.
+
+Exigences :
+1. Français impeccable, vivant, précis. Niveau grand reportage — jamais de remplissage.
+2. 4 à 5 sections, titres évocateurs. Chaque section fait 3 paragraphes DENSES et intègre :
+   les origines (histoire, géologie ou architecture), une anecdote ou légende peu connue,
+   la géographie ou l'atmosphère du lieu, et un conseil d'initié (bonne heure, coin discret).
+3. 6 à 8 faits chiffrés PRÉCIS et vérifiables : hauteur ou superficie, année ou époque,
+   fréquentation annuelle, matériaux ou géologie, localisation, meilleure saison.
+4. RÈGLE ABSOLUE : uniquement des faits réels et vérifiables. Si tu n'es pas sûr d'un
+   chiffre, donne un ordre de grandeur ou omets-le. N'invente RIEN.
+5. N'écris ni HTML ni Markdown : uniquement du texte. La mise en forme est faite ailleurs.
+
+Réponds UNIQUEMENT en JSON :
+{
+ "titre":"titre captivant, sans deux-points à rallonge",
+ "sous_titre":"une phrase d'accroche",
+ "resume":"2-3 phrases qui donnent envie de lire",
+ "lecture":"ex : 6 min de lecture",
+ "sujet":"le nom exact du lieu traité",
+ "sections":[{"titre":"titre de section","texte":"3 paragraphes séparés par des retours à la ligne"}],
+ "faits":[{"label":"Hauteur","valeur":"324 m"}],
+ "tags":["3 à 5 mots-clés"]
+}`;
+    }
+
+    /* ---- Génération : réservée à l'administrateur ---- */
+    if (path === '/admin/blog/generate' && request.method === 'POST') {
+      const adm = env('ADMIN_EMAIL').trim().toLowerCase();
+      const who = await sessionEmail(request);
+      if (!adm || !who || !safeEqual(who, adm)) return json({ error: 'Accès refusé' }, 403);
+      if (!env('GEMINI_KEY')) return json({ error: 'GEMINI_KEY non configurée' }, 501);
+
+      const b = await request.json().catch(() => ({}));
+      const sujet = String(b.sujet || '').trim().slice(0, 80);
+      const categorie = BLOG_CATS[b.categorie] ? b.categorie : 'nature';
+      const ton = String(b.ton || 'vivant');
+      if (sujet.length < 3) return json({ error: 'Sujet manquant' }, 400);
+
+      const slug = slugify(sujet);
+      await blogTable();
+      const deja = await sqlite.execute({ sql: 'SELECT slug FROM aco_posts WHERE slug = ?', args: [slug] });
+      if (deja.rows[0] && !b.remplacer) return json({ error: 'Un article existe déjà sur ce sujet', slug }, 409);
+
+      let data;
+      try {
+        const r = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env('GEMINI_KEY')}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: blogPrompt(sujet, categorie, ton) }] }],
+              generationConfig: { responseMimeType: 'application/json', temperature: 0.75, maxOutputTokens: 8192 },
+            }) });
+        if (!r.ok) return json({ error: 'Le moteur de rédaction a refusé la demande (' + r.status + ')' }, 502);
+        const g = await r.json();
+        const txt = g?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        /* le modèle encadre parfois le JSON de texte : on isole l'objet */
+        const m = txt.match(/\{[\s\S]*\}/);
+        data = JSON.parse(m ? m[0] : txt);
+      } catch (e) {
+        return json({ error: 'Réponse illisible du moteur de rédaction' }, 502);
+      }
+      if (!data?.titre || !Array.isArray(data.sections) || !data.sections.length)
+        return json({ error: 'Article incomplet — réessaie' }, 502);
+
+      /* On borne tout : un article vient d'un modèle, donc de l'extérieur. */
+      const corps = {
+        sections: data.sections.slice(0, 8).map(s => ({
+          titre: String(s.titre || '').slice(0, 140),
+          texte: String(s.texte || '').slice(0, 6000),
+        })),
+        faits: (Array.isArray(data.faits) ? data.faits : []).slice(0, 10).map(f => ({
+          label: String(f.label || '').slice(0, 60), valeur: String(f.valeur || '').slice(0, 90),
+        })),
+        tags: (Array.isArray(data.tags) ? data.tags : []).slice(0, 6).map(t => String(t).slice(0, 40)),
+      };
+      const img = await blogImage(String(data.sujet || sujet));
+      const now = Date.now();
+      await sqlite.execute({
+        sql: `INSERT INTO aco_posts(slug,sujet,categorie,titre,sous_titre,resume,lecture,corps,image,credit,statut,created_at)
+              VALUES(?,?,?,?,?,?,?,?,?,?,'brouillon',?)
+              ON CONFLICT(slug) DO UPDATE SET sujet=excluded.sujet,categorie=excluded.categorie,
+                titre=excluded.titre,sous_titre=excluded.sous_titre,resume=excluded.resume,
+                lecture=excluded.lecture,corps=excluded.corps,image=excluded.image,credit=excluded.credit`,
+        args: [slug, String(data.sujet || sujet).slice(0, 80), categorie,
+               String(data.titre).slice(0, 180), String(data.sous_titre || '').slice(0, 240),
+               String(data.resume || '').slice(0, 600), String(data.lecture || '').slice(0, 40),
+               JSON.stringify(corps), img.url, img.credit, now],
+      });
+      return json({ ok: true, slug, titre: data.titre, sections: corps.sections.length, image: !!img.url });
+    }
+
+    /* ---- Liste complète, brouillons compris : administrateur ---- */
+    if (path === '/admin/blog/list') {
+      const adm = env('ADMIN_EMAIL').trim().toLowerCase();
+      const who = await sessionEmail(request);
+      if (!adm || !who || !safeEqual(who, adm)) return json({ error: 'Accès refusé' }, 403);
+      await blogTable();
+      const r = await sqlite.execute(`SELECT slug,sujet,categorie,titre,statut,created_at,
+        (image IS NOT NULL AND image <> '') AS a_image FROM aco_posts ORDER BY created_at DESC LIMIT 200`);
+      return json({ articles: (r.rows || []).map(x => ({
+        slug: String(x.slug ?? x[0]), sujet: String(x.sujet ?? x[1]), categorie: String(x.categorie ?? x[2]),
+        titre: String(x.titre ?? x[3]), statut: String(x.statut ?? x[4]),
+        quand: Number(x.created_at ?? x[5]), image: !!Number(x.a_image ?? x[6]) })) });
+    }
+
+    /* ---- Publier / dépublier / supprimer : administrateur ---- */
+    if (path === '/admin/blog/statut' && request.method === 'POST') {
+      const adm = env('ADMIN_EMAIL').trim().toLowerCase();
+      const who = await sessionEmail(request);
+      if (!adm || !who || !safeEqual(who, adm)) return json({ error: 'Accès refusé' }, 403);
+      const b = await request.json().catch(() => ({}));
+      const st = b.statut === 'publie' ? 'publie' : 'brouillon';
+      await blogTable();
+      await sqlite.execute({ sql: 'UPDATE aco_posts SET statut = ? WHERE slug = ?',
+                             args: [st, String(b.slug || '').slice(0, 70)] });
+      return json({ ok: true, statut: st });
+    }
+    if (path === '/admin/blog' && request.method === 'DELETE') {
+      const adm = env('ADMIN_EMAIL').trim().toLowerCase();
+      const who = await sessionEmail(request);
+      if (!adm || !who || !safeEqual(who, adm)) return json({ error: 'Accès refusé' }, 403);
+      await blogTable();
+      await sqlite.execute({ sql: 'DELETE FROM aco_posts WHERE slug = ?',
+                             args: [String(url.searchParams.get('slug') || '').slice(0, 70)] });
+      return json({ ok: true });
+    }
+
+    /* ---- Lecture publique : uniquement les articles PUBLIÉS ---- */
+    if (path === '/blog') {
+      await blogTable();
+      const r = await sqlite.execute(
+        `SELECT slug,sujet,categorie,titre,sous_titre,resume,lecture,image,created_at
+         FROM aco_posts WHERE statut = 'publie' ORDER BY created_at DESC LIMIT 60`);
+      return json({ articles: (r.rows || []).map(x => ({
+        slug: String(x.slug ?? x[0]), sujet: String(x.sujet ?? x[1]), categorie: String(x.categorie ?? x[2]),
+        titre: String(x.titre ?? x[3]), sous_titre: String(x.sous_titre ?? x[4] ?? ''),
+        resume: String(x.resume ?? x[5] ?? ''), lecture: String(x.lecture ?? x[6] ?? ''),
+        image: String(x.image ?? x[7] ?? ''), quand: Number(x.created_at ?? x[8]) })) });
+    }
+    /* ---- Index léger : sert à repérer, dans un voyage, les lieux qui ont
+       un article. On ne renvoie que le nécessaire pour faire un lien. ---- */
+    if (path === '/blog/index') {
+      await blogTable();
+      const r = await sqlite.execute(`SELECT slug,sujet,titre FROM aco_posts WHERE statut = 'publie' LIMIT 300`);
+      return json({ index: (r.rows || []).map(x => ({
+        slug: String(x.slug ?? x[0]), sujet: String(x.sujet ?? x[1]), titre: String(x.titre ?? x[2]) })) });
+    }
+    if (path === '/blog/article') {
+      await blogTable();
+      const r = await sqlite.execute({
+        sql: `SELECT slug,sujet,categorie,titre,sous_titre,resume,lecture,corps,image,credit,created_at
+              FROM aco_posts WHERE slug = ? AND statut = 'publie'`,
+        args: [String(url.searchParams.get('slug') || '').slice(0, 70)] });
+      const x = r.rows[0];
+      if (!x) return json({ error: 'Article introuvable' }, 404);
+      let corps = { sections: [], faits: [], tags: [] };
+      try { corps = JSON.parse(String(x.corps ?? x[7])); } catch (e) {}
+      return json({ article: {
+        slug: String(x.slug ?? x[0]), sujet: String(x.sujet ?? x[1]), categorie: String(x.categorie ?? x[2]),
+        titre: String(x.titre ?? x[3]), sous_titre: String(x.sous_titre ?? x[4] ?? ''),
+        resume: String(x.resume ?? x[5] ?? ''), lecture: String(x.lecture ?? x[6] ?? ''),
+        image: String(x.image ?? x[8] ?? ''), credit: String(x.credit ?? x[9] ?? ''),
+        quand: Number(x.created_at ?? x[10]), ...corps } });
+    }
     if (path === '/capabilities') {
       return json({
         comptes: mailReady(env),

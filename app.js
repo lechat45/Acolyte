@@ -2341,7 +2341,7 @@ function todayHTML(){
   return `<div class="card today-card">
     <h3 style="margin:0 0 4px">📍 Aujourd'hui — jour ${idx}${prog.length ? ` / ${prog.length}` : ''}</h3>
     ${jr ? `<h4 style="margin:6px 0 4px">${esc(jr.resume || '')}</h4>
-        ${(jr.lieux || []).length ? `<p class="hint" style="margin:0">📍 ${jr.lieux.map(esc).join(' · ')}</p>` : ''}
+        ${(jr.lieux || []).length ? `<p class="hint" style="margin:0">📍 ${jr.lieux.map(l => esc(l) + blogLienHTML(l)).join(' · ')}</p>` : ''}
         <button class="btn sm" data-daydetail="${esc(String(idx))}" style="margin-top:10px">🕘 Détailler ma journée</button>`
       : `<p class="sub" style="margin:0">Journée libre — profite bien !</p>`}
   </div>`;
@@ -2380,7 +2380,7 @@ function panProgramme(d){
           <div class="day-txt">
             <h4>${esc(jr.resume || '')}</h4>
             ${jr.base ? `<span class="day-base">📍 ${esc(jr.base)}</span>` : ''}
-            ${(jr.lieux||[]).length ? `<p>${jr.lieux.map(esc).join(' · ')}</p>` : ''}
+            ${(jr.lieux||[]).length ? `<p>${jr.lieux.map(l => esc(l) + blogLienHTML(l)).join(' · ')}</p>` : ''}
           </div>
         </div>
         <div class="day-acts">
@@ -5271,9 +5271,11 @@ function switchCat(cat){
   $('#catTrip').classList.toggle('hidden', cat !== 'trip');
   $('#catMap').classList.toggle('hidden', cat !== 'map');
   $('#catProfile').classList.toggle('hidden', cat !== 'profile');
+  $('#catBlog')?.classList.toggle('hidden', cat !== 'blog');
   window.scrollTo({top:0});
   if(cat === 'map') buildProjectMap();
   if(cat === 'profile'){ renderProfile(); renderSettings(); }
+  if(cat === 'blog') openBlog();
   /* états vides : pas de voyage → invitations plutôt qu'écrans vides */
   const noTrip = !state.trip;
   $('#catMap')?.classList.toggle('empty', noTrip);
@@ -8564,3 +8566,150 @@ document.addEventListener('keydown', e => {
     if(ov?.classList.contains('show')){ arcadeStop(id); ov.classList.remove('show'); }
   }
 });
+
+/* ============================================================
+   BLOGUE — lecture des articles, et liens depuis un voyage
+   ------------------------------------------------------------
+   Le générateur d'origine était une application React à part. Seule la
+   consigne de rédaction a été gardée ; elle vit maintenant dans le backend,
+   pilotée depuis le panel admin. Ici, on ne fait que LIRE.
+
+   ⚠️ On ne reçoit JAMAIS de HTML rédigé par le modèle : le serveur renvoie des
+   champs séparés (titre, sections, faits) et c'est nous qui les mettons en
+   forme, en échappant tout au passage. Un article est du texte venu de
+   l'extérieur : il est traité comme tel.
+============================================================ */
+const LS_BLOGIDX = 'acolyte_blog_index';
+let _blogListe = null;      /* liste des articles, en cache pour la session */
+let _blogIdx = null;        /* index léger : sert à repérer les lieux qui ont un article */
+
+/* Index des lieux qui ont un article. Gardé en mémoire ET dans le stockage :
+   il sert à chaque affichage du programme, on ne va pas le redemander. */
+async function blogIndex(){
+  if(_blogIdx) return _blogIdx;
+  try{
+    const cache = JSON.parse(localStorage.getItem(LS_BLOGIDX) || 'null');
+    /* on garde 12 h : un article nouvellement publié apparaît le lendemain
+       au plus tard, et on n'interroge pas le serveur à chaque page */
+    if(cache && Date.now() - cache.quand < 12 * 3600e3){ _blogIdx = cache.index; return _blogIdx; }
+  }catch(e){}
+  const r = await srvFetch('/blog/index');
+  _blogIdx = (r.ok && Array.isArray(r.data?.index)) ? r.data.index : [];
+  lsSet(LS_BLOGIDX, JSON.stringify({ quand: Date.now(), index: _blogIdx }));
+  return _blogIdx;
+}
+/* Retrouve l'article qui parle d'un lieu. On compare sur la forme réduite
+   (sans accents ni casse), comme pour les lieux de la carte. */
+function blogPour(nom){
+  if(!_blogIdx || !nom) return null;
+  const n = normPlace(nom);
+  if(n.length < 3) return null;
+  return _blogIdx.find(a => normPlace(a.sujet) === n)
+      || _blogIdx.find(a => { const s = normPlace(a.sujet); return s.length >= 4 && (s.includes(n) || n.includes(s)); })
+      || null;
+}
+/* Le lien à coller à côté d'un lieu. Vide si aucun article : on n'affiche
+   jamais un lien mort. */
+function blogLienHTML(nom){
+  const a = blogPour(nom);
+  if(!a) return '';
+  return ` <button class="blog-link" data-blogopen="${esc(a.slug)}"
+    title="${esc(isEN() ? 'Read the article' : 'Lire l’article')} : ${esc(a.titre)}">📰</button>`;
+}
+
+const BLOG_CATS_FR = { nature:'Merveille naturelle', bati:'Merveille bâtie', ville:'Grande ville' };
+const blogCatNom = c => isEN()
+  ? ({ nature:'Natural wonder', bati:'Built wonder', ville:'Great city' })[c] || 'Article'
+  : BLOG_CATS_FR[c] || 'Article';
+
+async function openBlog(){
+  const liste = $('#blogList'), une = $('#blogOne');
+  $('#blogBack')?.classList.add('hidden');
+  une?.classList.add('hidden');
+  liste?.classList.remove('hidden');
+  if(_blogListe){ renderBlogListe(_blogListe); return; }
+  if(liste) liste.innerHTML = loaderHTML(isEN() ? 'Fetching the articles…' : 'Récupération des articles…');
+  const r = await srvFetch('/blog');
+  if(!r.ok){
+    if(liste) liste.innerHTML = errHTML(isEN() ? 'The journal is unreachable right now.' : 'Le journal est injoignable pour le moment.');
+    return;
+  }
+  _blogListe = r.data?.articles || [];
+  renderBlogListe(_blogListe);
+}
+function renderBlogListe(arts){
+  const liste = $('#blogList');
+  if(!liste) return;
+  if(!arts.length){
+    liste.innerHTML = `<div class="card"><p class="hint" style="margin:0">${
+      isEN() ? 'No article published yet — come back soon.' : 'Aucun article publié pour l’instant — reviens bientôt.'}</p></div>`;
+    return;
+  }
+  liste.innerHTML = arts.map(a => `
+    <button class="blog-card" data-blogopen="${esc(a.slug)}">
+      ${/^https:\/\/upload\.wikimedia\.org\//.test(String(a.image || ''))
+        ? `<span class="bc-img"><img src="${esc(a.image)}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`
+        : '<span class="bc-img bc-noimg">📰</span>'}
+      <span class="bc-body">
+        <span class="bc-cat">${esc(blogCatNom(a.categorie))}</span>
+        <b class="bc-titre">${esc(a.titre)}</b>
+        <span class="bc-sous">${esc(a.resume || a.sous_titre || '')}</span>
+        <span class="bc-meta">${esc(a.lecture || '')}</span>
+      </span>
+    </button>`).join('');
+}
+
+async function openArticle(slug){
+  switchCat('blog');
+  const liste = $('#blogList'), une = $('#blogOne');
+  liste?.classList.add('hidden');
+  une?.classList.remove('hidden');
+  $('#blogBack')?.classList.remove('hidden');
+  if(une) une.innerHTML = loaderHTML(isEN() ? 'Opening the article…' : 'Ouverture de l’article…');
+  const r = await srvFetch('/blog/article?slug=' + encodeURIComponent(slug));
+  if(!r.ok || !r.data?.article){
+    if(une) une.innerHTML = errHTML(isEN() ? 'This article is unavailable.' : 'Cet article n’est pas disponible.');
+    return;
+  }
+  const a = r.data.article;
+  /* Tout est échappé : ce texte vient d'un modèle, donc de l'extérieur.
+     Les paragraphes sont découpés sur les retours à la ligne — on ne fait
+     JAMAIS confiance à un balisage fourni. */
+  const paras = t => String(t || '').split(/\n{1,}/).filter(p => p.trim())
+    .map(p => `<p>${esc(p.trim())}</p>`).join('');
+  /* L'illustration vient de Wikimédia et de nulle part ailleurs. On le
+     VÉRIFIE au lieu de le supposer : l'adresse arrive par le réseau, donc de
+     l'extérieur. Tout le reste est refusé — pas d'affichage du tout. */
+  const img = /^https:\/\/upload\.wikimedia\.org\//.test(String(a.image || '')) ? a.image : '';
+  une.innerHTML = `
+    ${img ? `<figure class="art-hero"><img src="${esc(img)}" alt="${esc(a.sujet)}" referrerpolicy="no-referrer">
+      ${a.credit ? `<figcaption>Photo · ${esc(a.credit)}</figcaption>` : ''}</figure>` : ''}
+    <span class="bc-cat">${esc(blogCatNom(a.categorie))}</span>
+    <h1 class="art-titre">${esc(a.titre)}</h1>
+    ${a.sous_titre ? `<p class="art-sous">${esc(a.sous_titre)}</p>` : ''}
+    <p class="art-meta">${esc(a.lecture || '')}${a.quand ? ' · ' + new Date(a.quand).toLocaleDateString(LOC()) : ''}</p>
+    ${a.resume ? `<p class="art-resume">${esc(a.resume)}</p>` : ''}
+    ${(a.faits || []).length ? `<div class="art-faits">${a.faits.map(f =>
+      `<div class="af"><span class="af-k">${esc(f.label)}</span><span class="af-v">${esc(f.valeur)}</span></div>`).join('')}</div>` : ''}
+    ${(a.sections || []).map(s => `<section class="art-sec"><h2>${esc(s.titre)}</h2>${paras(s.texte)}</section>`).join('')}
+    ${(a.tags || []).length ? `<div class="art-tags">${a.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+    <p class="hint art-note">${isEN()
+      ? 'Article written by Acolyte. Figures are given for guidance — check them before you rely on them.'
+      : 'Article rédigé par Acolyte. Les chiffres sont donnés à titre indicatif — vérifie-les avant de t’y fier.'}</p>`;
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-blogopen]');
+  if(b){ openArticle(b.dataset.blogopen); return; }
+  if(e.target.closest('#blogBack')) openBlog();
+});
+
+/* On charge l'index au démarrage, sans bloquer : il sert à décorer le
+   programme. S'il arrive APRÈS l'affichage du plan, on redessine la barre
+   d'onglets pour que les liens apparaissent — mais uniquement elle, jamais
+   tout le plan, sinon on perdrait les journées dépliées et les commentaires
+   en cours de frappe. */
+blogIndex().then(idx => {
+  if(idx.length && state.cache?.plan && _planTab === 'programme') renderSections(state.cache.plan);
+}).catch(() => {});

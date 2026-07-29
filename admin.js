@@ -406,6 +406,7 @@
         + 'Elles apparaîtront d’elles-mêmes dès que la base sera assez large.</div></div>';
     }
 
+    html += blogPanelHTML();
     html += '<div class="card wide"><h2>🔒 Ce que cette page ne peut pas voir</h2><p class="note">'
       + 'Le serveur ne renvoie ici <strong>que des nombres déjà additionnés</strong>. Aucune adresse email, '
       + 'aucun contenu de voyage, aucune note personnelle, aucune date de départ précise ne transite par cette page — '
@@ -419,6 +420,8 @@
     $('#state').classList.add('hidden');
     $('#stamp').textContent = 'Généré le ' + new Date(d.genere || Date.now()).toLocaleString('fr-FR');
     $('#tables').textContent = _tables ? '📊 Graphiques' : '🔢 Tableaux';
+    /* le panneau est réécrit à chaque rendu : on rebranche ses boutons */
+    brancheBlog();
   }
 
   function seuilNote(d, masq) {
@@ -428,6 +431,140 @@
       s += '<br>' + nb(masq.lieux) + ' lieu(x) masqué(s), soit ' + nb(masq.voyages) + ' voyage(s).';
     }
     return s + '</p>';
+  }
+
+
+  /* ============================================================
+     GÉNÉRATEUR D'ARTICLES — le pilotage vit ICI, dans le panel admin
+     ------------------------------------------------------------
+     Le générateur d'origine avait sa propre application React. Elle a été
+     retirée : garder deux interfaces pour la même chose, c'est deux
+     interfaces à maintenir. Le pilotage est donc dans le panel, où sont déjà
+     les autres commandes réservées à l'administrateur.
+     Le serveur fait tout le travail (rédaction, image, stockage) : ici on ne
+     fait qu'envoyer une demande et afficher le résultat.
+  ============================================================ */
+  var BLOG_CATS = { nature:'Merveille naturelle', bati:'Merveille bâtie', ville:'Grande ville' };
+  var _posts = null;
+
+  function blogPanelHTML() {
+    return '<div class="card wide" id="blogPanel">'
+      + '<h2>📰 Générateur d’articles</h2>'
+      + '<p class="lede">Un sujet, et Acolyte rédige l’article : histoire, géographie, faits chiffrés, '
+      + 'conseils. L’illustration vient de Wikipédia. L’article est enregistré en <strong>brouillon</strong> — '
+      + 'il n’apparaît dans l’onglet Blogue qu’une fois publié.</p>'
+      + '<div class="bg-form">'
+      +   '<label>Sujet<input type="text" id="bgSujet" placeholder="ex : Mont Fuji, Lisbonne, Grand Canyon" maxlength="80"></label>'
+      +   '<label>Catégorie<select id="bgCat">'
+      +     '<option value="nature">Merveille naturelle</option>'
+      +     '<option value="bati">Merveille bâtie</option>'
+      +     '<option value="ville">Grande ville</option>'
+      +   '</select></label>'
+      +   '<label>Ton<select id="bgTon">'
+      +     '<option value="vivant">Vivant</option>'
+      +     '<option value="sobre">Sobre</option>'
+      +     '<option value="poetique">Poétique</option>'
+      +     '<option value="concis">Concis</option>'
+      +   '</select></label>'
+      +   '<button id="bgGo">✍️ Rédiger</button>'
+      + '</div>'
+      + '<p class="bg-etat" id="bgEtat"></p>'
+      + '<div class="scroll"><table id="bgTable"><thead><tr>'
+      +   '<th>Article</th><th>Catégorie</th><th>État</th><th class="num">Actions</th>'
+      + '</tr></thead><tbody id="bgRows"></tbody></table></div>'
+      + '</div>';
+  }
+
+  function bgEtat(msg, err) {
+    var el = $('#bgEtat');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.className = 'bg-etat' + (err ? ' err' : '');
+  }
+
+  function renderPosts() {
+    var tb = $('#bgRows');
+    if (!tb) return;
+    if (!_posts || !_posts.length) {
+      tb.innerHTML = '<tr><td colspan="4">Aucun article pour le moment.</td></tr>';
+      return;
+    }
+    tb.innerHTML = _posts.map(function (p) {
+      var publie = p.statut === 'publie';
+      return '<tr>'
+        + '<td><b>' + esc(p.titre) + '</b><br><span class="bg-sujet">' + esc(p.sujet)
+        +   (p.image ? '' : ' · <em>sans image</em>') + '</span></td>'
+        + '<td>' + esc(BLOG_CATS[p.categorie] || p.categorie) + '</td>'
+        + '<td><span class="bg-pastille' + (publie ? ' on' : '') + '">'
+        +   (publie ? 'Publié' : 'Brouillon') + '</span></td>'
+        + '<td class="num bg-acts">'
+        +   '<button data-bgstatut="' + esc(p.slug) + '" data-vers="' + (publie ? 'brouillon' : 'publie') + '">'
+        +     (publie ? '↩ Dépublier' : '✅ Publier') + '</button>'
+        +   '<button class="bg-del" data-bgdel="' + esc(p.slug) + '">🗑</button>'
+        + '</td></tr>';
+    }).join('');
+  }
+
+  function srv(chemin, opts) {
+    var base = ((window.ACOLITE_KEYS && window.ACOLITE_KEYS.proxy) || '').replace(/\/+$/, '');
+    opts = opts || {};
+    opts.headers = { Authorization: 'Bearer ' + token() };
+    if (opts.body) opts.headers['Content-Type'] = 'application/json';
+    return fetch(base + chemin, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        return { ok: r.ok, status: r.status, data: d };
+      });
+    });
+  }
+
+  function chargePosts() {
+    return srv('/admin/blog/list').then(function (r) {
+      if (r.status === 404) { bgEtat('Serveur non à jour : recolle valtown-backend.js dans Val Town.', true); return; }
+      if (!r.ok) { bgEtat(r.data.error || 'Liste indisponible.', true); return; }
+      _posts = r.data.articles || [];
+      renderPosts();
+    });
+  }
+
+  function brancheBlog() {
+    var go = $('#bgGo');
+    if (go) go.onclick = function () {
+      var sujet = ($('#bgSujet').value || '').trim();
+      if (sujet.length < 3) { bgEtat('Écris un sujet.', true); return; }
+      go.disabled = true;
+      bgEtat('Rédaction en cours… (30 à 60 s, l’article est long)');
+      srv('/admin/blog/generate', {
+        method: 'POST',
+        body: JSON.stringify({ sujet: sujet, categorie: $('#bgCat').value, ton: $('#bgTon').value }),
+      }).then(function (r) {
+        go.disabled = false;
+        if (r.status === 409) { bgEtat('Un article existe déjà sur ce sujet.', true); return; }
+        if (!r.ok) { bgEtat(r.data.error || 'La rédaction a échoué.', true); return; }
+        bgEtat('✅ « ' + (r.data.titre || sujet) +' » rédigé — ' + (r.data.sections || 0)
+               + ' sections' + (r.data.image ? ', avec image' : ', sans image')
+               + '. Il reste à le publier.');
+        $('#bgSujet').value = '';
+        chargePosts();
+      }).catch(function () { go.disabled = false; bgEtat('Serveur injoignable.', true); });
+    };
+    /* publier / dépublier / supprimer : un seul écouteur, la table est redessinée */
+    var panel = $('#blogPanel');
+    if (panel) panel.onclick = function (e) {
+      var st = e.target.closest('[data-bgstatut]');
+      if (st) {
+        srv('/admin/blog/statut', { method:'POST',
+          body: JSON.stringify({ slug: st.dataset.bgstatut, statut: st.dataset.vers }) })
+          .then(chargePosts);
+        return;
+      }
+      var del = e.target.closest('[data-bgdel]');
+      if (del) {
+        if (!confirm('Supprimer cet article définitivement ?')) return;
+        srv('/admin/blog?slug=' + encodeURIComponent(del.dataset.bgdel), { method:'DELETE' })
+          .then(chargePosts);
+      }
+    };
+    chargePosts();
   }
 
   function load() {

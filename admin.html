@@ -135,6 +135,23 @@
     border:1px solid var(--stroke);box-shadow:var(--shadow);padding:8px 14px;border-radius:var(--r-md)}
   button:active{transform:translateY(1px);box-shadow:var(--shadow)}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* ===== Generateur d articles ===== */
+  .bg-form{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px}
+  .bg-form label{display:block;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .bg-form input,.bg-form select{display:block;width:100%;margin-top:5px;padding:10px 12px;font:inherit;font-weight:600;background:var(--surface-2);color:var(--ink);border:1px solid var(--stroke);border-radius:var(--r-sm)}
+  .bg-form button{padding:11px 18px;white-space:nowrap;background:var(--primary);color:var(--primary-ink);border-color:transparent}
+  .bg-form button:disabled{opacity:.55;cursor:progress}
+  @media(max-width:760px){ .bg-form{grid-template-columns:1fr} }
+  /* l etat de la redaction : discret, mais rouge si ca a echoue */
+  .bg-etat{font-size:.8rem;font-weight:700;color:var(--muted);margin:0 0 12px;line-height:1.5;min-height:1.2em}
+  .bg-etat.err{color:var(--danger)}
+  .bg-sujet{font-size:.72rem;color:var(--muted)}
+  .bg-pastille{display:inline-block;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:4px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--stroke);color:var(--muted)}
+  .bg-pastille.on{background:var(--primary);color:var(--primary-ink);border-color:transparent}
+  .bg-acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+  .bg-acts button{padding:7px 11px;font-size:.72rem}
+  .bg-acts .bg-del:hover{background:var(--danger);color:#fff;border-color:transparent}
 </style>
 </head>
 <body>

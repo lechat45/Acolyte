@@ -197,7 +197,19 @@ header{
    tailles, du bandeau de démarrage à la colonne de gauche. */
 .o-mark{
   display:inline-flex;align-items:center;justify-content:center;
-  width:.92em;height:.92em;vertical-align:-.06em;margin:0 .02em;
+  /* ⚠️ Le globe se POSE sur la ligne de base des lettres.
+     Avant : height .92em + vertical-align:-.06em → il descendait SOUS la
+     ligne et paraissait tomber. Un bloc en ligne sans texte a sa ligne de
+     base au bord INFÉRIEUR : « baseline » suffit donc à l'aligner.
+     0.82em, soit un peu plus que la hauteur des capitales (~0.72em) : c'est
+     le débord naturel d'une lettre ronde, qui la fait paraître de la même
+     taille que les lettres droites. */
+  width:.82em;height:.82em;margin:0 .04em;
+  /* ⚠️ .logo-word est un conteneur FLEX (align-items:flex-end) : « vertical-align »
+     y est purement ignoré. C'est « align-self:baseline » qui compte — il pose le
+     bas du globe sur la LIGNE DE BASE des lettres, et non sur le bas de leur
+     boîte, qui descend plus bas de tout le jambage. C'était ça, l'effet « trop bas ». */
+  align-self:baseline;
 }
 .logo-mark{
   display:block;width:100%;height:100%;
@@ -2410,3 +2422,104 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   .map-acts{justify-content:flex-start}
   #catMap #projMap{height:clamp(300px,52vh,460px)}
 }
+
+/* ============================================================
+   BLOGUE
+   ------------------------------------------------------------
+   L'onglet n'existe QUE sur ordinateur : lire un long article sur un
+   téléphone pendant qu'on prépare un voyage n'a pas d'intérêt, et le bouton
+   encombrerait une barre du bas déjà à l'étroit (3 boutons y suffisent).
+============================================================ */
+/* ⚠️ Sélecteur `.catnav button.cat-pc` et non `.cat-pc` seul : les règles
+   `.catnav button` posent un display et sont plus spécifiques — l'onglet
+   restait visible sur téléphone. */
+.catnav button.cat-pc{display:none}
+@media (min-width:900px){ .catnav button.cat-pc{display:inline-flex} }
+
+.blog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.blog-head h2{margin:0}
+.blog-head .sub{margin:6px 0 0}
+
+/* ---- La liste : des fiches larges, l'image à gauche ---- */
+.blog-list{display:grid;gap:14px}
+.blog-card{
+  display:grid;grid-template-columns:180px 1fr;gap:0;text-align:left;
+  background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-lg);
+  box-shadow:var(--shadow);overflow:hidden;cursor:pointer;padding:0;
+  transition:border-color .12s ease,transform .12s ease;
+}
+.blog-card:hover{border-color:var(--stroke-2);transform:translateY(-2px)}
+.bc-img{display:block;background:var(--surface-2);min-height:132px;overflow:hidden}
+.bc-img img{width:100%;height:100%;object-fit:cover;display:block}
+.bc-noimg{display:grid;place-items:center;font-size:2rem;opacity:.4}
+.bc-body{display:flex;flex-direction:column;gap:6px;padding:16px 18px;min-width:0}
+.bc-cat{
+  display:inline-block;align-self:flex-start;
+  font-family:'Sora',sans-serif;font-weight:800;font-size:.62rem;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);
+  background:var(--surface-2);border:1px solid var(--stroke);
+  border-radius:999px;padding:4px 10px;
+}
+.bc-titre{
+  font-family:'Sora',sans-serif;font-weight:900;font-size:1.05rem;
+  line-height:1.25;color:var(--txt);
+}
+.bc-sous{font-size:.86rem;line-height:1.5;color:var(--txt-2)}
+.bc-meta{font-size:.72rem;font-weight:700;color:var(--txt-2);opacity:.8;margin-top:auto}
+@media (max-width:700px){
+  .blog-card{grid-template-columns:1fr}
+  .bc-img{min-height:150px;max-height:180px}
+}
+
+/* ---- L'article ---- */
+.art-hero{margin:-2px -2px 18px;border-radius:var(--r-md);overflow:hidden;position:relative}
+.art-hero img{width:100%;max-height:380px;object-fit:cover;display:block}
+.art-hero figcaption{
+  font-size:.7rem;font-weight:700;color:var(--txt-2);
+  padding:8px 2px 0;text-align:right;
+}
+.art-titre{
+  font-family:'Sora',sans-serif;font-weight:900;
+  font-size:clamp(1.5rem,3.4vw,2.2rem);line-height:1.12;
+  letter-spacing:-.02em;margin:12px 0 0;
+}
+.art-sous{font-size:1.05rem;line-height:1.5;color:var(--txt-2);margin:10px 0 0;font-weight:600}
+.art-meta{font-size:.74rem;font-weight:700;color:var(--txt-2);opacity:.8;margin:10px 0 0}
+.art-resume{
+  font-size:.98rem;line-height:1.65;margin:18px 0 0;
+  padding-left:16px;border-left:3px solid var(--primary);
+}
+/* ---- Les faits chiffrés : une grille, lisible d'un coup d'œil ---- */
+.art-faits{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;
+  margin:22px 0 4px;
+}
+.af{
+  background:var(--surface-2);border:1px solid var(--stroke);
+  border-radius:var(--r-md);padding:11px 13px;
+}
+.af-k{
+  display:block;font-size:.64rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--txt-2);
+}
+.af-v{display:block;font-family:'Sora',sans-serif;font-weight:900;font-size:.95rem;margin-top:3px}
+
+.art-sec{margin-top:26px}
+.art-sec h2{
+  font-family:'Sora',sans-serif;font-weight:900;font-size:1.22rem;
+  line-height:1.3;margin:0 0 10px;
+}
+/* Le corps du texte : une largeur de lecture confortable, pas la pleine
+   largeur de l'écran — au-delà de ~70 caractères, l'œil perd sa ligne. */
+.art-sec p{font-size:.98rem;line-height:1.75;color:var(--txt);margin:0 0 14px;max-width:68ch}
+.art-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.art-note{margin-top:20px;border-top:1px solid var(--stroke);padding-top:12px}
+
+/* ---- Le lien discret posé à côté d'un lieu du programme ---- */
+.blog-link{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;padding:0;vertical-align:-.28em;
+  background:var(--surface-2);border:1px solid var(--stroke);border-radius:7px;
+  font-size:.74rem;line-height:1;cursor:pointer;
+}
+.blog-link:hover{background:var(--primary);border-color:transparent}

@@ -167,6 +167,10 @@
     <nav class="catnav">
       <button data-cat="map"><span class="ico">🗺️</span>Carte</button>
       <button data-cat="trip" class="on"><span class="ico">✈️</span>Voyage</button>
+      <!-- Blogue : ordinateur uniquement. Lire un long article sur un
+           téléphone pendant qu'on prépare un voyage n'a pas d'intérêt, et
+           l'onglet encombrerait une barre déjà à l'étroit. -->
+      <button data-cat="blog" class="cat-pc"><span class="ico">📰</span>Blogue</button>
       <button data-cat="profile"><span class="ico">👤</span>Profil</button>
     </nav>
   </header>
@@ -403,6 +407,22 @@
   </section>
 
   <!-- ================= CATÉGORIE : PROFIL ================= -->
+  <!-- ===== BLOGUE =====
+       Les articles sont écrits par le générateur, piloté depuis le panel
+       admin, et stockés côté serveur : un article est rédigé une fois et lu
+       par tout le monde. Ici on ne fait que lire. -->
+  <section class="hidden" id="catBlog">
+    <div class="card blog-head">
+      <div>
+        <h2>Le journal d'Acolyte 📰</h2>
+        <p class="sub" id="blogSub">Merveilles du monde, grandes villes et lieux qui valent le détour.</p>
+      </div>
+      <button class="btn ghost sm hidden" id="blogBack">← Tous les articles</button>
+    </div>
+    <div id="blogList" class="blog-list"></div>
+    <article id="blogOne" class="card hidden"></article>
+  </section>
+
   <section class="hidden" id="catProfile">
     <div class="cat-empty-banner" id="profileEmpty" hidden>
       <div class="ce-emoji">✈️</div>
