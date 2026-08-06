@@ -4010,3 +4010,48 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   .pf-inst{min-height:44px;height:auto}
   .cat-empty-banner .btn{min-height:44px}
 }
+
+/* ============================================================
+   ASSISTANT DE MODIFICATION — la barre en tête du voyage
+   Un champ, un bouton, une ligne d'état. Pas une fenêtre de discussion : on
+   modifie SON voyage, qu'on a sous les yeux, on ne converse pas à côté.
+============================================================ */
+.asst-bar{
+  border:1px solid var(--stroke);border-radius:var(--r-lg);
+  background:var(--secondary);padding:16px;margin-bottom:18px;
+}
+.asst-l{
+  display:block;font-family:'Sora',sans-serif;font-weight:700;font-size:.63rem;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--primary);margin-bottom:12px;
+}
+.asst-ligne{display:flex;gap:10px;flex-wrap:wrap}
+.asst-ligne input{
+  flex:1;min-width:180px;
+  background:none;border:0;border-bottom:1px solid var(--stroke-2);border-radius:0;
+  padding:0 0 9px;font-size:.9rem;color:var(--txt);
+}
+.asst-ligne input:focus{border-bottom-color:var(--primary)}
+.asst-ligne .btn{border-radius:999px;min-height:44px;padding:0 22px;flex:none}
+/* Pendant l'attente : le bouton se calme, le champ reste lisible. */
+.asst-bar.occupe .asst-ligne .btn{opacity:.55;pointer-events:none}
+.asst-etat{margin:12px 0 0;font-size:.82rem;line-height:1.55;color:var(--txt-2)}
+.asst-etat b{color:var(--txt);font-weight:600}
+.asst-etat:empty{display:none}
+/* « Annuler » n'existe QUE s'il y a quelque chose à annuler : un bouton
+   d'annulation toujours visible laisse croire qu'on peut revenir en arrière à
+   n'importe quel moment, ce qui est faux. */
+.asst-undo{
+  display:none;background:none;border:0;box-shadow:none;
+  margin-top:10px;min-height:44px;padding:0 2px;
+  font-size:.8rem;font-weight:600;color:var(--txt-2);cursor:pointer;
+}
+.asst-bar.modifie .asst-undo{display:inline-flex;align-items:center}
+.asst-undo:hover{color:var(--txt);text-decoration:underline;text-underline-offset:3px}
+
+@media (pointer:coarse){
+  /* Mesuré à 318×27 : le champ de l'assistant est SOULIGNÉ, donc sa hauteur
+     vient du texte seul — 27 px, sous le seuil confortable. Le padding du bas
+     porte le trait, on ajoute la hauteur par min-height pour ne pas décoller le
+     soulignement du texte. */
+  .asst-ligne input{min-height:44px;padding-bottom:14px}
+}

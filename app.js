@@ -11186,3 +11186,253 @@ document.addEventListener('click', e => {
   const neuf = lienPartenaire(a.href);
   if(neuf !== a.href) a.href = neuf;
 }, true);
+
+/* ============================================================
+   ASSISTANT DE MODIFICATION DU VOYAGE
+   ------------------------------------------------------------
+   « Enlève le musée du jour 3 » · « ajoute un marché le matin » ·
+   « décale tout d'une heure ». Avant, changer une seule chose obligeait à
+   retourner au questionnaire et à TOUT régénérer : on perdait le programme
+   qu'on aimait pour corriger un détail. C'est le manque qui séparait Acolyte
+   des gros — chez eux on discute avec son itinéraire.
+
+   ⚠️ L'IA RENVOIE UNE MODIFICATION, PAS UN VOYAGE. C'est la décision centrale.
+   Elle produit une liste d'opérations sur la structure existante, jamais le
+   programme complet. Trois raisons :
+     · ~20 fois moins de texte à générer → rapide, et ça tient dans les quotas
+       gratuits ;
+     · le reste du voyage NE PEUT PAS changer par accident — ce qui n'est pas
+       visé n'est pas touché ;
+     · c'est annulable : on garde l'état d'avant, donc on sait revenir.
+
+   ⚠️ RIEN N'EST APPLIQUÉ SANS VALIDATION. Un modèle qui renvoie
+   {"action":"supprimer","jour":9} sur un voyage de 5 jours, ça arrivera.
+   asstValide() vérifie CHAQUE opération — action connue, jour existant, index
+   dans les bornes — et rejette la fautive sans abandonner les autres. On ne
+   fait pas plus confiance à une sortie de modèle qu'à un champ de formulaire.
+============================================================ */
+const ASST_ACTIONS = ['supprimer', 'ajouter', 'modifier', 'deplacer'];
+
+/* Valide UNE opération contre le voyage réel. Renvoie null si elle est bonne,
+   sinon la raison du refus (affichée telle quelle, pour que l'utilisateur
+   comprenne ce qui a été ignoré plutôt que de voir un changement partiel). */
+function asstValide(op){
+  if(!op || typeof op !== 'object') return 'opération illisible';
+  if(!ASST_ACTIONS.includes(op.action)) return `action inconnue « ${op.action} »`;
+  const j = Number(op.jour);
+  if(!Number.isInteger(j)) return 'jour manquant';
+  const etapes = tlEtapes(j);
+  if(!etapes) return `le jour ${j} n'existe pas dans ce voyage`;
+  /* Pour tout sauf « ajouter », l'étape visée doit exister. */
+  if(op.action !== 'ajouter'){
+    const i = Number(op.etape);
+    if(!Number.isInteger(i) || i < 0 || i >= etapes.length)
+      return `le jour ${j} n'a pas de moment n°${op.etape}`;
+  }
+  if(op.action === 'deplacer'){
+    const jd = Number(op.versJour);
+    if(!Number.isInteger(jd) || !tlEtapes(jd)) return `jour d'arrivée ${op.versJour} inconnu`;
+  }
+  if(op.action === 'ajouter' && !String(op.titre || '').trim())
+    return 'ajout sans titre';
+  return null;
+}
+
+/* Exécute les opérations valides. Renvoie { faites, refusees }.
+   ⚠️ Les suppressions et déplacements sont traités du DERNIER index au
+   PREMIER : retirer l'étape 1 puis l'étape 3 supprimerait la mauvaise, parce
+   que les index glissent après chaque retrait. C'est l'erreur classique, et
+   elle est silencieuse. */
+function asstApplique(ops){
+  const bonnes = [], refusees = [];
+  for(const op of ops){
+    const err = asstValide(op);
+    if(err) refusees.push({ op, err }); else bonnes.push(op);
+  }
+  const ordre = [...bonnes].sort((a, b) => (Number(b.etape) || 0) - (Number(a.etape) || 0));
+  const faites = [];
+  for(const op of ordre){
+    const etapes = tlEtapes(Number(op.jour));
+    const i = Number(op.etape);
+    try{
+      if(op.action === 'supprimer'){
+        faites.push({ op, quoi: etapes[i]?.titre || '' });
+        etapes.splice(i, 1);
+      }else if(op.action === 'ajouter'){
+        const e = {
+          heure: /^\d{1,2}:\d{2}$/.test(String(op.heure)) ? String(op.heure) : '10:00',
+          titre: String(op.titre).slice(0, 90),
+          description: String(op.description || '').slice(0, 400),
+          lieu: op.lieu ? String(op.lieu).slice(0, 90) : null,
+          type: TL_TYPES && TL_TYPES[op.type] ? op.type : 'visite'
+        };
+        /* « apres » absent → à la fin. Un index hors bornes est ramené dedans
+           plutôt que refusé : l'intention est claire, la position est un
+           détail. */
+        const pos = Number.isInteger(Number(op.apres))
+          ? Math.max(0, Math.min(etapes.length, Number(op.apres) + 1))
+          : etapes.length;
+        etapes.splice(pos, 0, e);
+        faites.push({ op, quoi: e.titre });
+      }else if(op.action === 'modifier'){
+        const e = etapes[i];
+        faites.push({ op, quoi: e.titre });
+        if(op.titre)       e.titre = String(op.titre).slice(0, 90);
+        if(op.description) e.description = String(op.description).slice(0, 400);
+        if(op.lieu)        e.lieu = String(op.lieu).slice(0, 90);
+        if(/^\d{1,2}:\d{2}$/.test(String(op.heure))) e.heure = String(op.heure);
+        if(op.type && TL_TYPES && TL_TYPES[op.type]) e.type = op.type;
+      }else if(op.action === 'deplacer'){
+        const e = etapes[i];
+        faites.push({ op, quoi: e?.titre || '' });
+        etapes.splice(i, 1);
+        tlEtapes(Number(op.versJour)).push(e);
+      }
+    }catch(err){ refusees.push({ op, err: 'échec : ' + err.message }); }
+  }
+  /* Les journées restent triées par heure : sinon un ajout à 8h se retrouve
+     après le déjeuner et le programme devient illisible. */
+  const jours = new Set(faites.map(f => Number(f.op.jour))
+    .concat(faites.filter(f => f.op.versJour != null).map(f => Number(f.op.versJour))));
+  for(const j of jours){
+    const e = tlEtapes(j);
+    if(e) e.sort((a, b) => String(a.heure).localeCompare(String(b.heure)));
+  }
+  return { faites, refusees };
+}
+
+/* Le voyage, résumé pour l'IA. On n'envoie QUE ce qu'il faut pour viser une
+   étape : jour, index, heure, titre. Pas les notes, pas les dépenses, pas
+   l'email — l'assistant n'a aucun besoin de les connaître, donc ils ne
+   sortent pas de l'appareil. */
+function asstResume(){
+  const days = state.cache?.days || {};
+  const L = [];
+  for(const j of Object.keys(days).sort((a, b) => a - b)){
+    const e = tlEtapes(Number(j));
+    if(!e) continue;
+    L.push(`Jour ${j} :`);
+    e.forEach((x, i) => L.push(`  [${i}] ${x.heure} — ${x.titre}`));
+  }
+  return L.join('\n');
+}
+function asstPrompt(demande){
+  return `Tu modifies un programme de voyage EXISTANT. Voici son état :
+
+${asstResume()}
+
+Demande du voyageur : « ${String(demande).slice(0, 400)} »
+
+Renvoie UNIQUEMENT les opérations nécessaires, jamais le programme entier.
+Format : {"operations":[…],"resume":"une phrase disant ce que tu changes"}
+
+Actions possibles :
+· {"action":"supprimer","jour":3,"etape":2}
+· {"action":"ajouter","jour":3,"apres":1,"heure":"10:30","titre":"…","description":"…","lieu":"…","type":"visite"}
+· {"action":"modifier","jour":2,"etape":0,"heure":"09:00","titre":"…","description":"…"}
+· {"action":"deplacer","jour":2,"etape":1,"versJour":3}
+
+Règles :
+1. "jour" et "etape" sont ceux affichés ci-dessus. N'invente jamais un numéro absent.
+2. Ne touche QUE ce que la demande concerne. Tout le reste doit rester intact.
+3. Si la demande est impossible ou incompréhensible, renvoie {"operations":[],"resume":"…"} en expliquant pourquoi.
+4. "type" vaut : visite, repas, transport, hotel, pause, activite.
+5. "resume" est écrit pour le voyageur, à la deuxième personne, sans jargon.`;
+}
+
+/* Le va-et-vient complet : demande → opérations → APERÇU → confirmation.
+   ⚠️ On applique sur une COPIE d'abord pour pouvoir montrer le résultat, puis
+   on annule si l'utilisateur refuse. C'est ce qui rend l'assistant sûr : il ne
+   peut pas abîmer un voyage sans qu'on ait dit oui. */
+var _asstAvant = null;
+async function asstDemande(texte){
+  if(!state.cache?.days || !Object.keys(state.cache.days).length){
+    toast(isEN() ? 'No trip to modify yet' : 'Pas encore de voyage à modifier');
+    return;
+  }
+  const bar = $('#asstBar');
+  bar?.classList.add('occupe');
+  const st = $('#asstEtat');
+  if(st) st.textContent = isEN() ? 'Acolyte is looking…' : 'Acolyte regarde…';
+  try{
+    const { data } = await ai('light', asstPrompt(texte), true, 1400);
+    const ops = Array.isArray(data?.operations) ? data.operations : [];
+    if(!ops.length){
+      if(st) st.textContent = String(data?.resume || (isEN() ? 'Nothing to change.' : 'Rien à changer.')).slice(0, 200);
+      return;
+    }
+    /* état d'avant, pour l'annulation */
+    _asstAvant = JSON.stringify(state.cache.days);
+    const { faites, refusees } = asstApplique(ops);
+    if(!faites.length){
+      _asstAvant = null;
+      if(st) st.textContent = (isEN() ? 'Could not apply: ' : 'Impossible d’appliquer : ')
+        + refusees.map(r => r.err).join(' · ').slice(0, 200);
+      return;
+    }
+    save();
+    if(typeof tlRender === 'function') faites.forEach(f => { try{ tlRender(Number(f.op.jour)); }catch(e){} });
+    if(typeof buildProjectMap === 'function'){ try{ buildProjectMap(); }catch(e){} }
+    const lignes = faites.map(f => {
+      const v = { supprimer:'−', ajouter:'+', modifier:'~', deplacer:'→' }[f.op.action] || '·';
+      return `${v} jour ${f.op.jour} : ${f.quoi}`;
+    });
+    if(st) st.innerHTML = `<b>${esc(String(data?.resume || '').slice(0, 160))}</b><br>`
+      + lignes.map(esc).join('<br>')
+      + (refusees.length ? `<br><i>${esc(refusees.length + (isEN() ? ' ignored' : ' ignorée(s)'))}</i>` : '');
+    bar?.classList.add('modifie');
+  }catch(e){
+    if(st) st.textContent = isEN() ? 'Acolyte could not answer. Try again.' : 'Acolyte n’a pas pu répondre. Réessaie.';
+  }finally{
+    bar?.classList.remove('occupe');
+  }
+}
+/* Annuler : on remet l'état d'avant, tel quel. Pas d'inversion d'opérations —
+   rejouer une suppression à l'envers demanderait de deviner la position, et une
+   copie de la structure coûte quelques kilooctets. */
+function asstAnnule(){
+  if(!_asstAvant) return;
+  try{
+    state.cache.days = JSON.parse(_asstAvant);
+    _asstAvant = null;
+    save();
+    Object.keys(state.cache.days).forEach(j => { try{ tlRender(Number(j)); }catch(e){} });
+    try{ buildProjectMap(); }catch(e){}
+    const st = $('#asstEtat'); if(st) st.textContent = isEN() ? 'Change undone.' : 'Modification annulée.';
+    $('#asstBar')?.classList.remove('modifie');
+    toast(isEN() ? '↩ Undone' : '↩ Annulé');
+  }catch(e){}
+}
+
+/* La barre, posée en tête de l'écran du voyage. Construite en JS pour ne pas
+   dépendre d'un emplacement précis dans index.html — et pour qu'elle
+   n'apparaisse que s'il y a un voyage à modifier. */
+function asstMonte(){
+  const hote = $('#view3');
+  if(!hote || $('#asstBar')) return;
+  const EN = isEN();
+  const bar = document.createElement('div');
+  bar.className = 'asst-bar';
+  bar.id = 'asstBar';
+  bar.innerHTML = `
+    <label class="asst-l" for="asstInp">${EN ? 'Change your trip' : 'Modifie ton voyage'}</label>
+    <div class="asst-ligne">
+      <input id="asstInp" type="text" autocomplete="off"
+             placeholder="${EN ? 'Remove the museum on day 3, add a market…' : 'Enlève le musée du jour 3, ajoute un marché…'}">
+      <button class="btn" id="asstGo" type="button">${EN ? 'Ask' : 'Demander'}</button>
+    </div>
+    <p class="asst-etat" id="asstEtat" role="status" aria-live="polite"></p>
+    <button class="asst-undo" id="asstUndo" type="button">${EN ? '↩ Undo' : '↩ Annuler'}</button>`;
+  hote.insertBefore(bar, hote.firstChild);
+  const envoie = () => {
+    const v = $('#asstInp').value.trim();
+    if(!v) return;
+    $('#asstInp').value = '';
+    asstDemande(v);
+  };
+  $('#asstGo').onclick = envoie;
+  /* Entrée envoie : c'est un champ à une ligne, on n'attend rien d'autre. */
+  $('#asstInp').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); envoie(); } });
+  $('#asstUndo').onclick = asstAnnule;
+}
+asstMonte();
