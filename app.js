@@ -11192,6 +11192,10 @@ document.addEventListener('click', e => {
   if(!a) return;
   const neuf = lienPartenaire(a.href);
   if(neuf !== a.href) a.href = neuf;
+  /* Le seul endroit où l'on sait qu'un visiteur part vers un partenaire. La
+     question n'est pas l'argent, c'est de savoir si le programme mène à
+     l'action ou s'il reste un joli document. */
+  try{ if(PARTENAIRES.some(x => x.hote.test(new URL(a.href, location.href).hostname))) statCompte('reservation_clic'); }catch(e){}
 }, true);
 
 /* ============================================================
@@ -11390,6 +11394,7 @@ async function asstDemande(texte){
       + (refusees.length ? `<br><i>${esc(refusees.length + (isEN() ? ' ignored' : ' ignorée(s)'))}</i>` : '');
     bar?.classList.add('modifie');
   }catch(e){
+    statCompte('ia_echec');
     if(st) st.textContent = isEN() ? 'Acolyte could not answer. Try again.' : 'Acolyte n’a pas pu répondre. Réessaie.';
   }finally{
     bar?.classList.remove('occupe');
@@ -11400,6 +11405,9 @@ async function asstDemande(texte){
    copie de la structure coûte quelques kilooctets. */
 function asstAnnule(){
   if(!_asstAvant) return;
+  /* Un refus est le signal de qualité le plus honnête qu'on ait sur l'IA :
+     comparé à assistant_utilise, il donne un taux de rejet. */
+  statCompte('assistant_annule');
   try{
     state.cache.days = JSON.parse(_asstAvant);
     _asstAvant = null;
@@ -11638,3 +11646,22 @@ function statCompte(cle, uneFois = false){
   }catch(e){}
 }
 statCompte('arrivee', true);
+/* Le hors-ligne est LA différence d'Acolyte face à Layla et Mindtrip. Encore
+   faut-il savoir s'il sert : sans mesure, c'est une conviction, pas un fait. */
+if(navigator.onLine === false) statCompte('hors_ligne', true);
+
+/* L'ABANDON LE PLUS COÛTEUX, et le seul qu'on ne voyait pas.
+   « arrivee » compte ceux qui ouvrent le site, « voyage_genere » ceux qui vont
+   au bout. Entre les deux, il manquait ceux qui COMMENCENT à remplir puis
+   partent : sans ce compteur, on ne sait pas si le questionnaire rebute avant
+   ou après la première question.
+   ⚠️ Une seule fois par session, et au PREMIER caractère tapé — pas au focus :
+   cliquer dans un champ par curiosité n'est pas commencer. */
+{
+  const champs = ['#fFrom', '#fDest', '#fWhen', '#fDays'];
+  const marque = () => statCompte('questionnaire_commence', true);
+  champs.forEach(sel => {
+    const el = $(sel);
+    if(el) el.addEventListener('input', marque, { once: true });
+  });
+}

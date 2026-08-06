@@ -68,6 +68,14 @@
   }
 
   /* ---------- Tuile de chiffre ---------- */
+  /* ⚠️ kpi() passe sa valeur par nb(), qui force un Number : « 78 % » devenait
+     donc 0, et le taux le plus important du panneau s'affichait à zéro. Cette
+     variante laisse la valeur telle quelle — pour les pourcentages et tout ce
+     qui porte une unité. */
+  function kpiTxt(k, v, d) {
+    return '<div class="kpi"><div class="k">' + esc(k) + '</div><div class="v">' + esc(String(v)) + '</div>'
+         + (d ? '<div class="d">' + esc(d) + '</div>' : '') + '</div>';
+  }
   function kpi(k, v, d) {
     return '<div class="kpi"><div class="k">' + esc(k) + '</div><div class="v">' + nb(v) + '</div>'
          + (d ? '<div class="d">' + esc(d) + '</div>' : '') + '</div>';
@@ -155,6 +163,22 @@
     { cle: 'assistant_utilise', nom: 'Assistant',       c: 'var(--s5)' },
     { cle: 'blog_ouvert',       nom: 'Blog',            c: 'var(--s6)' }
   ];
+  /* Ces événements ne méritent pas une courbe — ils sont rares ou binaires, et
+     six lignes suffisent déjà à saturer un graphique. Mais leur TOTAL répond à
+     des questions précises, alors ils vont dans un tableau à côté. */
+  var APART = [
+    { cle: 'questionnaire_commence', nom: 'Questionnaires commencés' },
+    { cle: 'questions_passees',      nom: 'Questions passées' },
+    { cle: 'assistant_annule',       nom: 'Propositions de l’IA refusées' },
+    { cle: 'ia_echec',               nom: 'Pannes de l’IA' },
+    { cle: 'horaires_verifies',      nom: 'Vérifications d’horaires' },
+    { cle: 'reservation_clic',       nom: 'Départs vers un partenaire' },
+    { cle: 'hors_ligne',             nom: 'Ouvertures hors ligne' },
+    { cle: 'jour_j',                 nom: 'Mode Jour J' },
+    { cle: 'papiers_ouvert',         nom: 'Onglet Papiers' },
+    { cle: 'carte_ouverte',          nom: 'Carte' },
+    { cle: 'install',                nom: 'Installations' }
+  ];
   function joursSuite(jours) {
     var cles = Object.keys(jours || {}).sort();
     if (!cles.length) return [];
@@ -166,6 +190,33 @@
     }
     return out;
   }
+  /* Le tableau des événements secondaires, avec deux TAUX calculés — c'est eux
+     qui portent l'information, pas les totaux bruts :
+       · abandon du questionnaire = commencés qui n'ont pas produit de voyage ;
+       · rejet de l'IA = propositions annulées sur propositions faites.
+     Un total seul ne dit pas si 40 refus sur 1000 est bon ou catastrophique. */
+  function apartHTML(totaux) {
+    var t = totaux || {};
+    var lignes = APART.filter(function (a) { return t[a.cle]; })
+      .map(function (a) { return { nom: a.nom, n: t[a.cle] }; });
+    var out = '';
+    var com = t.questionnaire_commence || 0, gen = t.voyage_genere || 0;
+    var uti = t.assistant_utilise || 0, ann = t.assistant_annule || 0;
+    if (com || uti) {
+      out += '<div class="kpis">';
+      if (com) out += kpiTxt('Abandon du questionnaire',
+        (com > gen ? Math.round(((com - gen) / com) * 100) : 0) + ' %',
+        nb(com) + ' commencé(s) · ' + nb(gen) + ' abouti(s)');
+      if (uti) out += kpiTxt('Rejet des propositions IA',
+        Math.round((ann / uti) * 100) + ' %',
+        nb(ann) + ' annulée(s) sur ' + nb(uti));
+      if (t.ia_echec) out += kpi('Pannes de l’IA', nb(t.ia_echec), 'sur la période');
+      out += '</div>';
+    }
+    if (!lignes.length) return out + '<p class="lede">Aucun de ces événements n’a encore été enregistré.</p>';
+    return out + tableau('🔎 Le détail', lignes);
+  }
+
   function courbes(jours) {
     var dates = joursSuite(jours);
     if (dates.length < 2) return '<p class="lede">Il faut au moins deux jours de mesure pour tracer une courbe.</p>';
@@ -408,6 +459,10 @@
       html += '<div class="card wide"><h2>📉 Utilisation par jour</h2>'
         + '<p class="lede">Une courbe par événement, sur 60 jours. Compare les arrivées aux voyages réellement générés : l’écart entre les deux, c’est ce qu’il reste à gagner.</p>'
         + courbes(d.jours) + '</div>';
+
+      html += '<div class="card wide"><h2>🔎 Ce qui est utilisé, et ce qui bloque</h2>'
+        + '<p class="lede">Les taux d’abandon et de rejet sont calculés : un total seul ne dit pas si 40 refus sur 1000 est bon ou catastrophique.</p>'
+        + apartHTML(d.totaux) + '</div>';
 
       html += '<div class="cols">';
 

@@ -399,7 +399,21 @@ export default async function (request) {
     'arrivee', 'inscription', 'connexion',
     'questions_finies', 'questions_passees',
     'voyage_genere', 'voyage_ouvert', 'carte_ouverte', 'blog_ouvert',
-    'assistant_utilise', 'horaires_verifies', 'install'
+    'assistant_utilise', 'assistant_annule', 'horaires_verifies', 'install',
+    /* Deuxième vague. Chacune répond à une question qu'on se posait sans
+       pouvoir y répondre :
+         questionnaire_commence → combien commencent mais n'arrivent pas au bout
+                                  (l'abandon le plus coûteux, invisible jusqu'ici)
+         assistant_annule       → la qualité de l'IA, mesurée par les refus
+         ia_echec               → sa fiabilité, mesurée par les pannes
+         hors_ligne             → est-ce que le mode avion sert vraiment
+         jour_j                 → est-ce qu'on ouvre Acolyte PENDANT le voyage
+         reservation_clic       → est-ce que le programme mène à l'action
+         papiers_ouvert         → est-ce que la différence est utilisée
+       ⚠️ Toujours des compteurs agrégés : aucun de ces événements n'ajoute la
+       moindre donnée personnelle. */
+    'questionnaire_commence', 'ia_echec', 'hors_ligne', 'jour_j',
+    'reservation_clic', 'papiers_ouvert', 'postcard_cree', 'ics_telecharge', 'partage'
   ]);
   async function statTable() {
     await sqlite.execute(`CREATE TABLE IF NOT EXISTS aco_stats(
