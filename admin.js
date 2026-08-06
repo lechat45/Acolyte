@@ -134,6 +134,91 @@
     return s;
   }
 
+  /* ---------- Courbes d'utilisation : une ligne par événement ----------
+     La question à laquelle ce graphique répond : « qu'est-ce qui est utilisé,
+     et est-ce que ça monte ou ça descend ? » Les colonnes ci-dessus montrent
+     UNE série ; ici il en faut plusieurs superposées, sinon on ne peut pas
+     comparer les arrivées aux voyages générés.
+
+     ⚠️ Aucune bibliothèque. Un graphique en courbes, c'est une polyligne et
+     deux axes : une dépendance de 300 Ko pour ça ne se justifie pas, et la CSP
+     du panneau n'autorise de toute façon pas de script externe.
+
+     ⚠️ Les jours SANS aucune donnée doivent quand même exister sur l'axe,
+     sinon deux jours d'écart et un jour d'écart se ressemblent, et la courbe
+     ment sur le rythme. On reconstruit donc la suite complète des dates. */
+  var SERIES = [
+    { cle: 'arrivee',           nom: 'Arrivées',        c: 'var(--s1)' },
+    { cle: 'inscription',       nom: 'Inscriptions',    c: 'var(--s2)' },
+    { cle: 'questions_finies',  nom: 'Questions finies',c: 'var(--s3)' },
+    { cle: 'voyage_genere',     nom: 'Voyages générés', c: 'var(--s4)' },
+    { cle: 'assistant_utilise', nom: 'Assistant',       c: 'var(--s5)' },
+    { cle: 'blog_ouvert',       nom: 'Blog',            c: 'var(--s6)' }
+  ];
+  function joursSuite(jours) {
+    var cles = Object.keys(jours || {}).sort();
+    if (!cles.length) return [];
+    var d = new Date(cles[0] + 'T00:00:00Z'), fin = new Date(cles[cles.length - 1] + 'T00:00:00Z');
+    var out = [], garde = 0;
+    while (d <= fin && garde++ < 400) {
+      out.push(d.toISOString().slice(0, 10));
+      d.setUTCDate(d.getUTCDate() + 1);
+    }
+    return out;
+  }
+  function courbes(jours) {
+    var dates = joursSuite(jours);
+    if (dates.length < 2) return '<p class="lede">Il faut au moins deux jours de mesure pour tracer une courbe.</p>';
+    /* on ne garde que les séries réellement présentes : une légende de six
+       entrées dont quatre à zéro n'apprend rien */
+    var actives = SERIES.filter(function (se) {
+      return dates.some(function (j) { return (jours[j] || {})[se.cle]; });
+    });
+    if (!actives.length) return '<p class="lede">Aucune utilisation enregistrée sur la période.</p>';
+    var W = 640, H = 220, PB = 26, PL = 34, PT = 10;
+    var max = 1;
+    actives.forEach(function (se) {
+      dates.forEach(function (j) { max = Math.max(max, (jours[j] || {})[se.cle] || 0); });
+    });
+    var plot = H - PB, hauteur = plot - PT;
+    var x = function (i) { return PL + (i * (W - PL - 6)) / (dates.length - 1); };
+    var y = function (v) { return plot - (v / max) * hauteur; };
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Utilisation par jour, une courbe par événement">';
+    [0, .5, 1].forEach(function (f) {
+      var yy = y(f * max);
+      s += '<line x1="' + PL + '" y1="' + yy + '" x2="' + W + '" y2="' + yy + '" stroke="var(--grid)" stroke-width="1"/>';
+      s += '<text class="axis" x="' + (PL - 6) + '" y="' + (yy + 3) + '" text-anchor="end">' + Math.round(f * max) + '</text>';
+    });
+    actives.forEach(function (se) {
+      var pts = dates.map(function (j, i) { return x(i).toFixed(1) + ',' + y((jours[j] || {})[se.cle] || 0).toFixed(1); }).join(' ');
+      s += '<polyline points="' + pts + '" fill="none" stroke="' + se.c + '" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>';
+      /* un point par jour SEULEMENT si la place le permet : au-delà, les
+         disques se touchent et la courbe devient une chenille */
+      if (dates.length <= 32) {
+        dates.forEach(function (j, i) {
+          var v = (jours[j] || {})[se.cle] || 0;
+          if (v) s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="2.6" fill="' + se.c + '"/>';
+        });
+      }
+    });
+    dates.forEach(function (j, i) {
+      if (i % Math.ceil(dates.length / 6) === 0 || i === dates.length - 1) {
+        s += '<text class="axis" x="' + x(i).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">'
+           + esc(j.slice(8) + '/' + j.slice(5, 7)) + '</text>';
+      }
+    });
+    s += '<line x1="' + PL + '" y1="' + plot + '" x2="' + W + '" y2="' + plot + '" stroke="var(--ink)" stroke-width="2"/>';
+    s += '</svg>';
+    /* La légende est INDISPENSABLE : six courbes sans noms sont un décor.
+       Nom ET total, pour qu'on sache laquelle compte. */
+    s += '<div class="lg">' + actives.map(function (se) {
+      var tot = dates.reduce(function (a, j) { return a + ((jours[j] || {})[se.cle] || 0); }, 0);
+      return '<span class="lg-i"><i style="background:' + se.c + '"></i>' + esc(se.nom)
+           + ' <b>' + tot + '</b></span>';
+    }).join('') + '</div>';
+    return s;
+  }
+
   /* ---------- Anneau : répartition part-à-tout ----------
      Un écart de 2px entre les parts (comme sur le site : les aplats ne se
      touchent jamais), et une légende nommée+chiffrée en dessous. */
@@ -316,6 +401,13 @@
       html += '<div class="card wide"><h2>📈 Inscriptions par jour</h2>'
         + '<p class="lede">Sur les 30 derniers jours. Un creux le week-end est normal.</p>'
         + colonnes(d.courbe) + '</div>';
+
+      /* Les courbes d'utilisation. Placées juste après les inscriptions parce
+         qu'elles répondent à la question suivante : ceux qui arrivent,
+         qu'est-ce qu'ils font ? */
+      html += '<div class="card wide"><h2>📉 Utilisation par jour</h2>'
+        + '<p class="lede">Une courbe par événement, sur 60 jours. Compare les arrivées aux voyages réellement générés : l’écart entre les deux, c’est ce qu’il reste à gagner.</p>'
+        + courbes(d.jours) + '</div>';
 
       html += '<div class="cols">';
 

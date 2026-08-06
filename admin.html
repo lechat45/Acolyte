@@ -40,6 +40,10 @@
     --r-lg:20px; --r-md:14px; --r-sm:10px;
     /* palette catégorielle — ordre FIXE, jamais recyclé */
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+    /* 6e teinte : les courbes d'utilisation ont six series. Ajoutee A LA FIN
+       et jamais inseree au milieu — l'ordre de cette palette est fixe, sinon
+       chaque graphique deja lu changerait de couleurs. */
+    --s6:#7a5cd0;
     /* une seule teinte pour les magnitudes (« plus foncé = plus grand ») */
     --seq:#3987e5;
   }
@@ -188,6 +192,12 @@
     font-weight:900;font-size:.78rem;
   }
   .pr-danger:disabled{opacity:.45;cursor:not-allowed;background:var(--surface-2);color:var(--muted);border-color:var(--stroke)}
+
+  /* Legende des courbes : sans elle, six lignes sont un decor. */
+  .lg{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px}
+  .lg-i{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;color:var(--txt-2)}
+  .lg-i i{width:11px;height:11px;border-radius:3px;flex:none;display:block}
+  .lg-i b{color:var(--txt);font-weight:700}
 </style>
 </head>
 <body>
