@@ -11120,3 +11120,69 @@ function ICO_OEIL(vu){
     : o + '<path d="M3 12s3.6-6.2 9-6.2 9 6.2 9 6.2-3.6 6.2-9 6.2S3 12 3 12Z"/>'
         + '<circle cx="12" cy="12" r="2.9"/></svg>';
 }
+
+/* ============================================================
+   LIENS PARTENAIRES — L'AFFILIATION, EN UN SEUL ENDROIT
+   ------------------------------------------------------------
+   Acolyte envoie déjà ses visiteurs chez Booking, GetYourGuide et Aviasales,
+   avec les dates et le nombre de voyageurs pré-remplis : 14 liens dans le code.
+   Aucun ne portait d'identifiant d'affilié. Chaque réservation faite depuis
+   Acolyte rapportait donc zéro, alors que le travail de recommandation était
+   déjà fait — c'est la seule source de revenu du projet, et elle était
+   débranchée.
+
+   ⚠️ UN SEUL POINT DE PASSAGE, et c'est délibéré : un délégué de clic qui
+   réécrit le lien au moment où on le suit. Ajouter le paramètre dans les 14
+   endroits, c'est la garantie d'en oublier un — et surtout d'oublier le 15e
+   qu'on écrira demain. Ici, tout nouveau lien vers un hôte connu est couvert
+   sans y penser.
+
+   ⚠️ SANS IDENTIFIANT, RIEN NE CHANGE. Tant que les champs de config.js sont
+   vides, l'URL est renvoyée telle quelle : le lien marche exactement comme
+   aujourd'hui. Aucune régression possible si tu ne t'inscris jamais.
+
+   ⚠️ Aucune donnée personnelle ne part dans l'URL — seulement la destination,
+   les dates et le nombre de voyageurs, qui étaient déjà là. On n'ajoute QUE
+   l'identifiant de compte, qui est le tien, pas celui du visiteur.
+
+   Les trois programmes sont GRATUITS à rejoindre :
+     · Booking.com    → partenaire Booking (paramètre « aid »)
+     · GetYourGuide   → partenaire GYG    (paramètre « partner_id »)
+     · Travelpayouts  → Aviasales, Omio…  (paramètre « marker »)
+============================================================ */
+const PARTENAIRES = [
+  { hote:/(^|\.)booking\.com$/i,      param:'aid',        cle:'booking' },
+  { hote:/(^|\.)getyourguide\.[a-z.]+$/i, param:'partner_id', cle:'gyg' },
+  { hote:/(^|\.)aviasales\.[a-z.]+$/i,    param:'marker',     cle:'tp' },
+  { hote:/(^|\.)omio\.[a-z.]+$/i,         param:'marker',     cle:'tp' },
+  { hote:/(^|\.)tp\.st$/i,                param:'marker',     cle:'tp' }
+];
+/* Les identifiants vivent dans config.js, à côté du reste. Le repli sur
+   localStorage sert à tester sans toucher au fichier. */
+function idAffilie(cle){
+  const c = (window.ACOLITE_KEYS && window.ACOLITE_KEYS.affiliation) || {};
+  try{ return String(c[cle] || localStorage.getItem('acolite_aff_' + cle) || '').trim(); }
+  catch(e){ return String(c[cle] || '').trim(); }
+}
+function lienPartenaire(url){
+  try{
+    const u = new URL(url, location.href);
+    const p = PARTENAIRES.find(x => x.hote.test(u.hostname));
+    if(!p) return url;
+    const id = idAffilie(p.cle);
+    if(!id) return url;                  /* pas d'identifiant → lien inchangé */
+    /* On n'écrase JAMAIS un paramètre déjà présent : si un lien porte
+       explicitement son propre identifiant, il a une raison. */
+    if(u.searchParams.has(p.param)) return url;
+    u.searchParams.set(p.param, id);
+    return u.toString();
+  }catch(e){ return url; }              /* URL illisible → on ne touche à rien */
+}
+/* Le délégué. En phase de CAPTURE et non de bouillonnement : on réécrit le lien
+   avant que d'autres gestionnaires ne l'ouvrent eux-mêmes. */
+document.addEventListener('click', e => {
+  const a = e.target.closest?.('a[href]');
+  if(!a) return;
+  const neuf = lienPartenaire(a.href);
+  if(neuf !== a.href) a.href = neuf;
+}, true);

@@ -37,5 +37,30 @@ window.ACOLITE_KEYS = {
     publicKey: 'iZ2Y1SA61PxmXDCT5CzeV',
     serviceId: 'service_wiq1wzj',
     templateId: 'template_szov0of'
+  },
+
+  /* ▸ AFFILIATION — la seule source de revenu du projet.
+     Acolyte envoie DÉJÀ ses visiteurs chez ces trois-là, avec la destination,
+     les dates et le nombre de voyageurs pré-remplis (14 liens dans app.js).
+     Sans identifiant ici, ces clics ne rapportent rien : le travail de
+     recommandation est fait, la rémunération est simplement débranchée.
+
+     Les trois inscriptions sont GRATUITES :
+       booking → https://www.booking.com/affiliate-program/v2/index.html
+                 (récupère ton « AID », un nombre)
+       gyg     → https://partner.getyourguide.com
+                 (récupère ton « partner_id »)
+       tp      → https://www.travelpayouts.com
+                 (récupère ton « marker » — il couvre Aviasales ET Omio)
+
+     ⚠️ Tant qu'un champ est vide, le lien correspondant part inchangé. Rien ne
+        casse si tu ne t'inscris jamais, et rien n'attend d'être « activé ».
+     ⚠️ Ces identifiants sont PUBLICS par nature — ils servent à te reconnaître,
+        pas à t'authentifier. Les mettre ici est sans risque, contrairement aux
+        clés d'API plus haut. */
+  affiliation: {
+    booking: '',
+    gyg: '',
+    tp: ''
   }
 };
