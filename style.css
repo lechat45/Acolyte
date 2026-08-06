@@ -1589,13 +1589,15 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .auth-switch{font-size:.85rem;font-weight:700;margin-top:14px}
 .auth-switch a{color:var(--accent-orange);cursor:pointer;text-decoration:underline}
 .code-inp{font-family:'Sora',sans-serif;font-weight:900;font-size:1.5rem;letter-spacing:.4em;text-align:center}
-.profile-big{
-  min-height:60px;padding:12px 22px;max-width:100%;
-  border:1px solid var(--stroke);background:var(--primary);
-  display:grid;place-items:center;font-size:1.3rem;font-weight:900;
-  font-family:'Sora',sans-serif;text-transform:uppercase;letter-spacing:-.01em;
-  box-shadow:var(--shadow);flex-shrink:0;overflow-wrap:anywhere;text-align:center;
-}
+/* ⚠️ L'ancienne déclaration de .profile-big vivait ICI — un pavé jaune encadré,
+   avec min-height:60px, du padding, une bordure et une ombre. Elle a été
+   SUPPRIMÉE, pas corrigée : la seule qui compte est celle du bloc « écran de
+   compte — maquette 1g », en fin de fichier.
+   Les deux se battaient sur ONZE propriétés, et c'est ce qui a produit l'avatar
+   en ovale : min-height:60px l'emportait sur height:58px, parce que min-height
+   gagne TOUJOURS sur height, quelle que soit la spécificité. Deux déclarations
+   complètes du même sélecteur, ce n'est pas un doublon anodin — c'est une règle
+   dont la moitié est annulée sans que rien ne le signale. */
 @media(max-width:640px){
   .wrap{padding-bottom:160px}
 }
@@ -3616,10 +3618,10 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    overflow:hidden resterait lue en entier par un lecteur d'écran. */
 .profile-big{
   width:58px;height:58px;flex:none;border-radius:999px;
-  /* ⚠️ min-height:0 est INDISPENSABLE : l'ancienne règle pose min-height:60px,
-     et min-height l'emporte TOUJOURS sur height, quelle que soit la
-     spécificité. Mesuré 58 × 60 : un cercle de 2 px trop haut, donc un ovale. */
-  min-height:0;border:0;box-shadow:none;
+  /* Plus de min-height:0 ni de border:0 ici : c'étaient des rustines contre
+     l'ancienne déclaration, qui n'existe plus. Une valeur posée uniquement pour
+     annuler une autre règle est une dette, pas un réglage — le jour où on lit
+     ce bloc sans connaître l'histoire, on ne comprend pas pourquoi elle est là. */
   display:flex;align-items:center;justify-content:center;
   background:var(--primary);color:var(--primary-ink);
   font-family:'Sora',sans-serif;font-weight:800;font-size:1.37rem;line-height:1;
