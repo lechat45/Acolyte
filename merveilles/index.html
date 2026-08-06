@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     OÙ EST-CE ? — le jeu des merveilles du monde
+     ------------------------------------------------------------
+     PROJET AUTONOME. Il ne partage aucun fichier avec Acolyte et vit dans son
+     propre dépôt : on peut le déployer, le casser ou le réécrire sans jamais
+     toucher au site principal. Le seul lien entre les deux, ce sont les deux
+     boutons de fin de manche, qui ouvrent Acolyte par son adresse publique.
+
+     ⚠️ TOUT TIENT DANS CE FICHIER, et c'est voulu : aucune compilation, aucune
+     dépendance, aucun paquet à mettre à jour. On dépose ce fichier sur GitHub
+     Pages et c'est en ligne. Les tuiles viennent d'OpenStreetMap, les photos de
+     Wikimédia : rien à payer, rien à héberger.
+
+     ---- DÉPLOIEMENT ----
+     1. Nouveau dépôt GitHub (public), par exemple « ou-est-ce ».
+     2. Y déposer ce fichier, renommé index.html.
+     3. Settings → Pages → Source : « Deploy from a branch », branche main, /root.
+============================================================ -->
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- On n'autorise que les hôtes réellement appelés.
+     ⚠️ « connect-src » n'autorise QUE le backend d'Acolyte, et pour une seule
+     chose : savoir quels articles du journal existent, afin de ne pas proposer
+     un lien qui mène dans le vide. C'était « none » auparavant, ce qui bloquait
+     silencieusement l'appel — le jeu continuait de marcher, mais la
+     vérification ne pouvait jamais aboutir.
+     Le jeu reste jouable entièrement hors ligne : cet appel est facultatif. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://tile.openstreetmap.org https://upload.wikimedia.org; connect-src https://*.val.run; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#121212">
+<title>Où est-ce ? — Situe les merveilles du monde</title>
+<meta name="description" content="Une photo, une carte. Situe la merveille du monde et nomme-la. Cinq manches, un score, et de quoi partir vraiment.">
+<meta property="og:title" content="Où est-ce ? — Situe les merveilles du monde">
+<meta property="og:description" content="Une photo, une carte. Double-clique là où tu crois que se trouve le monument, puis nomme-le.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Mêmes couleurs qu'Acolyte : les deux sites doivent se reconnaître. */
+  :root{
+    --bg:#121212; --secondary:#1C1C1C; --surface-2:#232323;
+    --primary:#FFE600; --primary-ink:#141414;
+    --txt:#F2F1EC; --txt-2:#A5A49D;
+    --ok:#5BC98B; --danger:#E9695F;
+    --stroke:rgba(255,255,255,.11); --stroke-2:rgba(255,255,255,.20);
+    --shadow:0 6px 18px rgba(0,0,0,.35); --shadow-lg:0 18px 44px rgba(0,0,0,.48);
+    --r-lg:20px; --r-md:14px; --r-sm:10px;
+    color-scheme:dark;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--txt);
+    line-height:1.55;min-height:100dvh;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 16px 40px}
+
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+  h1{
+    font-family:'Sora',sans-serif;font-weight:900;font-size:1.5rem;
+    text-transform:uppercase;letter-spacing:-.01em;
+  }
+  .sous{color:var(--txt-2);font-size:.9rem}
+  .compteurs{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap}
+  .pill{
+    font:900 .7rem 'Sora',sans-serif;text-transform:uppercase;letter-spacing:.06em;
+    background:var(--surface-2);border:1px solid var(--stroke);border-radius:999px;
+    padding:6px 14px;white-space:nowrap;
+  }
+  .pill.or{background:var(--primary);color:var(--primary-ink);border-color:transparent}
+
+  /* ---- La scène : photo à gauche, carte à droite ----
+     ⚠️ La PHOTO est l'énoncé du jeu : elle a la plus grande part. Avant, elle
+     était une vignette et on devinait plus qu'on ne reconnaissait. */
+  .scene{display:grid;grid-template-columns:1fr;gap:14px}
+  @media (min-width:900px){
+    .scene{grid-template-columns:1.15fr 1fr;align-items:start}
+  }
+  .photo-box{
+    position:relative;background:var(--secondary);border:1px solid var(--stroke);
+    border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow);
+  }
+  /* Hauteur généreuse et cadrage « cover » : on veut voir le monument, pas
+     une image entière écrasée dans une boîte. */
+  #photo{
+    display:block;width:100%;height:clamp(260px, 46vh, 520px);
+    object-fit:cover;background:var(--surface-2);
+  }
+  .photo-box figcaption{
+    position:absolute;bottom:0;left:0;right:0;padding:8px 12px;
+    font-size:.68rem;color:#fff;background:linear-gradient(transparent, rgba(0,0,0,.72));
+  }
+  /* La loupe : on peut agrandir la photo, un détail d'architecture suffit
+     souvent à trancher entre deux monuments. */
+  .zoom-btn{
+    position:absolute;top:10px;right:10px;
+    width:40px;height:40px;border-radius:var(--r-md);cursor:pointer;
+    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);color:#fff;
+    font-size:1.1rem;display:grid;place-items:center;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  }
+  .zoom-btn:hover{background:rgba(0,0,0,.75)}
+
+  /* ---- La carte ---- */
+  .map-box{
+    position:relative;border:1px solid var(--stroke);border-radius:var(--r-lg);
+    overflow:hidden;box-shadow:var(--shadow);background:#0d0d0d;
+    height:clamp(300px, 46vh, 520px);
+    /* le doigt fait glisser la carte, il ne défile pas la page */
+    touch-action:none;cursor:crosshair;
+  }
+  .map-tiles{position:absolute;inset:0;will-change:transform}
+  .map-tiles img{position:absolute;width:256px;height:256px;user-select:none;-webkit-user-drag:none}
+  .mk{
+    position:absolute;width:26px;height:26px;margin:-26px 0 0 -13px;
+    pointer-events:none;font-size:1.3rem;line-height:1;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
+  }
+  .trait{position:absolute;inset:0;pointer-events:none}
+  .zoom-ctl{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:6px}
+  .zoom-ctl button{
+    width:38px;height:38px;border-radius:var(--r-sm);cursor:pointer;
+    background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.22);color:#fff;
+    font:900 1.1rem 'Sora',sans-serif;
+  }
+  .credit{
+    position:absolute;left:8px;bottom:6px;font-size:.6rem;color:#cfcfcf;
+    background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;
+  }
+  .credit a{color:#fff}
+
+  /* ---- La consigne, et les réponses ---- */
+  .consigne{
+    margin-top:14px;padding:14px 16px;border-radius:var(--r-md);
+    background:var(--secondary);border:1px solid var(--stroke);
+    border-left:3px solid var(--primary);font-size:.92rem;
+  }
+  .consigne kbd{
+    font:800 .8rem 'Sora',sans-serif;background:var(--primary);color:var(--primary-ink);
+    padding:2px 7px;border-radius:6px;
+  }
+  .noms{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+  .noms .q{
+    grid-column:1/-1;font-family:'Sora',sans-serif;font-weight:900;
+    font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--txt-2);
+  }
+  .nom{
+    padding:14px 16px;min-height:52px;cursor:pointer;text-align:left;
+    background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-md);
+    color:var(--txt);font:700 .95rem 'Inter',sans-serif;
+    transition:transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+  }
+  .nom:hover{background:var(--surface-2);border-color:var(--stroke-2);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+  .nom:active{transform:translateY(1px)}
+  .nom:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+  /* ---- Le résultat de la manche, avec le classement ---- */
+  .res{margin-top:14px;padding:16px;border-radius:var(--r-lg);background:var(--secondary);border:1px solid var(--stroke);box-shadow:var(--shadow)}
+  .res h2{font-family:'Sora',sans-serif;font-weight:900;font-size:1.15rem;margin-bottom:4px}
+  .res .detail{color:var(--txt-2);font-size:.9rem}
+  .rang{
+    display:flex;align-items:center;gap:12px;margin:14px 0;
+    padding:12px 14px;border-radius:var(--r-md);background:var(--primary);color:var(--primary-ink);
+  }
+  .rang .grade{font:900 1rem 'Sora',sans-serif;text-transform:uppercase;letter-spacing:.04em}
+  .rang .pos{font:900 1.6rem 'Sora',sans-serif;line-height:1}
+  .barres{display:grid;gap:6px;margin:12px 0}
+  .barre{display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;font-size:.78rem}
+  .barre .k{color:var(--txt-2);font-weight:700;text-transform:uppercase;font-size:.68rem;letter-spacing:.05em}
+  .barre .j{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+  .barre .j i{display:block;height:100%;background:var(--primary);border-radius:999px}
+  .barre .v{font-family:'Sora',sans-serif;font-weight:900;white-space:nowrap}
+
+  /* ---- Le défi du jour ----
+     Il doit se voir sans écraser la partie libre : une bande, pas une carte. */
+  .defi{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    margin:0 0 16px;padding:13px 16px;border-radius:var(--r-md);
+    background:var(--secondary);border:1px solid var(--stroke);
+    border-left:3px solid var(--primary);
+  }
+  .defi-txt{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
+  .defi-txt strong{font-family:'Sora',sans-serif;font-weight:900;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em}
+  .defi-txt span{font-size:.84rem;color:var(--txt-2)}
+  .defi.fait{border-left-color:var(--ok)}
+  .defi.fait .defi-txt strong{color:var(--ok)}
+  .partage-pre{
+    margin:14px auto 0;max-width:340px;text-align:left;
+    font:700 .92rem ui-monospace,monospace;white-space:pre-wrap;
+    background:var(--bg);border:1px solid var(--stroke);border-radius:var(--r-sm);padding:12px 14px;
+  }
+
+  .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none;
+    font:900 .84rem 'Sora',sans-serif;text-transform:uppercase;letter-spacing:.03em;
+    padding:13px 20px;min-height:48px;border-radius:var(--r-md);
+    border:1px solid var(--stroke);background:var(--primary);color:var(--primary-ink);
+    box-shadow:var(--shadow);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:var(--surface-2);color:var(--txt);border-color:var(--stroke-2)}
+  .btn:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+
+  /* ---- Fin de partie ---- */
+  .fin{margin-top:16px;padding:22px;border-radius:var(--r-lg);background:var(--secondary);border:1px solid var(--stroke);box-shadow:var(--shadow-lg);text-align:center}
+  .fin h2{font-family:'Sora',sans-serif;font-weight:900;font-size:1.6rem}
+  .fin .gros{font-family:'Sora',sans-serif;font-weight:900;font-size:2.6rem;color:var(--primary);line-height:1.1;margin:8px 0}
+  .fin .acts{justify-content:center}
+  .tableau{margin:16px auto 0;max-width:460px;text-align:left;display:grid;gap:6px}
+  .tableau .l{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:.86rem;padding:8px 12px;background:var(--surface-2);border:1px solid var(--stroke);border-radius:var(--r-sm)}
+  .tableau .l b{font-family:'Sora',sans-serif}
+
+  [hidden]{display:none !important}
+  footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--stroke);font-size:.8rem;color:var(--txt-2)}
+  footer a{color:var(--primary)}
+  @media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important;animation-duration:.01ms !important} }
+
+  /* Photo en plein écran */
+  .loupe{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.92);display:grid;place-items:center;padding:20px}
+  .loupe img{max-width:100%;max-height:100%;object-fit:contain;border-radius:var(--r-md)}
+  .loupe .x{position:absolute;top:16px;right:16px;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:1.3rem;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Où est-ce ?</h1>
+      <p class="sous">Une photo, une carte. À toi de situer la merveille — puis de la nommer.</p>
+    </div>
+    <div class="compteurs">
+      <span class="pill" id="manche">Manche 1 / 5</span>
+      <span class="pill or" id="score">0 pt</span>
+      <span class="pill" id="record">Record —</span>
+    </div>
+  </header>
+
+  <!-- Le défi du jour. La même merveille pour tout le monde, un seul essai,
+       un score qu'on peut coller dans une conversation. -->
+  <div class="defi" id="defi">
+    <div class="defi-txt">
+      <strong id="defiTitre">Le défi du jour</strong>
+      <span id="defiEtat">Une merveille, la même pour tout le monde. Un seul essai.</span>
+    </div>
+    <button class="btn" id="defiGo">🎯 Jouer le défi</button>
+  </div>
+
+  <div class="scene">
+    <figure class="photo-box">
+      <img id="photo" alt="Monument à reconnaître" referrerpolicy="no-referrer">
+      <button class="zoom-btn" id="loupeGo" aria-label="Agrandir la photo" title="Agrandir la photo">🔍</button>
+      <figcaption>Photo · Wikimédia Commons</figcaption>
+    </figure>
+
+    <div class="map-box" id="map">
+      <div class="map-tiles" id="tiles"></div>
+      <svg class="trait" id="trait" aria-hidden="true"></svg>
+      <div class="zoom-ctl">
+        <button id="zPlus" aria-label="Zoomer">+</button>
+        <button id="zMoins" aria-label="Dézoomer">−</button>
+      </div>
+      <span class="credit">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a></span>
+    </div>
+  </div>
+
+  <p class="consigne" id="consigne">
+    <strong>Double-clique</strong> sur la carte à l'endroit où tu crois que se trouve ce monument.
+    Un simple glissement déplace la carte — c'est le <kbd>double-clic</kbd> qui pose ton point.
+  </p>
+
+  <div class="noms" id="noms" hidden></div>
+  <div class="res" id="res" hidden></div>
+  <div class="fin" id="fin" hidden></div>
+
+  <footer>
+    Jeu autonome, sans compte et sans traceur. Cartes © OpenStreetMap, photos Wikimédia Commons.
+    Il accompagne <a href="https://lechat45.github.io/Acolyte/" target="_blank" rel="noopener noreferrer">Acolyte</a>, un copilote de voyage.
+  </footer>
+</div>
+
+<div class="loupe" id="loupe" hidden>
+  <button class="x" id="loupeX" aria-label="Fermer">✕</button>
+  <img id="loupeImg" alt="Monument à reconnaître, agrandi">
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   L'ADRESSE D'ACOLYTE — le seul lien entre les deux projets
+   ⚠️ À changer ici si le site principal déménage. Nulle part ailleurs.
+============================================================ */
+const ACOLYTE = 'https://lechat45.github.io/Acolyte/';
+/* ⚠️ L'adresse du JEU, pour le score partagé. À changer si le dépôt est renommé,
+   sinon les scores partagés renverraient dans le vide. */
+const JEU_URL = 'https://lechat45.github.io/ou-est-ce/';
+/* ⚠️ L'adresse du BACKEND d'Acolyte, uniquement pour savoir quels articles
+   existent. Facultative : sans elle, le jeu marche exactement pareil, il
+   propose simplement le bouton « article » à chaque fois. */
+const ACOLYTE_API = 'https://lechat45--2ec0f9a6860b11f183cf1607ee4eb77e.web.val.run';
+
+/* La même fabrique de slug que le backend d'Acolyte. Elle DOIT rester
+   identique, sinon le bouton « article » pointe à côté. */
+const slugify = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70);
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+  c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+/* ---- Les merveilles. « ville » sert au bouton « créer un voyage » : on
+   n'envoie pas « Grande Muraille » comme destination, ça n'aide pas le
+   planificateur — on envoie le lieu où l'on se rend vraiment. ---- */
+const LIEUX = [
+  { nom:'Colisée', ville:'Rome', lat:41.8905, lon:12.4926, img:'d/de/Colosseo_2020.jpg' },
+  { nom:'Tour Eiffel', ville:'Paris', lat:48.8583, lon:2.2945, img:'a/a8/Tour_Eiffel_Wikimedia_Commons.jpg' },
+  { nom:'Taj Mahal', ville:'Agra', lat:27.1750, lon:78.0419, img:'b/bd/Taj_Mahal%2C_Agra%2C_India_edit3.jpg' },
+  { nom:'Palais de Westminster', ville:'Londres', lat:51.4994, lon:-0.1242, img:'3/3b/Houses_of_Parliament_in_2022_%28cropped%29.jpg' },
+  { nom:'Statue de la Liberté', ville:'New York', lat:40.6892, lon:-74.0444, img:'f/fd/Statue_of_Liberty%2C_statue%2C_Liberty_Island%2C_New_York.jpg' },
+  { nom:'Machu Picchu', ville:'Cusco', lat:-13.1633, lon:-72.5456, img:'1/13/Before_Machu_Picchu.jpg' },
+  { nom:'Sagrada Família', ville:'Barcelone', lat:41.4034, lon:2.1744, img:'7/78/SF_maig_2026.jpg' },
+  { nom:'Opéra de Sydney', ville:'Sydney', lat:-33.8571, lon:151.2149, img:'9/92/Sydney_Opera_House_from_Circular_Quay%2C_2023%2C_10.jpg' },
+  { nom:'Pyramide de Khéops', ville:'Le Caire', lat:29.9789, lon:31.1339, img:'a/a0/Great_Pyramid_of_Giza.jpg' },
+  { nom:'Tour de Pise', ville:'Pise', lat:43.7230, lon:10.3966, img:'2/2a/Exterior_of_the_Leaning_Tower_%28Pisa%29_in_April_2024.jpg' },
+  { nom:'Parthénon', ville:'Athènes', lat:37.9715, lon:23.7267, img:'d/da/The_Parthenon_in_Athens.jpg' },
+  { nom:'Mont Saint-Michel', ville:'Mont Saint-Michel', lat:48.6361, lon:-1.5114, img:'e/ef/Mont_St_Michel_in_the_afternoon.jpg' },
+  { nom:'Château de Neuschwanstein', ville:'Munich', lat:47.5578, lon:10.7499, img:'f/f8/Schloss_Neuschwanstein_2013.jpg' },
+  { nom:'Pétra', ville:'Pétra', lat:30.3292, lon:35.4436, img:'2/23/View_of_Petra.jpg' },
+  { nom:'Angkor Vat', ville:'Siem Reap', lat:13.4125, lon:103.8668, img:'4/41/Angkor_Wat.jpg' },
+  { nom:'Grande Muraille', ville:'Pékin', lat:40.3347, lon:116.0450, img:'f/fa/Great_Wall_of_China_July_2006.JPG' },
+  { nom:'Chichén Itzá', ville:'Mérida', lat:20.6829, lon:-88.5687, img:'8/8d/El_Castillo_Stitch_2008_Edit_1.jpg' },
+  { nom:'Basilique Saint-Marc', ville:'Venise', lat:45.4344, lon:12.3398, img:'6/61/Venezia_Basilica_di_San_Marco_Fassade_2.jpg' },
+  { nom:'Alhambra', ville:'Grenade', lat:37.1769, lon:-3.5899, img:'d/de/Dawn_Charles_V_Palace_Alhambra_Granada_Andalusia_Spain.jpg' }
+];
+/* ⚠️ 1280 px et non 960 : la photo est bien plus grande qu'avant, une image
+   trop petite s'afficherait floue. Wikimédia n'accepte pas toutes les
+   largeurs — celle-ci passe pour tous ces fichiers. */
+const photoURL = (f) => 'https://upload.wikimedia.org/wikipedia/commons/thumb/' + f
+  + '/1280px-' + f.split('/').pop().replace(/\.[Jj][Pp][Gg]$/, '.jpg').replace(/\.JPG$/, '.jpg');
+
+const MANCHES = 5;
+const LS_BEST = 'ouestce_best';
+const LS_HIST = 'ouestce_hist';
+const LS_DEFI = 'ouestce_defi';       /* { jour:'2026-08-03', score, km, juste } */
+
+/* ============================================================
+   LE DÉFI DU JOUR
+   ------------------------------------------------------------
+   Une merveille tirée de la DATE : la même pour tout le monde, partout, sans
+   serveur. Un seul essai par jour, et un score qu'on peut coller dans une
+   conversation. C'est le mécanisme qui a fait connaître Wordle, et il ne coûte
+   presque rien ici puisque la merveille se DÉDUIT du jour.
+
+   ⚠️ La date est prise en LOCAL et non en UTC : le défi doit changer à minuit
+   chez le joueur, pas à une heure arbitraire. Deux joueurs dans des fuseaux
+   différents peuvent donc avoir un jour de décalage — c'est le bon compromis,
+   l'inverse donnerait un « défi du jour » qui change en pleine journée.
+
+   ⚠️ Le tirage doit être STABLE et bien réparti. Un simple « jour % 19 »
+   avancerait d'une merveille par jour, donc dans le même ordre pour toujours ;
+   on passe la date dans une petite fonction de mélange pour casser la suite.
+============================================================ */
+function jourLocal(d){
+  const x = d || new Date();
+  return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0')
+    + '-' + String(x.getDate()).padStart(2, '0');
+}
+function merveilleDuJour(jour){
+  let h = 2166136261;
+  for(const c of String(jour)){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return LIEUX[Math.abs(h) % LIEUX.length];
+}
+function defiFait(){
+  try{ const d = JSON.parse(lire(LS_DEFI, 'null')); return (d && d.jour === jourLocal()) ? d : null; }
+  catch(e){ return null; }
+}
+
+/* ============================================================
+   CARTE — moteur minimal, Web Mercator et tuiles OpenStreetMap
+   ------------------------------------------------------------
+   Pas de bibliothèque : le jeu n'a besoin que de quatre choses — afficher le
+   monde, se laisser déplacer, poser deux marqueurs, tracer un trait entre eux.
+   Une bibliothèque de carte pèse plus que tout ce fichier.
+============================================================ */
+const TAILLE = 256, ZMIN = 1, ZMAX = 12;
+const elMap = document.getElementById('map');
+const elTiles = document.getElementById('tiles');
+const elTrait = document.getElementById('trait');
+let vue = { lat: 20, lon: 5, z: 2 };
+let marques = [];
+let ligne = null;
+
+const projX = (lon, z) => (lon + 180) / 360 * TAILLE * (1 << z);
+const projY = (lat, z) => {
+  const s = Math.sin(lat * Math.PI / 180);
+  return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * TAILLE * (1 << z);
+};
+const unprojLon = (x, z) => x / (TAILLE * (1 << z)) * 360 - 180;
+const unprojLat = (y, z) => {
+  const n = Math.PI - 2 * Math.PI * y / (TAILLE * (1 << z));
+  return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+};
+
+function dessine(){
+  const r = elMap.getBoundingClientRect();
+  if(!r.width) return;
+  const z = vue.z, n = 1 << z;
+  const cx = projX(vue.lon, z), cy = projY(vue.lat, z);
+  const gx = cx - r.width / 2, gy = cy - r.height / 2;
+  const t0 = Math.floor(gx / TAILLE), t1 = Math.ceil((gx + r.width) / TAILLE);
+  const u0 = Math.floor(gy / TAILLE), u1 = Math.ceil((gy + r.height) / TAILLE);
+
+  const veut = new Set();
+  for(let tx = t0; tx <= t1; tx++){
+    for(let ty = u0; ty <= u1; ty++){
+      if(ty < 0 || ty >= n) continue;                 /* pas de tuile aux pôles */
+      const wx = ((tx % n) + n) % n;                  /* le monde s'enroule en longitude */
+      const cle = z + '/' + wx + '/' + ty + '@' + tx;
+      veut.add(cle);
+      let img = elTiles.querySelector('[data-k="' + CSS.escape(cle) + '"]');
+      if(!img){
+        img = document.createElement('img');
+        img.dataset.k = cle;
+        img.draggable = false;                        /* sinon le glisser natif vole le déplacement */
+        img.alt = '';
+        img.loading = 'eager';
+        img.referrerPolicy = 'no-referrer';
+        img.src = 'https://tile.openstreetmap.org/' + z + '/' + wx + '/' + ty + '.png';
+        elTiles.appendChild(img);
+      }
+      img.style.left = (tx * TAILLE - gx) + 'px';
+      img.style.top = (ty * TAILLE - gy) + 'px';
+    }
+  }
+  /* ⚠️ On retire les tuiles hors champ. Les garder « au cas où » sans les
+     repositionner produit des fragments de carte au mauvais endroit. */
+  elTiles.querySelectorAll('img').forEach(i => { if(!veut.has(i.dataset.k)) i.remove(); });
+
+  elTiles.querySelectorAll('.mk').forEach(m => m.remove());
+  marques.forEach(m => {
+    const s = document.createElement('span');
+    s.className = 'mk';
+    s.textContent = m.ico;
+    s.title = m.nom || '';
+    s.style.left = (projX(m.lon, z) - gx) + 'px';
+    s.style.top = (projY(m.lat, z) - gy) + 'px';
+    elTiles.appendChild(s);
+  });
+
+  if(ligne){
+    const a = { x: projX(ligne[0].lon, z) - gx, y: projY(ligne[0].lat, z) - gy };
+    const b = { x: projX(ligne[1].lon, z) - gx, y: projY(ligne[1].lat, z) - gy };
+    elTrait.setAttribute('viewBox', '0 0 ' + r.width + ' ' + r.height);
+    elTrait.innerHTML = '<line x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y
+      + '" stroke="#FFE600" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"/>';
+  } else elTrait.innerHTML = '';
+}
+function centre(lat, lon, z){ vue = { lat, lon, z: z || vue.z }; dessine(); }
+function cadre(a, b){
+  /* on cherche le plus grand zoom où les deux points tiennent encore */
+  const r = elMap.getBoundingClientRect();
+  for(let z = ZMAX; z >= ZMIN; z--){
+    const dx = Math.abs(projX(a.lon, z) - projX(b.lon, z));
+    const dy = Math.abs(projY(a.lat, z) - projY(b.lat, z));
+    if(dx < r.width - 90 && dy < r.height - 90){
+      centre((a.lat + b.lat) / 2, (a.lon + b.lon) / 2, z);
+      return;
+    }
+  }
+  centre((a.lat + b.lat) / 2, (a.lon + b.lon) / 2, ZMIN);
+}
+function versLatLon(clientX, clientY){
+  const r = elMap.getBoundingClientRect(), z = vue.z;
+  const gx = projX(vue.lon, z) - r.width / 2, gy = projY(vue.lat, z) - r.height / 2;
+  return { lat: unprojLat(gy + (clientY - r.top), z), lon: unprojLon(gx + (clientX - r.left), z) };
+}
+
+/* ---- Déplacement : on suit le pointeur, souris comme doigt ---- */
+let glisse = null, distance = 0;
+elMap.addEventListener('pointerdown', e => {
+  glisse = { x: e.clientX, y: e.clientY }; distance = 0;
+  elMap.setPointerCapture(e.pointerId);
+});
+elMap.addEventListener('pointermove', e => {
+  if(!glisse) return;
+  const dx = e.clientX - glisse.x, dy = e.clientY - glisse.y;
+  distance += Math.abs(dx) + Math.abs(dy);
+  const z = vue.z;
+  const cx = projX(vue.lon, z) - dx, cy = projY(vue.lat, z) - dy;
+  vue.lon = unprojLon(cx, z);
+  vue.lat = Math.max(-85, Math.min(85, unprojLat(cy, z)));
+  glisse = { x: e.clientX, y: e.clientY };
+  dessine();
+});
+elMap.addEventListener('pointerup', () => { glisse = null; });
+elMap.addEventListener('pointercancel', () => { glisse = null; });
+elMap.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoomVers(e.clientX, e.clientY, e.deltaY < 0 ? 1 : -1);
+}, { passive: false });
+function zoomVers(cx, cy, d){
+  const avant = versLatLon(cx, cy);
+  vue.z = Math.max(ZMIN, Math.min(ZMAX, vue.z + d));
+  dessine();
+  const apres = versLatLon(cx, cy);
+  vue.lat += avant.lat - apres.lat;
+  vue.lon += avant.lon - apres.lon;
+  dessine();
+}
+document.getElementById('zPlus').onclick = () => { const r = elMap.getBoundingClientRect(); zoomVers(r.left + r.width/2, r.top + r.height/2, 1); };
+document.getElementById('zMoins').onclick = () => { const r = elMap.getBoundingClientRect(); zoomVers(r.left + r.width/2, r.top + r.height/2, -1); };
+addEventListener('resize', dessine);
+
+/* ============================================================
+   LE JEU
+============================================================ */
+let J = null;
+
+const melange = (a) => { const b = a.slice();
+  for(let i = b.length - 1; i > 0; i--){ const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; }
+  return b; };
+const havKm = (a, b) => {
+  const R = 6371, r = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+  const h = Math.sin(dLat/2)**2 + Math.cos(a.lat*r) * Math.cos(b.lat*r) * Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+};
+const lire = (k, d) => { try{ return localStorage.getItem(k) ?? d; }catch(e){ return d; } };
+const ecrire = (k, v) => { try{ localStorage.setItem(k, v); }catch(e){} };
+
+/* ---- Le classement : un grade, et une place parmi ses propres parties ----
+   ⚠️ Le classement est LOCAL, et il faut le dire : il n'y a pas de serveur ici.
+   Comparer aux autres joueurs demanderait que le backend d'Acolyte accepte
+   l'origine de CE site — voir le README. En attendant, se mesurer à soi-même
+   sur ses dix dernières parties est honnête et immédiatement lisible. */
+const GRADES = [
+  { min:4600, nom:'Explorateur légendaire', emo:'🏆' },
+  { min:3800, nom:'Grand voyageur',         emo:'🌍' },
+  { min:2800, nom:'Globe-trotteur',         emo:'🧭' },
+  { min:1800, nom:'Voyageur curieux',       emo:'🗺️' },
+  { min:900,  nom:'Touriste appliqué',      emo:'📸' },
+  { min:0,    nom:'Première escale',        emo:'🧳' }
+];
+const gradeDe = (s) => GRADES.find(g => s >= g.min);
+function historique(){
+  try{ const h = JSON.parse(lire(LS_HIST, '[]')); return Array.isArray(h) ? h : []; }catch(e){ return []; }
+}
+function rangParmiSesParties(score){
+  const h = historique().concat(score).sort((a, b) => b - a);
+  return { place: h.indexOf(score) + 1, total: h.length };
+}
+
+/* `defi` à vrai : UNE seule manche, la merveille du jour, et un score
+   partageable à la fin. Sinon, cinq merveilles au hasard. */
+function nouvellePartie(defi){
+  const lieux = defi ? [merveilleDuJour(jourLocal())] : melange(LIEUX).slice(0, MANCHES);
+  J = { manche: 0, score: 0, lieux, pose: null, detail: [], defi: !!defi, total: lieux.length };
+  document.getElementById('fin').hidden = true;
+  document.getElementById('res').hidden = true;
+  majRecord();
+  majDefi();
+  manche();
+}
+/* La bande du défi dit son état : à jouer, ou déjà fait avec le résultat. */
+function majDefi(){
+  const d = defiFait();
+  const bande = document.getElementById('defi');
+  const t = document.getElementById('defiTitre');
+  const e = document.getElementById('defiEtat');
+  const b = document.getElementById('defiGo');
+  if(d){
+    bande.classList.add('fait');
+    t.textContent = '✅ Défi du jour terminé';
+    e.textContent = d.score.toLocaleString('fr-FR') + ' pt · à ' + d.km.toLocaleString('fr-FR')
+      + ' km · ' + (d.juste ? 'bon nom' : 'mauvais nom') + ' — reviens demain';
+    b.textContent = '↗ Partager mon score';
+  }else{
+    bande.classList.remove('fait');
+    t.textContent = 'Le défi du jour';
+    e.textContent = 'Une merveille, la même pour tout le monde. Un seul essai.';
+    b.textContent = '🎯 Jouer le défi';
+  }
+}
+function majRecord(){
+  const b = parseInt(lire(LS_BEST, '0'), 10) || 0;
+  document.getElementById('record').textContent = b ? 'Record ' + b : 'Record —';
+}
+function manche(){
+  const m = J.lieux[J.manche];
+  J.pose = null; marques = []; ligne = null;
+  const p = document.getElementById('photo');
+  p.src = photoURL(m.img);
+  document.getElementById('loupeImg').src = photoURL(m.img);
+  document.getElementById('manche').textContent = J.defi
+    ? '🎯 Défi du ' + new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long' })
+    : 'Manche ' + (J.manche + 1) + ' / ' + J.total;
+  document.getElementById('score').textContent = J.score + ' pt';
+  document.getElementById('consigne').hidden = false;
+  document.getElementById('noms').hidden = true;
+  document.getElementById('res').hidden = true;
+  centre(20, 5, 2);
+}
+
+/* ⚠️ DOUBLE-CLIC pour poser le point, et pas simple clic. Sur une carte qu'on
+   déplace, le simple clic est ambigu : tout glissement finit par un clic, et on
+   posait son point par accident. Le double-clic est un geste franc, qu'on ne
+   fait pas sans le vouloir.
+   « dblclick » couvre la souris ET le double-tap tactile — inutile de compter
+   les touches à la main. */
+elMap.addEventListener('dblclick', e => {
+  e.preventDefault();
+  if(!J || J.pose) return;                       /* une seule tentative par manche */
+  if(e.target.closest('.zoom-ctl, .credit')) return;
+  const g = versLatLon(e.clientX, e.clientY);
+  pose(g.lat, g.lon);
+});
+function pose(lat, lon){
+  J.pose = { lat, lon };
+  marques = [{ lat, lon, ico:'📍', nom:'Ta réponse' }];
+  dessine();
+  document.getElementById('consigne').hidden = true;
+  const bon = J.lieux[J.manche];
+  const choix = melange([bon, ...melange(LIEUX.filter(x => x.nom !== bon.nom)).slice(0, 3)]);
+  const z = document.getElementById('noms');
+  z.innerHTML = '<p class="q">Et ça s\'appelle comment ?</p>'
+    + choix.map(c => '<button class="nom" data-nom="' + esc(c.nom) + '">' + esc(c.nom) + '</button>').join('');
+  z.hidden = false;
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-nom]');
+  if(!b || !J || !J.pose) return;
+  const bon = J.lieux[J.manche];
+  const juste = b.dataset.nom === bon.nom;
+  const km = Math.round(havKm(J.pose, bon));
+  const ptsD = Math.max(0, Math.round(1000 * (1 - km / 5000)));
+  const ptsN = juste ? 500 : 0;
+  J.score += ptsD + ptsN;
+  J.detail.push({ nom: bon.nom, km, ptsD, ptsN });
+
+  marques = [
+    { lat: J.pose.lat, lon: J.pose.lon, ico:'📍', nom:'Ta réponse' },
+    { lat: bon.lat, lon: bon.lon, ico:'🎯', nom: bon.nom }
+  ];
+  ligne = [{ lat: J.pose.lat, lon: J.pose.lon }, { lat: bon.lat, lon: bon.lon }];
+  cadre(J.pose, bon);
+
+  document.getElementById('noms').hidden = true;
+  document.getElementById('score').textContent = J.score + ' pt';
+  reveleManche(bon, km, ptsD, ptsN, juste);
+});
+
+/* ---- Le résultat : la merveille, le classement, et les deux portes de sortie ---- */
+function reveleManche(bon, km, ptsD, ptsN, juste){
+  const g = gradeDe(J.score);
+  const r = rangParmiSesParties(J.score);
+  const derniere = J.manche + 1 >= J.total;
+  const res = document.getElementById('res');
+  res.innerHTML =
+    '<h2>' + esc(bon.nom) + '</h2>'
+    + '<p class="detail">' + (juste ? '✅ Bon nom' : '❌ Mauvais nom')
+      + ' · tu étais à <strong>' + km.toLocaleString('fr-FR') + ' km</strong></p>'
+    + '<div class="rang"><span class="pos">' + g.emo + '</span>'
+      + '<span><span class="grade">' + esc(g.nom) + '</span><br>'
+      + 'Classement : ' + r.place + '<sup>' + (r.place === 1 ? 'er' : 'e') + '</sup> sur '
+      + r.total + ' partie' + (r.total > 1 ? 's' : '') + '</span></div>'
+    + '<div class="barres">'
+      + barre('Position', ptsD, 1000)
+      + barre('Nom', ptsN, 500)
+      + barre('Total', J.score, J.total * 1500)
+    + '</div>'
+    + '<div class="acts">'
+      + lienArticle(bon)
+      + lienVoyage(bon)
+      + '<button class="btn" id="suite">' + (derniere ? 'Voir mon résultat →' : 'Manche suivante →') + '</button>'
+    + '</div>';
+  res.hidden = false;
+  document.getElementById('suite').onclick = () => {
+    if(derniere){ fin(); return; }
+    J.manche++; manche();
+  };
+}
+function barre(k, v, max){
+  return '<div class="barre"><span class="k">' + esc(k) + '</span>'
+    + '<span class="j"><i style="width:' + Math.max(0, Math.min(100, v / max * 100)).toFixed(1) + '%"></i></span>'
+    + '<span class="v">' + v.toLocaleString('fr-FR') + '</span></div>';
+}
+/* ⚠️ LES DEUX PORTES VERS ACOLYTE. Ce sont les seuls liens entre les projets.
+   · l'article : Acolyte sait ouvrir ?a=<slug> directement. Si l'article
+     n'existe pas encore, Acolyte le dit et propose son journal — ce n'est
+     jamais une impasse.
+   · le voyage : ?lieu=<ville> pré-remplit la destination. On envoie la VILLE
+     et non le monument : « Grande Muraille » n'est pas une destination qu'un
+     planificateur sait traiter, « Pékin » si. */
+/* ============================================================
+   QUELS ARTICLES EXISTENT VRAIMENT
+   ------------------------------------------------------------
+   ⚠️ Le problème : le journal d'Acolyte s'écrit tout seul, une merveille par
+   heure. Le jeu ne peut pas savoir où il en est, et proposait donc « Lire
+   l'article » même quand il n'y en avait pas — un joueur sur deux atterrissait
+   sur « pas encore écrit ». Envoyer quelqu'un dans le vide est pire que ne rien
+   lui proposer.
+
+   On demande donc la liste UNE fois, au chargement, et on n'affiche le bouton
+   que pour les merveilles couvertes.
+
+   ⚠️ Cet appel est FACULTATIF par construction : s'il échoue (backend éteint,
+   hors ligne, origine refusée), _slugsConnus reste null et on retombe sur
+   l'ancien comportement — le bouton s'affiche toujours. Le jeu ne doit JAMAIS
+   dépendre d'Acolyte pour fonctionner : ce sont deux projets séparés.
+============================================================ */
+let _slugsConnus = null;          /* null = on ne sait pas · Set = on sait */
+(async function chargeIndexArticles(){
+  try{
+    const r = await fetch(ACOLYTE_API + '/blog', { signal: AbortSignal.timeout(6000) });
+    if(!r.ok) return;
+    const d = await r.json();
+    if(!Array.isArray(d.articles)) return;
+    _slugsConnus = new Set(d.articles.map(a => String(a.slug || '')));
+  }catch(e){ /* silence : le jeu marche sans */ }
+})();
+
+function lienArticle(m){
+  const slug = slugify(m.nom);
+  /* on ne cache le bouton que si on SAIT que l'article manque */
+  if(_slugsConnus && !_slugsConnus.has(slug)) return '';
+  return '<a class="btn ghost" target="_blank" rel="noopener noreferrer" href="'
+    + esc(ACOLYTE + '?a=' + encodeURIComponent(slug)) + '">📰 Lire l\'article</a>';
+}
+function lienVoyage(m){
+  return '<a class="btn" target="_blank" rel="noopener noreferrer" href="'
+    + esc(ACOLYTE + '?lieu=' + encodeURIComponent(m.ville)) + '">✈️ Y aller pour de vrai</a>';
+}
+
+/* ---- Le texte partageable du défi ----
+   ⚠️ Il ne révèle PAS le nom de la merveille : le premier joueur ne doit pas
+   gâcher le défi de celui qui n'a pas encore joué. On donne la distance et le
+   score, jamais la réponse. C'est exactement la règle qui a fait tenir Wordle.
+   Une barre de cinq carrés donne l'écart d'un coup d'œil, sans chiffre à lire. */
+function defiTexte(d){
+  const carres = (km) => {
+    const n = km < 25 ? 5 : km < 200 ? 4 : km < 1000 ? 3 : km < 3000 ? 2 : 1;
+    return '🟨'.repeat(n) + '⬛'.repeat(5 - n);
+  };
+  return 'Où est-ce ? — défi du ' + new Date().toLocaleDateString('fr-FR')
+    + '\n' + carres(d.km) + '  ' + d.score.toLocaleString('fr-FR') + ' pt'
+    + '\n' + (d.juste ? '✅' : '❌') + ' le nom · à ' + d.km.toLocaleString('fr-FR') + ' km'
+    + '\n' + JEU_URL;
+}
+async function partageDefi(d){
+  const txt = defiTexte(d);
+  try{
+    if(typeof navigator.share === 'function'){ await navigator.share({ text: txt }); return; }
+    await navigator.clipboard.writeText(txt);
+    alert('Score copié — colle-le où tu veux :\n\n' + txt);
+  }catch(e){
+    if(e && e.name === 'AbortError') return;    /* partage annulé : rien à dire */
+    alert(txt);
+  }
+}
+
+function fin(){
+  /* ---- Le défi : un seul essai par jour, et on l'enregistre ---- */
+  if(J.defi){
+    const d0 = J.detail[0] || { km: 0, ptsD: 0, ptsN: 0 };
+    const enr = { jour: jourLocal(), score: J.score, km: d0.km, juste: d0.ptsN > 0 };
+    ecrire(LS_DEFI, JSON.stringify(enr));
+    majDefi();
+    const g = gradeDe(J.score * 5);            /* un seul tour : on met à l'échelle */
+    const fin = document.getElementById('fin');
+    fin.innerHTML =
+      '<h2>' + g.emo + ' Défi du jour</h2>'
+      + '<p class="gros">' + J.score.toLocaleString('fr-FR') + ' pt</p>'
+      + '<p class="detail">' + (enr.juste ? '✅ Bon nom' : '❌ Mauvais nom')
+        + ' · à ' + enr.km.toLocaleString('fr-FR') + ' km — reviens demain pour la suivante</p>'
+      + '<pre class="partage-pre">' + esc(defiTexte(enr)) + '</pre>'
+      + '<div class="acts"><button class="btn" id="defiPartage">↗ Partager mon score</button>'
+        + '<button class="btn ghost" id="libre">🎲 Partie libre (5 manches)</button></div>';
+    fin.hidden = false;
+    document.getElementById('defiPartage').onclick = () => partageDefi(enr);
+    document.getElementById('libre').onclick = () => nouvellePartie(false);
+    fin.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+
+  const best = parseInt(lire(LS_BEST, '0'), 10) || 0;
+  const record = J.score > best;
+  if(record) ecrire(LS_BEST, String(J.score));
+  /* on ne garde que les dix dernières parties : le classement doit rester
+     lisible, et un historique sans fin ne dit plus rien */
+  const h = historique().concat(J.score).sort((a, b) => b - a).slice(0, 10);
+  ecrire(LS_HIST, JSON.stringify(h));
+  majRecord();
+
+  const g = gradeDe(J.score);
+  const place = h.indexOf(J.score) + 1;
+  const fin = document.getElementById('fin');
+  fin.innerHTML =
+    '<h2>' + g.emo + ' ' + esc(g.nom) + '</h2>'
+    + '<p class="gros">' + J.score.toLocaleString('fr-FR') + ' pt</p>'
+    + '<p class="detail">' + (record ? '🎉 Nouveau record !' : 'Ton record : ' + best.toLocaleString('fr-FR') + ' pt')
+      + (place > 0 ? ' · ' + place + '<sup>' + (place === 1 ? 'er' : 'e') + '</sup> de tes ' + h.length + ' meilleures parties' : '')
+      + '</p>'
+    + '<div class="tableau">'
+      + J.detail.map((d, i) => '<div class="l"><b>M' + (i + 1) + '</b><span>' + esc(d.nom)
+          + ' — ' + d.km.toLocaleString('fr-FR') + ' km</span><b>' + (d.ptsD + d.ptsN) + '</b></div>').join('')
+    + '</div>'
+    + '<div class="acts"><button class="btn" id="rejouer">🔄 Rejouer</button>'
+      + '<a class="btn ghost" target="_blank" rel="noopener noreferrer" href="' + esc(ACOLYTE) + '">Découvrir Acolyte ↗</a></div>';
+  fin.hidden = false;
+  document.getElementById('rejouer').onclick = () => nouvellePartie(false);
+  fin.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+/* ---- La bande du défi ---- */
+document.getElementById('defiGo').onclick = () => {
+  const d = defiFait();
+  /* déjà joué aujourd'hui → on ne rejoue pas, on partage. Un seul essai par
+     jour, c'est ce qui donne sa valeur au score. */
+  if(d){ partageDefi(d); return; }
+  nouvellePartie(true);
+};
+
+/* ---- La loupe ---- */
+const loupe = document.getElementById('loupe');
+document.getElementById('loupeGo').onclick = () => { loupe.hidden = false; };
+document.getElementById('loupeX').onclick = () => { loupe.hidden = true; };
+loupe.onclick = (e) => { if(e.target === loupe) loupe.hidden = true; };
+addEventListener('keydown', e => { if(e.key === 'Escape') loupe.hidden = true; });
+
+nouvellePartie(false);
+</script>
+</body>
+</html>

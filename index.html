@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<!-- Politique de sécurité du contenu.
+     Principe : n'autoriser QUE les hôtes réellement appelés par le code.
+     Chaque hôte listé est une porte ouverte ; ceux qui ne servent plus
+     (Hotellook, Travelpayouts, corsproxy, allorigins, workers.dev, deno.dev)
+     ont été retirés. Avant d'ajouter un domaine, vérifie qu'il est appelé.
+     ⚠️ Pas de 'unsafe-inline' dans script-src : c'est CE réglage qui empêche
+     un texte piégé de devenir du code exécutable. Ne l'affaiblis jamais.
+     ⚠️ N'ajoute PAS 'frame-ancestors' ici : cette directive n'existe QUE dans
+     un en-tête HTTP, le navigateur l'ignore dans une balise <meta> et le
+     signale dans la console. La protection contre l'encadrement passe par
+     X-Frame-Options dans le fichier _headers. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://upload.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://*.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#F5F4F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<!-- Icône de l'onglet. ⚠️ Il n'y en avait AUCUNE : sans balise `icon`, Chrome
+     cherche /favicon.ico à la racine du domaine, pas dans le sous-chemin
+     GitHub Pages — l'onglet restait donc vide. Le .ico contient quatre
+     tailles (16/32/48/64) car Chrome, Windows et les favoris n'en prennent
+     pas la même ; le .png est là pour les écrans à forte densité. -->
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- Le flux du journal, produit par l'action GitHub en même temps que le plan
+     du site. Cette balise est ce qui permet à un lecteur de flux de le trouver
+     tout seul, à partir de l'adresse du site. -->
+<link rel="alternate" type="application/rss+xml" title="Le journal d'Acolyte" href="feed.xml">
+<!-- Les DEUX sont nécessaires : la version standard (que Chrome réclame
+     désormais) et la variante Apple, encore lue par les anciens iOS. Retirer
+     celle d'Apple ferait perdre le mode plein écran sur iPhone. -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<!-- ⚠️ Le nom SOUS l'icône sur l'écran d'accueil iOS. Sans cette balise, iOS
+     reprend le <title> de la page — 66 caractères ici — et n'en garde qu'une
+     douzaine : on lisait « Acolyte — Pl… » sous l'icône. -->
+<meta name="apple-mobile-web-app-title" content="Acolyte">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Acolyte — Planifie ton voyage : destination, transport, itinéraire</title>
+<meta name="description" content="Décris ton envie de voyage : Acolyte choisit la destination, le transport et le logement, puis construit ton programme jour par jour. Consultable hors-ligne.">
+<!-- Canonique : sans elle, Google choisit lui-même l'adresse de référence.
+     Elle doit être ABSOLUE et pointer sur le sous-chemin GitHub Pages. -->
+<link rel="canonical" href="https://lechat45.github.io/Acolyte/">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<!-- Aperçu de lien (réseaux sociaux). Les URL doivent être absolues : un
+     chemin relatif n'est pas résolu par les robots de partage. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Acolyte">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://lechat45.github.io/Acolyte/">
+<meta property="og:title" content="Acolyte — Ton copilote de voyage">
+<meta property="og:description" content="D'une simple envie à un programme jour par jour : destination, transport, logement et itinéraire, organisés pour toi.">
+<meta property="og:image" content="https://lechat45.github.io/Acolyte/og-image.png">
+<meta property="og:image:alt" content="Logo Acolyte : le globe mascotte remplace le o d'ACOLYTE">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Acolyte — Ton copilote de voyage">
+<meta name="twitter:description" content="D'une simple envie à un programme jour par jour : destination, transport, logement et itinéraire, organisés pour toi.">
+<meta name="twitter:image" content="https://lechat45.github.io/Acolyte/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<!-- Données structurées : décrit le site à Google dans son vocabulaire.
+     Ce n'est PAS du script exécuté (type application/ld+json = bloc de
+     données), la CSP n'a donc pas à être touchée. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Acolyte",
+  "alternateName": "Acolyte — copilote de voyage",
+  "url": "https://lechat45.github.io/Acolyte/",
+  "image": "https://lechat45.github.io/Acolyte/og-image.png",
+  "applicationCategory": "TravelApplication",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+  "isAccessibleForFree": true,
+  "operatingSystem": "Web, Android, iOS",
+  "inLanguage": "fr-FR",
+  "description": "Décris ton envie de voyage : Acolyte choisit la destination, le transport et le logement, puis construit ton programme jour par jour. Consultable hors-ligne.",
+  "featureList": [
+    "Choix de la destination à partir d'une envie",
+    "Comparaison des transports sur le prix, la durée et le CO₂",
+    "Choix du quartier et du logement",
+    "Programme jour par jour organisé par proximité",
+    "Carte de l'itinéraire consultable hors-ligne"
+  ]
+}
+</script>
+</head>
+<body>
+
+<!-- ===== Écran de démarrage (HTML : un seul code, tous les écrans) ===== -->
+<div id="boot">
+  <div class="boot-in">
+    <div class="boot-mark">
+      <svg class="mascot" viewBox="0 0 100 100" role="img" aria-label="Acolyte">
+        <defs><clipPath id="mGlobeClipBoot"><circle cx="50" cy="50" r="45"/></clipPath></defs>
+        <circle class="m-ocean" cx="50" cy="50" r="45"/>
+        <g clip-path="url(#mGlobeClipBoot)" class="m-land">
+          <ellipse cx="24" cy="29" rx="14" ry="10" transform="rotate(-20 24 29)"/>
+          <ellipse cx="29" cy="67" rx="9" ry="14" transform="rotate(14 29 67)"/>
+          <ellipse cx="71" cy="24" rx="17" ry="9" transform="rotate(8 71 24)"/>
+          <ellipse cx="68" cy="66" rx="11" ry="14" transform="rotate(-10 68 66)"/>
+          <ellipse cx="50" cy="12" rx="20" ry="6"/>
+        </g>
+        <circle class="m-rim" cx="50" cy="50" r="45"/>
+        <g class="m-eyes">
+          <ellipse class="m-white" cx="36" cy="46" rx="15" ry="19"/>
+          <ellipse class="m-white" cx="66" cy="46" rx="14" ry="18"/>
+          <g class="m-pupils">
+            <circle class="m-pupil" cx="38" cy="48" r="8"/>
+            <circle class="m-pupil" cx="68" cy="48" r="7.5"/>
+            <circle class="m-shine" cx="41.5" cy="43.5" r="2.4"/>
+            <circle class="m-shine" cx="71" cy="43.5" r="2.1"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <div class="boot-word">ACOLYTE</div>
+    <div class="boot-sub">COPILOTE DE VOYAGE</div>
+    <div class="boot-bar"><i></i></div>
+    <div class="boot-step" id="bootStep">Démarrage…</div>
+  </div>
+</div>
+
+<!-- ===== Colonne de gauche (ordinateur) =====
+     Elle porte l'identité et le fil du parcours. Sur téléphone elle
+     disparaît : la barre du bas et le fil d'étapes horizontal reprennent le
+     relais — le dessin mobile reste la référence. -->
+<aside class="rail" aria-hidden="true">
+  <!-- Le logo : le globe REMPLACE le « o » d'ACOLYTE — une lettre ronde par
+       une planète ronde. Chaque lettre reste un élément séparé, et le globe
+       est la mascotte du site (2 clics dessus = la salle de jeux). -->
+  <div class="rail-logo">
+    <span class="logo-word rail-logoword" aria-label="Acolyte"><i>A</i><i>c</i><i class="o-mark">o<span class="logo-mark"></span></i><i>l</i><i>y</i><i>t</i><i>e</i></span>
+    <em class="rail-tag">Ton assistant voyage</em>
+  </div>
+
+  <!-- Le titre dit ce que la colonne montre : il change avec la catégorie
+       (Étapes / Journées du voyage / Mon compte). -->
+  <p class="rail-title" id="railTitle">Étapes</p>
+  <ol class="rail-steps" id="railSteps">
+    <!-- rempli par renderRail() : le contenu dépend de la catégorie -->
+  </ol>
+
+  <!-- Décor : la route en pointillé d'un avion. Dessiné en SVG, donc net à
+       toute taille et sans image à télécharger. Coupé si l'utilisateur a
+       réduit les animations n'a pas de sens : il ne bouge pas. -->
+  <!-- Décor : la trace d'un avion qui rejoint une destination.
+       Dessiné en SVG (net à toute taille, rien à télécharger).
+       ⚠️ Un seul tracé pour la goutte du repère : la version précédente en
+       superposait deux, ce qui donnait une forme brouillonne. -->
+  <svg class="rail-art" viewBox="0 0 200 200" aria-hidden="true" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 30 C64 14 112 44 104 78 C97 106 52 108 48 84 C44 58 96 46 138 70 C166 86 176 116 168 142"
+          stroke-dasharray="5 9"/>
+    <!-- l'avion, vu de dessus, orienté dans le sens de la trace -->
+    <g transform="translate(150 52) rotate(38)">
+      <path d="M0 -11 L3 -3 L15 4 L15 7 L3 4 L2 10 L6 14 L6 16 L0 14 L-6 16 L-6 14 L-2 10 L-2 4 L-15 7 L-15 4 L-3 -3 Z"
+            fill="currentColor" stroke="none"/>
+    </g>
+    <!-- le repère de destination : une goutte et son point -->
+    <path d="M168 152 c-8.5 0 -14 6 -14 13.5 c0 10 14 24.5 14 24.5 s14 -14.5 14 -24.5 c0 -7.5 -5.5 -13.5 -14 -13.5 z"/>
+    <circle cx="168" cy="165" r="4" fill="currentColor" stroke="none"/>
+  </svg>
+
+  <!-- ⚠️ Ce bloc N'EST PLUS UNE CARTE, et c'est le principe même de la
+       direction 1b : « plus d'air, pas de cartes empilées ». Un filet et une
+       phrase. L'encadré, l'émoji et la deuxième ligne étaient une carte de
+       plus dans une colonne qui n'en veut aucune. -->
+  <div class="rail-note">
+    <p>Acolyte crée ton voyage sur mesure en quelques secondes.</p>
+  </div>
+</aside>
+
+<!-- ⚠️ Lien d'évitement (RGAA 12.7 / WCAG 2.4.1). Invisible à la souris, il
+     apparaît dès qu'on tabule : sans lui, quelqu'un au clavier doit traverser
+     tout l'en-tête et la navigation avant d'atteindre le contenu, à chaque
+     changement d'écran. Premier élément du corps de page, forcément. -->
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="logo-word" aria-label="Acolyte"><i>A</i><i>c</i><i class="o-mark">o<span class="logo-mark"></span></i><i>l</i><i>y</i><i>t</i><i>e</i></span></div>
+    <!-- La nav vit ici dans le HTML, mais sur téléphone elle est en
+         position:fixed en bas : le parent n'a alors aucun effet sur elle.
+         Sur ordinateur elle repasse en flux et devient la barre du haut. -->
+    <nav class="catnav">
+      <!-- ⚠️ Tracés REPRIS TELS QUELS de la maquette (section « Le jeu
+           d'icônes »). Mes premières versions étaient redessinées de mémoire et
+           ça se voyait : la carte n'était qu'une suite de traits qui ne se
+           fermaient jamais, et l'avion ressemblait à une ancre. Une icône de
+           24 px ne se devine pas, elle se recopie.
+           stroke-width 1.75 comme la maquette. -->
+      <button data-cat="map"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3.5 2.8 6v14.5L9 18l6 2.5 6.2-2.5V3.5L15 6 9 3.5Z"/><path d="M9 3.5V18M15 6v14.5"/></svg>Carte</button>
+      <button data-cat="trip" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.4c.85 0 1.5.65 1.5 1.5v4.9l7.1 4.1v2l-7.1-2.2v4.2l2.5 1.8v1.5L12 19.6l-4 .6v-1.5l2.5-1.8v-4.2L3.4 15v-2l7.1-4.1v-5c0-.84.65-1.5 1.5-1.5Z"/></svg>Voyage</button>
+      <button data-cat="blog"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 21.2h12.2a2 2 0 0 0 2-2V6.6l-3.4-3.4H6.5a2 2 0 0 0-2 2v3.4"/><path d="M4.5 9.5H3.2a1 1 0 0 0-1 1v8.7a2 2 0 0 0 2 2"/><path d="M8 8h4M8 12h7M8 16h7"/></svg>Blog</button>
+      <button data-cat="profile"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20.8v-1.9a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1.9"/><path d="M12 3.2a4.1 4.1 0 1 0 0 8.2 4.1 4.1 0 0 0 0-8.2Z"/></svg>Profil</button>
+    </nav>
+
+    <!-- Le côté droit de la barre du haut (maquette 1b) : le thème,
+         l'installation, le compte.
+         ⚠️ Il n'existe QUE sur ordinateur (display:none en dessous de 900 px).
+         Sur téléphone, la barre du bas n'a de place que pour les quatre
+         onglets, et ces trois réglages sont déjà dans l'onglet Profil : rien
+         n'est perdu, ce n'est pas un raccourci réservé au bureau. -->
+    <div class="navtools">
+      <button id="ntTheme" type="button" title="Changer de thème" aria-label="Changer de thème">
+        <!-- Deux dessins, un seul visible : la LUNE en thème clair (elle
+             annonce où l'on va), le SOLEIL en thème sombre. Le choix se fait
+             en CSS sur :root[data-theme] — aucun JavaScript à synchroniser. -->
+        <svg class="ico nt-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 14.6A8.6 8.6 0 1 1 9.4 3.8a6.7 6.7 0 0 0 10.8 10.8Z"/></svg>
+        <svg class="ico nt-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/></svg>
+      </button>
+      <button id="ntInstall" type="button" title="Installer l'application" aria-label="Installer l'application" style="display:none">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11.8"/><path d="m7 10.5 5 5 5-5M4.2 20h15.6"/></svg>
+      </button>
+      <button id="ntMe" type="button" class="nt-me" title="Mon compte">
+        <span class="nt-av" id="ntAv" aria-hidden="true">?</span><span class="nt-nom" id="ntNom">Compte</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="contenu">
+  <div id="catTrip">
+  <nav class="steps">
+    <div class="step active" data-step="1"><span class="n">1</span>Questions</div>
+    <div class="step locked" data-step="2"><span class="n">2</span>Les choix</div>
+    <div class="step locked" data-step="3"><span class="n">3</span>Ton voyage</div>
+  </nav>
+
+  <!-- ================= VUE 1 : ENVIES ================= -->
+  <section class="view" id="view1">
+    <!-- Bandeau d'accueil : le titre posé sur un décor. Le décor est une
+         composition CSS/SVG et non une photo — aucun fichier à télécharger,
+         rien à autoriser dans la politique de sécurité, et il reste net sur
+         tous les écrans. -->
+    <div class="hero">
+      <div class="hero-deco" aria-hidden="true"></div>
+      <div class="hero-in">
+        <!-- h1 de la page : titre principal pour Google et les lecteurs d'écran -->
+        <h1>Où est-ce qu'on t'emmène ?</h1>
+        <p class="sub">Décris tes envies, Acolyte te propose des destinations sur mesure — puis t'aide à affiner.</p>
+      </div>
+      <svg class="hero-globe" viewBox="0 0 90 90" aria-hidden="true">
+        <circle cx="45" cy="46" r="23" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <ellipse cx="45" cy="46" rx="9" ry="23" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <path d="M23 39 h44 M23 53 h44" stroke="currentColor" stroke-width="2.4" fill="none"/>
+        <path d="M45 14 v-9 M69 24 l7 -7 M21 24 l-7 -7 M78 46 h9 M3 46 h9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="card" id="tripGallery" hidden>
+      <h3 style="margin:0 0 4px">🧳 Mes voyages</h3>
+      <p class="sub" style="margin:0 0 12px">Reprends un voyage déjà exploré, ou lances-en un nouveau ci-dessous.</p>
+      <div class="gallery" id="galleryList"></div>
+    </div>
+    <div class="card">
+      <div class="grid">
+        <div class="field"><label for="fFrom">Ville de départ</label><input id="fFrom" placeholder="Paris" autocomplete="off"></div>
+        <div class="field"><label for="fDest">Destination souhaitée</label><input id="fDest" placeholder="Pays ou ville — vide = surprends-moi" autocomplete="off"></div>
+        <div class="field"><label for="fDays">Durée</label>
+          <select id="fDays">
+            <option value="un week-end (2-3 jours)">🌤️ Week-end (2-3 j)</option>
+            <option value="une semaine" selected>🗓️ 1 semaine</option>
+            <option value="deux semaines">🗓️ 2 semaines</option>
+            <option value="trois semaines ou plus">🌍 3 semaines +</option>
+          </select>
+        </div>
+        <div class="field"><label for="fWhen">Période</label><input id="fWhen" placeholder="août 2026, vacances de la Toussaint…"></div>
+        <div class="field"><label for="fDepart">Date de départ (optionnel)</label><input id="fDepart" type="date"></div>
+        <div class="field"><label for="fBudget">Budget total / personne</label>
+          <select id="fBudget">
+            <option value="petit budget (moins de 500€)">🪙 Petit (&lt; 500 €)</option>
+            <option value="budget moyen (500-1200€)" selected>💶 Moyen (500 – 1200 €)</option>
+            <option value="budget confortable (1200-2500€)">💳 Confort (1200 – 2500 €)</option>
+            <option value="budget élevé (2500€ et plus)">💎 Élevé (2500 € +)</option>
+          </select>
+        </div>
+        <div class="field"><label for="fAdults">Adultes</label>
+          <select id="fAdults"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+        </div>
+        <div class="field"><label for="fKids">Enfants</label>
+          <select id="fKids"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        </div>
+        <div class="field"><label for="fVibe">Ambiance recherchée</label>
+          <select id="fVibe">
+            <option value="" selected>Peu importe — surprends-moi</option>
+            <option value="plage & détente">🏖️ Plage &amp; détente</option>
+            <option value="ville & culture">🏛️ Ville &amp; culture</option>
+            <option value="nature & aventure">🥾 Nature &amp; aventure</option>
+            <option value="fête & vie nocturne">🎉 Fête &amp; vie nocturne</option>
+            <option value="romantique">💘 Romantique</option>
+            <option value="bien-être & repos">🧘 Bien-être &amp; repos</option>
+          </select>
+        </div>
+        <div class="field"><label for="fWith">Avec qui</label>
+          <select id="fWith">
+            <option value="" selected>Peu importe</option>
+            <option value="en solo">🧍 En solo</option>
+            <option value="en couple">💞 En couple</option>
+            <option value="entre amis">👯 Entre amis</option>
+            <option value="en famille">👨‍👩‍👧 En famille</option>
+            <option value="entre collègues">💼 Entre collègues</option>
+          </select>
+        </div>
+        <div class="field"><label for="fTransport">Comment tu veux voyager</label>
+          <select id="fTransport">
+            <option value="" selected>🤷 Peu importe — Acolyte décide</option>
+            <option value="train">🚆 Train</option>
+            <option value="voiture">🚗 Voiture</option>
+            <option value="avion">✈️ Avion</option>
+          </select>
+        </div>
+        <div class="field"><label for="fStay">Style d'hébergement</label>
+          <select id="fStay">
+            <option value="" selected>Peu importe</option>
+            <option value="hôtel">🏨 Hôtel</option>
+            <option value="appartement / Airbnb">🏠 Appartement / Airbnb</option>
+            <option value="auberge / éco">🎒 Auberge / éco</option>
+            <option value="séjour de luxe">✨ Séjour de luxe</option>
+          </select>
+        </div>
+        <!-- Une case à cocher plutôt qu'une option au fond d'une liste : le
+             voyageur doit VOIR qu'il peut traverser plusieurs pays. -->
+        <div class="field wide">
+          <label class="opt-check" for="fMulti">
+            <input type="checkbox" id="fMulti">
+            <span>
+              <b>🌍 Traverser plusieurs pays</b>
+              <em>Acolyte construit un itinéraire de 2 à 3 pays, avec les trajets entre étapes comptés dans le budget.</em>
+            </span>
+          </label>
+          <!-- N'apparaît QUE si la case est cochée : sinon c'est un champ qui
+               ne sert à rien et qui alourdit le questionnaire. -->
+          <div class="pays-box hidden" id="paysBox">
+            <label for="fPaysAdd">Quels pays ?</label>
+            <div class="pays-add">
+              <input id="fPaysAdd" list="paysList" placeholder="ex : Italie" autocomplete="off" maxlength="40">
+              <datalist id="paysList"></datalist>
+              <button type="button" class="btn sm" id="btnPaysAdd">➕ Ajouter</button>
+            </div>
+            <div class="pays-tags" id="paysTags"></div>
+            <p class="hint" id="paysHint">Laisse vide et Acolyte choisit les pays pour toi.</p>
+          </div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px"><label for="fFree">Tes limites & conditions</label>
+        <textarea id="fFree" placeholder="Ex : max 3h de trajet, pas d'auberge, je pars avec un bébé, je veux la plage, budget serré sur le logement…"></textarea>
+      </div>
+      <div class="go-acts">
+        <button class="btn" id="btnGo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 13.6 8 18.4 9.6 13.6 11.2 12 16 10.4 11.2 5.6 9.6 10.4 8Z"/><path d="M18.4 15.2 19.1 17.1 21 17.8 19.1 18.5 18.4 20.4 17.7 18.5 15.8 17.8 17.7 17.1Z"/></svg>Propose-moi des voyages</button>
+        <button class="btn ghost" id="btnCountry"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor"/><path d="M12 2.2v1.6M12 20.2v1.6M2.2 12h1.6M20.2 12h1.6"/></svg>Choisis un pays, l'IA trouve le lieu</button>
+        <div class="btn-duo">
+          <button class="btn ghost" id="btnLucky"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.6" y="3.6" width="16.8" height="16.8" rx="3.4"/><circle cx="8.6" cy="8.6" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.15" fill="currentColor" stroke="none"/></svg>Surprends-moi</button>
+          <button class="btn ghost" id="btnScanTicket"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.4A1.9 1.9 0 0 1 5.4 6.5h2.2l1.3-2.1h6.2l1.3 2.1h2.2a1.9 1.9 0 0 1 1.9 1.9v9.2a1.9 1.9 0 0 1-1.9 1.9H5.4a1.9 1.9 0 0 1-1.9-1.9Z"/><circle cx="12" cy="13" r="3.6"/></svg>Scanner un ticket</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================= VUE 2 : LES CHOIX ================= -->
+  <section class="view hidden" id="view2">
+    <div id="zoneResults"><div class="card"><p class="sub" style="margin:0">Remplis le questionnaire à l'étape 1 pour voir tes propositions ici.</p></div></div>
+  </section>
+
+  <!-- ================= VUE 3 : Y ALLER ================= -->
+  <section class="view hidden" id="view3">
+    <div id="passSlot3"></div>
+
+    <!-- Encart « aujourd'hui » (rendu par le JS, seulement pendant le séjour) -->
+    <div id="zonePlan"></div>
+
+    <!-- Tout le voyage, rangé par catégorie (barre rendue par le JS) -->
+    <div id="zoneSections"></div>
+
+    <!-- 3 · Réserver (replié : on n'y va qu'au moment de réserver) -->
+    <div class="acc" id="accResa">
+      <div class="acc-head" data-acc>🎫 RÉSERVER <span class="arr">›</span></div>
+      <div class="acc-body">
+        <p class="sub" style="margin:0 0 12px">Tous les liens de réservation, déjà pré-remplis avec ta destination et tes dates.</p>
+        <button class="btn" id="btnOpenResa" style="width:100%;justify-content:center">🎫 Réserver — billets, hôtels, activités</button>
+        <div class="btn-duo" style="margin-top:10px">
+          <button class="btn ghost sm" id="btnDossier">📄 Carnet (PDF)</button>
+          <button class="btn ghost sm" id="btnMaps">🗺️ Cartes hors-ligne</button>
+        </div>
+        <p class="hint" style="margin:8px 0 0">✈️ Avant le décollage : télécharge le carnet PDF et prépare les <strong>cartes de chaque journée</strong> — tout reste consultable <strong>sans connexion</strong>.</p>
+      </div>
+    </div>
+
+    <!-- 4 · Gestion du voyage (replié : actions rares) -->
+    <div class="acc" id="accManage">
+      <div class="acc-head" data-acc>🧰 GÉRER CE VOYAGE <span class="arr">›</span></div>
+      <div class="acc-body">
+        <div class="btn-duo">
+          <button class="btn ghost sm" id="btnPlanRedo2">🔄 Tout réorganiser</button>
+          <button class="btn ghost sm" data-changedest>↩ Changer de destination</button>
+        </div>
+        <div class="btn-duo" style="margin-top:10px">
+          <button class="btn ghost sm" id="btnBackup">💾 Sauvegarder (fichier)</button>
+          <button class="btn ghost sm" id="btnRestore">📂 Importer</button>
+        </div>
+        <div class="btn-duo" style="margin-top:10px">
+          <button class="btn ghost sm" id="btnExport">⬇ Exporter (.md)</button>
+          <button class="btn ghost sm" id="btnReset">↺ Nouveau voyage</button>
+        </div>
+        <input type="file" id="restoreFile" accept="application/json,.json" hidden aria-label="Choisir un fichier de sauvegarde à restaurer">
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VUE 4 : DORMIR ================= -->
+
+  <!-- ================= VUE 5 : SUR PLACE ================= -->
+
+  </div><!-- /catTrip -->
+
+  <!-- ================= CATÉGORIE : CARTE ================= -->
+  <!-- ===== CARTE =====
+       Elle vit DANS le flux de la page, comme les autres vues : deux cartes
+       posées l'une sous l'autre. Avant, tout était en position absolue par
+       dessus l'écran — les pastilles et les boutons flottaient sans support
+       et ne s'alignaient sur rien. -->
+  <section class="hidden" id="catMap">
+    <div class="card map-head">
+      <div class="map-title">
+        <h2>Ta carte 🗺️</h2>
+        <p class="sub" id="mapNote"></p>
+      </div>
+      <div class="map-acts">
+        <span class="mapnote-warn" id="mapWarn"></span>
+        <button class="btn ghost sm" id="mapLocate">🧭 Où je suis</button>
+        <a class="btn sm" id="projOpen" href="#" target="_blank" rel="noopener">↗ M'y guider</a>
+      </div>
+      <!-- une pastille par journée : la navigation principale de la carte -->
+      <div class="mapbar" id="mapDays" role="tablist" aria-label="Journées du voyage"></div>
+    </div>
+
+    <div class="card map-card">
+      <!-- DEUX couches superposées, une seule visible à la fois.
+           · Google : le rendu que tout le monde connaît, avec les rues, les
+             commerces et l'itinéraire à pied réel. Demande du réseau.
+           · Acolyte : le moteur maison sur tuiles OpenStreetMap, mis en cache
+             par le service worker — il fonctionne dans l'avion.
+           ⚠️ Le bouton ne sert qu'à FORCER un choix : par défaut on suit le
+           réseau, et on bascule tout seul sur Acolyte quand il n'y en a plus.
+           C'est ce qui préserve la promesse « consultable hors-ligne ». -->
+      <div class="map-src">
+        <button type="button" class="map-src-b" id="mapSrcG">Google</button>
+        <button type="button" class="map-src-b on" id="mapSrcA">Acolyte · hors-ligne</button>
+      </div>
+      <iframe id="projGoogle" title="Carte Google de la journée" hidden
+              loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div id="projMap"></div>
+      <!-- les étapes sous la carte, et non posées dessus : elles ne masquent
+           plus le terrain ni l'attribution OpenStreetMap -->
+      <div class="mapstops" id="zoneStops"></div>
+    </div>
+
+    <div class="cat-empty" id="mapEmpty" hidden>
+      <div class="cat-empty-card">
+        <div class="ce-emoji">🗺️</div>
+        <h3>Pas encore de voyage</h3>
+        <p>Choisis une destination et Acolyte trace ton itinéraire, jour par jour, ici même.</p>
+        <button class="btn" id="mapEmptyGo">✨ Commencer un voyage</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CATÉGORIE : PROFIL ================= -->
+  <!-- ===== BLOGUE =====
+       Les articles sont écrits par le générateur, piloté depuis le panel
+       admin, et stockés côté serveur : un article est rédigé une fois et lu
+       par tout le monde. Ici on ne fait que lire. -->
+  <section class="hidden" id="catBlog">
+    <!-- ⚠️ Plus de « card » ici : un titre de journal se pose sur la page, il
+         n'est pas enfermé dans un cadre. C'est le filet du bas qui le sépare du
+         contenu — c'est le langage éditorial du reste de l'app. -->
+    <div class="blog-head">
+      <div>
+        <h2>Le journal d'Acolyte</h2>
+        <p class="sub" id="blogSub">Merveilles du monde, grandes villes et lieux qui valent le détour.</p>
+      </div>
+      <button class="btn ghost sm hidden" id="blogBack">← Tous les articles</button>
+    </div>
+    <div id="blogList" class="blog-list"></div>
+    <article id="blogOne" class="card hidden"></article>
+  </section>
+
+  <section class="hidden" id="catProfile">
+    <div class="cat-empty-banner" id="profileEmpty" hidden>
+      <div class="ce-emoji">✈️</div>
+      <div style="flex:1;min-width:0">
+        <h3 style="margin:0">Aucun voyage en cours</h3>
+        <p class="hint" style="margin:2px 0 0">Lance ton premier voyage pour débloquer la carte, le programme et le ticket.</p>
+      </div>
+      <button class="btn sm ghost" id="profileEmptyGo">Commencer</button>
+    </div>
+    <!-- En-tête du compte, maquette 1g : un rond jaune avec l'initiale,
+         l'adresse en titre, la ligne d'état en dessous, et l'installation en
+         pastille à droite. ⚠️ Ce n'était PAS une carte dans la maquette : un
+         simple filet la sépare du reste. -->
+    <div class="card pf-head">
+      <h2>Mon compte 👤</h2>
+      <div class="row pf-id">
+        <div class="profile-big" id="pfAvatar">?</div>
+        <div style="min-width:0">
+          <h3 style="margin:0;overflow-wrap:anywhere" id="pfEmail">—</h3>
+          <p class="hint" style="margin:4px 0 0" id="pfMeta">—</p>
+        </div>
+        <!-- Le même bouton que la ligne « Installer » de la liste d'actions,
+             remonté ici comme dans la maquette. Il ne s'affiche que s'il y a
+             quelque chose à installer : majNavTools() s'en charge. -->
+        <button class="pf-inst" id="pfInstTop" type="button" style="display:none">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11.8"/><path d="m7 10.5 5 5 5-5M4.2 20h15.6"/></svg>Installer Acolyte
+        </button>
+      </div>
+    </div>
+
+
+    <!-- pf-panels : sur ordinateur, ce bloc devient les DEUX COLONNES de la
+         maquette 1g — préférences à gauche, actions à droite. Les deux
+         accordéons sont déjà frères ici, il n'y a rien à déplacer.
+         Sur téléphone il reste ce qu'il est : deux accordéons empilés, car une
+         liste de réglages aussi longue a besoin de se replier. -->
+    <div class="card pf-panels">
+      <div class="acc" id="accPrefs">
+        <div class="acc-head" data-acc>PRÉFÉRENCES <span class="arr">›</span></div>
+        <div class="acc-body">
+
+          <h3 style="margin:0 0 6px">🧭 Ton style de voyage</h3>
+          <p class="hint" style="margin:0 0 8px">L'IA en tient compte à chaque proposition et à chaque plan.</p>
+          <div class="chips" id="stStyle"></div>
+
+          <h3 style="margin:16px 0 6px">⚡ Ton rythme</h3>
+          <div class="chips" id="stRythme"></div>
+
+          <!-- Comment on se déplace SUR PLACE — à ne pas confondre avec le
+               transport pour y aller. Ce choix change les durées affichées
+               entre deux visites, et la façon dont l'IA regroupe les journées. -->
+          <h3 style="margin:16px 0 6px">🚶 Sur place, tu te déplaces</h3>
+          <p class="hint" style="margin:0 0 8px">Change les durées entre deux visites, et la façon dont l'IA groupe tes journées.</p>
+          <div class="chips" id="stSurPlace"></div>
+
+          <h3 style="margin:16px 0 6px">🍽️ Alimentation</h3>
+          <div class="chips" id="stFood"></div>
+
+          <h3 style="margin:16px 0 6px">♿ Accessibilité</h3>
+          <div class="chips" id="stAcces"></div>
+
+          <h3 style="margin:16px 0 6px">🚫 Transports à éviter</h3>
+          <p class="hint" style="margin:0 0 8px">L'IA ne te proposera pas ces modes de transport (sauf s'il n'existe aucune alternative).</p>
+          <div class="chips" id="stEco"></div>
+
+          <div class="divider"></div>
+
+          <h3 style="margin:0 0 6px">✨ Réponses d'Acolyte</h3>
+          <div class="field">
+            <label for="stDetail">Niveau de détail</label>
+            <select id="stDetail">
+              <option value="court">✂️ Concis — l'essentiel</option>
+              <option value="normal" selected>📄 Normal</option>
+              <option value="long">📚 Détaillé — tout expliquer</option>
+            </select>
+          </div>
+          <div class="chips" id="stIA" style="margin-top:8px"></div>
+
+          <div class="divider"></div>
+
+          <h3 style="margin:0 0 6px">🌐 Langue</h3>
+          <p class="hint" style="margin:0 0 8px">Change la langue de l'interface et celle des voyages qu'Acolyte écrit pour toi.</p>
+          <div class="chips" id="stLang" data-noi18n>
+            <button class="chip" data-lang="fr">🇫🇷 Français</button>
+            <button class="chip" data-lang="en">🇬🇧 English</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <h3 style="margin:0 0 6px">🎨 Apparence</h3>
+          <p class="hint" style="margin:0 0 8px">« Système » suit automatiquement le thème clair/sombre de ton appareil.</p>
+          <div class="chips" id="stTheme"></div>
+          <div class="field" style="margin-top:12px">
+            <label for="stFont">Taille du texte : <span id="stFsVal">100 %</span></label>
+            <input type="range" id="stFont" min="90" max="130" step="5" value="100"
+                   aria-valuemin="90" aria-valuemax="130" aria-valuenow="100" aria-valuetext="100 %">
+          </div>
+          <div class="chips" id="stUI" style="margin-top:8px"></div>
+
+          <div class="divider"></div>
+
+          <h3 style="margin:0 0 6px">📌 Valeurs par défaut</h3>
+          <p class="hint" style="margin:0 0 8px">Pré-remplies à chaque nouveau voyage — tu peux toujours les changer dans le questionnaire.</p>
+          <div class="grid tight">
+            <div class="field">
+              <label for="stHome">🏠 Ville de départ</label>
+              <input id="stHome" placeholder="ex : Paris" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="stAdults">🧑 Adultes</label>
+              <select id="stAdults"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+            </div>
+            <div class="field">
+              <label for="stKids">🧒 Enfants</label>
+              <select id="stKids"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:14px">
+            <button class="btn sm ghost" id="stReset">↺ Tout réinitialiser</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc" id="accActions">
+      <div class="acc-head" data-acc>ACTIONS <span class="arr">›</span></div>
+      <div class="acc-body">
+      <div class="item act">
+        <div class="head"><div class="emo">✨</div><h4>Nouveautés <span id="pfVersion" class="hint" style="margin:0"></span></h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfNews">Voir</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">⬇</div><h4>Exporter mon voyage</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfExport">Exporter</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">📅</div><h4>Mettre mon voyage dans mon agenda</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfIcs">Télécharger</button></div>
+      </div>
+      <!-- Transférer un voyage à quelqu'un. ⚠️ Le fichier ne contient QUE le
+           voyage : ni adresse email, ni dépenses, ni notes personnelles. -->
+      <div class="item act">
+        <div class="head"><div class="emo">🤝</div><h4>Donner ce voyage à un ami</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfAmiOut">Créer le fichier</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">📥</div><h4>Ouvrir le voyage d'un ami</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfAmiIn">Choisir le fichier</button></div>
+      </div>
+      <input type="file" id="amiFile" accept="application/json,.json" hidden
+             aria-label="Choisir le fichier de voyage d'un ami">
+      <!-- Personne ne retient huit écrans du premier coup : on doit pouvoir y
+           revenir, y compris après avoir cliqué « Passer ». -->
+      <div class="item act">
+        <div class="head"><div class="emo">❓</div><h4>Comment marche Acolyte</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfAide">Revoir</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">↺</div><h4>Recommencer un voyage</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfNewTrip">Nouveau voyage</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">🔑</div><h4>Changer le mot de passe</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfChangePass">Changer</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">📧</div><h4>Changer d'adresse email</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfChangeEmail">Changer</button></div>
+      </div>
+      <div class="item act" id="pwaItem" style="display:none">
+        <div class="head"><div class="emo">📲</div><h4>Installer Acolyte sur l'appareil</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfInstall">Installer</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">📷</div><h4>Importer un voyage (scanner un ticket)</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfScan">Ouvrir le scanner</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">🧹</div><h4>Régénérer les contenus IA</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfClearCache">Vider le cache IA</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">📄</div><h4>Télécharger mes données</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfMyData">Télécharger (.json)</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">🌙</div><h4>Mode "Vol de nuit"</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfTheme">Activer / désactiver</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">🔒</div><h4>Politique de confidentialité</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfPrivacy">Consulter</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">🚪</div><h4>Se déconnecter</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfLogout">Déconnexion</button></div>
+      </div>
+      </div><!-- /acc-body -->
+      </div><!-- /acc -->
+    </div>
+
+    <!-- ===== Product Hunt — placé AVANT la zone sensible : demander un
+         avis juste après « supprimer mon compte » tombait très mal. ===== -->
+    <div class="ph-card">
+      <div class="ph-txt">
+        <span class="ph-eyebrow">Ton avis compte</span>
+        <h3>Aide Acolyte à grandir</h3>
+        <p>Pas de pub intrusive, pas de données revendues. La meilleure façon de soutenir Acolyte, c'est de laisser ton avis.</p>
+      </div>
+      <a class="ph-link" href="https://www.producthunt.com/products/acolyte/reviews/new?utm_source=badge-product_review&amp;utm_medium=badge&amp;utm_source=badge-acolyte" target="_blank" rel="noopener">
+        <img src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1273558&amp;theme=light"
+             alt="Donner son avis sur Acolyte — Product Hunt" width="250" height="54" loading="lazy">
+      </a>
+    </div>
+
+    <div class="danger-zone">
+      <h3>⚠️ Zone sensible</h3>
+      <p>La suppression est <strong>définitive</strong> : compte, voyages, notes et souvenirs seront perdus. Aucun retour possible.</p>
+      <button class="btn danger" id="pfDelete">🗑️ Supprimer définitivement mon compte</button>
+    </div>
+
+  </section>
+
+  </main>
+
+  <!-- ⚠️ Le pied de page est HORS de <main> : ce n'est pas le contenu principal,
+       c'est un repère « contentinfo ». Un lecteur d'écran annonce alors les deux
+       zones séparément, ce qui est justement l'intérêt des repères. -->
+  <!-- ===== Pied de page =====
+       ⚠️ CE BLOC EXISTE POUR ÊTRE LU SANS JAVASCRIPT. Tout le reste de la page
+       est construit par app.js : un robot qui n'exécute pas le script ne voit
+       donc presque aucun texte, et Google n'a rien à se mettre sous la dent
+       pour comprendre de quoi parle le site. Ces quelques paragraphes sont en
+       HTML brut, présents dès le premier octet servi.
+       ⚠️ On ne met ici QUE des liens utiles à un humain. Pas de lien vers
+       sitemap.xml ni manifest.json : ce sont des fichiers machine, les lier
+       n'apporte rien au référencement et encombre l'interface. -->
+  <footer class="foot">
+    <div class="foot-cols">
+      <section class="foot-col">
+        <h2>Acolyte, en deux lignes</h2>
+        <p>Décris ton envie de voyage en une phrase. Acolyte choisit la destination,
+           compare les transports sur le prix, la durée et le CO₂, propose un quartier
+           et un logement, puis construit ton programme heure par heure.</p>
+      </section>
+      <section class="foot-col">
+        <h2>Ce que ça sait faire</h2>
+        <ul>
+          <li>Trouver une destination à partir d'une simple envie</li>
+          <li>Comparer train, voiture et avion sur le prix et le CO₂</li>
+          <li>Organiser chaque journée par proximité, pas au hasard</li>
+          <li>Traverser plusieurs pays dans un même itinéraire</li>
+          <li>Garder la carte et le programme consultables hors-ligne</li>
+        </ul>
+      </section>
+      <section class="foot-col">
+        <h2>Le journal</h2>
+        <p>Acolyte publie ses propres articles de fond sur les merveilles du monde,
+           les grandes villes et les lieux qui valent le détour.</p>
+        <p class="foot-links">
+          <a href="./" id="footBlog">Lire le journal</a>
+          <!-- ⚠️ Obligatoire, et pas seulement souhaitable : la loi française
+               exige que les mentions légales soient accessibles depuis
+               n'importe quelle page. Le pied de page est le seul endroit
+               présent partout, y compris sans JavaScript. -->
+          <a href="#mentions-legales" id="footLegal">Mentions légales et confidentialité</a>
+        </p>
+      </section>
+    </div>
+    <p class="foot-bas">
+      Acolyte — copilote de voyage. Application web gratuite, installable sur
+      téléphone et ordinateur, utilisable sans connexion.
+    </p>
+  </footer>
+</div>
+
+<!-- ===== Auth (création de compte / connexion / vérification) =====
+     Deux panneaux sur ordinateur : la promesse à gauche, le formulaire à
+     droite. Un seul sur téléphone, le panneau de gauche disparaît — sur un
+     petit écran, ce qui compte c'est le formulaire, pas l'argumentaire.
+     ⚠️ TOUS LES IDENTIFIANTS SONT CONSERVÉS. Le circuit d'authentification
+     (inscription, connexion, vérification, mot de passe oublié) est branché
+     dessus dans app.js : en renommer un casserait la connexion sans erreur
+     visible. La refonte est purement visuelle. -->
+<div class="auth-wrap hidden" id="authWrap">
+  <!-- Panneau de gauche : la promesse. Masqué sous 900 px. -->
+  <aside class="auth-brand" aria-hidden="true">
+    <div class="auth-brand-logo">
+      <span class="logo-word" aria-label="Acolyte"><i>A</i><i>c</i><i class="o-mark">o<span class="logo-mark"></span></i><i>l</i><i>y</i><i>t</i><i>e</i></span>
+    </div>
+    <h2 class="auth-brand-h">D'une simple envie à un<br>programme jour par jour.</h2>
+    <ul class="auth-brand-l">
+      <li><span>🧭</span>Trouver une destination à partir d'une simple envie</li>
+      <li><span>🌱</span>Comparer train, voiture et avion sur le prix et le CO₂</li>
+      <li><span>📍</span>Organiser chaque journée par proximité, pas au hasard</li>
+      <li><span>📴</span>Garder la carte et le programme consultables hors-ligne</li>
+    </ul>
+  </aside>
+
+  <div class="auth-card">
+    <!-- Le sélecteur du profil est derrière l'inscription : sans celui-ci, un
+         visiteur anglophone n'aurait aucun moyen de changer de langue. -->
+    <div class="auth-lang" id="stLangAuth" data-noi18n>
+      <button type="button" class="chip" data-lang="fr">FR</button>
+      <button type="button" class="chip" data-lang="en">EN</button>
+    </div>
+    <!-- Le logo ne s'affiche que sur téléphone : sur ordinateur il est déjà
+         dans le panneau de gauche, l'afficher deux fois ferait doublon. -->
+    <div class="auth-logo auth-logo-mob"><span class="logo-word" aria-label="Acolyte"><i>A</i><i>c</i><i class="o-mark">o<span class="logo-mark"></span></i><i>l</i><i>y</i><i>t</i><i>e</i></span></div>
+    <h1 class="auth-h1" id="authTitre">Créer ton compte</h1>
+    <p class="sub" id="authSub">Crée ton compte pour commencer l'aventure.</p>
+
+    <div id="authSignup">
+      <div class="field"><label for="auPseudo">Ton pseudo</label><input id="auPseudo" placeholder="ex : Sacha" maxlength="20" autocomplete="nickname"></div>
+      <div class="field ico-mail"><label for="auEmail">Adresse email</label><input id="auEmail" type="email" placeholder="toi@exemple.com" autocomplete="email"></div>
+      <div class="field ico-lock"><label for="auPass">Mot de passe</label><input id="auPass" type="password" placeholder="8 caractères minimum" autocomplete="new-password"></div>
+      <div class="field ico-lock"><label for="auPass2">Confirme le mot de passe</label><input id="auPass2" type="password" autocomplete="new-password"></div>
+      <label class="privacy-check"><input type="checkbox" id="auPrivacy"> J'ai lu et j'accepte la <a id="openPrivacy">politique de confidentialité</a>.</label>
+      <button class="btn" id="btnSignup" style="margin-top:16px;width:100%;justify-content:center">Créer mon compte →</button>
+      <p class="auth-switch">Déjà un compte ? <a id="goLogin">Se connecter</a></p>
+    </div>
+
+    <div id="authLogin" class="hidden">
+      <div class="field ico-mail"><label for="loEmail">Adresse email</label><input id="loEmail" type="email" autocomplete="email"></div>
+      <div class="field ico-lock"><label for="loPass">Mot de passe</label><input id="loPass" type="password" autocomplete="current-password"></div>
+      <button class="btn" id="btnLogin" style="margin-top:16px;width:100%;justify-content:center">Se connecter →</button>
+      <p class="auth-switch">Pas de compte ? <a id="goSignup">En créer un</a></p>
+      <!-- ⚠️ CE LIEN MANQUAIT, et c'était le seul qui compte vraiment :
+           la récupération existait, mais uniquement depuis le profil — donc
+           réservée à quelqu'un DÉJÀ connecté. Inutile quand on est bloqué
+           dehors, c'est-à-dire exactement quand on en a besoin. -->
+      <p class="auth-switch"><a id="goForgot">Mot de passe oublié ?</a></p>
+    </div>
+
+    <!-- ===== Mot de passe oublié — deux étapes dans le même écran =====
+         Étape 1 : l'adresse. Étape 2 : le code reçu + le nouveau mot de passe.
+         On ne change pas d'écran entre les deux : le code arrive pendant qu'on
+         est là, et faire disparaître le champ où le coller serait absurde. -->
+    <div id="authForgot" class="hidden">
+      <p style="font-weight:700;font-size:.92rem;margin-bottom:4px">🔑 Retrouver son accès</p>
+      <p class="hint" style="margin:0 0 12px">On t'envoie un code à 6 chiffres. Tu choisis ensuite un nouveau mot de passe.</p>
+
+      <div id="fgStep1">
+        <div class="field"><label for="fgEmail">Ton adresse email</label>
+          <input id="fgEmail" type="email" autocomplete="email" placeholder="toi@exemple.fr"></div>
+        <button class="btn" id="btnFgSend" style="margin-top:16px;width:100%;justify-content:center">📬 Recevoir un code</button>
+      </div>
+
+      <div id="fgStep2" class="hidden">
+        <p class="hint" style="margin:0 0 12px">Un code a été envoyé à <strong id="fgWho"></strong>. Regarde tes indésirables — il expire au bout d'une heure.</p>
+        <div class="field"><label for="fgCode">Code reçu</label>
+          <input id="fgCode" class="code-inp" inputmode="numeric" maxlength="6" placeholder="······"></div>
+        <div class="field" style="margin-top:12px"><label for="fgPass">Nouveau mot de passe</label>
+          <input id="fgPass" type="password" autocomplete="new-password" placeholder="8 caractères minimum"></div>
+        <div class="field" style="margin-top:12px"><label for="fgPass2">Confirme-le</label>
+          <input id="fgPass2" type="password" autocomplete="new-password"></div>
+        <button class="btn" id="btnFgReset" style="margin-top:16px;width:100%;justify-content:center">🔑 Changer mon mot de passe</button>
+        <p class="auth-switch"><a id="btnFgAgain">Renvoyer un code</a></p>
+      </div>
+
+      <p class="auth-switch"><a id="fgBack">← Revenir à la connexion</a></p>
+    </div>
+
+    <div id="authVerify" class="hidden">
+      <p style="font-weight:700;font-size:.92rem;margin-bottom:12px">📬 Un code de vérification à 6 chiffres a été envoyé à <strong id="vfEmail"></strong>. Entre-le pour sécuriser ton compte.</p>
+      <div class="field"><label for="vfCode">Code de vérification</label><input id="vfCode" class="code-inp" inputmode="numeric" maxlength="6" placeholder="······"></div>
+      <button class="btn" id="btnVerify" style="margin-top:16px;width:100%;justify-content:center">Vérifier ✔</button>
+      <p class="auth-switch"><a id="btnResend">Renvoyer le code</a> · <a id="vfBack">Changer d'email</a></p>
+      <p class="hint" id="vfDemo"></p>
+    </div>
+    <p class="err hidden" id="authErr" style="margin-top:14px"></p>
+  </div>
+</div>
+
+
+<!-- ===== Pop-up : questions de l'IA avant la génération du voyage complet ===== -->
+<div class="overlay" id="ovQs">
+  <div class="modal" style="max-height:88vh;overflow-y:auto">
+    <h2 style="margin:0 0 4px">🎯 Précisons ton voyage</h2>
+    <p class="sub">Acolyte a besoin de quelques précisions pour viser juste. Réponds, et il ajuste tes propositions de voyage.</p>
+    <div id="zoneQs"></div>
+    <div id="qsProg" class="qs-prog"></div>
+    <button class="btn" id="btnQsGo" style="width:100%;justify-content:center;margin-top:14px" disabled>✅ Affiner mes propositions</button>
+    <button class="btn ghost sm" id="btnQsSkip" style="width:100%;justify-content:center;margin-top:8px">Passer — garder ces propositions</button>
+  </div>
+</div>
+
+<!-- ===== Pop-up SCANNER de ticket ===== -->
+<div class="overlay" id="ovScan">
+  <div class="modal" style="max-height:88vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0">Scanner un ticket 📷</h2>
+      <button class="close-btn" data-closescan aria-label="Fermer">✕</button>
+    </div>
+    <p class="sub">Vise le QR d'un ticket Acolyte pour importer le voyage (idéal entre amis).</p>
+    <video id="scanVideo" playsinline muted style="width:100%;border:3px solid var(--stroke);border-radius:var(--r);background:#101010;min-height:200px"></video>
+    <p id="scanMsg" class="hint" style="margin-top:10px"></p>
+    <label class="btn ghost sm" style="width:100%;justify-content:center;margin-top:8px">🖼 Ou choisir une photo du ticket
+      <input type="file" id="scanFile" accept="image/*" style="display:none">
+    </label>
+    <button class="modal-close" data-closescan>Fermer</button>
+  </div>
+</div>
+
+<!-- ===== Pop-up SUPPRESSION DE COMPTE ===== -->
+<div class="overlay" id="ovDel">
+  <div class="modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0;color:var(--danger)">⚠️ Supprimer le compte</h2>
+      <button class="close-btn" data-close="ovDel" aria-label="Fermer">✕</button>
+    </div>
+    <p class="sub">Compte, voyages, notes et préférences seront <strong>définitivement effacés</strong> de cet appareil. Aucun retour possible.</p>
+    <div class="field" style="margin-top:12px">
+      <label for="delConfirm">Pour confirmer, écris <strong id="delPseudo">ton pseudo</strong></label>
+      <input id="delConfirm" placeholder="…" autocomplete="off">
+    </div>
+    <button class="btn danger" id="delGo" style="width:100%;justify-content:center;margin-top:14px" disabled>🗑️ Supprimer définitivement</button>
+    <button class="btn ghost sm" data-close="ovDel" style="width:100%;justify-content:center;margin-top:8px">Annuler</button>
+  </div>
+</div>
+
+<!-- ===== Pop-up RÉSERVATION ===== -->
+<div class="overlay" id="ovResa">
+  <div class="modal" style="max-height:88vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0">Réservation 🎫</h2>
+      <button class="close-btn" data-close="ovResa" aria-label="Fermer">✕</button>
+    </div>
+    <div id="zoneResa"></div>
+    <button class="modal-close" data-close="ovResa">Fermer</button>
+  </div>
+</div>
+
+<!-- ===== Pop-up SIMULATION vols & trains ===== -->
+<div class="overlay" id="ovSim">
+  <div class="modal" style="max-height:88vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0">Simulation 🛫</h2>
+      <button class="close-btn" data-close="ovSim" aria-label="Fermer">✕</button>
+    </div>
+    <p class="sub">Vrais prix et vrais horaires — mode pré-sélectionné par le plan, change-le pour comparer.</p>
+    <div class="toggle">
+      <button id="tgPlane" class="on">✈️ Avion</button>
+      <button id="tgCar">🚗 Voiture</button>
+      <button id="tgTrain">🚆 Train</button>
+    </div>
+    <div id="priceAlert" style="display:none;margin-bottom:10px"></div>
+    <div id="zoneTransport"></div>
+    <button class="modal-close" data-close="ovSim">Fermer</button>
+  </div>
+</div>
+
+<!-- ===== Barre "l'IA cherche" : remplace la nav du bas pendant la réflexion ===== -->
+<div class="searchbar" id="searchBar" hidden>
+  <div class="sb-mark" id="sbMascot"></div>
+  <div class="sb-body">
+    <div class="sb-text" id="sbText">Acolyte explore le monde…</div>
+    <div class="sb-track"><i></i></div>
+  </div>
+</div>
+
+<!-- ===== Carte postale ===== -->
+<div class="overlay" id="ovPostcard">
+  <div class="modal" style="max-height:92vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">Ta carte postale 🖼️</h2>
+      <button class="close-btn" data-close="ovPostcard" aria-label="Fermer">✕</button>
+    </div>
+    <div class="pc-preview"><img id="pcImg" alt="Aperçu de la carte postale"><div class="pc-loading" id="pcLoading">Composition…</div></div>
+    <div class="pc-group"><span class="pc-label">Modèle — mise en page</span><div class="pc-chips" id="pcTemplates"></div></div>
+    <div class="pc-group"><span class="pc-label">Style — couleurs</span><div class="pc-chips" id="pcStyles"></div></div>
+    <div class="pc-group" id="pcLayoutGroup"><span class="pc-label">Disposition des photos</span><div class="pc-chips" id="pcLayouts"></div></div>
+    <div class="pc-group"><span class="pc-label">Photos</span>
+      <div class="btn-duo">
+        <button class="btn sm ghost" id="pcMine">📸 Mes photos</button>
+        <button class="btn sm ghost" id="pcWeb">🌐 Photos du web</button>
+      </div>
+      <input type="file" id="pcFile" accept="image/*" multiple hidden aria-label="Choisir des photos pour la carte postale">
+    </div>
+    <div class="btn-duo" style="margin-top:14px">
+      <button class="btn sm" id="pcDownload">⬇ Télécharger</button>
+      <button class="btn sm ghost" id="pcShare">📤 Partager</button>
+    </div>
+    <p class="hint" style="margin-top:8px">Ajoute <strong>tes photos</strong> ou laisse Acolyte chercher des photos du web. Souvenir uniquement.</p>
+  </div>
+</div>
+
+<div class="net-badge" id="netBadge" hidden></div>
+<div id="toast"></div>
+
+<!-- ===== Carnet de voyage imprimable (rempli au clic, visible seulement à l'impression) ===== -->
+<div id="dossier" hidden></div>
+
+<!-- ===== Nouveautés de la mise à jour ===== -->
+<div class="overlay" id="ovNews">
+  <div class="modal" style="max-height:88vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0">✨ Quoi de neuf ?</h2>
+      <button class="close-btn" data-close="ovNews" aria-label="Fermer">✕</button>
+    </div>
+    <div id="newsBody"></div>
+    <button class="btn" id="newsOk" style="width:100%;justify-content:center;margin-top:14px">👍 J'ai vu</button>
+  </div>
+</div>
+
+<!-- ================= MINI-JEU : DÉFENDS LA TERRE (easter egg) ================= -->
+<div class="overlay" id="ovGame">
+  <div class="modal game-modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">🛰️ Défends la Terre</h2>
+      <button class="close-btn" data-close="ovGame" id="gameClose" aria-label="Fermer">✕</button>
+    </div>
+    <div class="game-hud">
+      <span id="gameScore">Score : 0</span>
+      <span id="gameCombo" class="game-combo" hidden></span>
+      <span id="gameLevel">Niveau 1</span>
+      <span id="gameLives">❤️❤️❤️</span>
+    </div>
+    <div class="game-stage">
+      <canvas id="gameCanvas" width="640" height="460"></canvas>
+      <div class="game-over" id="gameOver" hidden>
+        <h3 id="gameOverTitle">Terre perdue !</h3>
+        <p id="gameOverScore">Score : 0</p>
+        <div id="gameLeaderboard" class="game-lb"></div>
+        <button class="btn" id="gameReplay" style="justify-content:center">🔄 Rejouer</button>
+      </div>
+      <div class="game-start" id="gameStart">
+        <p>🖱️ Clique sur les astéroïdes pour les détruire avant qu'ils touchent la Terre.</p>
+        <p class="game-tip">💡 Enchaîne sans laisser passer d'astéroïde : ton multiplicateur monte. Les dorés valent triple.</p>
+        <p class="game-best" id="gameBest" hidden></p>
+        <div class="game-start-btns">
+          <button class="btn" id="gameGo" style="justify-content:center">🚀 Commencer</button>
+          <button class="btn ghost sm" id="gameCustomBtn" style="justify-content:center">🎨 Personnaliser</button>
+        </div>
+      </div>
+      <div class="game-custom" id="gameCustom" hidden>
+        <h3>🎨 Personnalisation</h3>
+        <p class="gc-hint">Change le style — sans toucher à la difficulté.</p>
+        <div class="gc-group"><span class="gc-label">☄️ Astéroïdes</span><div class="gc-swatches" id="gcAsteroids"></div></div>
+        <div class="gc-group"><span class="gc-label">🌍 Planète</span><div class="gc-swatches" id="gcPlanets"></div></div>
+        <button class="btn" id="gameCustomDone" style="justify-content:center;margin-top:6px">✅ Terminé</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SALLE DE JEUX (2 clics sur la mascotte, PC) ================= -->
+<div class="overlay" id="ovArcade">
+  <div class="modal arcade-modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h2 style="margin:0">🕹️ La salle de jeux</h2>
+      <button class="close-btn" data-close="ovArcade" aria-label="Fermer">✕</button>
+    </div>
+    <p class="sub" style="margin:0 0 14px">Tu m'as trouvée. Choisis à quoi on joue.</p>
+    <div class="arcade-grid" id="arcadeGrid"></div>
+  </div>
+</div>
+
+<!-- ================= JEU 2 : OÙ EST-CE ? ================= -->
+<div class="overlay" id="ovGeo">
+  <div class="modal game-modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">🌍 Où est-ce ?</h2>
+      <button class="close-btn" data-close="ovGeo" aria-label="Fermer">✕</button>
+    </div>
+    <div class="game-hud">
+      <span id="geoRound">Manche 1 / 5</span>
+      <span id="geoScore">Score : 0</span>
+    </div>
+    <div class="geo-stage">
+      <img id="geoPhoto" class="geo-photo" alt="Monument à reconnaître">
+      <div id="geoMap" class="geo-map"></div>
+      <p class="geo-hint" id="geoHint">Clique sur la carte à l'endroit où se trouve ce monument.</p>
+      <div class="geo-names" id="geoNames" hidden></div>
+      <div class="geo-result" id="geoResult" hidden></div>
+      <button class="btn" id="geoNext" hidden style="justify-content:center">Manche suivante →</button>
+      <div class="game-over" id="geoOver" hidden>
+        <h3 id="geoOverTitle">Partie terminée</h3>
+        <p id="geoOverScore">Score : 0</p>
+        <button class="btn" id="geoReplay" style="justify-content:center">🔄 Rejouer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= JEU 3 : PONG AVEC LA MASCOTTE ================= -->
+<div class="overlay" id="ovPong">
+  <div class="modal game-modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">🏓 Ne me lâche pas</h2>
+      <button class="close-btn" data-close="ovPong" aria-label="Fermer">✕</button>
+    </div>
+    <div class="game-hud">
+      <span id="pongScore">Renvois : 0</span>
+      <span id="pongBumps">Chocs : 0</span>
+      <span id="pongLives">❤️❤️❤️</span>
+    </div>
+    <div class="game-stage">
+      <canvas id="pongCanvas" width="640" height="460"></canvas>
+      <div class="game-over" id="pongOver" hidden>
+        <h3 id="pongOverTitle">Tu m'as laissée tomber !</h3>
+        <p id="pongOverScore">Renvois : 0</p>
+        <button class="btn" id="pongReplay" style="justify-content:center">🔄 Rejouer</button>
+      </div>
+      <div class="game-start" id="pongStart">
+        <p>🖱️ Bouge la raquette avec la souris et empêche la mascotte de tomber.</p>
+        <p class="game-tip">💡 Elle n'aime pas être cognée. Au bout de 10 chocs, elle voit rouge — et ça va plus vite.</p>
+        <p class="game-best" id="pongBest" hidden></p>
+        <button class="btn" id="pongGo" style="justify-content:center">🏓 Commencer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= JEU 4 : BAGAGE EXPRESS ================= -->
+<div class="overlay" id="ovPack">
+  <div class="modal game-modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 style="margin:0">🧳 Bagage express</h2>
+      <button class="close-btn" data-close="ovPack" aria-label="Fermer">✕</button>
+    </div>
+    <div class="game-hud">
+      <span id="packDest">Destination : —</span>
+      <span id="packScore">Score : 0</span>
+      <span id="packTime">30 s</span>
+    </div>
+    <div class="game-stage">
+      <canvas id="packCanvas" width="640" height="460"></canvas>
+      <div class="game-over" id="packOver" hidden>
+        <h3 id="packOverTitle">Valise bouclée</h3>
+        <p id="packOverScore">Score : 0</p>
+        <button class="btn" id="packReplay" style="justify-content:center">🔄 Rejouer</button>
+      </div>
+      <div class="game-start" id="packStart">
+        <p>🖱️ Le tapis défile. Clique sur ce qu'il faut emporter, laisse passer le reste.</p>
+        <p class="game-tip">💡 La destination change en cours de route : ce qui était utile ne l'est plus.</p>
+        <p class="game-best" id="packBest" hidden></p>
+        <button class="btn" id="packGo" style="justify-content:center">🧳 Commencer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= POLITIQUE DE CONFIDENTIALITÉ ================= -->
+<!-- ================= INSTALLER L'APPLICATION =================
+     Le contenu est écrit par le JavaScript : il dépend de l'appareil. Sur
+     Android et sur ordinateur le navigateur sait installer tout seul, il suffit
+     d'un bouton ; sur iPhone Apple l'interdit, et il faut donc expliquer le
+     geste au lieu d'offrir un bouton qui ne pourrait rien faire. -->
+<!-- ================= VOYAGE REÇU D'UN AMI =================
+     On l'affiche en LECTURE avant d'y toucher : recevoir un voyage ne doit
+     jamais écraser le sien par surprise. Le contenu est écrit par le JS. -->
+<div class="overlay" id="ovAmi">
+  <div class="modal" style="max-width:560px;max-height:88vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <h2 style="margin:0">🤝 Le voyage d'un ami</h2>
+      <button class="close-btn" data-close="ovAmi" aria-label="Fermer">✕</button>
+    </div>
+    <div id="amiBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovInstall">
+  <div class="modal" style="max-width:460px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <h2 style="margin:0">📲 Garde Acolyte sous la main</h2>
+      <button class="close-btn" data-close="ovInstall" aria-label="Fermer">✕</button>
+    </div>
+    <div id="installBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovPrivacy">
+  <div class="modal" style="max-height:88vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0" id="mentions-legales">🔒 Mentions légales et confidentialité</h2>
+      <button class="close-btn" data-close="ovPrivacy" id="privacyClose" aria-label="Fermer">✕</button>
+    </div>
+    <div id="privacyBody"></div>
+    <button class="btn" id="privacyAccept" style="width:100%;justify-content:center;margin-top:14px">✅ J'accepte</button>
+  </div>
+</div>
+
+<!-- ================= ONBOARDING (première visite) ================= -->
+<div class="onboard" id="onboard" hidden>
+  <div class="onboard-card">
+    <button class="onboard-skip" id="onboardSkip" aria-label="Passer l'introduction">Passer</button>
+    <div class="onboard-emoji" id="onboardEmoji">🌍</div>
+    <h2 id="onboardTitle">Bienvenue sur Acolyte</h2>
+    <p id="onboardText">Ton copilote de voyage.</p>
+    <div class="onboard-foot">
+      <span class="onboard-dots" id="onboardDots"></span>
+      <button class="btn" id="onboardNext">Suivant →</button>
+    </div>
+  </div>
+</div>
+
+<script src="boot-check.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

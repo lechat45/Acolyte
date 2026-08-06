@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     ACOLYTE — PROMO IMAGE STUDIO
+     ------------------------------------------------------------
+     Internal tool. Draws the four promotional images and lets you save them.
+     Nothing here ships to visitors.
+
+     ⚠️ ENGLISH ONLY, on purpose. These images are for stores, social cards and
+     press kits, where English travels further. The app itself stays bilingual.
+
+     ⚠️ noindex below: this page has no readable content of its own — canvases
+     and buttons. Without the tag, Google would index an empty page.
+
+     ⚠️ The artwork is NOT redrawn by hand. It loads the real brand files
+     (logo acolyte.png / icone acolyte.png), so these images can never drift
+     away from the actual logo. Change the logo files, reload, and every image
+     follows.
+============================================================ -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Acolyte — Promo image studio</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Same tokens as the app: charcoal surfaces, hairline borders, generous
+     radii, yellow used as an ACCENT rather than a background. */
+  :root{
+    --bg:#121212; --secondary:#1C1C1C; --surface-2:#232323;
+    --primary:#FFE600; --primary-ink:#141414;
+    --txt:#F2F1EC; --txt-2:#A5A49D;
+    --stroke:rgba(255,255,255,.11); --stroke-2:rgba(255,255,255,.20);
+    --shadow:0 6px 18px rgba(0,0,0,.35); --shadow-lg:0 18px 44px rgba(0,0,0,.48);
+    --r-lg:20px; --r-md:14px;
+    color-scheme:dark;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--txt);
+    padding:32px 20px 64px;line-height:1.6;
+  }
+  .wrap{max-width:960px;margin:0 auto}
+  h1{
+    font-family:'Sora',sans-serif;font-weight:900;font-size:1.7rem;
+    text-transform:uppercase;letter-spacing:-.01em;margin-bottom:8px;
+  }
+  .lede{color:var(--txt-2);font-size:.95rem;max-width:60ch}
+  .note{
+    margin:20px 0 30px;padding:14px 16px;background:var(--secondary);
+    border:1px solid var(--stroke);border-left:3px solid var(--primary);
+    border-radius:var(--r-md);font-size:.88rem;color:var(--txt-2);
+  }
+  .note code{font-family:ui-monospace,monospace;color:var(--txt)}
+  .shot{
+    margin-bottom:34px;padding:18px;background:var(--secondary);
+    border:1px solid var(--stroke);border-radius:var(--r-lg);box-shadow:var(--shadow);
+  }
+  .shot-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .shot h2{
+    font-family:'Sora',sans-serif;font-weight:900;font-size:1rem;
+    text-transform:uppercase;letter-spacing:.04em;
+  }
+  .dim{
+    font:800 .66rem 'Sora',sans-serif;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--txt-2);background:var(--surface-2);
+    border:1px solid var(--stroke);border-radius:999px;padding:3px 10px;
+  }
+  .shot p{font-size:.86rem;color:var(--txt-2);margin-bottom:14px}
+  canvas{
+    width:100%;height:auto;display:block;border-radius:var(--r-md);
+    border:1px solid var(--stroke);background:#000;
+  }
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer;
+    font-family:'Sora',sans-serif;font-weight:900;font-size:.82rem;
+    text-transform:uppercase;letter-spacing:.03em;
+    padding:11px 20px;border-radius:var(--r-md);
+    border:1px solid var(--stroke);background:var(--primary);color:var(--primary-ink);
+    box-shadow:var(--shadow);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:var(--surface-2);color:var(--txt);border-color:var(--stroke-2)}
+  .btn:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+  .bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:30px}
+  .state{font-size:.84rem;color:var(--txt-2);min-height:1.4em;margin-top:10px}
+  @media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Promo image studio</h1>
+  <p class="lede">
+    Four ready-to-post images, drawn from the real brand files. Save them one by
+    one, or grab all four at once.
+  </p>
+  <div class="note">
+    <strong>Why this page exists:</strong> the images are generated from
+    <code>logo acolyte.png</code> and <code>icone acolyte.png</code> instead of
+    being redrawn by hand — so they cannot drift away from the actual logo.
+    Change the logo files, reload, and every image follows.
+  </div>
+
+  <div class="bar">
+    <button class="btn" id="all">⬇ Download all four</button>
+    <button class="btn ghost" id="again">↻ Redraw</button>
+  </div>
+
+  <section class="shot">
+    <div class="shot-head"><h2>1 · Link preview</h2><span class="dim">1200 × 630</span></div>
+    <p>The card that appears when the link is shared. It saves as
+       <code>og-image.png</code> — drop it next to <code>index.html</code> and it
+       replaces the current preview with no other change, since that is the exact
+       filename the meta tags already point to.</p>
+    <canvas id="c1" width="1200" height="630"></canvas>
+    <button class="btn ghost" data-dl="c1" data-name="og-image.png">⬇ Save as og-image.png</button>
+  </section>
+
+  <section class="shot">
+    <div class="shot-head"><h2>2 · What it does</h2><span class="dim">1200 × 630</span></div>
+    <p>Three claims, no filler. For posts that need to explain the app rather
+       than just name it.</p>
+    <canvas id="c2" width="1200" height="630"></canvas>
+    <button class="btn ghost" data-dl="c2" data-name="acolyte-features.png">⬇ Save</button>
+  </section>
+
+  <section class="shot">
+    <div class="shot-head"><h2>3 · Works offline</h2><span class="dim">1080 × 1080</span></div>
+    <p>Square, for Instagram and store galleries. Leads on the one thing most
+       travel apps do not offer.</p>
+    <canvas id="c3" width="1080" height="1080"></canvas>
+    <button class="btn ghost" data-dl="c3" data-name="acolyte-offline.png">⬇ Save</button>
+  </section>
+
+  <section class="shot">
+    <div class="shot-head"><h2>4 · The logo, on its own</h2><span class="dim">1600 × 900</span></div>
+    <p>The wordmark large and uncluttered, with the monogram shown beside it. For
+       press kits, partner decks, and anywhere the mark has to be presented
+       properly.</p>
+    <canvas id="c4" width="1600" height="900"></canvas>
+    <button class="btn ghost" data-dl="c4" data-name="acolyte-logo.png">⬇ Save</button>
+  </section>
+
+  <p class="state" id="state" role="status">Loading fonts and brand files…</p>
+</div>
+
+<script>
+/* ============================================================
+   DRAWING
+   ------------------------------------------------------------
+   Two things must be ready before a single pixel is drawn: the webfonts
+   (otherwise the canvas silently falls back to a system face and every image
+   looks nothing like the app) and the brand PNGs. Both are awaited.
+============================================================ */
+const BG = '#121212', CARD = '#1C1C1C';
+const YEL = '#FFE600', INK = '#141414', TXT = '#F2F1EC', TXT2 = '#A5A49D';
+const HAIR = 'rgba(255,255,255,.11)';
+const etat = document.getElementById('state');
+
+/* The source files carry a wide white margin. We crop to the artwork before
+   using it — otherwise every composition would be padded by an invisible frame
+   we cannot control. */
+function crop(img){
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0);
+  const d = g.getImageData(0, 0, c.width, c.height).data;
+  let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+  for(let y = 0; y < c.height; y++){
+    for(let x = 0; x < c.width; x++){
+      const i = (y * c.width + x) * 4;
+      /* "far enough from white to be artwork" — a plain threshold would keep
+         the faint vignette baked into the source files. */
+      const loin = 255 - Math.min(d[i], d[i + 1], d[i + 2]);
+      if(d[i + 3] > 8 && loin > 40){
+        if(x < x0) x0 = x;
+        if(x > x1) x1 = x;
+        if(y < y0) y0 = y;
+        if(y > y1) y1 = y;
+      }
+    }
+  }
+  if(x1 < 0) return { c, x:0, y:0, w:c.width, h:c.height };
+  return { c, x:x0, y:y0, w:x1 - x0 + 1, h:y1 - y0 + 1 };
+}
+/* Same method as the app icons: the PNGs sit on opaque white, so the alpha is
+   built from "distance to white". A hard cutoff would leave a pale fringe along
+   the antialiased edges. */
+function detour(src){
+  const { c, x, y, w, h } = src;
+  const out = document.createElement('canvas');
+  out.width = w; out.height = h;
+  const g = out.getContext('2d');
+  g.drawImage(c, x, y, w, h, 0, 0, w, h);
+  const im = g.getImageData(0, 0, w, h), d = im.data;
+  for(let i = 0; i < d.length; i += 4){
+    const loin = 255 - Math.min(d[i], d[i + 1], d[i + 2]);
+    d[i + 3] = loin > 36 ? 255 : Math.round(loin * 255 / 36);
+  }
+  g.putImageData(im, 0, 0);
+  return out;
+}
+function poser(g, img, cx, cy, maxW, maxH){
+  const e = Math.min(maxW / img.width, maxH / img.height);
+  const w = img.width * e, h = img.height * e;
+  g.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+  return { w, h };
+}
+function coinsRonds(g, x, y, w, h, r){
+  g.beginPath();
+  if(g.roundRect){ g.roundRect(x, y, w, h, r); return; }
+  r = Math.min(r, w / 2, h / 2);            /* repli : Safari < 16 */
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+/* Wraps text and RETURNS the height it used, so callers can stack blocks
+   without hard-coding line positions. */
+function lignes(g, texte, x, y, maxW, pas){
+  const mots = String(texte).split(' ');
+  let ligne = '', n = 0;
+  for(const mot of mots){
+    const essai = ligne ? ligne + ' ' + mot : mot;
+    if(g.measureText(essai).width > maxW && ligne){
+      g.fillText(ligne, x, y + n * pas); ligne = mot; n++;
+    } else ligne = essai;
+  }
+  if(ligne){ g.fillText(ligne, x, y + n * pas); n++; }
+  return n * pas;
+}
+/* A faint dotted field: gives the flat background some texture without adding
+   anything the eye has to read. */
+function grain(g, w, h, pas, alpha){
+  g.fillStyle = 'rgba(255,255,255,' + alpha + ')';
+  for(let y = pas; y < h; y += pas)
+    for(let x = pas; x < w; x += pas) g.fillRect(x, y, 1.5, 1.5);
+}
+
+/* ---------- 1 · link preview ---------- */
+function dessin1(g, W, H, MOT){
+  g.fillStyle = BG; g.fillRect(0, 0, W, H);
+  grain(g, W, H, 34, .045);
+  /* a wide yellow glow bleeding off the right edge — an accent, not a slab */
+  g.beginPath(); g.arc(W + 40, H / 2, 330, 0, Math.PI * 2);
+  g.fillStyle = 'rgba(255,230,0,.10)'; g.fill();
+
+  poser(g, MOT, W / 2, H / 2 - 52, W * 0.66, 200);
+  g.textAlign = 'center';
+  g.fillStyle = YEL;
+  g.font = '900 25px Sora, sans-serif';
+  g.fillText('YOUR TRAVEL COPILOT', W / 2, H / 2 + 86);
+  g.fillStyle = TXT2;
+  g.font = '600 26px Inter, sans-serif';
+  lignes(g, 'Describe the trip you want. Acolyte picks the destination, compares the transport, and builds your plan day by day.', W / 2, H / 2 + 140, W * 0.68, 36);
+  g.textAlign = 'left';
+}
+
+/* ---------- 2 · what it does ---------- */
+function dessin2(g, W, H, MOT){
+  g.fillStyle = BG; g.fillRect(0, 0, W, H);
+  grain(g, W, H, 34, .04);
+  poser(g, MOT, 150 + 190, 92, 380, 76);
+  g.fillStyle = TXT;
+  g.font = '900 54px Sora, sans-serif';
+  g.fillText('One sentence in.', 150, 232);
+  g.fillStyle = YEL;
+  g.fillText('A whole trip out.', 150, 296);
+
+  const cartes = [
+    ['🧭', 'Picks the place', 'From a vague idea to a real destination that fits your budget and your dates.'],
+    ['🌱', 'Compares the CO₂', 'Train, car or plane — price, duration and carbon, side by side.'],
+    ['📴', 'Works offline', 'Map and itinerary stay readable on the plane and abroad, with no data.'],
+  ];
+  const lg = 300, gap = 25, y = 368, h = 200;
+  let x = 150;
+  for(const [emo, titre, corps] of cartes){
+    g.fillStyle = CARD; coinsRonds(g, x, y, lg, h, 18); g.fill();
+    g.strokeStyle = HAIR; g.lineWidth = 1.5; g.stroke();
+    g.font = '400 34px system-ui, sans-serif'; g.fillStyle = TXT;
+    g.fillText(emo, x + 24, y + 52);
+    g.font = '900 21px Sora, sans-serif'; g.fillStyle = TXT;
+    g.fillText(titre.toUpperCase(), x + 24, y + 92);
+    g.font = '500 17px Inter, sans-serif'; g.fillStyle = TXT2;
+    lignes(g, corps, x + 24, y + 124, lg - 48, 25);
+    x += lg + gap;
+  }
+  g.font = '800 19px Sora, sans-serif'; g.fillStyle = TXT2;
+  g.fillText('Free · installs like an app · no account needed to try', 150, H - 46);
+}
+
+/* ---------- 3 · offline, square ---------- */
+function dessin3(g, W, H, MONO){
+  g.fillStyle = BG; g.fillRect(0, 0, W, H);
+  grain(g, W, H, 40, .05);
+  /* the one large flat area: a yellow band, slightly tilted */
+  g.save();
+  g.translate(W / 2, H / 2); g.rotate(-0.055);
+  g.fillStyle = YEL; g.fillRect(-W, -108, W * 2, 216);
+  g.restore();
+
+  poser(g, MONO, W / 2, 250, 260, 260);
+
+  g.textAlign = 'center';
+  g.fillStyle = INK;
+  g.font = '900 106px Sora, sans-serif';
+  g.fillText('OFFLINE', W / 2, H / 2 + 8);
+  g.font = '900 34px Sora, sans-serif';
+  g.fillText('STILL WORKS', W / 2, H / 2 + 62);
+
+  g.fillStyle = TXT;
+  g.font = '900 40px Sora, sans-serif';
+  g.fillText('ACOLYTE', W / 2, H - 232);
+  g.fillStyle = TXT2;
+  g.font = '600 27px Inter, sans-serif';
+  lignes(g, 'Your map, your itinerary and your tickets stay readable on the plane, in the metro, and abroad with no data plan.', W / 2, H - 180, W * 0.74, 38);
+  g.textAlign = 'left';
+}
+
+/* ---------- 4 · the logo on its own ---------- */
+function dessin4(g, W, H, MOT, MONO){
+  /* Deliberately plain: this is a press-kit sheet, not a poster. Nothing here
+     competes with the mark. */
+  g.fillStyle = BG; g.fillRect(0, 0, W, H);
+  grain(g, W, H, 46, .035);
+
+  poser(g, MOT, W / 2, H / 2 - 66, W * 0.60, 250);
+
+  g.strokeStyle = HAIR; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(W / 2 - 300, H / 2 + 132); g.lineTo(W / 2 + 300, H / 2 + 132); g.stroke();
+
+  const m = poser(g, MONO, W / 2 - 258, H / 2 + 214, 74, 74);
+  g.fillStyle = TXT;
+  g.font = '900 27px Sora, sans-serif';
+  g.fillText('THE MONOGRAM', W / 2 - 258 + m.w / 2 + 26, H / 2 + 206);
+  g.fillStyle = TXT2;
+  g.font = '500 21px Inter, sans-serif';
+  g.fillText('used for the app icon and the favicon', W / 2 - 258 + m.w / 2 + 26, H / 2 + 238);
+
+  g.textAlign = 'center';
+  g.fillStyle = TXT2;
+  g.font = '800 20px Sora, sans-serif';
+  g.fillText('ACOLYTE — YOUR TRAVEL COPILOT', W / 2, H - 58);
+  g.textAlign = 'left';
+}
+
+/* ---------- orchestration ---------- */
+function charge(src){
+  return new Promise(function (ok, ko){
+    const i = new Image();
+    i.onload = function (){ ok(i); };
+    i.onerror = function (){ ko(new Error('could not load ' + src)); };
+    i.src = src;
+  });
+}
+let MOT = null, MONO = null;
+
+async function tout(){
+  etat.textContent = 'Loading fonts and brand files…';
+  /* Fonts FIRST. Draw before they land and the canvas silently uses a fallback
+     face — the images would look nothing like the app. */
+  try{
+    await Promise.all([
+      document.fonts.load('900 106px Sora'),
+      document.fonts.load('900 27px Sora'),
+      document.fonts.load('600 27px Inter'),
+      document.fonts.ready,
+    ]);
+  }catch(e){ /* worst case: a fallback face, still a usable image */ }
+
+  if(!MOT || !MONO){
+    try{
+      const paire = await Promise.all([charge('logo acolyte.png'), charge('icone acolyte.png')]);
+      MOT = detour(crop(paire[0]));
+      MONO = detour(crop(paire[1]));
+    }catch(e){
+      etat.textContent = '⚠️ ' + e.message + ' — the file must sit next to promo.html.';
+      return;
+    }
+  }
+
+  const plans = [
+    ['c1', function (g, W, H){ dessin1(g, W, H, MOT); }],
+    ['c2', function (g, W, H){ dessin2(g, W, H, MOT); }],
+    ['c3', function (g, W, H){ dessin3(g, W, H, MONO); }],
+    ['c4', function (g, W, H){ dessin4(g, W, H, MOT, MONO); }],
+  ];
+  for(const paire of plans){
+    const cv = document.getElementById(paire[0]);
+    const g = cv.getContext('2d');
+    g.clearRect(0, 0, cv.width, cv.height);
+    g.textBaseline = 'alphabetic';
+    paire[1](g, cv.width, cv.height);
+  }
+  etat.textContent = 'Ready — four images drawn from the current brand files.';
+}
+
+function garder(id, nom){
+  const cv = document.getElementById(id);
+  const a = document.createElement('a');
+  a.download = nom;
+  a.href = cv.toDataURL('image/png');
+  a.click();
+}
+document.addEventListener('click', function (e){
+  const b = e.target.closest('[data-dl]');
+  if(b){ garder(b.dataset.dl, b.dataset.name); return; }
+  if(e.target.closest('#again')) tout();
+  if(e.target.closest('#all')){
+    /* Staggered on purpose: fired all at once, browsers keep only the first
+       download. 350 ms apart and all four land. */
+    const l = [].slice.call(document.querySelectorAll('[data-dl]'));
+    l.forEach(function (btn, i){
+      setTimeout(function (){ garder(btn.dataset.dl, btn.dataset.name); }, i * 350);
+    });
+  }
+});
+tout();
+</script>
+</body>
+</html>

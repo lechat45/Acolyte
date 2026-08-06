@@ -1,0 +1,155 @@
+# ============================================================
+# ACOLYTE — LE SITEMAP SUIT LES ARTICLES
+# ------------------------------------------------------------
+# ⚠️ LE PROBLÈME QUE ÇA RÈGLE. Chaque article a maintenant sa propre adresse
+# (?a=le-slug), mais Google ne peut pas les DEVINER : elles n'apparaissent
+# nulle part dans le HTML servi, puisque la liste est chargée en JavaScript
+# depuis Val Town. Sans ce fichier, les articles restent invisibles quoi qu'on
+# fasse d'autre côté balises.
+#
+# Ce workflow lit la liste des articles publiés et réécrit sitemap.xml avec une
+# entrée par article. C'est ce qui les fait entrer dans l'index.
+#
+# Gratuit : sur un dépôt PUBLIC, GitHub Actions ne décompte aucune minute.
+#
+# ---- INSTALLATION (une seule fois) ----
+# Dépôt → Settings → Secrets and variables → Actions → onglet « Variables » →
+#   New repository variable
+#   Nom  : ACOLYTE_BACKEND
+#   Valeur : l'adresse du backend, sans barre oblique finale
+#            (la même que « proxy » dans config.js)
+# Puis Settings → Actions → General → Workflow permissions →
+#   cocher « Read and write permissions » (sinon le commit est refusé).
+# ============================================================
+name: Sitemap du blog
+
+on:
+  schedule:
+    # Deux fois par jour : les articles sortent toutes les heures, mais Google
+    # ne relit pas un sitemap plus souvent. Inutile de commiter 24 fois.
+    - cron: '17 5,17 * * *'
+  workflow_dispatch: {}        # bouton « Run workflow » pour tester tout de suite
+
+permissions:
+  contents: write              # il doit pouvoir commiter le sitemap
+
+concurrency:
+  group: sitemap-blog
+  cancel-in-progress: false
+
+jobs:
+  sitemap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construire le sitemap
+        env:
+          BACKEND: ${{ vars.ACOLYTE_BACKEND }}
+          SITE: https://lechat45.github.io/Acolyte/
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const BACKEND = (process.env.BACKEND || '').replace(/\/+$/, '');
+          const SITE = process.env.SITE;
+
+          const jour = d => new Date(d || Date.now()).toISOString().slice(0, 10);
+          const xmlEsc = s => String(s).replace(/[&<>"']/g,
+            c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;' }[c]));
+
+          async function articles() {
+            if (!BACKEND) {
+              console.log('⚠️ variable ACOLYTE_BACKEND absente : sitemap réduit à l’accueil.');
+              return [];
+            }
+            const r = await fetch(BACKEND + '/blog', { signal: AbortSignal.timeout(30000) });
+            if (!r.ok) throw new Error('/blog a répondu ' + r.status);
+            const d = await r.json();
+            return Array.isArray(d.articles) ? d.articles : [];
+          }
+
+          let liste = [];
+          try {
+            liste = await articles();
+          } catch (e) {
+            // ⚠️ On NE réécrit PAS un sitemap vide si le backend est en panne :
+            // annoncer à Google que les pages ont disparu les ferait désindexer.
+            console.error('Backend injoignable : ' + e.message);
+            console.error('sitemap.xml laissé tel quel — c’est voulu.');
+            process.exit(0);
+          }
+
+          // Le slug doit être propre : il finit dans un fichier public.
+          const ok = s => /^[a-z0-9][a-z0-9-]{0,79}$/.test(s);
+          const vus = new Set();
+          const urls = [];
+          for (const a of liste) {
+            const slug = String(a.slug || '');
+            if (!ok(slug) || vus.has(slug)) continue;
+            vus.add(slug);
+            urls.push({ loc: SITE + '?a=' + encodeURIComponent(slug), lastmod: jour(a.quand),
+                        titre: String(a.titre || slug), resume: String(a.resume || a.sous_titre || ''),
+                        quand: a.quand });
+          }
+
+          const xml = `<?xml version="1.0" encoding="UTF-8"?>
+          <!-- ⚠️ FICHIER GÉNÉRÉ par .github/workflows/sitemap-blog.yml.
+               Ne le modifie pas à la main : le prochain passage l'écrasera.
+               Une entrée pour l'accueil, puis une par article publié. -->
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <url>
+              <loc>${SITE}</loc>
+              <lastmod>${jour()}</lastmod>
+            </url>
+          ${urls.map(u => `  <url>
+              <loc>${xmlEsc(u.loc)}</loc>
+              <lastmod>${u.lastmod}</lastmod>
+            </url>`).join('\n')}
+          </urlset>
+          `.replace(/^ {10}/gm, '').replace(/^ {2}<url>/gm, '  <url>');
+
+          fs.writeFileSync('sitemap.xml', xml);
+          console.log(`sitemap.xml écrit : ${urls.length} article(s) + l’accueil.`);
+
+          // ---- FLUX RSS ----
+          // ⚠️ Presque gratuit : la liste des articles est DÉJÀ chargée pour le
+          // sitemap. Un second fichier dans le même passage, et les gens qui
+          // aiment le journal peuvent le suivre sans revenir vérifier.
+          // Le format RSS 2.0 plutôt qu'Atom : tous les lecteurs le lisent.
+          const rfc822 = (d) => new Date(d || Date.now()).toUTCString();
+          const items = urls.slice(0, 40).map(u => `  <item>
+            <title>${xmlEsc(u.titre)}</title>
+            <link>${xmlEsc(u.loc)}</link>
+            <guid isPermaLink="true">${xmlEsc(u.loc)}</guid>
+            <pubDate>${rfc822(u.quand)}</pubDate>
+            <description>${xmlEsc(u.resume)}</description>
+          </item>`).join('\n');
+          const rss = `<?xml version="1.0" encoding="UTF-8"?>
+          <!-- FICHIER GÉNÉRÉ par .github/workflows/sitemap-blog.yml. -->
+          <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+            <channel>
+              <title>Le journal d'Acolyte</title>
+              <link>${SITE}</link>
+              <atom:link href="${SITE}feed.xml" rel="self" type="application/rss+xml"/>
+              <description>Merveilles du monde, grandes villes et lieux qui valent le détour.</description>
+              <language>fr</language>
+              <lastBuildDate>${rfc822()}</lastBuildDate>
+          ${items}
+            </channel>
+          </rss>
+          `.replace(/^ {10}/gm, '');
+          fs.writeFileSync('feed.xml', rss);
+          console.log(`feed.xml écrit : ${Math.min(urls.length, 40)} article(s).`);
+          EOF
+
+      - name: Commiter si ça a changé
+        run: |
+          if git diff --quiet -- sitemap.xml feed.xml; then
+            echo "Aucun changement — rien à commiter."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sitemap.xml feed.xml
+          git commit -m "journal : plan du site et flux RSS mis à jour"
+          git push

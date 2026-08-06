@@ -1,0 +1,28 @@
+# Outils locaux
+.claude/
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Document de travail (pas nécessaire au site — retire cette ligne si tu veux le publier)
+app.pdf
+
+# Si un jour tu passes en "mode test" avec de vraies clés dans config.js,
+# décommente la ligne suivante AVANT de committer :
+# config.js
+config.local.js
+.env
+.env.*
+
+# Fichier de déploiement Val Town : REGÉNÉRÉ par `node outils/valtown-build.js`
+# depuis valtown-backend.js. Le versionner créerait deux vérités pour le même
+# code — et c'est toujours la copie générée qu'on finit par modifier à la main.
+valtown-backend.deploy.js
+
+# Éditeurs et journaux
+.vscode/
+.idea/
+*.swp
+*~
+*.log
+desktop.ini
