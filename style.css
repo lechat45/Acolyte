@@ -3533,6 +3533,16 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
     border-bottom:1px solid var(--stroke);
     margin:0 calc(var(--wrap-pad, 18px) * -1) 30px;
     padding:0 var(--wrap-pad, 18px);
+    /* ⚠️ UN FOND OPAQUE EST OBLIGATOIRE ICI. Une règle plus haute dans ce
+       fichier pose position:sticky sur l'en-tête (c'est un bon choix : les
+       onglets restent atteignables au défilement). Mais je ne posais aucun
+       fond : mesuré au défilement, la carte d'en-tête passait VISIBLEMENT
+       derrière la barre — elementsFromPoint au milieu de la barre renvoyait
+       .hero-deco juste sous elle. L'ancienne règle réglait ça avec un voile en
+       dégradé ; un aplat est plus simple et plus net.
+       Le fond doit être celui de la PAGE, pas --secondary : la barre n'est pas
+       une carte posée dessus, c'est un bord de l'interface. */
+    background:var(--bg);
   }
   /* entre 900 et 1080 px la colonne de gauche n'existe pas encore : le logo
      reste dans la barre, à gauche des onglets. Au-delà, il est masqué. */
