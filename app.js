@@ -11436,3 +11436,158 @@ function asstMonte(){
   $('#asstUndo').onclick = asstAnnule;
 }
 asstMonte();
+
+/* ============================================================
+   VÉRIFICATION DES HORAIRES — le défaut de fiabilité
+   ------------------------------------------------------------
+   C'est le reproche fait à tous les planificateurs qui s'appuient sur les
+   connaissances figées d'un modèle : ils « manquent régulièrement les
+   fermetures ». Un musée fermé le mardi se retrouve dans le programme, et
+   l'utilisateur ne le découvre que devant la porte.
+
+   On interroge OpenStreetMap (gratuit, sans clé) pour les horaires réels des
+   lieux du programme.
+
+   ⚠️ RÈGLE ABSOLUE ICI : UNE ALERTE FAUSSE EST PIRE QUE PAS D'ALERTE. Le
+   format opening_hours d'OSM est une spécification entière (congés scolaires,
+   « Su[1] », semaines paires, exceptions par date…). On ne prétend pas le lire.
+   On ne signale QUE les cas dont la lecture est certaine :
+     · une journée explicitement fermée (« Mo off », « Tu closed ») ;
+     · une liste de jours d'ouverture qui EXCLUT le jour prévu (« Tu-Su … »).
+   Tout le reste — 24/7, horaires par saison, syntaxe qu'on ne reconnaît pas —
+   ne produit RIEN. Le silence est le comportement correct par défaut.
+
+   ⚠️ Et l'absence d'un lieu dans OSM ne veut PAS dire qu'il n'existe pas :
+   OSM est incomplet. On ne signale donc jamais « ce lieu n'existe pas ».
+============================================================ */
+const OSM_JOURS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+/* Renvoie true SEULEMENT si la règle dit de façon certaine que c'est fermé ce
+   jour-là. Dans le doute : false. */
+function osmFermeLe(oh, jourSem){
+  if(!oh) return false;
+  const s = String(oh).trim();
+  if(/^24\/7$/i.test(s)) return false;
+  /* On refuse tout ce qui contient de la syntaxe qu'on ne sait pas lire :
+     semaines, dates, congés, ordinaux. Mieux vaut se taire. */
+  if(/week|:\s*\w+\s*\d{4}|\bPH\b|\bSH\b|\[|\d{4}|,\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(s)) return false;
+  const code = OSM_JOURS[jourSem];
+  const dev = j => OSM_JOURS.indexOf(j);
+  /* 1. fermeture explicite : « Mo off », « Tu-We closed » */
+  for(const m of s.matchAll(/\b(Mo|Tu|We|Th|Fr|Sa|Su)(?:\s*-\s*(Mo|Tu|We|Th|Fr|Sa|Su))?\s*(?:off|closed)\b/gi)){
+    const a = dev(m[1][0].toUpperCase() + m[1][1].toLowerCase());
+    const b = m[2] ? dev(m[2][0].toUpperCase() + m[2][1].toLowerCase()) : a;
+    for(let k = 0; k < 7; k++){ if(OSM_JOURS[(a + k) % 7] === code) return true; if((a + k) % 7 === b) break; }
+  }
+  /* 2. liste de jours ouverts qui n'inclut pas le nôtre */
+  const plages = [...s.matchAll(/\b(Mo|Tu|We|Th|Fr|Sa|Su)(?:\s*-\s*(Mo|Tu|We|Th|Fr|Sa|Su))?(?=[\s,]*\d{1,2}:)/gi)];
+  if(!plages.length) return false;
+  const ouverts = new Set();
+  for(const m of plages){
+    const a = dev(m[1][0].toUpperCase() + m[1][1].toLowerCase());
+    const b = m[2] ? dev(m[2][0].toUpperCase() + m[2][1].toLowerCase()) : a;
+    for(let k = 0; k < 7; k++){ ouverts.add(OSM_JOURS[(a + k) % 7]); if((a + k) % 7 === b) break; }
+  }
+  return !ouverts.has(code);
+}
+
+/* Relève les horaires des lieux nommés autour du voyage. Même chemin réseau que
+   osmStays : miroirs, délai, repli silencieux, cache dans state. */
+async function osmHoraires(lat, lon, radiusM = 12000){
+  const ck = `osm_oh_${lat.toFixed(3)}_${lon.toFixed(3)}_${radiusM}`;
+  if(state.cache[ck]) return state.cache[ck];
+  if(netSlow()) return {};
+  const q = `[out:json][timeout:20];nwr(around:${radiusM},${lat},${lon})`
+    + `[name]["opening_hours"];out center 400;`;
+  let d = null;
+  for(const url of OVERPASS_URLS){
+    try{
+      const r = await fetchT(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(q)
+      }, netTimeout(12000));
+      if(r.status === 429 || r.status >= 500) continue;
+      if(!r.ok) return {};
+      d = await r.json(); break;
+    }catch(e){ _netFails++; }
+  }
+  if(!d) return {};
+  const map = {};
+  for(const e of (d.elements || [])){
+    const n = e.tags?.name, oh = e.tags?.opening_hours;
+    if(n && oh) map[n.toLowerCase()] = oh;
+  }
+  state.cache[ck] = map; save();
+  return map;
+}
+
+/* Confronte le programme aux horaires réels. Renvoie la liste des moments dont
+   le lieu est CERTAINEMENT fermé ce jour-là.
+   ⚠️ On a besoin de la DATE de chaque journée pour connaître le jour de la
+   semaine. Sans date de départ, on ne peut rien conclure — et on ne devine pas :
+   la fonction renvoie simplement une liste vide. */
+async function osmVerifieProgramme(){
+  const dep = state.trip?.depart || state.depart;
+  const c = state.trip?.coords || state.coords;
+  if(!dep || !c?.lat) return { alertes: [], raison: 'sansDate' };
+  const map = await osmHoraires(c.lat, c.lon);
+  if(!Object.keys(map).length) return { alertes: [], raison: 'sansDonnees' };
+  const alertes = [];
+  for(const j of Object.keys(state.cache?.days || {})){
+    const etapes = tlEtapes(Number(j));
+    if(!etapes) continue;
+    const d = new Date(dep);
+    if(isNaN(d)) return { alertes: [], raison: 'sansDate' };
+    d.setDate(d.getDate() + (Number(j) - 1));
+    const jourSem = d.getDay();
+    etapes.forEach((e, i) => {
+      /* On cherche le lieu, puis le titre : souvent le titre EST le nom du
+         musée, alors que « lieu » porte le quartier. */
+      for(const cle of [e.lieu, e.titre]){
+        const oh = cle && map[String(cle).toLowerCase()];
+        if(oh && osmFermeLe(oh, jourSem)){
+          alertes.push({ jour: Number(j), etape: i, titre: e.titre, horaires: oh,
+                         jourNom: ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'][jourSem] });
+          break;
+        }
+      }
+    });
+  }
+  return { alertes, raison: null };
+}
+/* Bouton dans la barre de l'assistant : la vérification est un APPEL RÉSEAU de
+   plusieurs secondes, elle ne doit pas partir toute seule à chaque affichage. */
+function osmMonteBouton(){
+  const bar = $('#asstBar');
+  if(!bar || $('#asstOh')) return;
+  const EN = isEN();
+  const b = document.createElement('button');
+  b.className = 'asst-oh'; b.id = 'asstOh'; b.type = 'button';
+  b.textContent = EN ? 'Check opening hours' : 'Vérifier les horaires';
+  bar.appendChild(b);
+  b.onclick = async () => {
+    const st = $('#asstEtat');
+    b.disabled = true;
+    if(st) st.textContent = EN ? 'Asking OpenStreetMap…' : 'Acolyte interroge OpenStreetMap…';
+    try{
+      const { alertes, raison } = await osmVerifieProgramme();
+      if(raison === 'sansDate'){
+        st.textContent = EN ? 'Set a departure date first — without it there is no weekday to check.'
+                            : 'Indique d’abord une date de départ — sans elle, aucun jour de la semaine à vérifier.';
+      }else if(raison === 'sansDonnees'){
+        st.textContent = EN ? 'OpenStreetMap did not answer. Nothing changed.'
+                            : 'OpenStreetMap n’a pas répondu. Rien n’a changé.';
+      }else if(!alertes.length){
+        st.textContent = EN ? 'Nothing certainly closed. (OpenStreetMap is incomplete — check the official page before booking.)'
+                            : 'Rien de certainement fermé. (OpenStreetMap est incomplet — vérifie la page officielle avant de réserver.)';
+      }else{
+        st.innerHTML = `<b>${alertes.length} ${EN ? 'possible closure(s)' : 'fermeture(s) à vérifier'}</b><br>`
+          + alertes.map(a => esc(`jour ${a.jour} · ${a.titre} — fermé le ${a.jourNom} (${a.horaires})`)).join('<br>');
+      }
+    }catch(e){
+      if(st) st.textContent = EN ? 'Check failed. Nothing changed.' : 'La vérification a échoué. Rien n’a changé.';
+    }finally{ b.disabled = false; }
+  };
+}
+osmMonteBouton();

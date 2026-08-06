@@ -4055,3 +4055,12 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
      soulignement du texte. */
   .asst-ligne input{min-height:44px;padding-bottom:14px}
 }
+
+/* Le bouton de vérification des horaires : secondaire, à côté d'« Annuler ». */
+.asst-oh{
+  display:inline-flex;align-items:center;background:none;border:0;box-shadow:none;
+  margin-top:10px;margin-right:14px;min-height:44px;padding:0 2px;
+  font-size:.8rem;font-weight:600;color:var(--txt-2);cursor:pointer;
+}
+.asst-oh:hover:not(:disabled){color:var(--txt);text-decoration:underline;text-underline-offset:3px}
+.asst-oh:disabled{opacity:.5;cursor:default}
