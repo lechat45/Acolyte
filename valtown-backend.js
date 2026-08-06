@@ -372,6 +372,59 @@ export default async function (request) {
      · /blog       appelé par l'action GitHub qui reconstruit le plan du site.
                    Ne renvoie que des articles DÉJÀ PUBLICS.
   ============================================================ */
+  /* ============================================================
+     MESURE D'AUDIENCE — DES COMPTEURS, PAS UN TRACEUR
+     ------------------------------------------------------------
+     But : savoir OÙ les visiteurs abandonnent. Combien arrivent, combien
+     créent un compte, combien vont au bout du questionnaire, combien génèrent
+     un voyage. Sans ça, toute décision de design est un pari.
+
+     ⚠️ CE QUI N'EST PAS ENREGISTRÉ, et c'est le cœur du dispositif :
+     aucune adresse IP, aucun identifiant de visiteur, aucun cookie, aucune
+     empreinte de navigateur, aucun horaire précis, aucun parcours individuel.
+     La table ne contient que (jour, nom de l'événement, nombre). Il est
+     MATHÉMATIQUEMENT impossible d'en reconstituer une personne : on ne stocke
+     pas de ligne par visite, on incrémente un entier.
+
+     Conséquence directe : ce ne sont pas des données personnelles au sens du
+     RGPD, et il n'y a pas de cookie — donc ni bandeau de consentement, ni
+     mention supplémentaire à ajouter. C'est le seul dessin qui permet de
+     mesurer sans rien demander au visiteur.
+
+     ⚠️ Liste BLANCHE d'événements. Sans elle, n'importe qui pourrait écrire
+     n'importe quelle clé dans la table et s'en servir de stockage gratuit — ou
+     y injecter du texte qui finirait affiché dans le panneau d'administration.
+  ============================================================ */
+  const STAT_CLES = new Set([
+    'arrivee', 'inscription', 'connexion',
+    'questions_finies', 'questions_passees',
+    'voyage_genere', 'voyage_ouvert', 'carte_ouverte', 'blog_ouvert',
+    'assistant_utilise', 'horaires_verifies', 'install'
+  ]);
+  async function statTable() {
+    await sqlite.execute(`CREATE TABLE IF NOT EXISTS aco_stats(
+      jour TEXT NOT NULL, cle TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY(jour, cle))`);
+  }
+  /* Route publique, en POST, sans authentification : le visiteur n'a pas de
+     compte au moment où il arrive, et c'est justement l'événement le plus
+     important à compter. Elle ne renvoie RIEN d'exploitable — pas même le
+     total — pour qu'elle ne serve pas à espionner le trafic du site. */
+  if (path === '/stat' && request.method === 'POST') {
+    try {
+      const b = await request.json().catch(() => ({}));
+      const cle = String(b?.cle || '');
+      if (!STAT_CLES.has(cle)) return json({ ok: false }, 204);
+      await statTable();
+      const jour = new Date().toISOString().slice(0, 10);
+      await sqlite.execute({
+        sql: `INSERT INTO aco_stats(jour, cle, n) VALUES(?, ?, 1)
+              ON CONFLICT(jour, cle) DO UPDATE SET n = n + 1`,
+        args: [jour, cle] });
+    } catch (e) { /* une mesure qui échoue ne doit JAMAIS gêner le visiteur */ }
+    return json({ ok: true });
+  }
+
   const SANS_ORIGINE = new Set(['/ping', '/promo/stop', '/blog/tick', '/blog']);
   if (!okOrigin && !SANS_ORIGINE.has(path)) return json({ error: 'Origine non autorisée' }, 403);
 
@@ -950,6 +1003,44 @@ Réponds UNIQUEMENT en JSON :
         + '<h1 style="font-size:1.3rem">C’est fait.</h1>'
         + '<p>Tu ne recevras plus d’offres de voyage d’Acolyte. Ton compte et tes voyages ne sont pas touchés.</p>',
         { status: 200, headers: { ...cors, 'Content-Type': 'text/html; charset=utf-8' } });
+    }
+
+    /* ---- Lecture des compteurs : administrateur seulement ----
+       ⚠️ Protégée alors que l'ÉCRITURE est publique, et c'est volontaire :
+       compter est anodin, mais le trafic d'un site est une information
+       commerciale. Même garde que le panneau promo. */
+    if (path === '/admin/stats') {
+      const adm = env('ADMIN_EMAIL').trim().toLowerCase();
+      const who = await sessionEmail(request);
+      if (!adm || !who || !safeEqual(who, adm)) return json({ error: 'Accès refusé' }, 403);
+      await statTable();
+      /* 60 jours : assez pour voir une tendance, assez court pour que la table
+         ne grossisse jamais au-delà de quelques centaines de lignes. */
+      const depuis = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
+      const rows = (await sqlite.execute({
+        sql: `SELECT jour, cle, n FROM aco_stats WHERE jour >= ? ORDER BY jour DESC`,
+        args: [depuis] })).rows || [];
+      const parJour = {}, totaux = {};
+      for (const r of rows) {
+        const j = String(r.jour ?? r[0]), c = String(r.cle ?? r[1]), n = Number(r.n ?? r[2]) || 0;
+        (parJour[j] = parJour[j] || {})[c] = n;
+        totaux[c] = (totaux[c] || 0) + n;
+      }
+      /* L'ENTONNOIR, calculé ici plutôt que dans l'interface : c'est la seule
+         lecture qui répond à « où est-ce qu'ils abandonnent ». Un taux brut
+         par événement ne le dit pas. */
+      const pc = (a, b) => b ? Math.round((a / b) * 100) : null;
+      const e = totaux;
+      return json({
+        ok: true, jours: parJour, totaux,
+        entonnoir: {
+          arrivees: e.arrivee || 0,
+          inscrits: e.inscription || 0,           taux_inscription: pc(e.inscription, e.arrivee),
+          questions_au_bout: e.questions_finies || 0,
+          questions_passees: e.questions_passees || 0,
+          voyages_generes: e.voyage_genere || 0,  taux_voyage: pc(e.voyage_genere, e.inscription)
+        }
+      });
     }
 
     /* ---- Le panneau : administrateur seulement ---- */

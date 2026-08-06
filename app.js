@@ -5619,6 +5619,7 @@ const _e20 = $('#btnSignup'); if(_e20) _e20.onclick = async () => {
   if(!r.ok) return authErr(r.data.error || 'Inscription impossible.');
   /* le pseudo reste local : le serveur n'en a pas besoin */
   setUser({ email, pseudo, created: Date.now() });
+  statCompte('inscription');
   $('#vfEmail').textContent = email;
   authShow('authVerify');
   toast('📬 Code envoyé — pense à regarder tes indésirables');
@@ -6505,6 +6506,9 @@ function switchCat(cat){
   $('#catProfile').classList.toggle('hidden', cat !== 'profile');
   $('#catBlog')?.classList.toggle('hidden', cat !== 'blog');
   window.scrollTo({top:0});
+  /* Un compteur par ecran : c'est ce qui dit si le blog ou la carte servent
+     vraiment, ou si personne n'y va jamais. */
+  statCompte({ map:'carte_ouverte', blog:'blog_ouvert', trip:'voyage_ouvert' }[cat], true);
   if(cat === 'map') buildProjectMap();
   if(cat === 'profile'){ renderProfile(); renderSettings(); }
   if(cat === 'blog') openBlog();
@@ -11033,6 +11037,9 @@ const QZ = [
 var _qzI = 0;
 function qzFait(){ try{ return !!localStorage.getItem(QZ_KEY); }catch(e){ return true; } }
 function qzTermine(){
+  /* on distingue « repondu » de « passe » : c'est la difference entre un
+     questionnaire trop long et un questionnaire mal compris. */
+  statCompte(_qzI >= QZ.length - 1 ? 'questions_finies' : 'questions_passees');
   try{ localStorage.setItem(QZ_KEY, '1'); }catch(e){}
   const ov = $('#ovQz'); if(ov) ov.classList.remove('show');
   /* Les explications ENSUITE : Acolyte demande d'abord, raconte après. */
@@ -11346,6 +11353,7 @@ Règles :
    peut pas abîmer un voyage sans qu'on ait dit oui. */
 var _asstAvant = null;
 async function asstDemande(texte){
+  statCompte('assistant_utilise');
   if(!state.cache?.days || !Object.keys(state.cache.days).length){
     toast(isEN() ? 'No trip to modify yet' : 'Pas encore de voyage à modifier');
     return;
@@ -11571,6 +11579,7 @@ function osmMonteBouton(){
     b.disabled = true;
     if(st) st.textContent = EN ? 'Asking OpenStreetMap…' : 'Acolyte interroge OpenStreetMap…';
     try{
+      statCompte('horaires_verifies');
       const { alertes, raison } = await osmVerifieProgramme();
       if(raison === 'sansDate'){
         st.textContent = EN ? 'Set a departure date first — without it there is no weekday to check.'
@@ -11591,3 +11600,41 @@ function osmMonteBouton(){
   };
 }
 osmMonteBouton();
+
+/* ============================================================
+   MESURE D'AUDIENCE — CÔTÉ VISITEUR
+   ------------------------------------------------------------
+   On envoie UN MOT, celui de l'événement. Rien d'autre : ni identifiant, ni
+   adresse, ni horaire, ni parcours. Le serveur incrémente un entier par jour
+   et par événement (voir /stat dans valtown-backend.js).
+
+   ⚠️ Pas de cookie, pas d'identifiant de session, donc pas de bandeau de
+   consentement à ajouter : il n'y a aucune donnée personnelle à consentir.
+   C'est le seul dessin qui permet de mesurer sans rien demander.
+
+   ⚠️ TOTALEMENT FACULTATIF PAR CONSTRUCTION. Si le backend est éteint, hors
+   ligne, ou refuse l'origine, la fonction échoue en silence et l'app continue
+   exactement pareil. Une mesure ne doit jamais gêner celui qu'elle mesure.
+   ⚠️ keepalive : sans lui, l'envoi est annulé quand la page se ferme, et on
+   perdrait précisément les événements de fin de parcours.
+============================================================ */
+const STAT_DEJA = new Set();
+function statCompte(cle, uneFois = false){
+  /* Certains événements n'ont de sens qu'une fois par session (« arrivee ») :
+     les compter à chaque changement d'onglet gonflerait le chiffre sans rien
+     apprendre. */
+  if(uneFois){
+    if(STAT_DEJA.has(cle)) return;
+    STAT_DEJA.add(cle);
+  }
+  try{
+    if(!useBackend()) return;
+    fetch(`${API()}/stat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cle }),
+      keepalive: true
+    }).catch(() => {});
+  }catch(e){}
+}
+statCompte('arrivee', true);
