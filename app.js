@@ -4282,9 +4282,23 @@ function tlRender(jour){
 function tlSwap(jour, i, j){
   const et = tlEtapes(jour);
   if(!et || !et[i] || !et[j]) return;
+  /* ⚠️ LES HEURES RESTENT À LEUR PLACE, seul le contenu se déplace.
+     Avant, l'échange emportait l'objet ENTIER — donc son heure. Déplacer une
+     étape de 09:00 sous une étape de 11:00 produisait « 11:00 » puis « 09:00 » :
+     la journée cessait d'être chronologique, et les trajets calculés entre deux
+     étapes devenaient absurdes. C'est précisément l'incohérence géographique
+     qu'on veut éviter.
+     Un créneau appartient à la POSITION dans la journée, pas à l'activité :
+     échanger le musée et le déjeuner doit donner « le déjeuner à 09:00, le musée
+     à 11:00 », pas remonter 11:00 avant 09:00. */
+  const hi = et[i].heure, hj = et[j].heure;
   [et[i], et[j]] = [et[j], et[i]];
+  et[i].heure = hi; et[j].heure = hj;
   save();
   tlRender(jour);
+  /* Les trajets et la carte dépendent de l'ordre : sans ça, la carte garde
+     l'ancien tracé et le temps de marche annoncé ne correspond plus à rien. */
+  try{ buildProjectMap(); }catch(e){}
 }
 document.addEventListener('click', e => {
   const box = e.target.closest('[data-daybox]');
