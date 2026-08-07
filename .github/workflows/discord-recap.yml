@@ -1,0 +1,165 @@
+# ============================================================
+# Récapitulatif quotidien envoyé sur Discord
+# ------------------------------------------------------------
+# Une fois par jour, ce robot rassemble ce qui a changé aujourd'hui — les
+# articles publiés par le générateur et les nouveautés de l'application — et
+# les poste dans un salon Discord.
+#
+# POURQUOI CE ROBOT EXISTE. Un serveur Discord neuf est vide, et un salon vide
+# fait fuir : quelqu'un qui arrive, voit zéro message et repart. Le générateur
+# d'articles tourne déjà chaque heure ; il suffit de le raconter. Le serveur a
+# donc du contenu tous les jours sans que personne n'écrive rien.
+#
+# ⚠️ S'IL N'Y A RIEN DE NEUF, RIEN N'EST ENVOYÉ. Un message quotidien
+# « aujourd'hui : rien » est du bruit, et le bruit fait couper les
+# notifications — ce qui tue le salon plus sûrement que le silence.
+#
+# GRATUIT : les actions GitHub sont illimitées sur un dépôt public, et un
+# webhook Discord ne coûte rien. Aucune dépendance n'est installée.
+#
+# À CONFIGURER UNE FOIS :
+#   1. Discord → salon #annonces → Paramètres → Intégrations → Créer un webhook
+#      → Copier l'URL
+#   2. GitHub → Settings → Secrets and variables → Actions → onglet SECRETS
+#      (et non Variables : une URL de webhook permet d'écrire dans ton salon,
+#      c'est donc un secret) → New repository secret
+#      Nom : DISCORD_WEBHOOK
+#   Sans ce secret, le robot ne fait rien et ne se plaint pas.
+# ============================================================
+name: Récapitulatif Discord
+
+on:
+  schedule:
+    # 18h00 UTC, soit 20h en France en été : le récapitulatif arrive le soir,
+    # quand les gens lisent, et après que le générateur a travaillé la journée.
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rassembler et envoyer
+        env:
+          BACKEND: ${{ vars.ACOLYTE_BACKEND }}
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          SITE: https://lechat45.github.io/Acolyte/
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+
+          /* ⚠️ Tout est dans une fonction asynchrone. Ce script utilise
+             require() (CommonJS) ET await : Node 24 refuse de deviner entre les
+             deux et sort en ERR_AMBIGUOUS_MODULE_SYNTAX. C'est exactement ce qui
+             a cassé le workflow du sitemap, sur ce même dépôt. */
+          (async () => {
+            const WEBHOOK = process.env.WEBHOOK || '';
+            const BACKEND = (process.env.BACKEND || '').replace(/\/+$/, '');
+            const SITE = process.env.SITE;
+
+            if (!WEBHOOK) {
+              console.log('DISCORD_WEBHOOK absent : rien à faire. Voir l’en-tête du fichier.');
+              return;
+            }
+
+            /* Aujourd'hui, en heure de Paris — sinon un article publié à 23h
+               tomberait dans le récapitulatif du lendemain. */
+            const auj = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
+
+            /* ---- 1. Les articles publiés aujourd'hui ---- */
+            let articles = [];
+            if (BACKEND) {
+              try {
+                const r = await fetch(BACKEND + '/blog', { signal: AbortSignal.timeout(30000) });
+                if (!r.ok) throw new Error('/blog a répondu ' + r.status);
+                const d = await r.json();
+                articles = (Array.isArray(d.articles) ? d.articles : []).filter(a => {
+                  /* « quand » est un horodatage en millisecondes côté serveur. */
+                  const t = Number(a.quand);
+                  if (!t) return false;
+                  return new Date(t).toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' }) === auj;
+                });
+              } catch (e) { console.log('articles indisponibles : ' + e.message); }
+            }
+
+            /* ---- 2. Les nouveautés de l'application ----
+               Lues directement dans CHANGELOG, la source que voit l'utilisateur
+               dans son profil : une seule vérité, pas une liste recopiée. */
+            let nouveautes = [];
+            try {
+              const js = fs.readFileSync('app.js', 'utf8');
+              const bloc = js.match(/const CHANGELOG = \[([\s\S]*?)\n\];/);
+              if (bloc) {
+                /* On ne garde que l'entrée du jour. Le format est stable :
+                   { v:'7.1', date:'2026-08-06', titre:'…', items:[ '…', '…' ] } */
+                const re = new RegExp("\\{\\s*v:'([^']+)',\\s*date:'" + auj + "',\\s*titre:'([^']*)',\\s*items:\\s*\\[([\\s\\S]*?)\\]\\s*\\}");
+                const m = bloc[1].match(re);
+                if (m) {
+                  nouveautes = {
+                    version: m[1],
+                    titre: m[2].replace(/\\'/g, "'"),
+                    items: [...m[3].matchAll(/'((?:[^'\\]|\\.)*)'/g)]
+                      .map(x => x[1].replace(/\\'/g, "'")).slice(0, 8)
+                  };
+                }
+              }
+            } catch (e) { console.log('CHANGELOG illisible : ' + e.message); }
+
+            /* ---- 3. Rien de neuf → on se taît ---- */
+            if (!articles.length && !nouveautes.items) {
+              console.log('Rien de neuf aujourd’hui : aucun message envoyé (voulu).');
+              return;
+            }
+
+            /* ---- 4. Le message ----
+               Un « embed » Discord plutôt qu'un mur de texte : titre, sections,
+               et le jaune d'Acolyte comme liseré. 0xFFE600 = la couleur de la
+               marque, la même que dans le site. */
+            const champs = [];
+            if (nouveautes.items) {
+              champs.push({
+                name: '✨ Version ' + nouveautes.version + ' — ' + nouveautes.titre,
+                value: nouveautes.items.map(i => '• ' + i).join('\n').slice(0, 1024)
+              });
+            }
+            if (articles.length) {
+              champs.push({
+                name: '📰 ' + articles.length + ' nouvel' + (articles.length > 1 ? 's articles' : ' article'),
+                /* Chaque titre est un lien vers l'article : le récapitulatif
+                   ramène sur le site, il ne le remplace pas. */
+                value: articles.slice(0, 10)
+                  .map(a => '• [' + String(a.titre || a.sujet).replace(/[\[\]]/g, '') + '](' + SITE + '?a=' + encodeURIComponent(a.slug) + ')')
+                  .join('\n').slice(0, 1024)
+              });
+            }
+
+            const corps = {
+              username: 'Acolyte',
+              embeds: [{
+                title: 'Ce qui a changé aujourd’hui',
+                url: SITE,
+                color: 0xFFE600,
+                fields: champs,
+                footer: { text: new Date().toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'long' }) }
+              }]
+            };
+
+            const env = await fetch(WEBHOOK, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(corps)
+            });
+            /* Discord répond 204 sans corps quand tout va bien. */
+            if (!env.ok) {
+              console.error('Discord a répondu ' + env.status + ' : ' + (await env.text()).slice(0, 200));
+              process.exit(1);
+            }
+            console.log('Envoyé : ' + (nouveautes.items ? '1 nouveauté' : 'aucune nouveauté')
+              + ', ' + articles.length + ' article(s).');
+          })();
+          EOF
