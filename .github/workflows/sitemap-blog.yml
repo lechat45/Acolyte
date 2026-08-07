@@ -68,6 +68,14 @@ jobs:
             return Array.isArray(d.articles) ? d.articles : [];
           }
 
+          /* ⚠️ TOUT LE RESTE EST DANS UNE FONCTION ASYNCHRONE, et ce n'est pas
+             cosmétique. Le script utilise require() (CommonJS) et un await au
+             niveau racine (module ES). Node 20 tranchait tout seul ; Node 24
+             REFUSE de deviner et sort en erreur ERR_AMBIGUOUS_MODULE_SYNTAX.
+             GitHub a basculé ses exécuteurs sur Node 24 — le script n'a pas
+             changé, son interpréteur si. Enfermer l'await lève l'ambiguïté sans
+             toucher au reste. */
+          (async () => {
           let liste = [];
           try {
             liste = await articles();
@@ -140,6 +148,7 @@ jobs:
           `.replace(/^ {10}/gm, '');
           fs.writeFileSync('feed.xml', rss);
           console.log(`feed.xml écrit : ${Math.min(urls.length, 40)} article(s).`);
+          })();
           EOF
 
       - name: Commiter si ça a changé
