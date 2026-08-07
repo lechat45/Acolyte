@@ -267,6 +267,77 @@ titre('10. Sitemap');
   }
 }
 
+
+/* ============================================================
+   11. LE CONTRAT DU SERVEUR — on l'INTERROGE, on ne l'imagine pas
+   ------------------------------------------------------------
+   ⚠️ CE CONTRÔLE EXISTE À CAUSE DE LA PANNE LA PLUS COÛTEUSE DE CE PROJET.
+   Une route « /admin/stats » en double masquait l'originale, et le panneau
+   perdait les comptes créés, les voyages et la courbe d'inscriptions. J'avais
+   pourtant testé le panneau — mais avec des réponses que je FABRIQUAIS
+   moi-même, contenant évidemment les bonnes clés. Un test qui remplace le
+   serveur ne peut pas découvrir que le serveur répond mal.
+
+   Ici on appelle le VRAI backend et on vérifie que les clés attendues sont
+   présentes. C'est le seul contrôle du fichier qui touche le réseau.
+
+   ⚠️ INJOIGNABLE = AVERTISSEMENT, PAS ERREUR. Une coupure réseau, un backend
+   éteint ou une machine hors ligne ne sont pas des défauts du code : faire
+   échouer la publication pour ça rendrait le script inutilisable dans le train.
+   En revanche, un serveur qui RÉPOND mais sans les bonnes clés est un vrai
+   défaut, et là on échoue.
+
+   ⚠️ Le corps est dans une fonction asynchrone, pas en `await` racine. Ce
+   fichier utilise require() : mélanger les deux donne exactement l'erreur
+   ERR_AMBIGUOUS_MODULE_SYNTAX qui a cassé le workflow du sitemap sur Node 24.
+============================================================ */
+async function controleServeur(){
+  titre('11. Contrat du serveur (réseau)');
+  /* L'adresse vient de config.js : une seule source de vérité, jamais recopiée. */
+  const m = lire('config.js').match(/proxy:\s*'([^']*)'/);
+  const base = (m && m[1] || '').replace(/\/+$/, '');
+  if(!base){ warn('aucun proxy dans config.js — contrôle ignoré'); return; }
+
+  const appel = async (chemin) => {
+    try{
+      const r = await fetch(base + chemin, { signal: AbortSignal.timeout(15000) });
+      const txt = await r.text();
+      let data = null;
+      try{ data = JSON.parse(txt); }catch(e){}
+      return { statut: r.status, data, brut: txt.slice(0, 120) };
+    }catch(e){ return { erreur: e.message }; }
+  };
+
+  /* /ping : le backend tourne-t-il, et est-il à jour ? */
+  const ping = await appel('/ping');
+  if(ping.erreur){ warn('backend injoignable (' + ping.erreur + ') — contrôle ignoré'); return; }
+  if(ping.statut !== 200 || !ping.data?.ok){
+    err('/ping a répondu ' + ping.statut + ' : ' + ping.brut);
+    return;
+  }
+  ok('/ping — le backend répond');
+
+  /* /blog : la route dont dépendent le sitemap ET le flux RSS. */
+  const blog = await appel('/blog');
+  if(blog.erreur) warn('/blog injoignable : ' + blog.erreur);
+  else if(blog.statut !== 200) err('/blog a répondu ' + blog.statut + ' — le sitemap ne pourra pas se remplir');
+  else if(!Array.isArray(blog.data?.articles)) err('/blog ne renvoie pas de tableau « articles » : ' + blog.brut);
+  else ok('/blog — ' + blog.data.articles.length + ' article(s)');
+
+  /* /admin/stats : on ne peut pas l'appeler sans être administrateur, et c'est
+     voulu. Mais 403 prouve que la route EXISTE ; 404 prouve que le backend
+     déployé est plus vieux que le code d'ici. C'est ce que je n'avais pas su
+     voir, et c'est exactement ce qui rendait les comptes invisibles. */
+  const st = await appel('/admin/stats');
+  if(st.erreur) warn('/admin/stats injoignable');
+  else if(st.statut === 403) ok('/admin/stats — la route existe (403 = accès refusé, normal sans session)');
+  else if(st.statut === 404) err('/admin/stats absente du backend DÉPLOYÉ : recolle valtown-backend.deploy.js dans Val Town');
+  else warn('/admin/stats a répondu ' + st.statut + ' (inattendu, mais pas bloquant)');
+}
+
+/* Le verdict attend le contrôle réseau : sans ça le script sortirait avant que
+   la réponse du serveur n'arrive, et le résultat serait faux. */
+controleServeur().catch(e => warn('contrôle réseau interrompu : ' + e.message)).then(() => {
 /* ---------- Verdict ---------- */
 console.log('\n' + '─'.repeat(56));
 if (erreurs) {
@@ -278,3 +349,4 @@ console.log('✓ Rien de bloquant.' + (avert ? '  ' + avert + ' avertissement(s)
 console.log('  ⚠ Ce script ne remplace PAS un passage dans le navigateur :');
 console.log('    il ne voit ni un contraste trop faible, ni un texte qui déborde.');
 process.exit(0);
+});
