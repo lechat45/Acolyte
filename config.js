@@ -62,5 +62,15 @@ window.ACOLITE_KEYS = {
     booking: '',
     gyg: '',
     tp: ''
-  }
+  },
+
+  /* ▸ SERVEUR DISCORD — l'adresse d'invitation.
+     Tant que ce champ est vide, la ligne « Rejoindre la communauté » ne
+     s'affiche PAS dans le profil : proposer un lien mort est pire que ne rien
+     proposer.
+     ⚠️ Prends une invitation PERMANENTE (Discord → Inviter → Modifier le lien
+     → « Jamais » expirer, aucune limite d'utilisations). Un lien expiré dans un
+     vieux message, c'est un membre perdu sans qu'on le sache jamais.
+     Cette adresse est publique par nature : elle sert à faire entrer les gens. */
+  discord: ''
 };

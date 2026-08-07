@@ -10970,11 +10970,35 @@ function majNavTools(){
     const b = $(sel);
     if(b) b.style.display = proposable ? '' : 'none';
   });
+  /* La ligne du Discord n'apparaît que si l'adresse est renseignée dans
+     config.js. Proposer « rejoindre la communauté » et ouvrir une page morte est
+     pire que ne rien proposer — c'est la même règle que pour l'installation et
+     pour les liens d'affiliation : une invitation qu'on ne peut pas honorer ne
+     s'affiche pas. */
+  const dRow = $('#pfDiscordRow');
+  if(dRow) dRow.style.display = discordURL() ? '' : 'none';
+}
+/* Une seule lecture de l'adresse, avec le même repli que les autres réglages :
+   config.js d'abord, localStorage pour tester sans toucher au fichier. */
+function discordURL(){
+  const c = window.ACOLITE_KEYS || {};
+  let u = '';
+  try{ u = String(c.discord || localStorage.getItem('acolite_discord') || '').trim(); }
+  catch(e){ u = String(c.discord || '').trim(); }
+  /* ⚠️ On n'ouvre QUE du https, et seulement vers Discord. Cette valeur vient
+     d'un fichier de configuration, mais elle finit dans un window.open : si un
+     jour elle est remplie depuis ailleurs, on ne veut pas d'un javascript: */
+  return /^https:\/\/(discord\.gg|discord\.com|invite\.gg)\//i.test(u) ? u : '';
 }
 {
   const t = $('#ntTheme'); if(t) t.onclick = basculeTheme;
   const i = $('#ntInstall'); if(i) i.onclick = () => openInstall();
   const i2 = $('#pfInstTop'); if(i2) i2.onclick = () => openInstall();
+  const dc = $('#pfDiscord'); if(dc) dc.onclick = () => {
+    const u = discordURL();
+    /* noopener : sans lui, la page ouverte peut manipuler celle d'Acolyte */
+    if(u) window.open(u, '_blank', 'noopener,noreferrer');
+  };
   const m = $('#ntMe'); if(m) m.onclick = () => switchCat('profile');
   majNavTools();
 }
