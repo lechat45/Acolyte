@@ -1,13 +1,138 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Acolite — plan du site.
-     Une seule adresse : Acolite est une application monopage, tout le reste
-     (questionnaire, propositions, voyage, carte, profil) vit derrière la même
-     URL et n'est pas indexable séparément.
-     À déclarer dans la Search Console :
-     https://lechat45.github.io/Acolyte/sitemap.xml -->
+<!-- ⚠️ FICHIER GÉNÉRÉ par .github/workflows/sitemap-blog.yml.
+     Ne le modifie pas à la main : le prochain passage l'écrasera.
+     Une entrée pour l'accueil, puis une par article publié. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://lechat45.github.io/Acolyte/</loc>
+    <lastmod>2026-08-07</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=basilique-saint-marc</loc>
+    <lastmod>2026-08-06</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=chichen-itza</loc>
+    <lastmod>2026-08-06</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=chateau-de-neuschwanstein</loc>
+    <lastmod>2026-08-06</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=parthenon</loc>
+    <lastmod>2026-08-06</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=tour-de-pise</loc>
+    <lastmod>2026-08-06</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=opera-de-sydney</loc>
+    <lastmod>2026-08-06</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=statue-de-la-liberte</loc>
+    <lastmod>2026-08-06</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=palais-de-westminster</loc>
+    <lastmod>2026-08-06</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=tour-eiffel</loc>
+    <lastmod>2026-08-06</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=copenhague</loc>
+    <lastmod>2026-08-04</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=buenos-aires</loc>
+    <lastmod>2026-08-04</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=kyoto</loc>
+    <lastmod>2026-08-04</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=marrakech</loc>
+    <lastmod>2026-08-04</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=istanbul</loc>
+    <lastmod>2026-08-04</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=alhambra</loc>
+    <lastmod>2026-08-03</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=mont-saint-michel</loc>
+    <lastmod>2026-08-03</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=petra</loc>
+    <lastmod>2026-08-03</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=angkor-vat</loc>
+    <lastmod>2026-08-03</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=sagrada-familia</loc>
+    <lastmod>2026-08-03</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=machu-picchu</loc>
+    <lastmod>2026-08-03</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=taj-mahal</loc>
+    <lastmod>2026-08-03</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=colisee</loc>
+    <lastmod>2026-08-01</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=cappadoce</loc>
+    <lastmod>2026-08-01</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=great-barrier-reef</loc>
+    <lastmod>2026-08-01</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=salar-d-uyuni</loc>
+    <lastmod>2026-08-01</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=fjords-de-norvege</loc>
+    <lastmod>2026-07-31</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=baie-d-halong</loc>
+    <lastmod>2026-07-31</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=chutes-victoria</loc>
+    <lastmod>2026-07-31</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=aurores-boreales</loc>
+    <lastmod>2026-07-31</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=grand-canyon</loc>
     <lastmod>2026-07-30</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=mont-fuji</loc>
+    <lastmod>2026-07-29</lastmod>
+  </url>
+  <url>
+    <loc>https://lechat45.github.io/Acolyte/?a=caen</loc>
+    <lastmod>2026-07-29</lastmod>
   </url>
 </urlset>

@@ -1,23 +1,236 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Flux du journal d'Acolyte.
-
-     ⚠️ CE FICHIER EST REMPLACÉ automatiquement par
-     .github/workflows/sitemap-blog.yml, qui y écrit les 40 derniers articles.
-
-     Alors pourquoi le versionner vide ? Parce que index.html déclare le flux
-     (<link rel="alternate">) depuis toujours, alors que ce fichier n'existait
-     pas : tout lecteur RSS et tout robot qui suivait ce lien recevait un 404.
-     Un flux valide et vide est une réponse correcte — « ce journal n'a rien
-     publié » — là où un 404 dit « ce site est cassé ».
-
-     Le squelette respecte RSS 2.0 : <item> est facultatif, seuls title, link et
-     description sont obligatoires dans <channel>. -->
+<!-- FICHIER GÉNÉRÉ par .github/workflows/sitemap-blog.yml. -->
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Le journal d'Acolyte</title>
     <link>https://lechat45.github.io/Acolyte/</link>
-    <description>Destinations, merveilles du monde et grandes villes — le journal d'Acolyte.</description>
-    <language>fr</language>
     <atom:link href="https://lechat45.github.io/Acolyte/feed.xml" rel="self" type="application/rss+xml"/>
+    <description>Merveilles du monde, grandes villes et lieux qui valent le détour.</description>
+    <language>fr</language>
+    <lastBuildDate>Fri, 07 Aug 2026 14:33:58 GMT</lastBuildDate>
+  <item>
+  <title>La Basilique Saint-Marc : Le Cœur d&apos;Or de la Sérénissime</title>
+  <link>https://lechat45.github.io/Acolyte/?a=basilique-saint-marc</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=basilique-saint-marc</guid>
+  <pubDate>Thu, 06 Aug 2026 19:31:57 GMT</pubDate>
+  <description>Plus qu&apos;un édifice religieux, la Basilique Saint-Marc est un manifeste de puissance, une mosaïque éblouissante de cultures, et le témoignage vivant de l&apos;ingéniosité vénitienne. Chaque pierre, chaque tesselle raconte une histoire de conquête, de foi et d&apos;art. Un voyage au cœur de la République qui dominait les mers.</description>
+</item>
+  <item>
+  <title>Chichén Itzá : Le Souffle du Serpent Plumé</title>
+  <link>https://lechat45.github.io/Acolyte/?a=chichen-itza</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=chichen-itza</guid>
+  <pubDate>Thu, 06 Aug 2026 18:31:27 GMT</pubDate>
+  <description>Plongez dans la grandeur intemporelle de Chichén Itzá, cité maya-toltèque où l&apos;astronomie et le rituel s&apos;entremêlent. De l&apos;ombre du serpent de Kukulkan aux échos du grand jeu de balle, ce reportage immersif vous emmène au cœur d&apos;une merveille bâtie, révélant ses secrets et sa puissance millénaire.</description>
+</item>
+  <item>
+  <title>Neuschwanstein : Le Rêve de Pierre d&apos;un Roi Solitaire</title>
+  <link>https://lechat45.github.io/Acolyte/?a=chateau-de-neuschwanstein</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=chateau-de-neuschwanstein</guid>
+  <pubDate>Thu, 06 Aug 2026 17:30:23 GMT</pubDate>
+  <description>Au cœur des Alpes bavaroises, Neuschwanstein se dresse comme une apparition. Ce n&apos;est pas une forteresse, mais une fantaisie, le refuge onirique du roi Louis II, hanté par les légendes et la musique de Wagner. Plongez dans l&apos;histoire de cette merveille bâtie, où chaque pierre murmure l&apos;ambition démesurée d&apos;un monarque et l&apos;ingéniosité d&apos;une époque.</description>
+</item>
+  <item>
+  <title>Le Parthénon : Marbre et Mirages</title>
+  <link>https://lechat45.github.io/Acolyte/?a=parthenon</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=parthenon</guid>
+  <pubDate>Thu, 06 Aug 2026 15:14:58 GMT</pubDate>
+  <description>Plus qu&apos;une simple ruine, le Parthénon est une énigme sculptée dans le marbre. Ce reportage immersif vous emmène au cœur des illusions d&apos;optique, des légendes oubliées et des secrets d&apos;un monument qui a traversé vingt-cinq siècles de tumultes.</description>
+</item>
+  <item>
+  <title>La Tour Penchée : Huit Siècles d&apos;Équilibre Improbable</title>
+  <link>https://lechat45.github.io/Acolyte/?a=tour-de-pise</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=tour-de-pise</guid>
+  <pubDate>Thu, 06 Aug 2026 13:43:16 GMT</pubDate>
+  <description>Plus qu&apos;une icône touristique, la Tour de Pise est une énigme géologique et un chef-d&apos;œuvre roman qui a failli s&apos;effondrer. Ce grand reportage vous emmène au pied de cette merveille, explorant ses origines tumultueuses, ses secrets de construction et les interventions audacieuses qui la maintiennent debout.</description>
+</item>
+  <item>
+  <title>L&apos;Opéra de Sydney, une Écume de Béton sur le Port</title>
+  <link>https://lechat45.github.io/Acolyte/?a=opera-de-sydney</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=opera-de-sydney</guid>
+  <pubDate>Thu, 06 Aug 2026 12:28:20 GMT</pubDate>
+  <description>Plus qu&apos;un simple bâtiment, l&apos;Opéra de Sydney est une symphonie de béton et de céramique, un monument qui défia les conventions et faillit ne jamais voir le jour. Plongez dans les coulisses de cette merveille bâtie, des croquis initiaux aux défis colossaux qui forgèrent son identité unique.</description>
+</item>
+  <item>
+  <title>L&apos;Éclat Cuivré de la Liberté</title>
+  <link>https://lechat45.github.io/Acolyte/?a=statue-de-la-liberte</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=statue-de-la-liberte</guid>
+  <pubDate>Thu, 06 Aug 2026 10:28:09 GMT</pubDate>
+  <description>Un grand reporter géographe et historien explore la Statue de la Liberté, bien au-delà de sa silhouette iconique. Plongez dans ses entrailles d&apos;acier, découvrez ses secrets de construction et l&apos;âme de cuivre qui éclaire New York.</description>
+</item>
+  <item>
+  <title>La Pierre et le Temps : Westminster, Cœur Battant de l&apos;Histoire</title>
+  <link>https://lechat45.github.io/Acolyte/?a=palais-de-westminster</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=palais-de-westminster</guid>
+  <pubDate>Thu, 06 Aug 2026 09:27:36 GMT</pubDate>
+  <description>Plus qu&apos;un simple édifice, le Palais de Westminster est une épopée architecturale et politique. Des flammes de 1834 à l&apos;écho intemporel de Big Ben, explorez les coulisses d&apos;un monument où l&apos;histoire britannique continue de s&apos;écrire, pierre après pierre, loi après loi.</description>
+</item>
+  <item>
+  <title>La Dentelle de Fer au Ciel de Paris</title>
+  <link>https://lechat45.github.io/Acolyte/?a=tour-eiffel</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=tour-eiffel</guid>
+  <pubDate>Thu, 06 Aug 2026 08:05:01 GMT</pubDate>
+  <description>Plus qu&apos;une simple structure métallique, la Tour Eiffel est un monument vivant, témoin de l&apos;ingéniosité humaine et des caprices de l&apos;histoire. De sa genèse controversée à son rôle de phare mondial, plongez dans l&apos;âme de cette icône parisienne, entre anecdotes méconnues et perspectives d&apos;initié.</description>
+</item>
+  <item>
+  <title>Copenhague, l&apos;Ancre et le Vent du Nord</title>
+  <link>https://lechat45.github.io/Acolyte/?a=copenhague</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=copenhague</guid>
+  <pubDate>Tue, 04 Aug 2026 06:50:04 GMT</pubDate>
+  <description>Entre ses canaux historiques et ses pistes cyclables infinies, Copenhague déploie un art de vivre unique. Cette métropole, née d&apos;un village de pêcheurs, est aujourd&apos;hui un laboratoire d&apos;innovations durables, un écrin de design et une table gastronomique sans égale, invitant à une exploration lente et consciente.</description>
+</item>
+  <item>
+  <title>Buenos Aires, la fierté des avenues et l&apos;écho des docks</title>
+  <link>https://lechat45.github.io/Acolyte/?a=buenos-aires</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=buenos-aires</guid>
+  <pubDate>Tue, 04 Aug 2026 05:49:14 GMT</pubDate>
+  <description>Plus qu&apos;une simple métropole, Buenos Aires est un kaléidoscope d&apos;histoires et de passions. Des boulevards haussmanniens de Recoleta aux ruelles colorées de La Boca, en passant par l&apos;énergie inépuisable du tango, cette ville portuaire bâtie sur les limons du Río de la Plata offre une immersion profonde dans l&apos;âme argentine.</description>
+</item>
+  <item>
+  <title>Kyoto, la mémoire des mille ans sous le vent des cyprès</title>
+  <link>https://lechat45.github.io/Acolyte/?a=kyoto</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=kyoto</guid>
+  <pubDate>Tue, 04 Aug 2026 04:47:24 GMT</pubDate>
+  <description>Plus qu&apos;une ville, Kyoto est un palimpseste vivant où les échos de l&apos;ère Heian se mêlent au bourdonnement contemporain. De ses temples dorés à ses ruelles discrètes, elle invite à une immersion profonde dans l&apos;âme du Japon, un voyage entre passé glorieux et présent vibrant.</description>
+</item>
+  <item>
+  <title>Marrakech, le Rythme Ocre de l&apos;Atlas</title>
+  <link>https://lechat45.github.io/Acolyte/?a=marrakech</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=marrakech</guid>
+  <pubDate>Tue, 04 Aug 2026 03:46:03 GMT</pubDate>
+  <description>Des remparts de pisé aux jardins luxuriants, Marrakech n&apos;est pas qu&apos;une destination, c&apos;est une symphonie de sens. Suivez-nous au cœur d&apos;une ville où le passé almoravide rencontre un présent effervescent, révélant ses secrets les mieux gardés.</description>
+</item>
+  <item>
+  <title>Istanbul, où le détroit murmure l&apos;histoire</title>
+  <link>https://lechat45.github.io/Acolyte/?a=istanbul</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=istanbul</guid>
+  <pubDate>Tue, 04 Aug 2026 02:45:47 GMT</pubDate>
+  <description>Au-delà des cartes postales, Istanbul révèle une âme complexe, forgée par des millénaires d&apos;empires et de cultures. De ses eaux profondes à ses ruelles labyrinthiques, elle est un kaléidoscope sensoriel où chaque pierre raconte une épopée. Plongez dans le rythme trépidant de cette métropole unique.</description>
+</item>
+  <item>
+  <title>L&apos;Alhambra : La Citadelle Rouge qui Murmure</title>
+  <link>https://lechat45.github.io/Acolyte/?a=alhambra</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=alhambra</guid>
+  <pubDate>Mon, 03 Aug 2026 23:43:29 GMT</pubDate>
+  <description>Plus qu&apos;un palais, l&apos;Alhambra est une ville fortifiée, un poème architectural où le génie nasride a sculpté la lumière, l&apos;eau et le temps. Ce grand reportage vous emmène au cœur d&apos;une merveille bâtie, révélant ses secrets, ses légendes et la profonde résonance de son histoire.</description>
+</item>
+  <item>
+  <title>Mont Saint-Michel : Quand la Pierre Défie l&apos;Océan</title>
+  <link>https://lechat45.github.io/Acolyte/?a=mont-saint-michel</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=mont-saint-michel</guid>
+  <pubDate>Mon, 03 Aug 2026 22:43:29 GMT</pubDate>
+  <description>Chaque année, des millions de pèlerins et de curieux gravissent les pentes de ce rocher de granit. Loin des clichés, le Mont Saint-Michel révèle ses secrets, de ses fondations géologiques à ses voûtes célestes, offrant une plongée dans une épopée où l&apos;homme et la nature se sont affrontés, et sublimés.</description>
+</item>
+  <item>
+  <title>Petra, le murmure du grès et des fantômes nabatéens</title>
+  <link>https://lechat45.github.io/Acolyte/?a=petra</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=petra</guid>
+  <pubDate>Mon, 03 Aug 2026 19:42:04 GMT</pubDate>
+  <description>Imaginez une entaille sombre dans le désert, un serpent de roche aux parois vertigineuses. C&apos;est le Siq, la porte d&apos;entrée à Petra, l&apos;ancienne capitale nabatéenne. Ce voyage au centre de la Terre culmine devant un trésor de pierre, le Khazneh, mais la merveille ne fait que commencer. Cet article vous plonge dans la puissance d&apos;une civilisation oubliée, où chaque fissure et chaque façade racontent une histoire d&apos;ingéniosité et de mystère.</description>
+</item>
+  <item>
+  <title>Angkor Wat : La Montagne-Temple et le Règne de l&apos;Eau</title>
+  <link>https://lechat45.github.io/Acolyte/?a=angkor-vat</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=angkor-vat</guid>
+  <pubDate>Mon, 03 Aug 2026 18:42:34 GMT</pubDate>
+  <description>Au-delà des cartes postales, Angkor Wat est un manifeste architectural et spirituel. Ce reportage plonge dans les origines d&apos;un empire bâti sur l&apos;ingéniosité, le détail des bas-reliefs cosmiques et les secrets de ses douves millénaires. Préparez-vous à une exploration au-delà des foules, là où l&apos;histoire se lit sur chaque bloc de grès.</description>
+</item>
+  <item>
+  <title>Sagrada Família : L&apos;Odyssée Inachevée de la Pierre</title>
+  <link>https://lechat45.github.io/Acolyte/?a=sagrada-familia</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=sagrada-familia</guid>
+  <pubDate>Mon, 03 Aug 2026 16:41:24 GMT</pubDate>
+  <description>Plus qu&apos;une simple basilique, la Sagrada Família est un manifeste architectural, un dialogue entre la nature et le sacré, une œuvre en perpétuelle mutation. Ce grand reportage vous emmène au cœur de ce chantier éternel, des origines à son futur incertain, révélant ses secrets les mieux gardés.</description>
+</item>
+  <item>
+  <title>Machu Picchu, le Serpent de Pierre et le Soleil</title>
+  <link>https://lechat45.github.io/Acolyte/?a=machu-picchu</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=machu-picchu</guid>
+  <pubDate>Mon, 03 Aug 2026 13:39:31 GMT</pubDate>
+  <description>Perchée dans la cordillère Vilcabamba, la citadelle de Machu Picchu n&apos;est pas seulement un vestige archéologique ; c&apos;est une expérience sensorielle. Ce grand reportage vous plonge dans les mystères de sa construction, les légendes qui l&apos;entourent et les conseils pour en saisir l&apos;âme véritable, loin des foules.</description>
+</item>
+  <item>
+  <title>Le marbre qui pleure l&apos;amour éternel</title>
+  <link>https://lechat45.github.io/Acolyte/?a=taj-mahal</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=taj-mahal</guid>
+  <pubDate>Mon, 03 Aug 2026 12:39:30 GMT</pubDate>
+  <description>Plus qu&apos;un simple monument, le Taj Mahal est un poème architectural, une symphonie de marbre et de pierres précieuses. Plongez dans l&apos;intimité d&apos;un empereur dévasté, à l&apos;origine de la plus célèbre merveille bâtie de l&apos;Inde moghole. Découvrez ses secrets, ses lumières changeantes et les murmures de son histoire millénaire.</description>
+</item>
+  <item>
+  <title>Le Colisée : L&apos;Écho Millénaire des Jeux et des Hommes</title>
+  <link>https://lechat45.github.io/Acolyte/?a=colisee</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=colisee</guid>
+  <pubDate>Sat, 01 Aug 2026 17:08:36 GMT</pubDate>
+  <description>De sa genèse impériale sur les cendres de Néron à son statut d&apos;icône mondiale, le Colisée est bien plus qu&apos;une ruine. C&apos;est une merveille d&apos;ingénierie, un théâtre de passions humaines, et un symbole persistant de la grandeur romaine. Suivez notre grand reporter pour une exploration immersive de ses secrets et de son âme éternelle.</description>
+</item>
+  <item>
+  <title>Cappadoce, l&apos;Odyssée des Roches Enchantées</title>
+  <link>https://lechat45.github.io/Acolyte/?a=cappadoce</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=cappadoce</guid>
+  <pubDate>Sat, 01 Aug 2026 15:06:03 GMT</pubDate>
+  <description>La Cappadoce n&apos;est pas seulement une destination, c&apos;est une immersion dans un chapitre oublié de l&apos;histoire géologique et humaine. Entre cheminées de fée et cités troglodytes, ce reportage vous plonge dans une merveille naturelle où chaque recoin murmure des légendes ancestrales et des récits de survie.</description>
+</item>
+  <item>
+  <title>La Grande Barrière : Un chant corallien éternel</title>
+  <link>https://lechat45.github.io/Acolyte/?a=great-barrier-reef</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=great-barrier-reef</guid>
+  <pubDate>Sat, 01 Aug 2026 13:09:11 GMT</pubDate>
+  <description>Plongez au cœur de l&apos;une des merveilles naturelles les plus grandioses de notre planète. De ses origines géologiques à la vibrante biodiversité qui l&apos;anime, explorez la Grande Barrière de Corail, un monument vivant menacé mais résilient, où chaque récif raconte une histoire. Ce grand reportage vous emmène au-delà des clichés, à la rencontre de ses secrets les plus intimes.</description>
+</item>
+  <item>
+  <title>L&apos;infini miroir blanc du Salar d&apos;Uyuni</title>
+  <link>https://lechat45.github.io/Acolyte/?a=salar-d-uyuni</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=salar-d-uyuni</guid>
+  <pubDate>Sat, 01 Aug 2026 10:48:30 GMT</pubDate>
+  <description>Au cœur de l&apos;Altiplano bolivien s&apos;étend une immensité blanche, vestige d&apos;un lac préhistorique. Le Salar d&apos;Uyuni n&apos;est pas qu&apos;un paysage ; c&apos;est une expérience sensorielle, un miroir gigantesque reflétant l&apos;âme du monde, où la géologie rencontre le mythe et l&apos;homme se sent humble face à la grandeur naturelle. Ce grand reportage vous emmène au-delà de l&apos;horizon, là où la terre touche le ciel.</description>
+</item>
+  <item>
+  <title>Les Fjords de Norvège L&apos;Épopée Verticale des Glaciers</title>
+  <link>https://lechat45.github.io/Acolyte/?a=fjords-de-norvege</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=fjords-de-norvege</guid>
+  <pubDate>Fri, 31 Jul 2026 22:34:08 GMT</pubDate>
+  <description>Plongez au cœur d&apos;une merveille naturelle sculptée par des forces colossales. Cet article vous entraîne dans les entrailles des fjords norvégiens, entre mythes glaciaires, vie sauvage insoupçonnée et l&apos;âme résiliente de ses habitants. Une exploration immersive des paysages les plus spectaculaires de la planète.</description>
+</item>
+  <item>
+  <title>La Baie d&apos;Halong L&apos;Éternelle Symphonie de Pierre et d&apos;Eau</title>
+  <link>https://lechat45.github.io/Acolyte/?a=baie-d-halong</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=baie-d-halong</guid>
+  <pubDate>Fri, 31 Jul 2026 18:07:22 GMT</pubDate>
+  <description>Plongez dans l&apos;émeraude mystique de la Baie d&apos;Halong, un labyrinthe de pitons calcaires émergeant des eaux du Golfe du Tonkin. Ce grand reportage vous emmène au-delà des cartes postales, à la rencontre de ses origines géologiques millénaires, de ses légendes ancestrales et de la vie palpitante qui s&apos;y déploie. Une invitation à l&apos;émerveillement et à la découverte des secrets d&apos;un site classé au patrimoine mondial.</description>
+</item>
+  <item>
+  <title>Le rideau d&apos;eau qui tonne Plongée au cœur des Chutes Victoria</title>
+  <link>https://lechat45.github.io/Acolyte/?a=chutes-victoria</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=chutes-victoria</guid>
+  <pubDate>Fri, 31 Jul 2026 13:11:54 GMT</pubDate>
+  <description>Bien au-delà du simple spectacle d&apos;une chute d&apos;eau, les Chutes Victoria sont une symphonie géologique et culturelle. De leurs origines volcaniques aux légendes murmurées par les peuples Makalolo, en passant par les défis de leur conservation, suivez notre grand reportage au cœur de Mosi-oa-Tunya, &apos;la fumée qui tonne&apos;.</description>
+</item>
+  <item>
+  <title>La Danse Cosmique des Aurores : Quand le Ciel S&apos;enflamme</title>
+  <link>https://lechat45.github.io/Acolyte/?a=aurores-boreales</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=aurores-boreales</guid>
+  <pubDate>Fri, 31 Jul 2026 13:07:35 GMT</pubDate>
+  <description>Des mythes ancestraux aux découvertes scientifiques modernes, les aurores boréales demeurent l&apos;un des spectacles les plus grandioses de notre planète. Plongez au cœur de cette merveille naturelle, explorez ses origines cosmiques et préparez-vous à vivre une expérience inoubliable sous les draperies lumineuses du Grand Nord.</description>
+</item>
+  <item>
+  <title>L&apos;Étreinte Millénaire du Grand Canyon</title>
+  <link>https://lechat45.github.io/Acolyte/?a=grand-canyon</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=grand-canyon</guid>
+  <pubDate>Thu, 30 Jul 2026 12:28:02 GMT</pubDate>
+  <description>Au cœur de l&apos;Arizona, le Grand Canyon n&apos;est pas qu&apos;une simple faille terrestre ; c&apos;est une bibliothèque géologique ouverte, un sanctuaire de silence et de couleurs, façonné par des millions d&apos;années d&apos;histoire et la persévérance du fleuve Colorado. Plongez dans ses profondeurs vertigineuses, là où chaque strate raconte une ère, chaque vent murmure une légende et chaque regard se perd dans l&apos;infini.</description>
+</item>
+  <item>
+  <title>Le Fuji, Montagne Sacrée au Cœur du Japon</title>
+  <link>https://lechat45.github.io/Acolyte/?a=mont-fuji</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=mont-fuji</guid>
+  <pubDate>Wed, 29 Jul 2026 14:29:52 GMT</pubDate>
+  <description>Majestueux et énigmatique, le Mont Fuji incarne la quintessence du Japon. Ce stratovolcan iconique, classé au patrimoine mondial, est un sanctuaire naturel et culturel dont les pentes racontent des millénaires d&apos;histoire, de géologie et de spiritualité. Plongez au cœur de ses mystères, de ses légendes ancestrales à ses paysages à couper le souffle, et découvrez pourquoi il continue de fasciner le monde entier.</description>
+</item>
+  <item>
+  <title>Caen, la Phénix de Pierre</title>
+  <link>https://lechat45.github.io/Acolyte/?a=caen</link>
+  <guid isPermaLink="true">https://lechat45.github.io/Acolyte/?a=caen</guid>
+  <pubDate>Wed, 29 Jul 2026 09:58:41 GMT</pubDate>
+  <description>Plongez au cœur de Caen, cette cité normande à l&apos;histoire millénaire. Explorez ses abbeys ducales, son château imprenable et ses quartiers renaissants, témoins d&apos;une résilience hors du commun. Un voyage vibrant entre pierre ancestrale et modernité.</description>
+</item>
   </channel>
 </rss>
