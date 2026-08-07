@@ -101,10 +101,14 @@ jobs:
           }
 
           const xml = `<?xml version="1.0" encoding="UTF-8"?>
-          <!-- ⚠️ FICHIER GÉNÉRÉ par .github/workflows/sitemap-blog.yml.
-               Ne le modifie pas à la main : le prochain passage l'écrasera.
-               Une entrée pour l'accueil, puis une par article publié. -->
           <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <!-- ⚠️ FICHIER GÉNÉRÉ par .github/workflows/sitemap-blog.yml.
+                 Ne le modifie pas à la main : le prochain passage l'écrasera.
+                 ⚠️ Ce commentaire est DANS <urlset>, jamais entre la déclaration
+                 XML et la racine. C'est légal à cet endroit-là comme à l'autre,
+                 mais le parseur de sitemaps de Google est plus strict que la
+                 norme, et c'était la seule anomalie qui restait dans un fichier
+                 par ailleurs vérifié octet par octet. -->
             <url>
               <loc>${SITE}</loc>
               <lastmod>${jour()}</lastmod>
