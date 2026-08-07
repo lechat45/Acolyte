@@ -1964,17 +1964,15 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .modal-close:active{transform:translate(4px,4px);box-shadow:none}
 
-/* ===== Zone sensible (suppression de compte), isolée en bas du profil ===== */
-.danger-zone{
-  margin-top:28px;padding:18px;
-  border:1px dashed var(--danger);
-  background:var(--secondary);
-}
-.danger-zone h3{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.95rem;
-  color:var(--danger);margin:0 0 6px;
-}
-.danger-zone p{font-size:.82rem;font-weight:600;color:var(--txt-2);margin:0 0 14px;line-height:1.5}
+/* ⚠️ L'ancienne « zone sensible » vivait ICI — un encadré en tirets sur fond
+   --secondary, avec un h3 en Sora 900. Les trois règles sont SUPPRIMÉES : la
+   seule qui compte est celle du bloc « écran de compte — maquette 1g », en fin
+   de fichier. Elles se battaient sur trois paires de propriétés.
+   ⚠️ ET J'AI FAILLI CASSER QUELQUE CHOSE EN LES RETIRANT : mon bloc récent ne
+   déclare aucun margin-top — il s'appuyait, sans le savoir, sur le
+   margin-top:28px d'ici. La valeur est donc reportée là-bas, sinon la zone
+   sensible se collait à la liste d'actions. Une règle supprimée peut en porter
+   une autre : il faut lire les deux, pas seulement compter les doublons. */
 .btn.danger:not(.ghost){
   width:100%;justify-content:center;
   background:var(--danger);color:var(--on-accent);
@@ -3679,6 +3677,9 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 
 /* ---- La zone sensible : isolée, et rouge plutôt que jaune ---- */
 .danger-zone{
+  /* margin-top repris de l'ancienne déclaration supprimée plus haut : sans lui,
+     la zone se collait à la liste d'actions. */
+  margin-top:28px;
   border:1px solid color-mix(in srgb, var(--danger) 32%, transparent);
   border-radius:var(--r-lg);
   background:color-mix(in srgb, var(--danger) 5%, transparent);
