@@ -51,6 +51,11 @@
     :root:where(:not([data-theme="dark"])){
       color-scheme:light;
       --bg:#F5F4F0; --bg-2:#EFEEE9; --card:#FFFFFF; --surface-2:#F7F6F2;
+      /* ⚠️ --danger DOIT basculer avec le thème. #E9695F est un rouge CLAIR :
+         parfait sur #121212, mesuré à 2,87:1 sur ce papier — « Accès refusé »
+         devenait presque illisible, et c'est le message qu'il faut pouvoir
+         lire. Même valeur que l'app principale, qui l'avait déjà corrigé. */
+      --danger:#C4372C;
       --ink:#16160F; --muted:#63625B;
       --stroke:rgba(0,0,0,.12); --stroke-2:rgba(0,0,0,.24);
       --grid:rgba(0,0,0,.10); --track:#EDEBE4;
@@ -198,6 +203,71 @@
   .lg-i{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;color:var(--txt-2)}
   .lg-i i{width:11px;height:11px;border-radius:3px;flex:none;display:block}
   .lg-i b{color:var(--txt);font-weight:700}
+
+  /* ============================================================
+     DEUX COLONNES SUR ORDINATEUR — chiffres à gauche, graphiques à droite
+     ------------------------------------------------------------
+     Et le traitement du site : la direction 1b d'Acolyte remplace les cartes
+     empilées par des filets. Un panneau de statistiques est fait pour être
+     BALAYÉ, pas lu — quinze encadrés à ombre portée découpent le regard à
+     chaque bloc, alors qu'un filet laisse l'œil descendre.
+     Le jaune ne sert plus de fond : il devient l'encre des intertitres.
+  ============================================================ */
+  @media (min-width:1100px){
+    .wrap{max-width:1440px}
+    .duo{
+      display:grid;
+      /* la droite un peu plus large : elle porte des graphiques de 640 px de
+         large en viewBox, la gauche des nombres et des barres */
+      grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);
+      gap:38px;align-items:start;
+    }
+    /* Un filet vertical sépare les deux colonnes, comme la colonne de gauche
+       du site est séparée de son contenu. */
+    .duo-g{border-left:1px solid var(--stroke);padding-left:38px}
+
+    /* Les cartes se dénudent : plus de fond, plus d'ombre, plus de coins.
+       Un filet en dessous suffit à séparer deux blocs. */
+    .duo .card{
+      background:none;border:0;box-shadow:none;border-radius:0;
+      padding:0 0 22px;margin:0 0 22px;
+      border-bottom:1px solid var(--stroke);
+    }
+    .duo .card:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+    /* .cols redevient une simple pile : dans une demi-largeur, deux colonnes
+       de cartes ne tiennent pas sans écraser les libellés. */
+    .duo .cols{display:flex;flex-direction:column;gap:0}
+    .duo .card.wide{grid-column:auto}
+
+    /* Les titres passent en micro-étiquettes jaunes : c'est ce qui remplace le
+       fond des cartes pour marquer le début d'un bloc. */
+    .duo .card h2{
+      font-size:.68rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;
+      color:#6E6300;margin:0 0 6px;
+    }
+    /* Les chiffres, eux, gagnent en présence : c'est ce qu'on vient lire. */
+    .duo .kpis{grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--stroke);border:1px solid var(--stroke)}
+    .duo .kpi{background:var(--bg);border:0;box-shadow:none;border-radius:0;padding:14px 15px}
+    .duo .kpi .v{font-size:2.05rem}
+  }
+  /* ⚠️ L'intertitre jaune DOIT être défini pour les deux thèmes ET pour les deux
+     façons de les choisir. Je n'avais posé que la requête média : quand le
+     système est en sombre mais que le lecteur bascule en clair avec le bouton,
+     prefers-color-scheme:dark s'appliquait encore et le #FFE600 se retrouvait
+     sur du papier clair. Mesuré : 1,15:1 — invisible.
+     Le jaune vif ne marche que sur fond sombre ; il faut un jaune assombri
+     (#6E6300) sur fond clair. D'où les deux sélecteurs data-theme, qui doivent
+     pouvoir gagner dans LES DEUX SENS contre la requête média. */
+  @media (min-width:1100px){
+    .duo .card h2{color:#6E6300}
+  }
+  @media (min-width:1100px) and (prefers-color-scheme:dark){
+    .duo .card h2{color:#FFE600}
+  }
+  @media (min-width:1100px){
+    :root[data-theme="dark"]  .duo .card h2{color:#FFE600}
+    :root[data-theme="light"] .duo .card h2{color:#6E6300}
+  }
 </style>
 </head>
 <body>

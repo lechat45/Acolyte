@@ -410,7 +410,13 @@
   function render(d) {
     _data = d;
     var c = d.comptes || {}, v = d.voyages || {}, tech = d.technique || {};
-    var html = '';
+    /* Deux colonnes sur ordinateur : les CHIFFRES à gauche, les GRAPHIQUES à
+       droite. On construit deux chaînes séparées plutôt que d'espérer qu'une
+       grille CSS répartisse une pile plate — l'auto-placement d'une grille
+       entrelace les lignes des deux colonnes, ce qui crée des trous dès que les
+       deux côtés n'ont pas la même hauteur. Deux conteneurs, deux flux
+       indépendants. */
+    var html = '', droite = '';
 
     /* ---- La ligne de chiffres qui répond à « où on en est ? » ---- */
     html += '<div class="kpis">'
@@ -449,18 +455,18 @@
       }
     } else {
       /* ---- Vue graphiques ---- */
-      html += '<div class="card wide"><h2>📈 Inscriptions par jour</h2>'
+      droite += '<div class="card wide"><h2>📈 Inscriptions par jour</h2>'
         + '<p class="lede">Sur les 30 derniers jours. Un creux le week-end est normal.</p>'
         + colonnes(d.courbe) + '</div>';
 
       /* Les courbes d'utilisation. Placées juste après les inscriptions parce
          qu'elles répondent à la question suivante : ceux qui arrivent,
          qu'est-ce qu'ils font ? */
-      html += '<div class="card wide"><h2>📉 Utilisation par jour</h2>'
+      droite += '<div class="card wide"><h2>📉 Utilisation par jour</h2>'
         + '<p class="lede">Une courbe par événement, sur 60 jours. Compare les arrivées aux voyages réellement générés : l’écart entre les deux, c’est ce qu’il reste à gagner.</p>'
         + courbes(d.jours) + '</div>';
 
-      html += '<div class="card wide"><h2>🔎 Ce qui est utilisé, et ce qui bloque</h2>'
+      droite += '<div class="card wide"><h2>🔎 Ce qui est utilisé, et ce qui bloque</h2>'
         + '<p class="lede">Les taux d’abandon et de rejet sont calculés : un total seul ne dit pas si 40 refus sur 1000 est bon ou catastrophique.</p>'
         + apartHTML(d.totaux) + '</div>';
 
@@ -563,7 +569,12 @@
       + 'tant que la base est trop petite pour qu’un chiffre puisse désigner quelqu’un.'
       + '</p></div>';
 
-    $('#panel').innerHTML = html;
+    /* Si la colonne de droite est vide (vue tableaux), on n'ouvre pas la
+       grille : une colonne unique reste une colonne unique. */
+    $('#panel').innerHTML = droite
+      ? '<div class="duo"><div class="duo-c">' + html + '</div>'
+        + '<div class="duo-g">' + droite + '</div></div>'
+      : html;
     $('#panel').classList.remove('hidden');
     $('#state').classList.add('hidden');
     $('#stamp').textContent = 'Généré le ' + new Date(d.genere || Date.now()).toLocaleString('fr-FR');
