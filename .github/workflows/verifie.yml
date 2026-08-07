@@ -1,0 +1,50 @@
+# ============================================================
+# Contrôle automatique à chaque envoi
+# ------------------------------------------------------------
+# Le projet n'a ni compilation ni test : une erreur ne se voit qu'en ouvrant le
+# site, et certaines ne se voient pas du tout (un `const` en double rend la page
+# blanche, une accolade manquante rend muettes toutes les règles CSS suivantes).
+#
+# Cette action lance outils/verifie.js sur chaque envoi et chaque demande de
+# fusion. Si elle échoue, GitHub le signale AVANT que la version cassée ne soit
+# servie aux visiteurs par GitHub Pages.
+#
+# ⚠️ GRATUIT : les actions GitHub sont sans limite sur un dépôt public, et ce
+# contrôle n'installe RIEN (aucune dépendance, aucun `npm install`). Il tourne
+# en quelques secondes.
+# ============================================================
+name: Contrôle avant publication
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # permet de le relancer à la main depuis l'onglet Actions
+  workflow_dispatch:
+
+# Lecture seule : cette action ne modifie jamais le dépôt.
+permissions:
+  contents: read
+
+jobs:
+  verifie:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # La version de Node n'a aucune importance ici — le script n'utilise que
+      # `node --check` et le module fs. On fixe quand même une version pour que
+      # le résultat soit reproductible dans six mois.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntaxe, accolades, identifiants, secrets
+        run: node outils/verifie.js
+
+      # Le fichier de déploiement Val Town a une limite dure de 80 000
+      # caractères. La dépasser produit une erreur au moment de coller le code,
+      # pas ici — autant l'apprendre maintenant.
+      - name: Le fichier Val Town tient-il sous la limite ?
+        run: node outils/valtown-build.js

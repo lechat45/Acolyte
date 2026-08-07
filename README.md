@@ -9,6 +9,34 @@ programme jour par jour), budget, ticket souvenir et carte postale à partager.
 > (localStorage) ; un compte local avec vérification par email fait office de
 > démonstration d'authentification.
 
+## 🧪 Avant chaque publication
+
+```bash
+node outils/verifie.js
+```
+
+Le projet n'a **ni compilation ni test** : une erreur ne se voit qu'en ouvrant le
+site, et certaines ne se voient pas du tout. Trois pannes réelles, toutes
+silencieuses :
+
+| Panne | Ce qu'on voit | Détectée par |
+|---|---|---|
+| un `const` déclaré deux fois | **page blanche** — tout `app.js` meurt | contrôle 1 |
+| une accolade manquante dans `style.css` | toutes les règles suivantes ignorées, sans message | contrôle 2 |
+| deux déclarations du même sélecteur | la moitié des propriétés annulée en silence | contrôle 6 |
+
+Le script contrôle aussi les identifiants HTML en double (un bouton qui ne fait
+rien), la présence d'une clé d'API oubliée (le dépôt est **public**), et rappelle
+la version du cache — **l'oublier est le défaut le plus coûteux du projet : les
+visiteurs gardent l'ancienne version et aucun changement n'est visible.**
+
+Il tourne aussi tout seul à chaque envoi, via `.github/workflows/verifie.yml`.
+Aucune dépendance, aucun `npm install`, gratuit sur un dépôt public.
+
+> ⚠️ **Il ne remplace pas un passage dans le navigateur.** Il ne voit ni un
+> contraste trop faible, ni un texte qui déborde, ni une cible trop petite au
+> doigt. Il attrape ce qu'un humain ne peut pas voir, pas l'inverse.
+
 ## ✨ Fonctionnalités
 
 - **Pipeline IA ordonné** : ville (si un pays est donné) → transport
