@@ -211,6 +211,62 @@ titre('8. Fichiers référencés');
   else absents.forEach(a => err('fichier absent : ' + a));
 }
 
+
+/* ---------- 9. Deux routes pour le même chemin ----------
+   ⚠️ CE CONTRÔLE EXISTE À CAUSE D'UN VRAI BUG. En ajoutant les compteurs
+   d'audience, j'ai créé une SECONDE route « /admin/stats » déclarée plus haut
+   dans le fichier que celle qui existait déjà. Le routage est un enchaînement
+   de `if` : la première qui correspond répond, les suivantes ne sont jamais
+   atteintes. Le panneau a perdu d'un coup les comptes créés, les voyages et la
+   courbe d'inscriptions — sans erreur, sans 404, juste des sections vides.
+   Rien ne signale une route en double : ni node --check, ni un test du panneau
+   qui simule les réponses du serveur. */
+titre('9. Routes du backend');
+{
+  const src = lire('valtown-backend.js');
+  const vus = new Map();
+  for (const m of src.matchAll(/path\s*===\s*'([^']+)'/g)) {
+    const ligne = src.slice(0, m.index).split('\n').length;
+    if (!vus.has(m[1])) vus.set(m[1], []);
+    vus.get(m[1]).push(ligne);
+  }
+  const dbl = [...vus.entries()].filter(([, l]) => l.length > 1);
+  if (!dbl.length) ok(vus.size + ' chemins, tous uniques');
+  else for (const [chemin, lignes] of dbl)
+    err('chemin déclaré ' + lignes.length + ' fois : ' + chemin + ' (lignes ' + lignes.join(', ') + ')');
+}
+
+/* ---------- 10. Le sitemap pointe-t-il bien vers CE site ? ----------
+   ⚠️ AUTRE BUG RÉEL. Après un changement d'adresse, le sitemap servi contenait
+   encore l'ancien chemin (« /Acolyte.github.io/ »). Google le téléchargeait
+   sans problème, n'y trouvait aucune adresse dans le périmètre de la propriété,
+   et répondait « Impossible de récupérer » avec Type: Inconnu. Un fichier
+   parfaitement valide dont tout le contenu était hors sujet — la pire forme
+   d'erreur, parce qu'elle ressemble à une panne réseau. */
+titre('10. Sitemap');
+{
+  if (!existe('sitemap.xml')) warn('sitemap.xml absent (il est généré par le workflow)');
+  else {
+    const xml = lire('sitemap.xml');
+    /* L'adresse du site est celle déclarée par le workflow : une seule source. */
+    const m = lire('.github/workflows/sitemap-blog.yml').match(/SITE:\s*(\S+)/);
+    const site = m ? m[1].trim() : null;
+    const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(x => x[1].trim());
+    if (!site) warn('adresse du site introuvable dans le workflow — contrôle impossible');
+    else if (!locs.length) err('sitemap.xml ne contient aucune balise <loc>');
+    else {
+      const dehors = locs.filter(u => !u.startsWith(site));
+      if (dehors.length) {
+        err(dehors.length + ' adresse(s) hors du site déclaré (' + site + ')');
+        dehors.slice(0, 3).forEach(u => console.log('      ' + u));
+      } else ok(locs.length + ' adresse(s), toutes sous ' + site);
+    }
+    /* Une déclaration XML doit être au tout début, sans rien devant : un espace
+       ou un BOM suffit à faire échouer un parseur strict. */
+    if (!xml.startsWith('<?xml')) err('sitemap.xml ne commence pas par <?xml (espace, BOM ou commentaire devant ?)');
+  }
+}
+
 /* ---------- Verdict ---------- */
 console.log('\n' + '─'.repeat(56));
 if (erreurs) {
