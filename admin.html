@@ -191,9 +191,16 @@
     border:1px solid var(--stroke);border-radius:var(--r-sm);resize:vertical;
   }
   .pr-form input:focus-visible,.pr-form textarea:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+  /* ⚠️ ROUGE FIXE, pas var(--danger). Ce bouton porte du texte BLANC sur un
+     aplat : il faut donc que l'aplat soit assez foncé, dans les deux thèmes.
+     --danger vaut #E9695F en sombre — un rouge clair, parfait pour du TEXTE sur
+     fond noir, mais blanc dessus tombe à 3,16:1. Mesuré, et c'est le bouton qui
+     envoie un e-mail à tous les clients : celui qu'il faut lire le mieux.
+     #C4372C porte le blanc à 5,34:1, et un rouge profond convient mieux à une
+     action irréversible qu'un saumon. */
   .pr-danger{
     align-self:flex-start;margin-top:12px;padding:10px 18px;
-    background:var(--danger);color:#fff;border:1px solid transparent;
+    background:#C4372C;color:#fff;border:1px solid transparent;
     font-weight:900;font-size:.78rem;
   }
   .pr-danger:disabled{opacity:.45;cursor:not-allowed;background:var(--surface-2);color:var(--muted);border-color:var(--stroke)}
