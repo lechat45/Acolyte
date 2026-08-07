@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Flux du journal d'Acolyte.
+
+     ⚠️ CE FICHIER EST REMPLACÉ automatiquement par
+     .github/workflows/sitemap-blog.yml, qui y écrit les 40 derniers articles.
+
+     Alors pourquoi le versionner vide ? Parce que index.html déclare le flux
+     (<link rel="alternate">) depuis toujours, alors que ce fichier n'existait
+     pas : tout lecteur RSS et tout robot qui suivait ce lien recevait un 404.
+     Un flux valide et vide est une réponse correcte — « ce journal n'a rien
+     publié » — là où un 404 dit « ce site est cassé ».
+
+     Le squelette respecte RSS 2.0 : <item> est facultatif, seuls title, link et
+     description sont obligatoires dans <channel>. -->
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Le journal d'Acolyte</title>
+    <link>https://lechat45.github.io/Acolyte/</link>
+    <description>Destinations, merveilles du monde et grandes villes — le journal d'Acolyte.</description>
+    <language>fr</language>
+    <atom:link href="https://lechat45.github.io/Acolyte/feed.xml" rel="self" type="application/rss+xml"/>
+  </channel>
+</rss>

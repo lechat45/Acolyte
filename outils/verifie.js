@@ -176,6 +176,41 @@ titre('7. Identifiants câblés dans le vide (dette)');
        + (morts.size > 8 ? '…' : ''));
 }
 
+/* ---------- 8. Fichiers locaux référencés mais absents ----------
+   Le cas grave est la liste SHELL de sw.js : cache.addAll() est ATOMIQUE. Un
+   seul fichier manquant fait rejeter la promesse, le service worker ne
+   s'installe jamais, et le mode hors-ligne cesse de marcher — sans aucune
+   erreur visible pour le visiteur.
+
+   ⚠️ PORTÉE VOLONTAIREMENT ÉTROITE : uniquement sw.js, le manifeste, et les
+   `<link href>` de l'en-tête. J'avais écrit un détecteur large qui balayait tous
+   les src/href : il sortait 4 faux positifs sur 5 (des `href="` à l'intérieur de
+   gabarits JavaScript, et `url(#id)` en CSS qui désigne un fragment du document,
+   pas un fichier). Un contrôle qui crie au loup finit ignoré, donc désactivé —
+   mieux vaut couvrir moins et être cru. */
+titre('8. Fichiers référencés');
+{
+  const absents = [];
+  const test = (source, brut) => {
+    let p = String(brut).trim().replace(/^\.\//, '').split(/[?#]/)[0];
+    if (!p || /^(https?:|data:|mailto:|tel:|\/\/|#)/i.test(p)) return;
+    if (p.startsWith('/')) p = p.slice(1);
+    if (!existe(p)) absents.push(source + ' → ' + brut);
+  };
+  const shell = lire('sw.js').match(/const SHELL\s*=\s*\[([\s\S]*?)\]/);
+  if (shell) for (const q of shell[1].matchAll(/'([^']+)'/g)) test('sw.js SHELL', q[1]);
+  try {
+    const j = JSON.parse(lire('manifest.json'));
+    (j.icons || []).forEach(i => test('manifest icons', i.src));
+    if (j.start_url) test('manifest start_url', j.start_url);
+  } catch (e) { err('manifest.json illisible : ' + e.message); }
+  /* Les <link> de l'en-tête : icône, flux RSS, canonique. Le flux manquait, et
+     tout lecteur RSS qui suivait le lien recevait un 404. */
+  for (const m of lire('index.html').matchAll(/<link\b[^>]*\bhref="([^"]+)"/g)) test('index.html <link>', m[1]);
+  if (!absents.length) ok('tous les fichiers critiques référencés existent');
+  else absents.forEach(a => err('fichier absent : ' + a));
+}
+
 /* ---------- Verdict ---------- */
 console.log('\n' + '─'.repeat(56));
 if (erreurs) {
