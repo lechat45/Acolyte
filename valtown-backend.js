@@ -1023,39 +1023,7 @@ Réponds UNIQUEMENT en JSON :
        ⚠️ Protégée alors que l'ÉCRITURE est publique, et c'est volontaire :
        compter est anodin, mais le trafic d'un site est une information
        commerciale. Même garde que le panneau promo. */
-    if (path === '/admin/stats') {
-      const adm = env('ADMIN_EMAIL').trim().toLowerCase();
-      const who = await sessionEmail(request);
-      if (!adm || !who || !safeEqual(who, adm)) return json({ error: 'Accès refusé' }, 403);
-      await statTable();
-      /* 60 jours : assez pour voir une tendance, assez court pour que la table
-         ne grossisse jamais au-delà de quelques centaines de lignes. */
-      const depuis = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
-      const rows = (await sqlite.execute({
-        sql: `SELECT jour, cle, n FROM aco_stats WHERE jour >= ? ORDER BY jour DESC`,
-        args: [depuis] })).rows || [];
-      const parJour = {}, totaux = {};
-      for (const r of rows) {
-        const j = String(r.jour ?? r[0]), c = String(r.cle ?? r[1]), n = Number(r.n ?? r[2]) || 0;
-        (parJour[j] = parJour[j] || {})[c] = n;
-        totaux[c] = (totaux[c] || 0) + n;
-      }
-      /* L'ENTONNOIR, calculé ici plutôt que dans l'interface : c'est la seule
-         lecture qui répond à « où est-ce qu'ils abandonnent ». Un taux brut
-         par événement ne le dit pas. */
-      const pc = (a, b) => b ? Math.round((a / b) * 100) : null;
-      const e = totaux;
-      return json({
-        ok: true, jours: parJour, totaux,
-        entonnoir: {
-          arrivees: e.arrivee || 0,
-          inscrits: e.inscription || 0,           taux_inscription: pc(e.inscription, e.arrivee),
-          questions_au_bout: e.questions_finies || 0,
-          questions_passees: e.questions_passees || 0,
-          voyages_generes: e.voyage_genere || 0,  taux_voyage: pc(e.voyage_genere, e.inscription)
-        }
-      });
-    }
+
 
     /* ---- Le panneau : administrateur seulement ---- */
     if (path === '/admin/promo') {
@@ -1697,7 +1665,38 @@ Réponds UNIQUEMENT en JSON :
         iaComptes = await cnt(`SELECT COUNT(*) AS n FROM aco_ai WHERE window_start > ?`, [now - 3600 * 1000]);
       } catch (e) {}
 
+
+      /* ---- Compteurs d'audience, FUSIONNÉS dans cette route ----
+         ⚠️ Ils vivaient dans une SECONDE route « /admin/stats », déclarée plus
+         haut dans le fichier. Le routage est un enchaînement de `if` : la
+         première qui correspond répond, et les suivantes ne sont jamais
+         atteintes. Ma route masquait donc celle-ci, et le panneau perdait d'un
+         coup les comptes, les voyages, la technique et la courbe — sans erreur,
+         juste des sections vides. Une route en double ne se signale pas. */
+      await statTable();
+      const statDepuis = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
+      const statRows = (await sqlite.execute({
+        sql: `SELECT jour, cle, n FROM aco_stats WHERE jour >= ? ORDER BY jour DESC`,
+        args: [statDepuis] })).rows || [];
+      const jours = {}, totaux = {};
+      for (const r of statRows) {
+        const j = String(r.jour ?? r[0]), c = String(r.cle ?? r[1]), n = Number(r.n ?? r[2]) || 0;
+        (jours[j] = jours[j] || {})[c] = n;
+        totaux[c] = (totaux[c] || 0) + n;
+      }
+      const statPc = (a, b) => b ? Math.round((a / b) * 100) : null;
+      const entonnoir = {
+        arrivees: totaux.arrivee || 0,
+        inscrits: totaux.inscription || 0,
+        taux_inscription: statPc(totaux.inscription, totaux.arrivee),
+        questions_au_bout: totaux.questions_finies || 0,
+        questions_passees: totaux.questions_passees || 0,
+        voyages_generes: totaux.voyage_genere || 0,
+        taux_voyage: statPc(totaux.voyage_genere, totaux.inscription)
+      };
+
       return json({
+        jours, totaux, entonnoir,
         comptes,
         /* multiBase est une RÉPARTITION des voyages : elle tombe donc sous le
            même garde-fou que les autres. Sur 2 voyages, « 1 itinérant »
