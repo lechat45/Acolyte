@@ -4086,3 +4086,40 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 }
 .futur-bar .fb-x:hover{color:var(--txt);background:var(--surface-2)}
 @media (pointer:coarse){ .futur-bar .fb-x{width:44px;height:44px} }
+
+/* ============================================================
+   AUDIT — DÉBORDEMENT DES JEUX ET HAUTEUR DE VUE SUR iOS
+   ------------------------------------------------------------
+   Deux défauts signalés par un audit externe, vérifiés vrais dans le code.
+============================================================ */
+
+/* ---- 1. Les trois canvas de jeu débordaient sur téléphone ----
+   #gameCanvas, #pongCanvas et #packCanvas sont déclarés en 640×460 dans le HTML
+   et AUCUNE règle CSS ne les contraignait — vérifié : la seule occurrence de
+   « canvas » dans cette feuille concernait la vignette météo. Sur un téléphone
+   de 375 px, 640 px de large créaient un défilement horizontal parasite.
+
+   ⚠️ On ne touche PAS aux attributs width/height du HTML : ils définissent la
+   résolution du dessin, que le code de jeu utilise pour ses coordonnées. Les
+   changer déplacerait la raquette et les astéroïdes. On agit uniquement sur la
+   taille D'AFFICHAGE, en CSS — les deux sont indépendantes sur un canvas, et
+   c'est précisément ce qui permet de corriger sans rien casser.
+   aspect-ratio garde la proportion 640/460 : sans lui l'image s'étire. */
+#gameCanvas, #pongCanvas, #packCanvas{
+  display:block;
+  width:100%;max-width:640px;height:auto;
+  aspect-ratio:640 / 460;
+  margin-inline:auto;
+  /* Le doigt qui joue ne doit pas faire défiler la page sous le jeu. */
+  touch-action:none;
+}
+
+/* ---- 2. 100vh et 88vh masquaient le bas des fenêtres sur iOS Safari ----
+   Sur iPhone, 100vh vaut la hauteur SANS la barre d'outils rétractable : le bas
+   d'une fenêtre — donc les boutons « Accepter », « Suivant » — passe dessous.
+   dvh suit la hauteur réellement visible.
+   ⚠️ La déclaration en vh RESTE juste avant : un navigateur qui ne connaît pas
+   dvh ignore la seconde ligne et garde la première. Retirer le repli casserait
+   la mise en page sur les vieux Safari au lieu de l'améliorer. */
+body{ min-height:100dvh }
+.modal{ max-height:88dvh }
