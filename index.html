@@ -301,6 +301,16 @@
         <div class="field"><label for="fKids">Enfants</label>
           <select id="fKids"><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
         </div>
+        <!-- L'âge, et pas seulement le nombre. Un enfant de 2 ans et un de 14
+             n'imposent pas les mêmes journées : les distances, les horaires, la
+             sieste, ce qui l'intéresse — tout change. Le compte seul ne dit rien.
+             ⚠️ Masqué tant qu'il n'y a aucun enfant : un champ inutile dans un
+             questionnaire déjà long est un motif d'abandon. -->
+        <div class="field" id="fKidsAgesBox" style="display:none">
+          <label for="fKidsAges">Âge des enfants</label>
+          <input id="fKidsAges" type="text" inputmode="numeric" autocomplete="off"
+                 placeholder="ex. 3 et 7" maxlength="40">
+        </div>
         <div class="field"><label for="fVibe">Ambiance recherchée</label>
           <select id="fVibe">
             <option value="" selected>Peu importe — surprends-moi</option>

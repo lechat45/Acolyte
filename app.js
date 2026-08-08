@@ -1144,7 +1144,7 @@ RÈGLES DE QUALITÉ (toujours valables) :
 - Uniquement des lieux, quartiers, établissements et transports RÉELS et vérifiables — au moindre doute, préfère l'option la plus connue plutôt que d'inventer.
 - Prix en euros, réalistes pour la saison et l'année indiquées ; donne des fourchettes plutôt que des chiffres trop précis.
 - Respecte STRICTEMENT le budget et les limites du voyageur.
-- ${isEN() ? 'Write every text value in ENGLISH, warm and natural, addressing the traveller as "you".' : 'TUTOIE toujours le voyageur (jamais de vouvoiement), ton chaleureux et naturel.'}${p.kids ? (isEN() ? '\n- CHILDREN are travelling: adapt every piece of advice (pace, distances, activities, restaurants) to their presence.' : '\n- Des ENFANTS voyagent : adapte chaque conseil (rythme, distances, activités, restaurants) à leur présence.') : ''}`;
+- ${isEN() ? 'Write every text value in ENGLISH, warm and natural, addressing the traveller as "you".' : 'TUTOIE toujours le voyageur (jamais de vouvoiement), ton chaleureux et naturel.'}${p.kids ? (isEN() ? '\n- CHILDREN are travelling: adapt every piece of advice (pace, distances, activities, restaurants) to their presence.' : '\n- Des ENFANTS voyagent : adapte chaque conseil (rythme, distances, activités, restaurants) à leur présence.') : ''}${agesEnfantsTexte(p.kidsAges) ? '\n- ' + agesEnfantsTexte(p.kidsAges) : ''}`;
 }
 
 /* ============================================================
@@ -1159,6 +1159,11 @@ function readPrefs(extra){
     budget:$('#fBudget').value,
     adults:+$('#fAdults').value || 2,
     kids:  +$('#fKids').value || 0,
+    /* Les âges tels que saisis, nettoyés : on garde les nombres de 0 à 17
+       et rien d'autre. Un champ libre part dans un prompt — on ne laisse
+       pas passer du texte arbitraire. */
+    kidsAges: ($('#fKidsAges')?.value || '').match(/\d{1,2}/g)?.map(Number)
+                .filter(n => n >= 0 && n <= 17).slice(0, 6) || [],
     depart:$('#fDepart').value,
     vibe:  $('#fVibe')?.value || '',
     withWho:$('#fWith')?.value || '',
@@ -11922,4 +11927,37 @@ function securiteHTML(pays){
     + '<a href="' + u + '" target="_blank" rel="noopener noreferrer">'
     + (EN ? 'official advisories' : 'conseils aux voyageurs') + '</a>'
     + (EN ? ' — look up ' : ' — cherche ') + esc(nom) + '.</p>';
+}
+
+/* Le champ des âges n'apparaît que s'il y a des enfants — et disparaît si on
+   repasse à zéro, sinon un âge saisi puis oublié partirait dans le prompt d'un
+   voyage sans enfant. */
+{
+  const maj = () => {
+    const n = +($('#fKids')?.value || 0);
+    const box = $('#fKidsAgesBox');
+    if(box) box.style.display = n > 0 ? '' : 'none';
+    if(!n){ const c = $('#fKidsAges'); if(c) c.value = ''; }
+  };
+  const k = $('#fKids');
+  if(k) k.addEventListener('change', maj);
+  maj();
+}
+
+/* L'ÂGE DES ENFANTS EST UNE CONTRAINTE DE PLANIFICATION, pas un détail.
+   Avec un enfant de moins de 4 ans, une journée tient trois lieux et une sieste.
+   À 12 ans, on marche autant qu'un adulte mais on s'ennuie dans un musée de
+   peinture. L'IA doit l'avoir, et formulé en règles — pas en chiffres bruts
+   qu'elle interpréterait à sa façon. */
+function agesEnfantsTexte(ages){
+  if(!Array.isArray(ages) || !ages.length) return '';
+  const min = Math.min(...ages), max = Math.max(...ages);
+  const L = ['VOYAGE AVEC ENFANTS de ' + ages.join(', ') + ' ans. Adapte CHAQUE journée en conséquence.'];
+  if(min <= 3) L.push('Un enfant a 3 ans ou moins : maximum 3 lieux par jour, une pause d’au moins 1 h l’après-midi, jamais plus de 20 min de marche d’affilée, et vérifie l’accès poussette.');
+  else if(min <= 6) L.push('Le plus jeune a entre 4 et 6 ans : 3 à 4 lieux par jour, une vraie pause l’après-midi, et au moins une activité par jour faite POUR lui (parc, animaux, plage) et non subie.');
+  else if(min <= 11) L.push('Les enfants ont entre 7 et 11 ans : rythme adulte allégé, mais chaque journée doit contenir une activité concrète — grimper, toucher, fabriquer — et non seulement regarder.');
+  else L.push('Ce sont des adolescents : rythme adulte possible, mais prévois du temps libre et évite d’enchaîner les musées de même nature.');
+  if(max - min >= 6) L.push('L’écart d’âge est important : privilégie les lieux qui parlent aux deux, ou prévois des moments où le groupe peut se séparer.');
+  L.push('Signale les tarifs enfants et les gratuités quand ils existent, et évite les lieux avec un âge minimum.');
+  return L.join(' ');
 }
