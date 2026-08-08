@@ -4042,8 +4042,15 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
    l'inverse du bouton principal du site. C'est le seul endroit où ce
    renversement a un sens, et il donne le contraste maximal disponible. */
 .ph-discord{
-  display:inline-flex;align-items:center;gap:8px;
-  min-height:54px;padding:0 16px;flex:none;
+  /* EXACTEMENT la boîte du badge Product Hunt : son image fait 250×54, plus
+     8px/10px de padding et 1px de bordure → 272×72. On pose la taille finale
+     plutôt que de recopier padding et bordure : le badge est une image servie
+     par l'API de Product Hunt, et si elle change un jour c'est cette valeur
+     qu'on ajustera — à un seul endroit.
+     max-width pour que le bouton ne déborde jamais sur un écran étroit. */
+  width:272px;height:72px;max-width:100%;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  padding:0;flex:none;
   background:var(--primary-ink);color:var(--primary);
   border:0;border-radius:var(--r-md);box-shadow:var(--shadow);
   font-family:'Sora',sans-serif;font-weight:800;font-size:.82rem;
@@ -4051,7 +4058,10 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 }
 .ph-discord:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow-lg)}
 .ph-discord:active{transform:translateY(1px);box-shadow:var(--shadow)}
-.ph-discord svg.ico{width:19px;height:19px;flex:none}
+.ph-discord .dc-logo{width:24px;height:24px;flex:none;display:block}
+/* Le libellé monte d'un cran : à 272 px de large il a la place, et il doit
+   tenir le regard aussi fermement que « Product Hunt » à côté. */
+.ph-discord{font-size:.95rem}
 
 /* ---- Avertissement « voyage venu d'une version plus récente » ----
    Posé en tête du contenu, pas en fenêtre modale : ce n'est pas une erreur qui
