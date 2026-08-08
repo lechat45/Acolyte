@@ -72,5 +72,5 @@ window.ACOLITE_KEYS = {
      → « Jamais » expirer, aucune limite d'utilisations). Un lien expiré dans un
      vieux message, c'est un membre perdu sans qu'on le sache jamais.
      Cette adresse est publique par nature : elle sert à faire entrer les gens. */
-  discord: ''
+  discord: 'https://discord.gg/TkzzsVjMZ'
 };

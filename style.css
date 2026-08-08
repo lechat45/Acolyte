@@ -4025,3 +4025,30 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 }
 .asst-oh:hover:not(:disabled){color:var(--txt);text-decoration:underline;text-underline-offset:3px}
 .asst-oh:disabled{opacity:.5;cursor:default}
+
+/* ---- Les deux actions du bloc « Aide Acolyte à grandir » ----
+   Product Hunt et Discord côte à côte, et qui passent l'un sous l'autre plutôt
+   que de se comprimer : le badge Product Hunt fait 250 px et ne se redimensionne
+   pas. */
+/* ⚠️ Le badge Product Hunt fait 250 px FIXES et ne se redimensionne pas (c'est
+   une image servie par leur API). Dans la colonne de droite du profil, large de
+   392 px, il ne reste donc qu'une centaine de pixels : d'où le libellé
+   « Discord » seul plutôt que « Rejoindre le Discord », qui forçait le passage à
+   la ligne. flex-wrap reste, pour que ça s'empile proprement sur téléphone
+   plutôt que de déborder. */
+.ph-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+/* ⚠️ Ce bouton est posé sur l'APLAT JAUNE de .ph-card. Un bouton jaune y serait
+   invisible : on prend donc l'encre foncée comme FOND et le jaune comme texte —
+   l'inverse du bouton principal du site. C'est le seul endroit où ce
+   renversement a un sens, et il donne le contraste maximal disponible. */
+.ph-discord{
+  display:inline-flex;align-items:center;gap:8px;
+  min-height:54px;padding:0 16px;flex:none;
+  background:var(--primary-ink);color:var(--primary);
+  border:0;border-radius:var(--r-md);box-shadow:var(--shadow);
+  font-family:'Sora',sans-serif;font-weight:800;font-size:.82rem;
+  cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;
+}
+.ph-discord:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow-lg)}
+.ph-discord:active{transform:translateY(1px);box-shadow:var(--shadow)}
+.ph-discord svg.ico{width:19px;height:19px;flex:none}

@@ -710,10 +710,21 @@
         <h3>Aide Acolyte à grandir</h3>
         <p>Pas de pub intrusive, pas de données revendues. La meilleure façon de soutenir Acolyte, c'est de laisser ton avis.</p>
       </div>
-      <a class="ph-link" href="https://www.producthunt.com/products/acolyte/reviews/new?utm_source=badge-product_review&amp;utm_medium=badge&amp;utm_source=badge-acolyte" target="_blank" rel="noopener">
-        <img src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1273558&amp;theme=light"
-             alt="Donner son avis sur Acolyte — Product Hunt" width="250" height="54" loading="lazy">
-      </a>
+      <div class="ph-actions">
+        <a class="ph-link" href="https://www.producthunt.com/products/acolyte/reviews/new?utm_source=badge-product_review&amp;utm_medium=badge&amp;utm_source=badge-acolyte" target="_blank" rel="noopener">
+          <img src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1273558&amp;theme=light"
+               alt="Donner son avis sur Acolyte — Product Hunt" width="250" height="54" loading="lazy">
+        </a>
+        <!-- ⚠️ Masqué tant que l'adresse n'est pas renseignée dans config.js :
+             un bouton qui ouvre une page morte est pire que pas de bouton.
+             C'est un <button> et non un <a> parce que l'adresse est VALIDÉE
+             avant l'ouverture (voir discordURL dans app.js) — un href écrit en
+             dur ne pourrait pas l'être. -->
+        <button class="ph-discord" id="phDiscord" type="button" style="display:none">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 4.5h7l3 5v7l-4 3-1.2-2h-2.6L9.5 19.5l-4-3v-7l3-5Z"/><circle cx="9.8" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.2" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>
+          Discord
+        </button>
+      </div>
     </div>
 
     <div class="danger-zone">

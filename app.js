@@ -10975,8 +10975,14 @@ function majNavTools(){
      pire que ne rien proposer — c'est la même règle que pour l'installation et
      pour les liens d'affiliation : une invitation qu'on ne peut pas honorer ne
      s'affiche pas. */
-  const dRow = $('#pfDiscordRow');
-  if(dRow) dRow.style.display = discordURL() ? '' : 'none';
+  const dOk = !!discordURL();
+  /* Les DEUX entrées vers le Discord décidées ici : la ligne de la liste
+     d'actions et le bouton du bloc « Aide Acolyte à grandir ». Deux tests
+     séparés, c'est la garantie qu'un jour l'un des deux montrera un lien mort. */
+  [['#pfDiscordRow', ''], ['#phDiscord', 'inline-flex']].forEach(([sel, aff]) => {
+    const e = $(sel);
+    if(e) e.style.display = dOk ? aff : 'none';
+  });
 }
 /* Une seule lecture de l'adresse, avec le même repli que les autres réglages :
    config.js d'abord, localStorage pour tester sans toucher au fichier. */
@@ -10994,11 +11000,15 @@ function discordURL(){
   const t = $('#ntTheme'); if(t) t.onclick = basculeTheme;
   const i = $('#ntInstall'); if(i) i.onclick = () => openInstall();
   const i2 = $('#pfInstTop'); if(i2) i2.onclick = () => openInstall();
-  const dc = $('#pfDiscord'); if(dc) dc.onclick = () => {
+  /* Un seul gestionnaire pour les deux boutons : la validation de l'adresse et
+     le noopener ne doivent exister qu'à un endroit. */
+  const ouvreDiscord = () => {
     const u = discordURL();
     /* noopener : sans lui, la page ouverte peut manipuler celle d'Acolyte */
     if(u) window.open(u, '_blank', 'noopener,noreferrer');
   };
+  const dc = $('#pfDiscord'); if(dc) dc.onclick = ouvreDiscord;
+  const dp = $('#phDiscord'); if(dp) dp.onclick = ouvreDiscord;
   const m = $('#ntMe'); if(m) m.onclick = () => switchCat('profile');
   majNavTools();
 }
