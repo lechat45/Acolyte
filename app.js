@@ -155,11 +155,76 @@ function safeCache(c){
   } else delete o.maps;
   return o;
 }
+/* ============================================================
+   VERSION DE CONTRAT DE L'ÉTAT
+   ------------------------------------------------------------
+   safeState() protège contre la dérive de FORME : un champ manquant prend sa
+   valeur par défaut, un mauvais type est corrigé, une clé inconnue est ignorée.
+   Mais il ne voit RIEN de la dérive de SENS. Si une version change ce que
+   signifie une valeur — l'unité d'un nombre, le sens de « mode » — le
+   validateur laisse passer et la carte devient FAUSSEMENT JUSTE, ce qui est
+   pire que cassée.
+
+   ⚠️ ET LE DANGER VA DANS LES DEUX SENS. On pense d'abord au code neuf lisant
+   des données vieilles. Mais l'inverse arrive aussi, et c'est plus vicieux :
+   la v2 écrit un nouveau sens de « mode », puis la v1 le relit HORS LIGNE
+   (service worker, autre appareil, onglet resté ouvert). La v1 ne peut pas
+   savoir ce qui a changé — elle accepterait en silence.
+
+   D'où trois comportements, pas un :
+     · données à jour        → rien à faire
+     · données PLUS VIEILLES → on migre, champ par champ
+     · données PLUS RÉCENTES → on ne peut pas migrer vers le passé. On garde
+       tout ce qui est STRUCTUREL (dates, titres, heures : leur sens ne change
+       pas) et on remet à leur valeur sûre les seuls champs INTERPRÉTÉS. Refuser
+       de charger serait hostile : le voyage disparaîtrait précisément quand
+       l'utilisateur est hors ligne et en a besoin.
+
+   ⚠️ Incrémenter ETAT_V est OBLIGATOIRE dès qu'un champ change de SENS — pas
+   quand on en ajoute un, safeState s'en charge déjà.
+============================================================ */
+const ETAT_V = 1;
+/* Les champs dont la valeur s'INTERPRÈTE, donc ceux qui peuvent mentir après un
+   changement de contrat. Les autres (titres, heures, notes) sont du texte : leur
+   sens ne dérive pas. */
+const ETAT_INTERPRETE = { mode: 'plane' };
+/* Migrations vers l'avant, appliquées dans l'ordre. Vide aujourd'hui : le
+   tampon vient d'être posé. Chaque entrée reçoit l'objet brut et le rend
+   corrigé — c'est ici qu'on écrira « en v2, mode:'car' signifiait autre chose ».
+   ⚠️ Une migration ne doit JAMAIS supposer que les champs existent. */
+const ETAT_MIGRATIONS = {
+  /* exemple, à décommenter le jour où ce sera vrai :
+  2: o => { if(o.mode === 'car') o.mode = 'voiture'; return o; }
+  */
+};
+/* Vrai quand on a lu des données écrites par une version PLUS RÉCENTE. L'app
+   peut s'en servir pour prévenir l'utilisateur : il vaut mieux lui dire que son
+   voyage vient d'une version plus neuve que de lui montrer un plan silencieux. */
+var _etatDuFutur = false;
+
 /* Reconstruit un état propre à partir de données non fiables.
    On part TOUJOURS de la forme attendue : une clé inconnue est ignorée. */
 function safeState(raw){
-  const s = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+  let s = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+  /* Version du contrat qui a ÉCRIT ces données. Absente = antérieure au tampon. */
+  const vu = Number(s.v) || 0;
+  _etatDuFutur = false;
+  if(vu > ETAT_V){
+    /* Données du futur : on ne peut pas migrer vers le passé. On neutralise les
+       seuls champs dont le sens peut avoir changé, et on garde le reste. */
+    _etatDuFutur = true;
+    s = { ...s };
+    for(const [k, def] of Object.entries(ETAT_INTERPRETE)) s[k] = def;
+  }else if(vu < ETAT_V){
+    /* Migrations vers l'avant, dans l'ordre des versions. */
+    s = { ...s };
+    for(let n = vu + 1; n <= ETAT_V; n++){
+      const m = ETAT_MIGRATIONS[n];
+      if(typeof m === 'function'){ try{ s = m(s) || s; }catch(e){} }
+    }
+  }
   const st = {
+    v: ETAT_V,
     step:         _sNum(s.step, 1, 3),
     prefs:        s.prefs && typeof s.prefs === 'object' ? safeJSON(s.prefs) : null,
     destinations: Array.isArray(s.destinations) ? s.destinations.slice(0, 12).map(x => safeJSON(x)) : [],
