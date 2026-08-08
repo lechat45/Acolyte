@@ -1,5 +1,5 @@
 /* Acolite — Service Worker : app hors-ligne (coque en cache, réseau d'abord pour le HTML) */
-const CACHE = 'acolite-v113';
+const CACHE = 'acolite-v114';
 /* Cache séparé pour les tuiles de la carte : elles sont nombreuses et on les
    plafonne, alors que la coque de l'app doit rester intacte. */
 const TILES = 'acolite-tiles-v1';

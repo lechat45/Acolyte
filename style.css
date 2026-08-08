@@ -67,8 +67,14 @@
   /* assombri de #C25A11 : les liens en portent la couleur, et sur le blanc ils
      plafonnaient à 4,41:1 — juste sous la norme. À #B85410 : 4,87:1, et le
      texte blanc POSÉ dessus (bandeau réseau, étiquette « warn ») y gagne
-     exactement autant. */
-  --accent-orange: #B85410;
+     exactement autant.
+     ⚠️ CORRIGÉ À NOUVEAU — et le piège vaut d'être noté. #B85410 avait été
+     mesuré sur du BLANC PUR (#FFFFFF, la carte), mais la plupart des liens
+     reposent sur --bg (#F5F4F0), qui est plus SOMBRE : là, le rapport retombe
+     à 4,42:1, toujours sous la norme. Le bon fond de référence est le fond
+     RÉEL du texte, pas le plus clair de la palette.
+     À #B04E0E : 4,84:1 sur --bg et 5,33:1 sur blanc — les deux passent. */
+  --accent-orange: #B04E0E;
   /* assombri de #1E8C57 pour la même raison que l'orange : le texte blanc de
      l'étiquette « OK » n'y atteignait que 4,25:1. À #1A7F4E : 5,01:1. */
   --ok:     #1A7F4E;
@@ -299,9 +305,16 @@ h3{font-size:1.1rem;margin-top:6px}
   display:block;font-size:.8rem;font-weight:800;color:var(--txt);
   text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;
 }
+/* ⚠️ 16px N'EST PAS UN CHOIX DE STYLE, C'EST UN SEUIL DE SAFARI.
+   Sous iOS, poser le doigt dans un champ dont le texte fait MOINS de 16px
+   zoome la page entière — et Safari ne dézoome jamais tout seul. Le visiteur
+   reste coincé en gros plan et doit pincer pour ressortir, à chaque champ.
+   On était à .95rem (15,2px) : il s'en fallait de 0,8 pixel, sur les 17 champs
+   du site, dans une app faite pour le téléphone.
+   Ne repasse JAMAIS cette valeur sous 16px, quelle que soit la maquette. */
 input,select,textarea{
   width:100%;background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-sm);
-  color:var(--txt);padding:12px;font-size:.95rem;font-weight:600;font-family:inherit;outline:none;
+  color:var(--txt);padding:12px;font-size:16px;font-weight:600;font-family:inherit;outline:none;
   transition:all .1s ease;box-shadow:var(--shadow);
 }
 input:focus,select:focus,textarea:focus{background:var(--field-focus);transform:translate(-1px,-1px);box-shadow:var(--shadow)}
@@ -312,8 +325,11 @@ select option{background:var(--secondary);color:var(--txt)}
 /* Questions à choix pair : grille 2 colonnes bien symétrique */
 .chips.even{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chips.even .chip{text-align:center;justify-content:center;display:flex;align-items:center}
+/* min-width : les puces à texte court (« FR », « EN ») tombaient à 41px de
+   large. Le padding suffit dès qu'il y a un mot, jamais pour deux lettres —
+   d'où un plancher plutôt qu'un padding plus gros, qui déformerait les autres. */
 .chip{
-  padding:8px 16px;border-radius:var(--r-sm);font-size:.85rem;font-weight:700;cursor:pointer;
+  padding:8px 16px;min-width:44px;border-radius:var(--r-sm);font-size:.85rem;font-weight:700;cursor:pointer;
   background:var(--secondary);border:1px solid var(--stroke);color:var(--txt);
   transition:all .1s ease;user-select:none;box-shadow:var(--shadow);
 }
@@ -3227,9 +3243,12 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   display:block;font-family:'Sora',sans-serif;font-weight:800;font-size:.66rem;
   text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);margin-bottom:6px;
 }
+/* Même seuil que plus haut : .98rem = 15,68px, donc zoom iOS au focus. C'est le
+   pire endroit pour ça — l'inscription est le premier écran d'un nouveau
+   visiteur. 16px, et 12px de padding pour atteindre les 44px de cible. */
 .auth-card .field input{
   width:100%;background:transparent;border:0;border-bottom:1px solid var(--stroke-2);
-  border-radius:0;padding:10px 0 10px 0;font-size:.98rem;color:var(--txt);
+  border-radius:0;padding:12px 0;font-size:16px;color:var(--txt);
   transition:border-color .16s ease;
 }
 .auth-card .field input::placeholder{color:var(--txt-2);opacity:.75}
@@ -3256,7 +3275,13 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .auth-card .privacy-check{
   margin-top:22px;font-size:.86rem;line-height:1.45;color:var(--txt-2);
 }
-.auth-card .privacy-check a{color:var(--primary);text-decoration:underline;text-underline-offset:2px}
+/* ⚠️ ÉTAIT var(--primary) : du JAUNE #FFE600 sur le fond clair de la carte,
+   soit 1,15:1 — illisible, et c'est le lien vers la politique de
+   confidentialité, sur la case de consentement de l'inscription. Le jaune est
+   une couleur de FOND dans cette charte (il porte --primary-ink par-dessus) ;
+   posé en texte sur du clair il ne peut pas fonctionner. On reprend la couleur
+   de lien du reste du site, celle de la règle de base .privacy-check a. */
+.auth-card .privacy-check a{color:var(--accent-orange);text-decoration:underline;text-underline-offset:2px}
 .auth-card .btn{border-radius:var(--r-md);padding:16px 24px;font-size:.95rem}
 .auth-card .auth-switch{margin-top:18px;text-align:center;color:var(--txt-2);font-weight:600}
 /* ⚠️ inline-flex + min-height : mesuré à 16 px de haut sans ça, sous le
@@ -3802,15 +3827,32 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    C'est le trait le plus caractéristique de 1b. Un cadre complet autour de
    quatorze champs, ça fait quatorze boîtes ; un trait, ça fait une ligne
    d'écriture — et le regard descend au lieu de sauter de boîte en boîte. */
+/* ⚠️ LE PADDING FAIT LA CIBLE, PAS SEULEMENT LA MARGE.
+   Cette règle retire le cadre — c'est le trait voulu. Mais elle écrasait aussi
+   le `padding:12px` de la règle de base par `padding:0 0 8px`, et c'est LUI qui
+   donnait sa hauteur au champ. Résultat mesuré sur iPhone : 26px de haut au
+   lieu de 44, sur les onze champs du questionnaire — le formulaire principal du
+   site. Le trait ne coûtait rien ; le padding retiré avec, si.
+   On garde donc le dessin (aucun cadre, un trait dessous) et on rend la
+   hauteur : padding vertical restauré, seul le padding HORIZONTAL reste à 0,
+   puisque c'est lui qui alignerait le texte sur une boîte invisible. */
 #catTrip .field input:not([type="checkbox"]):not([type="range"]),
 #catTrip .field select,
 #catTrip .field textarea{
   background:none;border:0;border-radius:0;box-shadow:none;
   border-bottom:1px solid var(--stroke-2);
-  padding:0 0 8px;
-  font-family:'Inter',sans-serif;font-weight:500;font-size:.9rem;
+  padding:10px 0;
+  font-family:'Inter',sans-serif;font-weight:500;font-size:16px;
   transition:border-color .14s ease;
 }
+/* ⚠️ Le plancher de 44px vise les champs d'UNE ligne, et le textarea en est
+   EXCLU volontairement. Posé sur lui aussi, il devenait plus spécifique que le
+   `textarea{min-height:80px}` de la règle de base, le battait, et la zone de
+   texte libre rétrécissait de 80 à 59px : un plancher pour les uns est un
+   plafond pour l'autre. L'exclure ici évite en prime de déclarer min-height
+   deux fois sur le même sélecteur — le conflit que compte verifie.js. */
+#catTrip .field input:not([type="checkbox"]):not([type="range"]),
+#catTrip .field select{ min-height:44px }
 /* ⚠️ Sans cadre, le focus n'a plus de boîte à colorer : le trait DOIT réagir,
    sinon on ne sait plus dans quel champ on écrit. Le contour global du focus
    reste par-dessus, celui-ci s'adresse à la souris comme au clavier. */
@@ -3818,8 +3860,12 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 #catTrip .field select:focus,
 #catTrip .field textarea:focus{border-bottom-color:var(--primary)}
 /* Le libellé passe en micro-étiquette, comme dans la maquette. */
+/* ⚠️ .66rem faisait 10,6px, en gris atténué. Ce sont ces mots-là qui portent le
+   sens de chaque champ (« Budget total / personne ») : sous ~12px et en couleur
+   secondaire, ils passent sous le seuil de lecture confortable sur un
+   téléphone. .75rem = 12px, la micro-étiquette reste une micro-étiquette. */
 #catTrip .field > label{
-  font-family:'Inter',sans-serif;font-weight:500;font-size:.66rem;
+  font-family:'Inter',sans-serif;font-weight:500;font-size:.75rem;
   letter-spacing:.02em;text-transform:none;color:var(--txt-2);
   margin-bottom:8px;
 }
@@ -4123,3 +4169,104 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
    la mise en page sur les vieux Safari au lieu de l'améliorer. */
 body{ min-height:100dvh }
 .modal{ max-height:88dvh }
+
+/* ============================================================
+   ASSISTANT IA (bêta) — ORDINATEUR UNIQUEMENT
+   ------------------------------------------------------------
+   ⚠️ .cat-pc EST LE POINT DÉLICAT, et il a déjà été supprimé une fois de cette
+   feuille « parce que plus rien ne l'utilisait ». Il revient avec un usage
+   unique et nommé : le cinquième onglet.
+   Pourquoi display:none et pas une media query autour du bouton : la barre du
+   bas est une GRILLE figée à repeat(4,1fr). Un cinquième enfant en
+   display:none ne prend pas de colonne — les quatre onglets du téléphone
+   gardent exactement leur largeur. Masquer autrement (visibility, opacité,
+   largeur nulle) laisserait une colonne fantôme et rétrécirait les quatre
+   autres, ce qui est précisément le débordement que le commentaire du bloc
+   BLOG met en garde d'éviter.
+============================================================ */
+/* ⚠️ LA SPÉCIFICITÉ EST LE PIÈGE, et j'y suis tombé en le mesurant.
+   `.cat-pc` seul vaut (0,1,0) ; `.catnav button`, déclaré bien plus haut,
+   vaut (0,1,1) et pose display:flex. La règle courte PERDAIT donc toujours :
+   le cinquième bouton restait affiché sur téléphone et passait à la ligne,
+   donnant une barre du bas sur DEUX rangées. Vu à 375 px, pas déduit.
+   Il faut au moins égaler le sélecteur qu'on corrige : `.catnav button.cat-pc`
+   vaut (0,2,1) et gagne franchement. */
+.catnav button.cat-pc{display:none}
+@media (min-width:900px){ .catnav button.cat-pc{display:flex} }
+
+/* L'en-tête, au langage éditorial du blog : pas de cadre, un titre posé. */
+.ia-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.ia-head h2{margin:0;display:inline-flex;align-items:center;gap:10px}
+.ia-head .sub{margin:6px 0 0;max-width:62ch}
+
+/* L'étiquette bêta : elle doit se lire comme une mention, pas comme un bouton.
+   D'où le contour et non l'aplat — le jaune plein est réservé à ce sur quoi on
+   clique, règle posée par le bloc des onglets d'ordinateur. */
+.ia-beta{
+  font-family:'Inter',sans-serif;font-weight:700;font-size:.6rem;
+  text-transform:uppercase;letter-spacing:.1em;
+  color:var(--accent-orange);border:1px solid var(--accent-orange);
+  border-radius:999px;padding:3px 9px;vertical-align:middle;
+  position:relative;top:-2px;
+}
+
+.ia-avis{
+  display:flex;align-items:flex-start;gap:12px;
+  background:var(--surface-2);border:1px solid var(--stroke);
+  border-left:3px solid var(--accent-orange);
+  border-radius:var(--r-md);padding:14px 16px;margin-bottom:20px;
+}
+.ia-avis-ico{font-size:1.15rem;line-height:1.4;flex:none}
+.ia-avis p{margin:0;font-size:.86rem;line-height:1.55;color:var(--txt-2)}
+.ia-avis b{color:var(--txt)}
+
+.ia-modes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+/* La phrase d'aide du mode : elle change à chaque choix, donc elle ne doit pas
+   faire sauter la mise en page. Une hauteur minimale la réserve d'avance. */
+.ia-mode-aide{
+  font-size:.8rem;font-weight:600;color:var(--txt-2);
+  margin:0 0 18px;line-height:1.5;min-height:1.5em;
+}
+
+/* ---- Le fil de conversation ----
+   Hauteur bornée et défilement interne : la saisie doit rester visible sans
+   qu'on ait à remonter la page à chaque réponse. */
+.ia-fil{
+  display:flex;flex-direction:column;gap:14px;
+  min-height:220px;max-height:min(52vh,520px);overflow-y:auto;
+  background:var(--secondary);border:1px solid var(--stroke);
+  border-radius:var(--r-lg);box-shadow:var(--shadow);
+  padding:20px;margin-bottom:14px;
+}
+.ia-vide{margin:auto;text-align:center;color:var(--txt-2);font-size:.86rem;line-height:1.6;max-width:44ch}
+.ia-vide .ia-vide-ico{font-size:2rem;display:block;margin-bottom:10px;opacity:.5}
+
+.ia-msg{display:flex;flex-direction:column;gap:5px;max-width:78%}
+.ia-msg .ia-qui{
+  font-family:'Sora',sans-serif;font-weight:800;font-size:.6rem;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);
+}
+.ia-msg .ia-txt{
+  font-size:.88rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;
+  border:1px solid var(--stroke);border-radius:var(--r-md);padding:11px 14px;
+}
+/* Le voyageur à droite en jaune, Acolyte à gauche : la même asymétrie que
+   n'importe quelle conversation, on ne réinvente rien ici. */
+.ia-msg.moi{align-self:flex-end;align-items:flex-end}
+.ia-msg.moi .ia-txt{background:var(--primary);color:var(--primary-ink);border-color:transparent}
+.ia-msg.aco{align-self:flex-start}
+.ia-msg.aco .ia-txt{background:var(--surface-2);color:var(--txt)}
+/* Un refus ou une erreur ne se déguise pas en réponse normale. */
+.ia-msg.rate .ia-txt{border-color:var(--accent-orange);background:none;color:var(--txt-2)}
+
+.ia-saisie{display:flex;gap:10px;align-items:flex-end}
+.ia-saisie textarea{
+  flex:1;min-height:52px;max-height:180px;resize:vertical;
+  font-family:'Inter',sans-serif;font-weight:500;line-height:1.5;
+}
+.ia-saisie .btn{flex:none;height:52px;padding:0 26px;white-space:nowrap}
+.ia-etat{font-size:.78rem;font-weight:600;color:var(--txt-2);margin:10px 0 0;min-height:1.2em}
+
+/* Pendant un appel : on empêche le double envoi ET on le montre. */
+.ia-occupe .ia-saisie textarea,
+.ia-occupe .ia-saisie .btn{opacity:.55;pointer-events:none}

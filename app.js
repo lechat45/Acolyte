@@ -197,28 +197,102 @@ const ETAT_MIGRATIONS = {
   2: o => { if(o.mode === 'car') o.mode = 'voiture'; return o; }
   */
 };
-/* Vrai quand on a lu des données écrites par une version PLUS RÉCENTE. L'app
-   peut s'en servir pour prévenir l'utilisateur : il vaut mieux lui dire que son
-   voyage vient d'une version plus neuve que de lui montrer un plan silencieux. */
+/* Vrai quand on RETIENT des valeurs qu'on ne sait pas lire — soit qu'on vienne
+   de lire des données d'une version plus récente, soit qu'on transporte une
+   quarantaine posée par une autre version. Lu par futurBarMaj(). */
 var _etatDuFutur = false;
+
+/* ------------------------------------------------------------
+   LA QUARANTAINE — pourquoi neutraliser ne suffisait PAS.
+   ------------------------------------------------------------
+   ⚠️ CE BLOC EXISTE À CAUSE D'UN TROU RÉEL, signalé par le même lecteur du post
+   Reddit que la rétrogradation elle-même. La première version remettait les
+   champs interprétés à leur valeur sûre, levait le drapeau, et s'arrêtait là.
+   C'était correct pour AFFICHER. C'était destructeur pour ÉCRIRE :
+
+     la v9 écrit {v:9, mode:'car'}
+     la v1 lit    → drapeau levé, mode ramené à 'plane'   ← correct
+     un seul save() → le disque contient {v:1, mode:'plane'}
+     la v9 revient → tampon v1, aucun drapeau : pour elle ce sont de VIEILLES
+                     données parfaitement normales. Le 'car' n'existe plus
+                     nulle part, et rien ne dit qu'il a existé.
+
+   La perte devenait indiscernable d'un choix de l'utilisateur — exactement le
+   « faussement juste » que tout ce mécanisme devait empêcher. Et comme save()
+   déclenche la synchro, l'état appauvri partait sur le serveur et redescendait
+   sur l'appareil resté en v9 : le rayon d'action n'était pas un navigateur,
+   c'était le compte.
+
+   La règle est donc : on ne DÉTRUIT pas ce qu'on ne comprend pas, on le MET DE
+   CÔTÉ. La version courante affiche une valeur sûre ; l'originale voyage dans
+   `_futur`, jamais lue, jamais interprétée, seulement transportée — jusqu'à une
+   version qui sait enfin la relire, qui la restaure et jette la boîte.
+------------------------------------------------------------ */
+/* La boîte vient du disque, donc de l'EXTÉRIEUR : même méfiance que le reste.
+   Numéro de version entier plausible, et uniquement les clés interprétées. */
+function safeFutur(q){
+  if(!q || typeof q !== 'object' || Array.isArray(q)) return null;
+  const v = Number(q.v);
+  if(!Number.isInteger(v) || v <= 0 || v > 9999) return null;
+  const boite = { v };
+  for(const k of Object.keys(ETAT_INTERPRETE)){
+    if(q[k] !== undefined) boite[k] = safeJSON(q[k], 4);
+  }
+  return boite;
+}
 
 /* Reconstruit un état propre à partir de données non fiables.
    On part TOUJOURS de la forme attendue : une clé inconnue est ignorée. */
 function safeState(raw){
   let s = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+  s = { ...s };
   /* Version du contrat qui a ÉCRIT ces données. Absente = antérieure au tampon. */
   const vu = Number(s.v) || 0;
   _etatDuFutur = false;
+  let futur = safeFutur(s._futur);
+  /* Version DEPUIS laquelle la chaîne de migration doit repartir. C'est `vu`
+     en temps normal, mais la version de la BOÎTE quand on restaure : les
+     valeurs qui en sortent sont dans la sémantique de celle-là, pas dans celle
+     du disque. */
+  let depuis = vu;
+
   if(vu > ETAT_V){
-    /* Données du futur : on ne peut pas migrer vers le passé. On neutralise les
-       seuls champs dont le sens peut avoir changé, et on garde le reste. */
-    _etatDuFutur = true;
-    s = { ...s };
+    /* Données du futur : on ne peut pas migrer vers le passé. On met de côté
+       AVANT de neutraliser — c'est tout l'objet du correctif.
+       On n'écrase une boîte existante que si celle-ci vient de plus loin :
+       la plus ancienne mise de côté est la plus proche de l'original. */
+    if(!futur || futur.v < vu){
+      futur = { v: vu };
+      for(const k of Object.keys(ETAT_INTERPRETE)){
+        if(s[k] !== undefined) futur[k] = safeJSON(s[k], 4);
+      }
+    }
     for(const [k, def] of Object.entries(ETAT_INTERPRETE)) s[k] = def;
-  }else if(vu < ETAT_V){
-    /* Migrations vers l'avant, dans l'ordre des versions. */
-    s = { ...s };
-    for(let n = vu + 1; n <= ETAT_V; n++){
+  }else if(futur && futur.v <= ETAT_V){
+    /* On comprend enfin le contrat qui a rempli la boîte : on restaure, et on
+       la jette. C'est le retour de la v9 dans le scénario ci-dessus. */
+    for(const k of Object.keys(ETAT_INTERPRETE)){
+      if(futur[k] !== undefined) s[k] = futur[k];
+    }
+    depuis = futur.v;
+    futur = null;
+  }
+
+  /* Le drapeau ne dit plus « je viens de lire du futur » mais « je retiens des
+     valeurs que je ne sais pas lire ». C'est ce qui compte pour l'utilisateur,
+     et ça reste vrai tant que la boîte voyage — y compris pour une v5 qui lit
+     un disque v1 portant une boîte v9. */
+  _etatDuFutur = !!futur;
+
+  if(depuis < ETAT_V){
+    /* Migrations vers l'avant, dans l'ordre des versions.
+       ⚠️ Départ à `depuis` et non à `vu` : après une restauration, rejouer les
+       migrations depuis le tampon du disque les appliquerait DEUX FOIS aux
+       valeurs sorties de la boîte. Ceci suppose qu'une migration ne touche que
+       des champs INTERPRÉTÉS — c'est la promesse de ETAT_INTERPRETE. Le jour où
+       une migration devra corriger un autre champ, ce champ doit d'abord être
+       déclaré interprété. */
+    for(let n = depuis + 1; n <= ETAT_V; n++){
       const m = ETAT_MIGRATIONS[n];
       if(typeof m === 'function'){ try{ s = m(s) || s; }catch(e){} }
     }
@@ -244,7 +318,28 @@ function safeState(raw){
     _qsDone:      _sBool(s._qsDone)
   };
   if(!st.trip) st.step = 1;      /* pas de voyage → on ne peut pas être à l'étape 3 */
+  /* ⚠️ LA BOÎTE DOIT ÊTRE DANS LA LISTE BLANCHE, sinon elle meurt ici.
+     Ironie utile : le filtre qui protège l'état est exactement ce qui
+     supprimerait la quarantaine. On ne l'écrit que si elle contient quelque
+     chose — un `_futur:null` dans chaque sauvegarde ne servirait personne. */
+  if(futur) st._futur = futur;
   return st;
+}
+
+/* L'utilisateur vient de CHOISIR lui-même un champ interprété. Sa décision
+   d'aujourd'hui prime sur la valeur mise de côté hier : restaurer plus tard un
+   'car' venu de la v9 par-dessus le 'train' qu'il vient de sélectionner serait
+   défaire son travail sous prétexte de le protéger. On retire donc ce champ de
+   la boîte, et la boîte elle-même quand elle est vide. */
+function etatChoixExplicite(champ){
+  const q = state && state._futur;
+  if(!q || q[champ] === undefined) return;
+  delete q[champ];
+  if(!Object.keys(ETAT_INTERPRETE).some(k => q[k] !== undefined)){
+    delete state._futur;
+    _etatDuFutur = false;
+    if(typeof futurBarMaj === 'function') futurBarMaj();
+  }
 }
 
 /* Écriture localStorage tolérante : en navigation privée ou stockage plein,
@@ -3610,6 +3705,9 @@ const _e3 = $('#tgPlane'); if(_e3) _e3.onclick = () => setMode('plane');
 const _e4 = $('#tgCar'); if(_e4) _e4.onclick   = () => setMode('car');
 const _e5 = $('#tgTrain'); if(_e5) _e5.onclick = () => setMode('train');
 function setMode(m){
+  /* Choix explicite : il libère « mode » de toute quarantaine en cours (voir
+     etatChoixExplicite). À faire AVANT save(), sinon on réenregistre la boîte. */
+  etatChoixExplicite('mode');
   state.mode = m; state.modeManual = true; save();
   $('#tgPlane').classList.toggle('on', m==='plane');
   $('#tgCar').classList.toggle('on', m==='car');
@@ -6600,18 +6698,29 @@ function requireAuth(){
    CATÉGORIES — 🗺️ Carte · 🤖 Voyage · 👤 Profil
 ============================================================ */
 function switchCat(cat){
+  /* ⚠️ L'onglet Assistant n'existe QUE sur ordinateur, et le masquer en CSS ne
+     suffit pas : on peut y arriver sans cliquer sur le bouton (rechargement,
+     retour arrière, fenêtre rétrécie après coup). Le refus est donc ici, à
+     l'endroit par lequel TOUT passe. Sans ça, un téléphone pouvait afficher
+     une console dont l'onglet était invisible — donc sans retour possible. */
+  if(cat === 'ia' && typeof iaSurPC === 'function' && !iaSurPC()) cat = 'trip';
   $$('.catnav button').forEach(b => b.classList.toggle('on', b.dataset.cat === cat));
   $('#catTrip').classList.toggle('hidden', cat !== 'trip');
   $('#catMap').classList.toggle('hidden', cat !== 'map');
   $('#catProfile').classList.toggle('hidden', cat !== 'profile');
   $('#catBlog')?.classList.toggle('hidden', cat !== 'blog');
+  $('#catIA')?.classList.toggle('hidden', cat !== 'ia');
   window.scrollTo({top:0});
   /* Un compteur par ecran : c'est ce qui dit si le blog ou la carte servent
      vraiment, ou si personne n'y va jamais. */
-  statCompte({ map:'carte_ouverte', blog:'blog_ouvert', trip:'voyage_ouvert' }[cat], true);
+  statCompte({ map:'carte_ouverte', blog:'blog_ouvert', trip:'voyage_ouvert', ia:'assistant_ouvert' }[cat], true);
   if(cat === 'map') buildProjectMap();
   if(cat === 'profile'){ renderProfile(); renderSettings(); }
   if(cat === 'blog') openBlog();
+  /* Le fil peut avoir changé depuis le dernier passage (autre appareil, via la
+     synchro) : on le relit à l'ouverture plutôt que de garder l'affichage
+     construit au chargement de la page. */
+  if(cat === 'ia' && typeof iaRender === 'function'){ iaRender(); iaModeApplique(_iaMode); }
   /* états vides : pas de voyage → invitations plutôt qu'écrans vides */
   const noTrip = !state.trip;
   $('#catMap')?.classList.toggle('empty', noTrip);
@@ -6712,6 +6821,23 @@ function renderRail(){
         <span class="rs-n rs-cnt">${n}</span>
       </li>`;
     }).join('');
+  }else if(_cat === 'ia'){
+    /* La colonne de l'assistant porte les trois MODES. Sans elle, on retombait
+       sur « Questions · Les choix · Ton voyage » — les étapes du voyage, qui ne
+       mènent nulle part depuis ici : exactement le défaut que ce bloc décrit en
+       tête. Et comme le mode est une permission, l'avoir en permanence sous les
+       yeux, à deux endroits, n'est pas une redite : c'est le rappel de ce
+       qu'Acolyte a le droit de faire de la phrase suivante. */
+    titre = isEN() ? 'What Acolyte does' : 'Ce qu’Acolyte fait';
+    const M = isEN()
+      ? { question:['Answer','Reads your trip, changes nothing'],
+          creer:['Create','Fills the form, suggests destinations'],
+          modifier:['Modify','Edits your schedule, undoable'] }
+      : { question:['Répondre','Lit ton voyage, ne modifie rien'],
+          creer:['Créer','Remplit le questionnaire, propose'],
+          modifier:['Modifier','Change ton programme, annulable'] };
+    html = ['question', 'creer', 'modifier'].map((k, i) =>
+      ligne('iam:' + k, String(i + 1).padStart(2, '0'), M[k][0], M[k][1], _iaMode === k, false)).join('');
   }else{
     const n = state.step || 1;
     const bloque2 = !(state.destinations || []).length, bloque3 = !state.trip;
@@ -6741,6 +6867,7 @@ document.addEventListener('click', e => {
   if(!li || li.classList.contains('off')) return;
   const [genre, val] = li.dataset.rail.split(':');
   if(genre === 'step') gotoStep(+val);
+  else if(genre === 'iam') iaModeApplique(val);   /* il redessine la colonne lui-même */
   else if(genre === 'day'){
     /* renderRail() remplace les <li> : si l'activation venait du clavier, le
        focus tomberait dans le vide. On le repose sur la nouvelle ligne active,
@@ -11961,3 +12088,304 @@ function agesEnfantsTexte(ages){
   L.push('Signale les tarifs enfants et les gratuités quand ils existent, et évite les lieux avec un âge minimum.');
   return L.join(' ');
 }
+
+/* ============================================================
+   ASSISTANT IA (bêta) — la console de l'onglet « Assistant »
+   ------------------------------------------------------------
+   ⚠️ RÉSERVÉ À L'ORDINATEUR. Le bouton est masqué en CSS sous 900 px, mais un
+   bouton caché n'est pas une porte fermée : on peut arriver ici par le retour
+   arrière, par un rechargement, ou en rétrécissant la fenêtre. Le garde-fou
+   est donc DANS switchCat(), pas seulement dans la feuille de style.
+
+   ⚠️ LE MODE EST UNE PERMISSION, PAS UNE PRÉFÉRENCE. C'est la décision de
+   fond : « répondre » et « modifier ton voyage » n'ont pas les mêmes
+   conséquences, et laisser un modèle deviner laquelle on veut, c'est accepter
+   qu'il modifie un programme quand on lui posait une question. Le mode est
+   donc choisi par l'humain, visible en permanence, et il borne ce que le CODE
+   accepte de faire de la réponse — pas ce qu'on demande gentiment au modèle.
+
+   ⚠️ ON NE RÉÉCRIT PAS L'ASSISTANT DE MODIFICATION. Le mode « modifier »
+   réutilise asstPrompt() et asstApplique() — le contrat du prompt et la
+   validation opération par opération. Recopier cette logique ici en aurait
+   fait une seconde version, qui aurait dérivé, et la sécurité serait tombée
+   du côté le moins relu.
+============================================================ */
+const IA_PC_MIN = 900;                 /* même seuil que .cat-pc dans la feuille */
+const iaSurPC = () => window.innerWidth >= IA_PC_MIN;
+let _iaMode = 'question';
+let _iaOccupe = false;
+let _iaAvant = null;                   /* instantané du programme, pour annuler */
+
+const IA_MODES = {
+  question: {
+    aide: 'Acolyte répond à partir de TON voyage. Il ne modifie rien.',
+    trou: 'Ex. : à quelle heure ouvre le musée du jour 2 ?'
+  },
+  creer: {
+    aide: 'Décris ton envie en une phrase : Acolyte remplit le questionnaire et propose des destinations.',
+    trou: 'Ex. : une semaine au Portugal en mai, à deux, budget 800 € par personne'
+  },
+  modifier: {
+    aide: 'Acolyte change ton programme. Chaque opération est vérifiée, et tout est annulable.',
+    trou: 'Ex. : enlève le musée du jour 3 et ajoute un marché le matin'
+  }
+};
+
+/* Le fil vit dans state.chatLog — un champ présent dans le contrat de l'état
+   depuis le début : déclaré, assaini, synchronisé… et jamais rempli. Il est
+   déjà borné à 100 entrées par safeState : rien à plafonner ici. */
+function iaLog(){ if(!Array.isArray(state.chatLog)) state.chatLog = []; return state.chatLog; }
+
+function iaAjoute(qui, texte, rate){
+  iaLog().push({ qui, t: String(texte || '').slice(0, 4000), rate: !!rate, ts: Date.now() });
+  save();
+  iaRender();
+}
+
+function iaRender(){
+  const fil = $('#iaFil');
+  if(!fil) return;
+  const L = iaLog();
+  if(!L.length){
+    fil.innerHTML = '<div class="ia-vide">'
+      + '<span class="ia-vide-ico" aria-hidden="true">✨</span>'
+      + "Pose une question sur ton voyage, décris-en un nouveau, ou demande une modification. "
+      + 'En français, comme à quelqu’un.</div>';
+    return;
+  }
+  fil.innerHTML = L.map(m => {
+    const moi = m.qui === 'moi';
+    return '<div class="ia-msg ' + (moi ? 'moi' : 'aco') + (m.rate ? ' rate' : '') + '">'
+      + '<span class="ia-qui">' + (moi ? 'Toi' : 'Acolyte') + '</span>'
+      + '<div class="ia-txt">' + esc(m.t) + '</div></div>';
+  }).join('');
+  /* on colle au dernier message : sans ça, chaque réponse arrive hors champ */
+  fil.scrollTop = fil.scrollHeight;
+}
+
+function iaEtat(msg){ const e = $('#iaEtat'); if(e) e.textContent = msg || ''; }
+
+function iaModeApplique(mode){
+  _iaMode = IA_MODES[mode] ? mode : 'question';
+  $$('.ia-modes .chip').forEach(b => {
+    const on = b.dataset.iamode === _iaMode;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  const a = $('#iaModeAide'); if(a) a.textContent = IA_MODES[_iaMode].aide;
+  const i = $('#iaInp'); if(i) i.placeholder = IA_MODES[_iaMode].trou;
+  /* La colonne de gauche porte le même choix : elle doit suivre les puces.
+     ⚠️ Seulement si on EST sur l'onglet — switchCat() appelle cette fonction
+     avant d'avoir mis _cat à jour, et renderRail() dessinerait alors la
+     colonne de la catégorie qu'on vient de quitter. */
+  if(typeof _cat !== 'undefined' && _cat === 'ia' && typeof renderRail === 'function') renderRail();
+}
+
+/* ---- Mode QUESTION : lecture seule, et c'est tout son intérêt ----
+   ⚠️ expectJson = false. On veut une phrase, pas une structure : demander du
+   JSON pour en extraire un champ « reponse » ajouterait un point de rupture
+   (JSON invalide → échec) sans rien apporter. */
+function iaPromptQuestion(demande){
+  const t = state.trip;
+  const prog = (typeof asstResume === 'function') ? asstResume() : '';
+  return 'Tu es Acolyte, copilote de voyage. Tu réponds à une question du voyageur.\n\n'
+    + (t ? 'Son voyage : ' + (t.nom || '?') + (t.pays ? ', ' + t.pays : '') + '.'
+         : "Il n'a pas encore de voyage en cours.") + '\n'
+    + (prog ? '\nSon programme actuel :\n' + prog + '\n' : '')
+    + (typeof ctx === 'function' ? ctx() : '') + '\n\n'
+    + 'Question : « ' + String(demande).slice(0, 400) + ' »\n\n'
+    + 'Règles STRICTES :\n'
+    + '1. Réponds en 4 phrases maximum, en français, à la deuxième personne.\n'
+    + '2. Tu ne modifies RIEN. Si la demande est une modification, dis-lui de passer en mode « Modifier mon voyage ».\n'
+    + "3. Si tu n'es pas sûr d'un horaire, d'un prix ou d'une règle d'entrée, DIS-LE et conseille de vérifier à la source. Ne devine jamais un chiffre.\n"
+    + '4. Pas de liste à puces, pas de titre : une réponse parlée.';
+}
+
+/* ---- Mode CRÉER : la phrase libre devient le questionnaire ----
+   On ne fabrique pas un voyage ici. On remplit les champs, puis on laisse le
+   pipeline existant travailler — c'est lui qui a les données réelles, la
+   relecture croisée et les garde-fous. */
+function iaPromptCreer(demande){
+  return 'Transforme cette envie de voyage en champs de formulaire.\n\n'
+    + 'Envie : « ' + String(demande).slice(0, 500) + ' »\n\n'
+    + 'Réponds en JSON strict, uniquement avec les champs que la phrase permet de déduire :\n'
+    + '{"from":"ville de départ","dest":"destination ou pays souhaité","days":"week|1sem|2sem",'
+    + '"when":"période en clair (ex. mai, été)","budget":"petit|moyen|large","adults":2,"kids":0,'
+    + '"libre":"le reste de l\'envie, en une phrase"}\n\n'
+    + 'Règles :\n'
+    + "1. N'INVENTE RIEN. Un champ que la phrase ne permet pas de déduire est ABSENT du JSON — surtout \"from\" et \"dest\".\n"
+    + '2. "days" : "week" pour un week-end, "1sem" pour une semaine, "2sem" au-delà.\n'
+    + '3. "budget" : "petit" sous 500 € par personne, "moyen" jusqu\'à 1500, "large" au-delà.\n'
+    + "4. \"libre\" reprend les envies qui n'entrent dans aucun champ (ambiance, contraintes, centres d'intérêt).";
+}
+
+/* Pose une valeur dans un <select> SEULEMENT si l'option existe vraiment.
+   Un select forcé à une valeur inconnue retombe silencieusement sur sa
+   première option — donc sur un choix que personne n'a fait. */
+function iaPoseSelect(sel, valeur){
+  const el = $(sel);
+  if(!el || !valeur) return false;
+  const v = String(valeur).toLowerCase();
+  const opt = [...el.options].find(o =>
+    o.value.toLowerCase() === v || o.value.toLowerCase().includes(v) || v.includes(o.value.toLowerCase()));
+  if(!opt) return false;
+  el.value = opt.value;
+  return true;
+}
+
+async function iaCreer(demande){
+  const r = await ai('light', iaPromptCreer(demande), true, 700);
+  const data = r && r.data;
+  if(!data || typeof data !== 'object') throw new Error('IA_FORME');
+  const mis = [];
+  const texte = (sel, val, nom) => {
+    const el = $(sel);
+    if(el && val && String(val).trim()){ el.value = String(val).slice(0, 90); mis.push(nom); }
+  };
+  texte('#fFrom', data.from, 'départ');
+  texte('#fDest', data.dest, 'destination');
+  texte('#fWhen', data.when, 'période');
+  if(iaPoseSelect('#fDays', data.days)) mis.push('durée');
+  if(iaPoseSelect('#fBudget', data.budget)) mis.push('budget');
+  const el = $('#fAdults');
+  if(el && Number.isFinite(+data.adults) && +data.adults > 0){ el.value = String(Math.min(+data.adults, 6)); mis.push('voyageurs'); }
+  const ek = $('#fKids');
+  if(ek && Number.isFinite(+data.kids) && +data.kids >= 0) ek.value = String(Math.min(+data.kids, 4));
+  const libre = $('#fFree');
+  if(libre && data.libre) libre.value = String(data.libre).slice(0, 600);
+
+  if(!mis.length){
+    iaAjoute('aco', "Je n'ai pas réussi à en tirer de quoi remplir le questionnaire. "
+      + 'Donne-moi au moins un lieu ou une période — par exemple « une semaine au Portugal en mai ».', true);
+    return;
+  }
+  iaAjoute('aco', "J'ai rempli le questionnaire (" + mis.join(', ') + ') et je pars chercher des destinations. '
+    + 'Tu peux tout corriger à la main dans l’onglet Voyage.');
+  /* On l'emmène VOIR ce qui a été rempli : une déduction fausse doit pouvoir
+     être corrigée avant, pas découverte dans le résultat. */
+  switchCat('trip');
+  gotoStep(1);
+  if(typeof proposeTrips === 'function') proposeTrips();
+}
+
+/* ---- Mode MODIFIER : le noyau validé de l'assistant, piloté depuis ici ---- */
+async function iaModifier(demande){
+  if(!state.cache || !state.cache.days || !Object.keys(state.cache.days).length){
+    iaAjoute('aco', "Tu n'as pas encore de programme jour par jour à modifier. "
+      + 'Crée d’abord un voyage, puis reviens me voir.', true);
+    return;
+  }
+  statCompte('assistant_utilise');
+  const r = await ai('light', asstPrompt(demande), true, 1400);
+  const data = r && r.data;
+  const ops = Array.isArray(data && data.operations) ? data.operations : [];
+  if(!ops.length){
+    iaAjoute('aco', String((data && data.resume) || "Je n'ai rien trouvé à changer."), true);
+    return;
+  }
+  _iaAvant = JSON.stringify(state.cache.days);
+  const res = asstApplique(ops);
+  if(!res.faites.length){
+    _iaAvant = null;
+    iaAjoute('aco', 'Je n’ai rien pu appliquer : ' + res.refusees.map(x => x.err).join(' · ').slice(0, 300), true);
+    return;
+  }
+  save();
+  res.faites.forEach(f => { try{ tlRender(Number(f.op.jour)); }catch(e){} });
+  try{ buildProjectMap(); }catch(e){}
+  const signe = { supprimer:'−', ajouter:'+', modifier:'~', deplacer:'→' };
+  const lignes = res.faites.map(f => (signe[f.op.action] || '·') + ' jour ' + f.op.jour + ' : ' + f.quoi);
+  const bloc = [String((data && data.resume) || 'C’est fait.'), ''].concat(lignes);
+  if(res.refusees.length){
+    bloc.push('', '(' + res.refusees.length + ' opération(s) ignorée(s) : '
+      + res.refusees.map(x => x.err).join(' · ').slice(0, 160) + ')');
+  }
+  iaAjoute('aco', bloc.join('\n'));
+  const u = $('#iaUndo'); if(u) u.hidden = false;
+}
+
+function iaAnnule(){
+  if(!_iaAvant) return;
+  statCompte('assistant_annule');
+  try{
+    state.cache.days = JSON.parse(_iaAvant);
+    _iaAvant = null;
+    save();
+    Object.keys(state.cache.days).forEach(j => { try{ tlRender(Number(j)); }catch(e){} });
+    try{ buildProjectMap(); }catch(e){}
+    iaAjoute('aco', '↩ Modification annulée : ton programme est revenu à son état d’avant.');
+    const u = $('#iaUndo'); if(u) u.hidden = true;
+  }catch(e){}
+}
+
+async function iaEnvoie(){
+  if(_iaOccupe) return;
+  const inp = $('#iaInp');
+  const texte = (inp && inp.value || '').trim();
+  if(!texte) return;
+  /* Les appels IA passent par le compte : même porte que partout ailleurs. */
+  if(typeof requireAuth === 'function' && !requireAuth()) return;
+  inp.value = '';
+  iaAjoute('moi', texte);
+  _iaOccupe = true;
+  const hote = $('#catIA'); if(hote) hote.classList.add('ia-occupe');
+  iaEtat('Acolyte réfléchit…');
+  try{
+    if(_iaMode === 'question'){
+      const r = await ai('light', iaPromptQuestion(texte), false, 700);
+      iaAjoute('aco', String(r && r.data || '').trim() || "Je n'ai pas su répondre.");
+    }else if(_iaMode === 'creer'){
+      await iaCreer(texte);
+    }else{
+      await iaModifier(texte);
+    }
+    iaEtat('');
+  }catch(e){
+    statCompte('ia_echec');
+    iaAjoute('aco', "Je n'ai pas pu répondre — le service est peut-être saturé. Réessaie dans un instant.", true);
+    iaEtat('');
+  }finally{
+    _iaOccupe = false;
+    if(hote) hote.classList.remove('ia-occupe');
+  }
+}
+
+function iaMonte(){
+  if(!$('#catIA')) return;
+  $$('.ia-modes .chip').forEach(b => { b.onclick = () => iaModeApplique(b.dataset.iamode); });
+  const go = $('#iaGo'); if(go) go.onclick = iaEnvoie;
+  const inp = $('#iaInp');
+  /* Entrée envoie, Maj+Entrée passe à la ligne : la convention de toutes les
+     zones de conversation. C'est une zone MULTILIGNE, donc il faut le dire —
+     son comportement par défaut est l'inverse. */
+  if(inp) inp.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); iaEnvoie(); }
+  });
+  const cl = $('#iaClear');
+  if(cl) cl.onclick = () => {
+    state.chatLog = []; _iaAvant = null; save(); iaRender(); iaEtat('');
+    const u = $('#iaUndo'); if(u) u.hidden = true;
+  };
+  /* Le bouton d'annulation est créé ICI et non dans index.html : il n'a de
+     sens qu'après une modification, et un bouton présent mais inerte au
+     chargement est une promesse qu'on ne tient pas. */
+  const saisie = $('.ia-saisie');
+  if(saisie && !$('#iaUndo')){
+    const u = document.createElement('button');
+    u.id = 'iaUndo'; u.type = 'button'; u.className = 'btn ghost sm'; u.hidden = true;
+    u.textContent = '↩ Annuler la modification';
+    u.onclick = iaAnnule;
+    saisie.parentNode.insertBefore(u, saisie.nextSibling);
+  }
+  iaModeApplique(_iaMode);
+  iaRender();
+}
+iaMonte();
+
+/* ⚠️ La fenêtre peut MAIGRIR pendant la session : un ordinateur qu'on réduit,
+   une tablette qu'on tourne. L'onglet disparaît alors du bandeau, mais la
+   console resterait affichée — un écran sans porte de sortie visible. On
+   ramène donc au voyage dès qu'on repasse sous le seuil. */
+window.addEventListener('resize', () => {
+  if(_cat === 'ia' && !iaSurPC()) switchCat('trip');
+});

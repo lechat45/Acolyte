@@ -202,6 +202,16 @@
       <button data-cat="trip" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.4c.85 0 1.5.65 1.5 1.5v4.9l7.1 4.1v2l-7.1-2.2v4.2l2.5 1.8v1.5L12 19.6l-4 .6v-1.5l2.5-1.8v-4.2L3.4 15v-2l7.1-4.1v-5c0-.84.65-1.5 1.5-1.5Z"/></svg>Voyage</button>
       <button data-cat="blog"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 21.2h12.2a2 2 0 0 0 2-2V6.6l-3.4-3.4H6.5a2 2 0 0 0-2 2v3.4"/><path d="M4.5 9.5H3.2a1 1 0 0 0-1 1v8.7a2 2 0 0 0 2 2"/><path d="M8 8h4M8 12h7M8 16h7"/></svg>Blog</button>
       <button data-cat="profile"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20.8v-1.9a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1.9"/><path d="M12 3.2a4.1 4.1 0 1 0 0 8.2 4.1 4.1 0 0 0 0-8.2Z"/></svg>Profil</button>
+      <!-- ⚠️ ONGLET RÉSERVÉ À L'ORDINATEUR (classe .cat-pc, display:none sous
+           900 px). Deux raisons, pas une : la barre du bas n'a de place que
+           pour quatre boutons — sa grille est figée à repeat(4,1fr), et un
+           cinquième la ferait déborder — et cette console se tient en
+           conversation longue, ce qu'un clavier de téléphone posé sur la
+           moitié de l'écran rend pénible.
+           Un ancien .cat-pc avait été SUPPRIMÉ du CSS parce que plus rien ne
+           l'utilisait ; il est réintroduit ici avec son unique usage sous les
+           yeux, pour qu'on sache cette fois à quoi il sert. -->
+      <button data-cat="ia" class="cat-pc"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 13.6 8l4.8 1.6-4.8 1.6L12 16l-1.6-4.8L5.6 9.6 10.4 8 12 3.2Z"/><path d="M18.4 14.8l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg>Assistant</button>
     </nav>
 
     <!-- Le côté droit de la barre du haut (maquette 1b) : le thème,
@@ -514,6 +524,57 @@
     </div>
     <div id="blogList" class="blog-list"></div>
     <article id="blogOne" class="card hidden"></article>
+  </section>
+
+  <!-- ============================================================
+       ASSISTANT IA — console de conversation (ORDINATEUR UNIQUEMENT)
+       ------------------------------------------------------------
+       Trois usages d'un même champ, parce que c'est le même geste pour le
+       voyageur : décrire ce qu'il veut. Ce qui change, c'est ce qu'Acolyte a le
+       DROIT de faire de sa phrase — et c'est le mode qui le décide, pas
+       l'humeur du modèle :
+         · Créer   → remplit le questionnaire et lance des propositions
+         · Modifier→ passe par l'assistant d'opérations VALIDÉES (aperçu + annuler)
+         · Question→ ne touche à RIEN, répond seulement
+       Le mode est un choix explicite et visible : « je réponds » et « je
+       modifie ton voyage » ne doivent jamais dépendre d'une interprétation.
+  ============================================================ -->
+  <section class="hidden" id="catIA">
+    <div class="ia-head">
+      <div>
+        <h2>Assistant<span class="ia-beta" title="Fonctionnalité en test">bêta</span></h2>
+        <p class="sub" id="iaSub">Décris ton voyage, fais-le modifier, ou pose une question — en français, comme à quelqu'un.</p>
+      </div>
+      <button class="btn ghost sm" id="iaClear" type="button">Effacer la conversation</button>
+    </div>
+
+    <!-- ⚠️ Dire ce qui ne marche pas ENCORE est le contrat d'une bêta. Une
+         étiquette « bêta » sans phrase derrière ne prévient de rien. -->
+    <div class="ia-avis" role="note">
+      <span class="ia-avis-ico" aria-hidden="true">🧪</span>
+      <p><b>En test.</b> L'assistant se trompe encore, surtout sur les horaires et les prix.
+         Chaque modification est vérifiée avant d'être appliquée, elle te dit ce qu'elle a changé,
+         et un bouton <b>Annuler</b> remet tout en place — mais <b>vérifie avant de réserver</b>.</p>
+    </div>
+
+    <div class="ia-modes" role="tablist" aria-label="Que doit faire Acolyte">
+      <button class="chip on" data-iamode="question" role="tab" aria-selected="true" type="button">Poser une question</button>
+      <button class="chip" data-iamode="creer" role="tab" aria-selected="false" type="button">Créer un voyage</button>
+      <button class="chip" data-iamode="modifier" role="tab" aria-selected="false" type="button">Modifier mon voyage</button>
+    </div>
+    <p class="ia-mode-aide" id="iaModeAide"></p>
+
+    <div class="ia-fil" id="iaFil" role="log" aria-live="polite" aria-label="Conversation avec l'assistant"></div>
+
+    <div class="ia-saisie">
+      <!-- aria-label plutôt qu'un <label> masqué : il n'existe pas de classe
+           « visuellement caché » dans cette feuille, et en créer une pour un
+           seul usage laisserait une utilité orpheline de plus. -->
+      <textarea id="iaInp" rows="2" autocomplete="off" aria-label="Ta demande à l'assistant"
+                placeholder="Ex. : à quelle heure ouvre le musée du jour 2 ?"></textarea>
+      <button class="btn" id="iaGo" type="button">Envoyer</button>
+    </div>
+    <p class="ia-etat" id="iaEtat" role="status" aria-live="polite"></p>
   </section>
 
   <section class="hidden" id="catProfile">
