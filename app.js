@@ -2906,6 +2906,9 @@ function panPapiers(d){
 
   ${urgenceHTML(cc, t)}
 
+  ${simHTML(cc)}
+  ${securiteHTML(t && t.nom)}
+
   ${couts.length ? `
   <h3 class="pan-h3" style="margin-top:22px">${EN ? 'What things cost there' : 'Combien ça coûte sur place'}</h3>
   <div class="art-faits">
@@ -11809,4 +11812,114 @@ function futurBarMaj(){
      doit revenir. Le mémoriser reviendrait à taire un problème persistant. */
   if(x) x.onclick = () => { const b = $('#futurBar'); if(b) b.hidden = true; };
   futurBarMaj();
+}
+
+/* ============================================================
+   CARTE SIM SUR PLACE — la première chose qu'on cherche en atterrissant
+   ------------------------------------------------------------
+   Aucune API gratuite ne donne cette information. Mais elle est STABLE : les
+   opérateurs d'un pays ne changent pas tous les mois, contrairement aux prix
+   d'hôtel. Une table écrite à la main est donc le bon outil — le même choix que
+   pour URGENCE et pour les prises électriques.
+
+   ⚠️ ÉCRITE À LA MAIN, JAMAIS GÉNÉRÉE. Un opérateur inventé, c'est quelqu'un
+   qui cherche une boutique inexistante en sortant de l'avion. Les pays absents
+   n'affichent RIEN : on ne devine pas.
+   ⚠️ Les prix sont des ORDRES DE GRANDEUR datés, pas des tarifs. Ils vieillissent,
+   d'où la mention explicite sous le tableau.
+============================================================ */
+const SIM_UE = ['FR','DE','IT','ES','PT','BE','NL','LU','AT','IE','GR','PL','CZ','SK',
+                'HU','RO','BG','HR','SI','DK','SE','FI','EE','LV','LT','MT','CY'];
+const SIM = {
+  GB: { op:'EE, Vodafone, Three', ou:'aéroport, supermarchés, boutiques en ville', prix:'10–20 £ pour 20 Go', esim:true },
+  CH: { op:'Salt, Swisscom', ou:'gares et aéroports', prix:'20–30 CHF', esim:true },
+  US: { op:'T-Mobile (meilleure couverture prépayée), AT&T', ou:'boutiques en ville — pas toujours en aéroport', prix:'30–50 $ par mois', esim:true },
+  CA: { op:'Public Mobile, Fido', ou:'centres commerciaux', prix:'30–45 CAD', esim:true },
+  JP: { op:'IIJmio, Sakura Mobile (données seules)', ou:'à réserver AVANT le départ, retrait à l’aéroport', prix:'25–40 € pour 2 semaines', esim:true,
+        note:'la voix est rare sur les SIM touristiques japonaises : prévois des appels par internet' },
+  TH: { op:'AIS, TrueMove', ou:'guichets à la sortie de l’aéroport', prix:'8–15 € pour 15 jours', esim:true },
+  VN: { op:'Viettel (meilleure couverture rurale), Vinaphone', ou:'aéroport ou n’importe quelle boutique', prix:'5–10 € par mois', esim:true },
+  ID: { op:'Telkomsel', ou:'boutiques officielles — les stands d’aéroport sont plus chers', prix:'8–15 €', esim:true },
+  MY: { op:'Hotlink (Maxis), CelcomDigi', ou:'aéroport et centres commerciaux', prix:'8–12 €', esim:true },
+  IN: { op:'Airtel, Jio', ou:'boutique officielle — passeport et photo exigés', prix:'5–10 € par mois', esim:false,
+        note:'l’activation prend parfois 24 h : prends-la dès l’arrivée' },
+  MA: { op:'Maroc Telecom, Orange', ou:'aéroport et kiosques', prix:'5–10 €', esim:false },
+  TR: { op:'Turkcell, Vodafone TR', ou:'aéroport, passeport exigé', prix:'20–30 €', esim:true,
+        note:'les SIM touristiques sont chères en Turquie : une eSIM régionale coûte souvent moins' },
+  AU: { op:'Telstra (la seule couvrante hors des villes), Optus', ou:'aéroport et supermarchés', prix:'20–35 AUD', esim:true },
+  NZ: { op:'One NZ, Spark', ou:'aéroport', prix:'25–40 NZD', esim:true },
+  MX: { op:'Telcel (la seule couvrante partout)', ou:'boutiques Telcel et magasins OXXO', prix:'10–15 €', esim:true },
+  BR: { op:'Vivo, Claro', ou:'boutiques en ville — un CPF est parfois demandé', prix:'10–15 €', esim:true },
+  AR: { op:'Personal, Claro', ou:'boutiques en ville', prix:'5–10 €', esim:false },
+  PE: { op:'Claro, Movistar', ou:'aéroport et boutiques', prix:'8–12 €', esim:true },
+  ZA: { op:'Vodacom, MTN', ou:'aéroport — passeport et adresse exigés', prix:'10–15 €', esim:true },
+  EG: { op:'Vodafone EG, Orange', ou:'aéroport', prix:'10–15 €', esim:false },
+  AE: { op:'du, Etisalat', ou:'aéroport — une SIM touristique est parfois offerte à l’arrivée', prix:'15–30 €', esim:true },
+  CN: { op:'China Unicom', ou:'à réserver avant le départ, ou eSIM', prix:'20–35 €', esim:true,
+        note:'sans VPN installé AVANT le départ, la plupart des services occidentaux sont inaccessibles' }
+};
+/* Renvoie l'information d'un pays, ou null. Jamais d'invention. */
+function simFor(cc){
+  if(!cc) return null;
+  const c = String(cc).toUpperCase();
+  if(SIM[c]) return { ...SIM[c], ue:false };
+  if(SIM_UE.includes(c)) return { ue:true };
+  return null;
+}
+function simHTML(cc){
+  const s = simFor(cc);
+  if(!s) return '';
+  const EN = isEN();
+  const T = EN
+    ? { t:'Getting online there',
+        ue:'You are in the EU: your plan works at no extra cost. No local SIM needed.',
+        op:'Operators', ou:'Where to buy', prix:'Rough price', esim:'eSIM',
+        oui:'available', non:'not available',
+        pied:'Written table, not AI. Prices are orders of magnitude and do age — check on arrival.' }
+    : { t:'Se connecter sur place',
+        ue:'Tu es dans l’Union européenne : ton forfait fonctionne sans surcoût. Aucune carte SIM locale nécessaire.',
+        op:'Opérateurs', ou:'Où l’acheter', prix:'Prix indicatif', esim:'eSIM',
+        oui:'disponible', non:'indisponible',
+        pied:'Tableau écrit, pas de l’IA. Les prix sont des ordres de grandeur et vieillissent — vérifie à l’arrivée.' };
+  if(s.ue) return '\n  <h3 class="pan-h3" style="margin-top:22px">📶 ' + T.t + '</h3>\n'
+    + '  <p class="hint" style="margin:0">' + T.ue + '</p>';
+  const l = (k, v) => v
+    ? '<div class="af"><span class="af-k">' + k + '</span><span class="af-v">' + esc(v) + '</span></div>'
+    : '';
+  return '\n  <h3 class="pan-h3" style="margin-top:22px">📶 ' + T.t + '</h3>\n'
+    + '  <div class="art-faits">'
+    + l(T.op, s.op) + l(T.ou, s.ou) + l(T.prix, s.prix) + l(T.esim, s.esim ? T.oui : T.non)
+    + '</div>\n'
+    + (s.note ? '  <p class="hint" style="margin-top:8px">⚠️ ' + esc(s.note) + '</p>\n' : '')
+    + '  <p class="hint" style="margin-top:6px">' + T.pied + '</p>';
+}
+
+/* ============================================================
+   SÉCURITÉ — on RENVOIE vers la source officielle, on ne l'écrit pas
+   ------------------------------------------------------------
+   Le ministère des Affaires étrangères publie ses « Conseils aux voyageurs »
+   pays par pays, tenus à jour par des gens payés pour ça.
+
+   ⚠️ ON NE GÉNÈRE AUCUNE APPRÉCIATION. Un texte d'IA sur la sécurité ou la
+   situation d'un pays est contesté par nature, se périme en semaines, et un seul
+   paragraphe maladroit coûte la confiance d'un lecteur qu'on ne récupère pas.
+   Un lien vers une source qui engage l'État vaut mieux qu'une analyse qu'il
+   faudrait relire pour 249 pays.
+   ⚠️ On envoie vers la page d'accueil des conseils et non vers une fiche
+   devinée : les adresses des fiches ont leurs propres identifiants, et un lien
+   fabriqué tomberait en 404 — pire qu'une page d'où l'on trouve son pays.
+============================================================ */
+function securiteHTML(pays){
+  const nom = String(pays || '').trim();
+  if(!nom) return '';
+  const EN = isEN();
+  const u = 'https://www.diplomatie.gouv.fr/fr/conseils-aux-voyageurs/conseils-par-pays-destination/';
+  return '\n  <h3 class="pan-h3" style="margin-top:22px">🛡️ ' + (EN ? 'Safety' : 'Sécurité') + '</h3>\n'
+    + '  <p class="hint" style="margin:0">'
+    + (EN
+        ? 'Acolyte does not assess risk itself. The French foreign ministry publishes an up-to-date advisory for every country: '
+        : 'Acolyte ne juge pas le risque lui-même. Le ministère des Affaires étrangères publie une fiche à jour pour chaque pays : ')
+    + '<a href="' + u + '" target="_blank" rel="noopener noreferrer">'
+    + (EN ? 'official advisories' : 'conseils aux voyageurs') + '</a>'
+    + (EN ? ' — look up ' : ' — cherche ') + esc(nom) + '.</p>';
 }
