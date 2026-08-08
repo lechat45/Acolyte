@@ -4052,3 +4052,27 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 .ph-discord:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow-lg)}
 .ph-discord:active{transform:translateY(1px);box-shadow:var(--shadow)}
 .ph-discord svg.ico{width:19px;height:19px;flex:none}
+
+/* ---- Avertissement « voyage venu d'une version plus récente » ----
+   Posé en tête du contenu, pas en fenêtre modale : ce n'est pas une erreur qui
+   demande une décision, c'est une information à lire une fois. Une modale
+   forcerait un clic pour rien. */
+.futur-bar{
+  display:flex;align-items:flex-start;gap:12px;
+  margin:0 0 18px;padding:14px 16px;
+  border:1px solid color-mix(in srgb, var(--accent-orange) 40%, transparent);
+  background:color-mix(in srgb, var(--accent-orange) 8%, transparent);
+  border-radius:var(--r-md);
+}
+.futur-bar[hidden]{display:none}
+.futur-bar .fb-ico{font-size:1.1rem;line-height:1.4;flex:none}
+.futur-bar p{margin:0;flex:1;font-size:.86rem;line-height:1.55;color:var(--txt)}
+.futur-bar p b{font-weight:700}
+/* La croix garde une cible confortable même si le glyphe est petit. */
+.futur-bar .fb-x{
+  flex:none;width:32px;height:32px;padding:0;
+  background:none;border:0;box-shadow:none;border-radius:50%;
+  color:var(--txt-2);font-size:.9rem;cursor:pointer;
+}
+.futur-bar .fb-x:hover{color:var(--txt);background:var(--surface-2)}
+@media (pointer:coarse){ .futur-bar .fb-x{width:44px;height:44px} }

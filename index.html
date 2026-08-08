@@ -228,6 +228,19 @@
   </header>
 
   <main id="contenu">
+    <!-- ⚠️ Averti quand le voyage chargé a été écrit par une version PLUS
+         RÉCENTE d'Acolyte. On ne refuse pas de le charger — ce serait hostile
+         hors ligne, le voyage disparaîtrait au pire moment — mais l'utilisateur
+         doit savoir que certains réglages ont été remis à zéro par précaution.
+         Sans ce bandeau, son mode de transport changeait tout seul et en
+         silence. Affiché par safeState via _etatDuFutur. -->
+    <div class="futur-bar" id="futurBar" role="status" hidden>
+      <span class="fb-ico" aria-hidden="true">⚠️</span>
+      <p>Ce voyage a été créé avec une <b>version plus récente</b> d'Acolyte.
+         Certains réglages ont été remis à leur valeur par défaut par précaution —
+         tes étapes, tes notes et tes dépenses sont intactes.</p>
+      <button class="fb-x" id="futurX" type="button" aria-label="Masquer cet avertissement">✕</button>
+    </div>
   <div id="catTrip">
   <nav class="steps">
     <div class="step active" data-step="1"><span class="n">1</span>Questions</div>

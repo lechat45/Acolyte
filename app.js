@@ -277,7 +277,18 @@ function save(){
   try{ if(typeof pushSync === 'function') pushSync(); }catch(e3){}
 }
 function load(){
-  try{ const s = JSON.parse(localStorage.getItem(LS_TRIP)); if(s) state = {...state, ...s}; }catch(e){}
+  /* ⚠️ ON PASSE PAR safeState, et c'est le point important. Avant, cette ligne
+     faisait un simple {...state, ...s} : les données du stockage écrasaient
+     l'état sans aucun contrôle. Toute la protection de contrat — migration vers
+     l'avant, neutralisation des champs interprétés venus d'une version plus
+     récente — n'était donc appelée QUE sur l'import d'un fichier d'ami, jamais
+     au démarrage normal. J'avais construit un garde-fou hors du chemin.
+     Vérifié en écrivant un état estampillé v9 dans le stockage : sans cette
+     ligne, mode restait 'car' et le drapeau ne se levait pas. */
+  try{
+    const s = JSON.parse(localStorage.getItem(LS_TRIP));
+    if(s) state = safeState({ ...state, ...s });
+  }catch(e){}
 }
 
 let toastT;
@@ -5845,6 +5856,8 @@ function enterApp(){
      avant tout le reste */
   if(!requirePrivacy()) return;
   renderProfile(); renderSettings(); renderGallery(); checkNews();
+  /* Après la lecture de l'état : c'est safeState qui vient de lever le drapeau. */
+  futurBarMaj();
   /* ⚠️ L'ORDRE COMPTE, et c'est tout l'objet du changement : Acolyte POSE SES
      QUESTIONS d'abord, il explique ensuite. qzShow() renvoie faux si elles ont
      déjà été posées — dans ce cas on enchaîne directement sur les explications,
@@ -11777,4 +11790,23 @@ if(navigator.onLine === false) statCompte('hors_ligne', true);
     const el = $(sel);
     if(el) el.addEventListener('input', marque, { once: true });
   });
+}
+
+/* Le bandeau d'avertissement « voyage venu d'une version plus récente ».
+   ⚠️ _etatDuFutur était posé par safeState mais PERSONNE ne le lisait : le mode
+   de transport de l'utilisateur revenait à « avion » sans un mot d'explication.
+   Une protection à moitié construite est pire qu'aucune — elle donne l'illusion
+   d'être protégé. */
+function futurBarMaj(){
+  const b = $('#futurBar');
+  if(!b) return;
+  b.hidden = !_etatDuFutur;
+}
+{
+  const x = $('#futurX');
+  /* On masque pour la session seulement, sans rien enregistrer : au prochain
+     chargement l'état sera relu, et s'il vient encore du futur l'avertissement
+     doit revenir. Le mémoriser reviendrait à taire un problème persistant. */
+  if(x) x.onclick = () => { const b = $('#futurBar'); if(b) b.hidden = true; };
+  futurBarMaj();
 }

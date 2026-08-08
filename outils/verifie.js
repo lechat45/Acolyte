@@ -268,6 +268,25 @@ titre('10. Sitemap');
 }
 
 
+
+/* ---------- 12. Le contrat de l'état du voyage ----------
+   Délégué à outils/test-etat.js, qui rejoue les quatre directions : données
+   d'avant le tampon, à jour, venues d'une version PLUS RÉCENTE, illisibles.
+   Le cas de la rétrogradation vient d'un lecteur du post Reddit — c'est le seul
+   que je n'aurais pas trouvé seul, et c'est celui qui compte le plus. */
+titre('12. Contrat de l’état du voyage');
+{
+  try {
+    execFileSync(process.execPath, [path.join(RACINE, 'outils', 'test-etat.js')], { stdio: 'pipe' });
+    ok('les quatre directions tiennent (12 assertions)');
+  } catch (e) {
+    const sortie = String(e.stdout || '') + String(e.stderr || '');
+    err('le contrat de l’état est rompu :');
+    sortie.split('\n').filter(l => /ÉCHEC|ERREUR|attendu|obtenu/.test(l))
+      .slice(0, 8).forEach(l => console.log('      ' + l.trim()));
+  }
+}
+
 /* ============================================================
    11. LE CONTRAT DU SERVEUR — on l'INTERROGE, on ne l'imagine pas
    ------------------------------------------------------------
