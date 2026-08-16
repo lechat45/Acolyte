@@ -1544,11 +1544,20 @@ Réponds UNIQUEMENT en JSON valide, structure exacte. Commence OBLIGATOIREMENT p
     else if(e.message !== 'NO_KEY') zone.innerHTML = `<div class="card">${errHTML(msg, 'propose')}</div>`;
     else zone.innerHTML = '';
   }finally{
+    /* ⚠️ TOUT LE NETTOYAGE EST ICI, ET NULLE PART AILLEURS. Ces trois lignes
+       étaient posées APRÈS le try/catch/finally, ce qui marchait tant que la
+       fonction n'avait qu'une seule sortie. Le jour où la recherche depuis la
+       discussion a gagné son `return` anticipé (« pas de changement d'étape »),
+       elles ont cessé d'être atteintes sur ce chemin : la barre de recherche
+       restait affichée, son intervalle continuait de faire défiler les messages
+       en boucle, et surtout searchBar(true) avait posé `display:none` sur la
+       barre d'onglets — qui ne revenait donc jamais.
+       Un `return` dans le try saute ce qui suit le bloc, pas le finally. */
     clearInterval(msgTimer);
     _genBusy = false;
+    searchBar(false);
+    $('#btnGo').disabled = false; $('#btnLucky').disabled = false; if($('#btnCountry')) $('#btnCountry').disabled = false;
   }
-  searchBar(false);
-  $('#btnGo').disabled = false; $('#btnLucky').disabled = false; if($('#btnCountry')) $('#btnCountry').disabled = false;
 }
 
 /* "Hôtel familial ou appart-hôtel" → "Hôtel familial" ; "180-250€ par nuit" → "180-250€" */
@@ -13429,12 +13438,16 @@ async function iaEnvoie(){
     }else{
       await iaModifier(texte, complexe);
     }
-    iaEtat('');
   }catch(e){
     statCompte('ia_echec');
     iaAjoute('aco', "Je n'ai pas pu répondre — le service est peut-être saturé. Réessaie dans un instant.", true);
-    iaEtat('');
   }finally{
+    /* iaEtat('') était écrit deux fois, dans le try ET dans le catch. Ça
+       marchait, mais c'est le motif exact qui a laissé la barre de recherche
+       tourner en boucle juste au-dessus : le jour où l'un de ces chemins gagne
+       un `return`, l'indicateur « Acolyte réfléchit » reste allumé pour
+       toujours. Le nettoyage appartient au finally. */
+    iaEtat('');
     _iaOccupe = false;
     if(hote) hote.classList.remove('ia-occupe');
   }
