@@ -577,15 +577,23 @@ async function gemini(prompt, expectJson = true, maxTok = 4096, _retry = false, 
   /* plafond de sortie du modèle : 8192 pour la génération 2.0, 32768 au-delà */
   gc.maxOutputTokens = Math.min(gc.maxOutputTokens, /2\.0/.test(model) ? 8192 : 32768);
   if(expectJson) gc.responseMimeType = 'application/json';
+  /* ⚠️ LE DÉLAI SUIT LA TAILLE DE LA DEMANDE. Il était fixé à 45 s pour tout —
+     or une génération de propositions demande 8192 jetons de sortie PLUS un
+     budget de réflexion : elle dépasse régulièrement 45 s, et l'abandon
+     tombait en « La recherche a mis trop de temps » alors que le modèle
+     travaillait encore. Une réponse courte garde 45 s, une génération lourde
+     en obtient 90, une très lourde 120. On ne rallonge pas au hasard : on
+     rallonge proportionnellement à ce qu'on a demandé. */
+  const delai = maxTok >= 6000 ? 120000 : maxTok >= 3000 ? 90000 : 45000;
   const r = useBackend()
     ? await fetchT(`${API()}/gemini`, {
         method:'POST',
         headers: aiHeaders(),
         body: JSON.stringify({ model, body })      /* aucune clé ne quitte le navigateur */
-      })
+      }, delai)
     : await fetchT(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,{
     method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
-  });
+  }, delai);
   if(r.status === 404 && !_retry){
     /* modèle mis en cache devenu obsolète → re-détection puis retry */
     localStorage.removeItem(LS_GEMM);
@@ -12767,7 +12775,20 @@ function iaPromptIntention(demande){
     + '· "simple" — un fait à lire dans les informations du voyage, ou une réponse courte et directe.\n'
     + '· "complexe" — il faut comparer, arbitrer, réorganiser, tenir plusieurs contraintes ensemble, '
     + 'ou raisonner sur une conséquence (budget, temps, distances, faisabilité).\n\n'
-    + 'Réponds en JSON : {"intention":"question|creer|modifier","difficulte":"simple|complexe"}';
+    /* ⚠️ L'EXTRACTION SE FAIT DANS CE MÊME APPEL quand c'est une création.
+       Avant, créer un voyage enchaînait : classer → extraire les champs →
+       générer → relire. Quatre allers-retours en série, et l'attente devenait
+       insupportable avant même la génération. Demander les champs ICI ne coûte
+       rien de plus quand ce n'est pas une création (le modèle les omet), et
+       supprime un appel entier quand c'en est une. */
+    + 'Si — et SEULEMENT si — l’intention est "creer", ajoute aussi les champs du questionnaire '
+    + 'que la phrase permet de déduire, dans un objet "voyage" :\n'
+    + '{"from":"ville de départ","dest":"destination ou pays","days":"…","when":"période en clair",'
+    + '"budget":"…","adults":2,"kids":0,"libre":"le reste de l’envie en une phrase"}\n'
+    + 'N’INVENTE RIEN : un champ que la phrase ne permet pas de déduire est ABSENT.\n'
+    + '"days" doit être copié MOT POUR MOT depuis : ' + iaOptions('#fDays') + '\n'
+    + '"budget" doit être copié MOT POUR MOT depuis : ' + iaOptions('#fBudget') + '\n\n'
+    + 'Réponds en JSON : {"intention":"question|creer|modifier","difficulte":"simple|complexe","voyage":{…}}';
 }
 
 /* Renvoie { intention, difficulte }, avec repli sûr. Une classification
@@ -12775,21 +12796,24 @@ function iaPromptIntention(demande){
    « question » — la seule qui ne touche à rien. */
 async function iaIntention(texte){
   try{
-    const r = await ai('light', iaPromptIntention(texte), true, 140);
+    /* 420 jetons : il faut de la place pour l'objet "voyage" quand c'est une
+       création. Sur une question, le modèle n'en produit qu'une trentaine. */
+    const r = await ai('light', iaPromptIntention(texte), true, 420);
     const d = r && r.data || {};
     const v = String(d.intention || '').toLowerCase().trim();
     const dur = String(d.difficulte || '').toLowerCase().trim() === 'complexe';
+    const voyage = (d.voyage && typeof d.voyage === 'object') ? d.voyage : null;
     if(IA_INTENTS[v]){
       /* Garde-fou de bon sens : on ne modifie pas un programme qui n'existe pas.
          Le modèle a beau l'avoir dit, le code garde le dernier mot. */
       if(v === 'modifier' && !(state.cache && state.cache.days && Object.keys(state.cache.days).length))
-        return { intention:'creer', complexe:dur };
-      return { intention:v, complexe:dur };
+        return { intention:'creer', complexe:dur, voyage };
+      return { intention:v, complexe:dur, voyage };
     }
   }catch(e){}
   /* Le repli est « simple » : sans classification fiable, rien ne justifie de
      dépenser le modèle lourd. */
-  return { intention:'question', complexe:false };
+  return { intention:'question', complexe:false, voyage:null };
 }
 
 function iaAnnonce(intent){
@@ -13128,9 +13152,15 @@ function iaPoseSelect(sel, valeur){
   return true;
 }
 
-async function iaCreer(demande){
-  const r = await ai('light', iaPromptCreer(demande), true, 700);
-  const data = r && r.data;
+async function iaCreer(demande, deja){
+  /* `deja` : les champs extraits par la classification. S'ils sont là, on
+     économise un appel complet — c'est l'attente que ça supprime, pas des
+     jetons. On ne rappelle le modèle que s'il ne les a pas fournis. */
+  let data = deja;
+  if(!data || typeof data !== 'object' || !Object.keys(data).length){
+    const r = await ai('light', iaPromptCreer(demande), true, 700);
+    data = r && r.data;
+  }
   if(!data || typeof data !== 'object') throw new Error('IA_FORME');
   const mis = [];
   const texte = (sel, val, nom) => {
@@ -13164,8 +13194,25 @@ async function iaCreer(demande){
      La prudence est conservée autrement : les champs déduits sont ANNONCÉS
      avant la recherche, donc une erreur de lecture se voit dans le fil. */
   iaAjoute('aco', 'Compris : ' + mis.join(', ') + '. Je cherche…');
-  iaEtat('Acolyte explore le monde…');
-  await proposeTrips('', false, '', 'chat');
+  /* ⚠️ UNE ATTENTE LONGUE SANS SIGNAL RESSEMBLE À UNE PANNE. La génération de
+     propositions est l'appel le plus lourd de l'app (8192 jetons + réflexion,
+     puis une relecture croisée) : elle prend couramment 30 à 60 secondes.
+     Sans ces messages, l'écran restait figé sur « Acolyte réfléchit » et on
+     concluait que c'était cassé — c'est exactement ce qui a été remonté.
+     On fait donc défiler l'étape en cours, et on ANNONCE la durée. */
+  const etapes = [
+    'Acolyte explore le monde… (30 à 60 s)',
+    'Il compare les villes et les ambiances…',
+    'Vérification du budget, de la saison et des accès…',
+    'Transport et quartier pour chaque proposition…',
+    'Relecture par une seconde IA…',
+    'Presque prêt…'
+  ];
+  let k = 0;
+  iaEtat(etapes[0]);
+  const t = setInterval(() => { k++; iaEtat(etapes[Math.min(k, etapes.length - 1)]); }, 6000);
+  try{ await proposeTrips('', false, '', 'chat'); }
+  finally{ clearInterval(t); }
 }
 
 /* ---- Mode MODIFIER : le noyau validé de l'assistant, piloté depuis ici ---- */
@@ -13260,7 +13307,7 @@ async function iaEnvoie(){
   try{
     /* 1. QU'EST-CE QU'ON ME DEMANDE ? — un appel court et bon marché (120
        jetons), avant tout le reste. Il coûte moins qu'une réponse mal ciblée. */
-    const { intention: intent, complexe } = await iaIntention(texte);
+    const { intention: intent, complexe, voyage } = await iaIntention(texte);
     iaAnnonce(intent);
     /* 2. On le DIT avant d'agir. Une intention mal lue doit se voir dans le fil,
        pas seulement dans ses conséquences. */
@@ -13280,7 +13327,7 @@ async function iaEnvoie(){
                          false, complexe ? 1400 : 700);
       iaAjoute('aco', String(r && r.data || '').trim() || "Je n'ai pas su répondre.");
     }else if(intent === 'creer'){
-      await iaCreer(texte);
+      await iaCreer(texte, voyage);
     }else{
       await iaModifier(texte, complexe);
     }

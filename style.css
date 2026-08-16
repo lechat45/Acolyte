@@ -4884,3 +4884,69 @@ body{ min-height:100dvh }
   border-radius:999px;padding:4px 10px;
 }
 .iac-go{width:100%;justify-content:center;margin-top:4px;min-height:44px}
+
+/* ============================================================
+   DU JAUNE SUR LE PROFIL — pour qu'on s'y repère
+   ------------------------------------------------------------
+   L'écran était uniformément gris : quatre onglets, des cartes, des lignes
+   d'action, et rien qui dise où regarder. Depuis que les émojis sont partis,
+   il ne restait plus AUCUNE couleur — les icônes au trait suivent la couleur
+   du texte, donc elles ne hiérarchisent rien.
+   Le jaune revient là où il porte du sens, et nulle part ailleurs :
+     · l'onglet actif (il l'avait déjà) ;
+     · l'icône de l'onglet actif, qui prenait la couleur du texte ;
+     · le filet de tête des cartes du profil — un repère de bloc, pas un aplat ;
+     · les intertitres de section, qui étaient du gris sur du gris ;
+     · les badges DÉBLOQUÉS, pour qu'ils se distinguent des verrouillés.
+   ⚠️ Ce qui reste SANS jaune, volontairement : les lignes d'action. Elles sont
+   seize ; les colorer ferait seize points d'attention, c'est-à-dire aucun.
+============================================================ */
+
+/* L'icône de l'onglet actif prend l'encre du jaune, comme son libellé. */
+.pf-tab.on .ico-t{color:var(--primary-ink)}
+
+/* Un filet jaune en tête de chaque carte du profil : il découpe l'écran en
+   blocs lisibles sans ajouter de surface colorée. */
+#catProfile .pf-panel > .card{position:relative;overflow:hidden}
+#catProfile .pf-panel > .card::before{
+  content:'';position:absolute;left:0;right:0;top:0;height:3px;
+  background:var(--primary);
+}
+
+/* Les intertitres de section : le jaune écrit, lisible sur les deux thèmes
+   (--primary-txt, pas --primary — voir le jeton). */
+#catProfile .pf-panel h3{
+  display:flex;align-items:center;gap:9px;
+  color:var(--primary-txt);
+}
+#catProfile .pf-panel h3 .ico-t{color:var(--primary-txt);flex:none}
+
+/* Le passeport : le bandeau existait déjà, on lui donne du corps et on marque
+   les statistiques d'un liseré. */
+.pp-band{height:10px}
+.pp-stat{border-top:2px solid transparent}
+.pp-stat:first-child{border-top-color:var(--primary)}
+/* La valeur des statistiques passe en encre pleine : c'est le chiffre qu'on
+   vient lire, pas son libellé. */
+.pp-stat .v{color:var(--txt)}
+
+/* Un badge débloqué se voit : liseré jaune à gauche, fond légèrement teinté.
+   Un badge verrouillé garde son pointillé gris — l'écart se lit d'un coup
+   d'œil, sans avoir à lire les mots « Débloqué ». */
+.pp-badge:not(.off){
+  border-left:3px solid var(--primary);
+  background:color-mix(in srgb, var(--primary) 7%, var(--surface-2));
+}
+.pp-badge:not(.off) .pb-i{color:var(--primary-txt)}
+
+/* Le niveau du voyageur : il portait un simple contour, il devient une vraie
+   pastille jaune — c'est la seule récompense de l'écran, autant qu'elle se
+   voie. */
+.pp-niveau{
+  background:var(--primary);color:var(--primary-ink);
+  border-color:transparent;
+}
+
+/* Le voyage actif, en tête du passeport : c'est le bloc qu'on vient chercher. */
+#pfVoyageActif{border-left:3px solid var(--primary)}
+.pp-voyage-i .ico-t{color:var(--primary-txt)}
