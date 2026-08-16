@@ -26,6 +26,17 @@
   --surface-2:   #232323;   /* champ, pastille */
   --primary:     #FFE600;   /* le jaune de la marque, en accent */
   --primary-ink: #141414;   /* encre posée SUR le jaune */
+  /* ⚠️ LE JAUNE ÉCRIT — à utiliser dès qu'on met du TEXTE en jaune.
+     --primary est une couleur de FOND : on pose --primary-ink dessus. Employé
+     comme encre il ne tient que sur du sombre. Trois endroits l'utilisaient en
+     texte sur une surface claire (#FFE600 sur #F5F4F0 = 1,15:1, illisible) et
+     personne ne l'avait vu, parce qu'en thème SOMBRE ça passe : le défaut
+     n'existait que dans un thème sur deux.
+     En sombre, le jaune écrit reste le jaune de la marque. En clair, il
+     s'assombrit juste ce qu'il faut (voir le bloc clair plus bas).
+     ⚠️ Si tu écris `color:var(--primary)` un jour, demande-toi sur quel fond.
+     Si le fond peut être clair, c'est --primary-txt qu'il faut. */
+  --primary-txt: #FFE600;
   /* Encre posée sur les accents colorés (vert, orange, cyan). En thème sombre
      ces aplats sont CLAIRS, donc l'encre y est foncée ; en thème clair ils
      sont foncés, donc elle est blanche. Le jaune, lui, ne change pas de
@@ -61,14 +72,25 @@
   --surface-2:   #F7F6F2;
   --primary:     #FFE600;
   --primary-ink: #141414;
+  /* Le jaune ÉCRIT, version claire. #7E6B00 est le même jaune poussé jusqu'à
+     la lisibilité : 4,78:1 sur --bg, 4,65:1 sur le fond teinté du badge « à la
+     une », 5,26:1 sur blanc — les trois passent. Le jaune de FOND, lui, ne
+     bouge pas d'un cheveu : la marque reste la marque. */
+  --primary-txt: #7E6B00;
   --on-accent: #FFFFFF;
   --accent-cyan:   #1B8FA6;
   --accent-violet: #6D4FC4;
   /* assombri de #C25A11 : les liens en portent la couleur, et sur le blanc ils
      plafonnaient à 4,41:1 — juste sous la norme. À #B85410 : 4,87:1, et le
      texte blanc POSÉ dessus (bandeau réseau, étiquette « warn ») y gagne
-     exactement autant. */
-  --accent-orange: #B85410;
+     exactement autant.
+     ⚠️ CORRIGÉ À NOUVEAU — et le piège vaut d'être noté. #B85410 avait été
+     mesuré sur du BLANC PUR (#FFFFFF, la carte), mais la plupart des liens
+     reposent sur --bg (#F5F4F0), qui est plus SOMBRE : là, le rapport retombe
+     à 4,42:1, toujours sous la norme. Le bon fond de référence est le fond
+     RÉEL du texte, pas le plus clair de la palette.
+     À #B04E0E : 4,84:1 sur --bg et 5,33:1 sur blanc — les deux passent. */
+  --accent-orange: #B04E0E;
   /* assombri de #1E8C57 pour la même raison que l'orange : le texte blanc de
      l'étiquette « OK » n'y atteignait que 4,25:1. À #1A7F4E : 5,01:1. */
   --ok:     #1A7F4E;
@@ -127,16 +149,16 @@ body{
 }
 .boot-mark .mascot{width:92px;height:92px}
 .boot-mark span{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:3rem;line-height:1;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:3rem;line-height:1;
   color:#101010;letter-spacing:-.04em;
 }
 .boot-word{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:2.6rem;letter-spacing:-.04em;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:2.6rem;letter-spacing:-.04em;
   text-transform:uppercase;color:var(--txt);line-height:1;
   animation:bootUp .45s .1s ease both;
 }
 .boot-sub{
-  font-family:'Sora',sans-serif;font-weight:800;font-size:.66rem;letter-spacing:.22em;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.66rem;letter-spacing:.22em;
   color:var(--txt-2);text-transform:uppercase;
   animation:bootUp .45s .18s ease both;
 }
@@ -155,7 +177,7 @@ body{
   transition:width .35s ease;
 }
 .boot-step{
-  font-family:'Sora',sans-serif;font-weight:800;font-size:.62rem;letter-spacing:.1em;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.62rem;letter-spacing:.1em;
   text-transform:uppercase;color:var(--txt-2);
   animation:bootUp .45s .34s ease both;
 }
@@ -182,7 +204,7 @@ header{
   margin-bottom:18px;
 }
 .logo{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:2.15rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:2.15rem;
   letter-spacing:-.03em;display:flex;align-items:center;gap:10px;text-transform:uppercase;
 }
 /* La mascotte remplace l'ancien carré orange. Elle garde le regard et
@@ -285,7 +307,7 @@ header{
   background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-lg);
   padding:24px;margin-bottom:24px;box-shadow:var(--shadow);
 }
-h1,h2,h3{font-family:'Sora',sans-serif;letter-spacing:-.02em;text-transform:uppercase;font-weight:900}
+h1,h2,h3{font-family:'Fraunces',Georgia,'Times New Roman',serif;letter-spacing:-.02em;text-transform:uppercase;font-weight:900}
 /* le h1 de la page porte le même style que les h2 : la hiérarchie change pour
    Google et les lecteurs d'écran, pas l'apparence */
 h1,h2{font-size:1.4rem;margin-bottom:8px;display:inline-block;border-bottom:1px solid var(--stroke);padding-bottom:4px}
@@ -299,9 +321,16 @@ h3{font-size:1.1rem;margin-top:6px}
   display:block;font-size:.8rem;font-weight:800;color:var(--txt);
   text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;
 }
+/* ⚠️ 16px N'EST PAS UN CHOIX DE STYLE, C'EST UN SEUIL DE SAFARI.
+   Sous iOS, poser le doigt dans un champ dont le texte fait MOINS de 16px
+   zoome la page entière — et Safari ne dézoome jamais tout seul. Le visiteur
+   reste coincé en gros plan et doit pincer pour ressortir, à chaque champ.
+   On était à .95rem (15,2px) : il s'en fallait de 0,8 pixel, sur les 17 champs
+   du site, dans une app faite pour le téléphone.
+   Ne repasse JAMAIS cette valeur sous 16px, quelle que soit la maquette. */
 input,select,textarea{
   width:100%;background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-sm);
-  color:var(--txt);padding:12px;font-size:.95rem;font-weight:600;font-family:inherit;outline:none;
+  color:var(--txt);padding:12px;font-size:16px;font-weight:600;font-family:inherit;outline:none;
   transition:all .1s ease;box-shadow:var(--shadow);
 }
 input:focus,select:focus,textarea:focus{background:var(--field-focus);transform:translate(-1px,-1px);box-shadow:var(--shadow)}
@@ -312,8 +341,11 @@ select option{background:var(--secondary);color:var(--txt)}
 /* Questions à choix pair : grille 2 colonnes bien symétrique */
 .chips.even{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chips.even .chip{text-align:center;justify-content:center;display:flex;align-items:center}
+/* min-width : les puces à texte court (« FR », « EN ») tombaient à 41px de
+   large. Le padding suffit dès qu'il y a un mot, jamais pour deux lettres —
+   d'où un plancher plutôt qu'un padding plus gros, qui déformerait les autres. */
 .chip{
-  padding:8px 16px;border-radius:var(--r-sm);font-size:.85rem;font-weight:700;cursor:pointer;
+  padding:8px 16px;min-width:44px;border-radius:var(--r-sm);font-size:.85rem;font-weight:700;cursor:pointer;
   background:var(--secondary);border:1px solid var(--stroke);color:var(--txt);
   transition:all .1s ease;user-select:none;box-shadow:var(--shadow);
 }
@@ -331,7 +363,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 
 /* ===== Buttons ===== */
 .btn{
-  border:1px solid var(--stroke);cursor:pointer;font-family:'Sora',sans-serif;font-weight:900;
+  border:1px solid var(--stroke);cursor:pointer;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;
   font-size:1rem;text-transform:uppercase;padding:14px 28px;border-radius:var(--r-md);
   transition:all .1s ease;display:inline-flex;align-items:center;gap:10px;
   color:var(--primary-ink);background:var(--primary);box-shadow:var(--shadow);text-decoration:none;
@@ -537,7 +569,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 /* en-tête : le drapeau en grand, le nom dessous, bien centré */
 .cmp thead th{
   background:var(--primary);color:#101010;
-  font-family:'Sora',sans-serif;font-weight:900;text-transform:uppercase;font-size:.76rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;text-transform:uppercase;font-size:.76rem;
   cursor:pointer;text-align:center;border-bottom:1px solid var(--stroke);line-height:1.3;
   transition:filter .1s ease;
 }
@@ -546,7 +578,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .cmp .cmp-flag{font-size:1.7rem;display:inline-block;margin-bottom:2px}
 /* colonne des critères : étiquettes claires, collées à gauche au défilement */
 .cmp tbody th[scope="row"]{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.72rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;
   text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;
   color:var(--txt-2);background:var(--bg);position:sticky;left:0;z-index:1;
   border-right:1px solid var(--stroke);
@@ -573,12 +605,12 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .gal-flag{
   flex:none;width:38px;height:38px;display:grid;place-items:center;
   border-radius:50%;background:var(--surface-2);border:1px solid var(--stroke);
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.82rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.82rem;
   letter-spacing:.02em;line-height:1;color:var(--txt-2);
   overflow:hidden;
 }
 .gal-info{flex:1;min-width:0;display:flex;flex-direction:column}
-.gal-info b{font-family:'Sora',sans-serif;font-weight:900;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gal-info b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gal-info span{font-size:.76rem;color:var(--txt-2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gal-open{flex-shrink:0}
 /* Retirer un voyage : discret par défaut, il ne doit pas concurrencer
@@ -602,7 +634,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
    énorme sans qu'aucun des deux chiffres paraisse excessif. */
 .privacy-check input{width:auto;flex-shrink:0;margin-top:1px;box-shadow:none}
 .privacy-check a{color:var(--accent-orange);font-weight:800;text-decoration:underline;cursor:pointer}
-.legal h4{font-family:'Sora',sans-serif;font-size:.9rem;margin:14px 0 4px}
+.legal h4{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.9rem;margin:14px 0 4px}
 .legal h4:first-child{margin-top:0}
 .legal p{font-size:.84rem;line-height:1.55;color:var(--txt-2);margin:0}
 /* ===== Case à cocher d'option (questionnaire) =====
@@ -627,7 +659,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   accent-color:var(--primary);cursor:pointer;
 }
 .field label.opt-check b{
-  display:block;font-family:'Sora',sans-serif;font-weight:900;font-size:.92rem;
+  display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.92rem;
   text-transform:none;letter-spacing:0;color:var(--txt);
 }
 .field label.opt-check em{
@@ -661,7 +693,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   background:var(--primary);color:#101010;
   border:1px solid var(--stroke);box-shadow:var(--shadow);
   border-radius:var(--r-md);padding:6px 8px 6px 11px;
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.8rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.8rem;
 }
 .pays-tag .num{
   background:#101010;color:var(--primary);
@@ -686,7 +718,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .onboard[hidden]{display:none}
 .onboard-card{position:relative;max-width:380px;width:100%;background:var(--secondary);border:1px solid var(--stroke);box-shadow:var(--shadow);border-radius:var(--r-lg);padding:34px 26px 22px;text-align:center;animation:pop .3s ease both}
 .onboard-emoji{font-size:3.4rem;line-height:1;margin-bottom:12px}
-.onboard-card h2{font-family:'Sora',sans-serif;font-weight:900;font-size:1.3rem;margin:0 0 8px}
+.onboard-card h2{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.3rem;margin:0 0 8px}
 .onboard-card p{color:var(--txt-2);font-size:.95rem;line-height:1.55;margin:0 0 22px}
 .onboard-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .onboard-dots{display:flex;gap:7px}
@@ -698,9 +730,9 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .pc-preview{position:relative;border:1px solid var(--stroke);border-radius:var(--r-md);overflow:hidden;background:var(--bg);min-height:180px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:var(--shadow)}
 .pc-preview img{width:100%;display:block}
 .pc-preview img:not([src]){display:none}
-.pc-loading{position:absolute;font-family:'Sora',sans-serif;font-weight:800;color:var(--txt-2);font-size:.85rem}
+.pc-loading{position:absolute;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;color:var(--txt-2);font-size:.85rem}
 .pc-group{margin-bottom:10px}
-.pc-label{display:block;font-family:'Sora',sans-serif;font-weight:900;font-size:.72rem;text-transform:uppercase;color:var(--txt-2);margin-bottom:6px}
+.pc-label{display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;text-transform:uppercase;color:var(--txt-2);margin-bottom:6px}
 .pc-chips{display:flex;gap:8px;flex-wrap:wrap}
 .pc-chip{
   padding:8px 14px;border:1px solid var(--stroke);border-radius:var(--r-lg);
@@ -744,7 +776,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(76px + env(safe-area-inset-bottom, 0px));z-index:60;
   max-width:calc(100% - 24px);padding:8px 14px;
-  font:800 .74rem 'Sora',sans-serif;text-align:center;
+  font:600 .74rem 'Fraunces',Georgia,serif;text-align:center;
   background:var(--accent-orange);color:var(--on-accent);
   border:1px solid var(--stroke);border-radius:var(--r-lg);box-shadow:var(--shadow);
 }
@@ -787,14 +819,14 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 
 .news-entry .news-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .news-v{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.72rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;
   background:var(--secondary);color:var(--txt);
   padding:2px 9px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
 .news-entry.latest .news-v{background:var(--primary);color:#101010}
 .news-date{font-size:.72rem;font-weight:700;color:var(--txt-2)}
 .news-new{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.6rem;text-transform:uppercase;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.6rem;text-transform:uppercase;
   letter-spacing:.08em;background:var(--ok);color:var(--on-accent);
   padding:3px 8px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
@@ -838,7 +870,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 /* fond jaune dans les deux thèmes : l'encre reste donc foncée */
 .ph-eyebrow{
   display:inline-block;margin-bottom:8px;padding:3px 10px;
-  font:900 .62rem 'Sora',sans-serif;text-transform:uppercase;letter-spacing:.1em;
+  font:700 .62rem 'Fraunces',Georgia,serif;text-transform:uppercase;letter-spacing:.1em;
   background:#101010;color:var(--primary);border-radius:var(--r-md);
 }
 .ph-card h3{margin:0 0 8px;font-size:1.5rem;line-height:1.1;color:#101010}
@@ -865,13 +897,24 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .tr-top{display:flex;align-items:center;gap:12px}
 .tr-mode{font-size:1.8rem;line-height:1;flex-shrink:0}
 .tr-journey{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
-.tr-pt{font-family:'Sora',sans-serif;font-weight:900;font-size:1.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-pt{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ⚠️ LE DÉPART NE RÉTRÉCIT PLUS. Les deux points du trajet étaient également
+   compressibles (flex-shrink:1 par défaut), donc une destination longue mangeait
+   la ville de DÉPART : « Saint-Pierre-et-Miquelon » réduisait « Paris » de 48 à
+   32 px, et un nom de 58 caractères le réduisait à 14 px — soit « P… ».
+   Ce n'est pas un cas de laboratoire : « Charleville-Mézières » ou
+   « Villeneuve-d'Ascq » suffisent, sur le seul écran qui montre le trajet.
+   Le départ est court par nature (une ville de départ) et il ancre la lecture :
+   c'est la DESTINATION qui doit absorber le manque de place, et la troncature
+   par points de suspension y reste correcte. */
+.tr-journey .tr-pt:first-child{flex:0 0 auto}
+.tr-journey .tr-pt:last-child{flex:0 1 auto;min-width:0}
 .tr-arrow{font-weight:900;color:var(--txt-2);flex-shrink:0}
 .tr-check{flex-shrink:0;font-weight:900;color:var(--ok);font-size:1.1rem}
 /* les infos deviennent des étiquettes distinctes : même contenu, plus clair */
 .tr-facts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
 .tr-fact{
-  font:800 .72rem 'Sora',sans-serif;color:var(--txt);white-space:nowrap;
+  font:600 .72rem 'Fraunces',Georgia,serif;color:var(--txt);white-space:nowrap;
   padding:4px 10px;background:var(--bg);
   border:1px solid var(--stroke);border-radius:var(--r-lg);
 }
@@ -898,18 +941,73 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
    d'onglets sa présence propre — c'est « la barre en dessous du voyage ». */
 .sections-card{padding-top:8px}
 .sections-title{margin:2px 0 14px}
+/* ---- La rangée d'onglets défile, et ça doit SE VOIR ----
+   ⚠️ Elle déborde sur téléphone (six libellés qui ne tiennent pas) et
+   l'ascenseur est masqué : « Budget » restait hors champ sans que rien
+   n'indique qu'on pouvait glisser. Un contenu atteignable mais invisible vaut
+   un contenu absent.
+   Le voile est posé sur un ENVELOPPE et non sur .plan-tabs elle-même : un
+   dégradé sur l'élément qui défile défilerait avec lui. Il n'apparaît que du
+   côté où il reste réellement quelque chose (classes .a-gauche / .a-droite,
+   posées par planTabsOmbre), donc il ne ment jamais : pas de voile quand on
+   est au bout. */
+.plan-tabs-wrap{position:relative;margin:0 0 18px}
+.plan-tabs-wrap::before,
+.plan-tabs-wrap::after{
+  content:'';position:absolute;top:1px;bottom:1px;width:34px;
+  pointer-events:none;opacity:0;transition:opacity .18s ease;
+  z-index:2;
+}
+.plan-tabs-wrap::before{
+  left:1px;border-radius:var(--r-lg) 0 0 var(--r-lg);
+  background:linear-gradient(to right, var(--bg), transparent);
+}
+.plan-tabs-wrap::after{
+  right:1px;border-radius:0 var(--r-lg) var(--r-lg) 0;
+  background:linear-gradient(to left, var(--bg), transparent);
+}
+.plan-tabs-wrap.a-gauche::before{opacity:1}
+.plan-tabs-wrap.a-droite::after{opacity:1}
+@media (prefers-reduced-motion:reduce){
+  .plan-tabs-wrap::before,.plan-tabs-wrap::after{transition:none}
+}
+
 .plan-tabs{
   display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;
-  padding:6px;margin:0 0 18px;background:var(--bg);
+  padding:6px;margin:0;background:var(--bg);
   border:1px solid var(--stroke);border-radius:var(--r-lg);
   box-shadow:var(--shadow);
 }
 .plan-tabs::-webkit-scrollbar{display:none}
+
+/* ---- Événements : le titre et sa date sont DEUX blocs ----
+   Le badge vivait dans le <h4>, en flux inline avec le nom : sur un nom long il
+   se coupait en deux lignes, moitié au bout du titre, moitié dessous. Une
+   pastille ne se coupe pas — c'est ce qui la fait lire comme une pastille.
+   `align-items:baseline` aligne le badge sur la ligne d'écriture du titre
+   plutôt que sur le haut de sa boîte : sans ça il flotte trop haut quand le
+   titre passe lui-même sur deux lignes. */
+.ev-tete{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;min-width:0}
+.ev-tete h4{margin:0;min-width:0;overflow-wrap:anywhere}
+/* ⚠️ PAS DE `white-space:nowrap` ICI, et c'est un choix mesuré, pas un oubli.
+   Je l'avais posé pour tenir la date sur une ligne. Résultat mesuré : la
+   pastille passait bien à 22 px de haut, mais son texte était TRONQUÉ — une
+   date de 29 caractères (« Troisième week-end de juillet ») ne tient
+   objectivement pas sur une ligne dans une colonne de 313 px. J'échangeais un
+   repli contre une perte d'information, ce qui est pire.
+   Le défaut d'origine n'était pas qu'une date longue se replie : c'était
+   qu'elle se coupait EN PLEIN MILIEU, moitié au bout du titre, moitié dessous,
+   parce que le badge vivait dans le flux inline du <h4>. Sorti du titre, il est
+   un bloc entier sur sa propre ligne — qu'il fasse une ou deux lignes de texte
+   à l'intérieur ne casse plus rien.
+   `.tag` (500 lignes plus bas) garde donc son `white-space:normal`, et il a
+   raison de l'avoir. */
+.ev-quand{flex:none;font-size:.66rem}
 .plan-tab{
   position:relative;flex:1;min-width:max-content;white-space:nowrap;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:7px;
   padding:11px 14px;border:2px solid transparent;border-radius:var(--r-md);background:transparent;
-  font:900 .8rem 'Sora',sans-serif;color:var(--txt-2);
+  font:700 .8rem 'Fraunces',Georgia,serif;color:var(--txt-2);
   transition:transform .12s ease, color .12s ease, background .12s ease, box-shadow .12s ease;
 }
 .plan-tab span{font-size:1.1rem;line-height:1;transition:transform .15s ease}
@@ -921,15 +1019,25 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   transform:translate(-1px,-1px);
 }
 .plan-tab.on span{transform:scale(1.12)}
-/* mobile : icône au-dessus du mot → les onglets tiennent sans défilement */
+/* Mobile : icône AU-DESSUS du mot, et la rangée DÉFILE.
+   ⚠️ La version précédente visait « les onglets tiennent sans défilement » et
+   posait min-width:0 pour y arriver. Mais min-width:0 annule le
+   `min-width:max-content` de la règle de base : `flex:1` comprimait alors
+   chaque onglet SOUS son propre texte, et `white-space:nowrap` faisait le
+   reste — mesuré à 44 px de large pour 52 px de contenu, donc « Programme »,
+   « Transport » et « Événements » coupés net.
+   Six libellés de 8 à 10 lettres ne tiennent pas dans 375 px : l'objectif
+   était inatteignable, pas mal réglé. Un mot tronqué est pire qu'une rangée
+   qu'on fait glisser — surtout que .plan-tabs a DÉJÀ overflow-x:auto et son
+   ascenseur masqué, donc le défilement était prévu depuis le début. */
 @media(max-width:460px){
   .plan-tabs{gap:3px;padding:4px}
-  .plan-tab{flex-direction:column;gap:3px;padding:8px 3px;font-size:.62rem;min-width:0}
+  .plan-tab{flex:none;flex-direction:column;gap:3px;padding:8px 10px;font-size:.62rem}
   .plan-tab span{font-size:1.2rem}
 }
 .plan-panel{animation:pop .25s ease both}
 .pan-intro{font-size:.82rem;font-weight:600;color:var(--txt-2);line-height:1.5;margin:0 0 14px}
-.pan-sub{font-family:'Sora',sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
+.pan-sub{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
   color:var(--txt-2);margin:18px 0 8px}
 
 /* --- panneau Logement --- */
@@ -941,14 +1049,14 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .etapes{display:flex;flex-direction:column;gap:7px;margin-top:11px}
 .etape{display:flex;flex-direction:column;padding:9px 11px;background:var(--bg);
   border:1px solid var(--stroke);border-radius:9px}
-.etape b{font-family:'Sora',sans-serif;font-size:.88rem}
+.etape b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.88rem}
 .etape span{font-size:.76rem;color:var(--txt-2);font-weight:600}
 
 /* --- panneau Programme : lignes de journée compactes --- */
 .day-row{display:flex;align-items:flex-start;gap:11px;padding:13px;
   background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-md);
   box-shadow:var(--shadow)}
-.day-num{flex-shrink:0;font-family:'Sora',sans-serif;font-weight:900;font-size:.78rem;
+.day-num{flex-shrink:0;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.78rem;
   background:var(--primary);color:#101010;padding:4px 9px;border:1px solid var(--stroke);border-radius:8px}
 .day-txt{flex:1;min-width:0}
 .day-txt h4{margin:0;font-size:.98rem;line-height:1.3}
@@ -961,7 +1069,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .day-act{
   flex:1;min-width:140px;
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  font:800 .8rem 'Sora',sans-serif;color:var(--txt);cursor:pointer;
+  font:600 .8rem 'Fraunces',Georgia,serif;color:var(--txt);cursor:pointer;
   padding:9px 12px;background:var(--bg);
   border:1px solid var(--stroke);border-radius:9px;box-shadow:var(--shadow);
   transition:transform .1s ease, box-shadow .1s ease, background .1s ease;
@@ -980,7 +1088,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .ic-head{display:flex;align-items:center;gap:9px;margin-bottom:6px}
 .ic-head span{font-size:1.2rem;line-height:1}
 .ic-head h4{margin:0;font-size:.95rem;flex:1}
-.ic-head b{font-family:'Sora',sans-serif;font-size:.95rem}
+.ic-head b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.95rem}
 .info-card p{margin:0;font-size:.87rem;line-height:1.5;color:var(--txt-2)}
 .ic-note{margin-top:5px !important;font-size:.78rem !important;opacity:.85}
 .ic-todo{margin-top:5px !important;font-weight:700;color:var(--txt) !important}
@@ -998,10 +1106,10 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .tc-body{flex:1;min-width:0}
 .tc-body h4{margin:0;font-size:1.15rem}
 .tc-facts{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
-.tc-fact{font:800 .74rem 'Sora',sans-serif;background:#101010;color:var(--primary);padding:4px 10px;border-radius:var(--r-lg);white-space:nowrap}
+.tc-fact{font:600 .74rem 'Fraunces',Georgia,serif;background:#101010;color:var(--primary);padding:4px 10px;border-radius:var(--r-lg);white-space:nowrap}
 .tc-why{margin:6px 0 0;font-size:.9rem;font-weight:600;line-height:1.5}
 .carbon-card .carbon-big{margin:0;font-size:1rem}
-.carbon-card .carbon-big strong{font-family:'Sora',sans-serif;font-size:1.15rem}
+.carbon-card .carbon-big strong{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:1.15rem}
 .carbon-card .carbon-big span{font-size:.8rem;color:var(--txt-2);font-weight:600}
 
 /* ===== Cartes restaurant ===== */
@@ -1016,7 +1124,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .rc-id h4{margin:0;font-size:1rem;line-height:1.25}
 .rc-meta{font-size:.76rem;font-weight:600;color:var(--txt-2);margin-top:3px}
 .rc-price{
-  flex-shrink:0;font:900 .76rem 'Sora',sans-serif;
+  flex-shrink:0;font:700 .76rem 'Fraunces',Georgia,serif;
   background:var(--primary);color:#101010;padding:5px 10px;
   border:1px solid var(--stroke);border-radius:var(--r-md);text-align:center;max-width:130px;line-height:1.25;
 }
@@ -1033,7 +1141,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .hotel-card.best{box-shadow:var(--shadow);border-width:1px}
 .hc-badge{
   position:absolute;top:-11px;left:12px;
-  font:900 .62rem 'Sora',sans-serif;text-transform:uppercase;letter-spacing:.04em;
+  font:700 .62rem 'Fraunces',Georgia,serif;text-transform:uppercase;letter-spacing:.04em;
   background:var(--ok);color:var(--on-accent);padding:3px 9px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
 .hc-top{display:flex;align-items:flex-start;gap:11px}
@@ -1043,7 +1151,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .hc-meta{font-size:.76rem;font-weight:600;color:var(--txt-2);margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .hc-note{white-space:nowrap}
 .hc-stars{color:var(--accent-orange);letter-spacing:1px}
-.hc-price{flex-shrink:0;font-family:'Sora',sans-serif;font-weight:900;font-size:1rem;
+.hc-price{flex-shrink:0;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1rem;
   background:var(--primary);color:#101010;padding:5px 10px;border:1px solid var(--stroke);border-radius:var(--r-md);white-space:nowrap}
 .hc-price small{font-weight:700;font-size:.62rem;opacity:.75}
 .hc-why{margin:10px 0 0;font-size:.86rem;line-height:1.5;color:var(--txt-2)}
@@ -1058,16 +1166,16 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   margin-bottom:16px;
 }
 .budget-total{display:flex;flex-direction:column;line-height:1}
-.bt-num{font-family:'Sora',sans-serif;font-weight:900;font-size:1.9rem}
+.bt-num{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.9rem}
 .bt-lbl{font-weight:800;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;opacity:.75;margin-top:3px}
 .budget-chips{display:flex;flex-wrap:wrap;gap:7px}
-.budget-chip{font:800 .74rem 'Sora',sans-serif;background:#101010;color:var(--primary);
+.budget-chip{font:600 .74rem 'Fraunces',Georgia,serif;background:#101010;color:var(--primary);
   padding:5px 11px;border-radius:var(--r-lg);white-space:nowrap}
 .budget-breakdown{margin-bottom:4px}
 .budget-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:7px 0}
 .budget-row .br-ico{font-size:1.1rem}
 .br-label{font-weight:700;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.br-amount{font-family:'Sora',sans-serif;font-weight:900;font-size:.82rem;white-space:nowrap}
+.br-amount{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.82rem;white-space:nowrap}
 .br-bar{grid-column:1 / -1;height:8px;background:var(--bg);border:1px solid var(--stroke);border-radius:var(--r-sm);overflow:hidden}
 .br-bar i{display:block;height:100%;background:var(--accent-cyan);border-right:1px solid var(--stroke);min-width:3px;transition:width .4s ease}
 
@@ -1077,7 +1185,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .day-collab{display:flex;align-items:center;gap:14px;margin:8px 0 14px;padding-left:4px;flex-wrap:wrap}
 .cvote{
   display:inline-flex;align-items:center;gap:7px;
-  font:800 .78rem 'Sora',sans-serif;color:var(--txt);
+  font:600 .78rem 'Fraunces',Georgia,serif;color:var(--txt);
   background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-lg);
   padding:7px 15px;cursor:pointer;box-shadow:var(--shadow);
   transition:transform .1s ease, box-shadow .1s ease, background .1s ease;
@@ -1092,7 +1200,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 }
 .day-comments[hidden]{display:none}
 .com-list p{margin:0 0 7px;font-size:.85rem;line-height:1.45}
-.com-list b{font-family:'Sora',sans-serif;font-size:.78rem;background:var(--primary);color:#101010;padding:1px 7px;border:1.5px solid var(--stroke);border-radius:9px;margin-right:5px}
+.com-list b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.78rem;background:var(--primary);color:#101010;padding:1px 7px;border:1.5px solid var(--stroke);border-radius:9px;margin-right:5px}
 .com-bar{display:flex;gap:8px;margin-top:9px}
 .com-inp{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--stroke);border-radius:8px;background:var(--secondary);color:var(--txt);font:600 .85rem inherit}
 .com-inp:focus{outline:none;box-shadow:var(--shadow)}
@@ -1128,7 +1236,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 }
 .tl-item:nth-child(2n)::before{background:var(--accent-violet)}
 .tl-time{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.9rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.9rem;
   text-transform:uppercase;background:var(--primary);display:inline-block;
   padding:2px 6px;border:1px solid var(--stroke);margin-bottom:4px;
 }
@@ -1188,7 +1296,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   animation:pop .35s ease both;box-shadow:var(--shadow);
 }
 .item .emo{font-size:1.8rem;flex-shrink:0}
-.item h4{font-size:1.05rem;font-weight:800;margin-bottom:4px;font-family:'Sora',sans-serif;text-transform:uppercase}
+.item h4{font-size:1.05rem;font-weight:800;margin-bottom:4px;font-family:'Fraunces',Georgia,'Times New Roman',serif;text-transform:uppercase}
 .item p{font-size:.9rem;color:var(--txt-2);line-height:1.5}
 .item .side{margin-left:auto;text-align:right;flex-shrink:0}
 
@@ -1224,7 +1332,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   margin-bottom:10px;animation:pop .3s ease both;box-shadow:var(--shadow);
 }
 .phrase .fr{font-size:.85rem;font-weight:700;color:var(--txt-2);margin-bottom:4px}
-.phrase .loc{font-family:'Sora',sans-serif;font-weight:900;font-size:1.15rem;color:var(--txt)}
+.phrase .loc{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.15rem;color:var(--txt)}
 .phrase .pron{font-size:.8rem;color:var(--accent-orange);font-weight:700;font-style:italic;margin-top:4px}
 
 /* ===== Budget ===== */
@@ -1234,7 +1342,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.8rem;font-weight:700;color:var(--txt);margin-bottom:16px}
 .legend b{font-weight:900}
 .legend .sw{display:inline-block;width:12px;height:12px;border-radius:0;border:1px solid var(--stroke);margin-right:6px;vertical-align:middle}
-.spend-total{font-family:'Sora',sans-serif;font-weight:900;font-size:1.8rem;color:var(--txt);text-transform:uppercase}
+.spend-total{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.8rem;color:var(--txt);text-transform:uppercase}
 .spend-del{margin-left:auto;color:var(--danger);cursor:pointer;font-size:1.1rem;font-weight:bold;opacity:.8;flex-shrink:0}
 .spend-del:hover{opacity:1;transform:scale(1.1)}
 
@@ -1245,7 +1353,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 }
 .acc-head{
   padding:16px;cursor:pointer;display:flex;align-items:center;gap:10px;
-  font-family:'Sora',sans-serif;font-weight:900;font-size:1rem;text-transform:uppercase;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1rem;text-transform:uppercase;
   user-select:none;background:var(--primary);border-bottom:1px solid var(--stroke);
 }
 .acc:not(.open) .acc-head{border-bottom:none} /* fix : double trait quand fermé */
@@ -1328,18 +1436,18 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .game-custom h3{margin:0;font-size:1.15rem;color:#fff}
 .gc-hint{margin:0;font-size:.84rem;color:#cfd6ef}
 .gc-group{width:100%;max-width:400px}
-.gc-label{display:block;font:900 .78rem 'Sora',sans-serif;margin:0 0 6px;text-align:left}
+.gc-label{display:block;font:700 .78rem 'Fraunces',Georgia,serif;margin:0 0 6px;text-align:left}
 .gc-swatches{display:flex;flex-wrap:wrap;gap:8px}
 .gc-swatch{
   display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;
   background:rgba(255,255,255,.08);border:2px solid transparent;border-radius:var(--r-md);
-  padding:8px 10px;color:#fff;font:700 .64rem 'Sora',sans-serif;
+  padding:8px 10px;color:#fff;font:700 .64rem 'Fraunces',Georgia,serif;
 }
 .gc-swatch:hover{background:rgba(255,255,255,.16)}
 .gc-swatch.on{border-color:var(--primary);background:rgba(255,230,0,.18)}
 .gc-swatch svg{display:block}
 .game-hud{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
-  font:900 .9rem 'Sora',sans-serif;margin:0 0 8px}
+  font:700 .9rem 'Fraunces',Georgia,serif;margin:0 0 8px}
 /* multiplicateur de combo : n'apparaît qu'au-delà de ×1 */
 .game-combo{
   background:var(--primary);color:#101010;padding:2px 10px;border-radius:var(--r-lg);
@@ -1349,7 +1457,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .game-combo[hidden]{display:none}
 @keyframes comboPop{from{transform:scale(.6)}to{transform:scale(1)}}
 .game-tip{font-size:.8rem;opacity:.85}
-.game-best{font:900 .88rem 'Sora',sans-serif;color:var(--primary)}
+.game-best{font:700 .88rem 'Fraunces',Georgia,serif;color:var(--primary)}
 .game-best[hidden]{display:none}
 .game-stage{position:relative;border:1px solid var(--stroke);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow);background:#0b1026}
 #gameCanvas{display:block;width:100%;height:auto;cursor:crosshair;touch-action:none}
@@ -1480,13 +1588,16 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 ============================================================ */
 .catnav{
   position:fixed;left:0;right:0;bottom:0;z-index:38;
-  display:grid;grid-template-columns:repeat(4, 1fr);   /* 4 boutons EXACTEMENT égaux */
-  gap:8px;
+  /* 5 boutons EXACTEMENT égaux — Carte · Voyage · Blog · Profil · Assistant.
+     ⚠️ Ce nombre DOIT suivre le nombre réel de boutons de la nav : à 4 le
+     cinquième débordait. La gouttière se resserre d'autant. */
+  display:grid;grid-template-columns:repeat(5, 1fr);
+  gap:5px;
   width:100%;
   background:var(--secondary);
   border-top:1px solid var(--stroke);
   border-radius:var(--r-lg) 22px 0 0;                          /* coins du haut arrondis */
-  padding:9px 10px 9px;
+  padding:6px 10px;
   box-shadow:0 -6px 0 rgba(0,0,0,.06), 0 -1px 0 var(--stroke);
 }
 .catnav button{
@@ -1494,8 +1605,19 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   width:100%;min-width:0;                       /* aucune colonne ne peut s'élargir */
   border:2px solid transparent;border-radius:var(--r-md);
   background:transparent;
-  font-family:'Sora',sans-serif;font-weight:800;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;
-  padding:7px 4px 6px;cursor:pointer;color:var(--txt-2);
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;
+  /* ⚠️ ENCRE PLEINE (--txt) ET NON L'ENCRE ATTÉNUÉE (--txt-2).
+     Les pictogrammes de la barre du bas étaient en gris moyen : lisibles au
+     calme, mais c'est la navigation principale de l'app sur téléphone, souvent
+     regardée en marchant, dehors, en plein soleil. --txt-2 ne tient pas dans
+     ces conditions.
+     ⚠️ Et surtout : --txt, pas « noir ». En thème sombre un noir écrit en dur
+     disparaîtrait dans la barre. La variable vaut #16160F en clair (donc bien
+     noir, comme demandé) et #F2F1EC en sombre — c'est la même intention, tenue
+     dans les deux thèmes.
+     L'onglet actif reste distinct par son FOND (pastille jaune), pas par un
+     écart de gris : c'est un repère plus solide qu'une nuance. */
+  padding:7px 4px 6px;cursor:pointer;color:var(--txt);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
   transition:transform .12s ease, background .12s ease, color .12s ease, box-shadow .12s ease, border-color .12s ease;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -1518,8 +1640,8 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 /* Plan clé en main : 3 stats compactes */
 .plan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .plan-stat{border:1px solid var(--stroke);background:var(--secondary);padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:104px;overflow:hidden}
-.plan-stat .k{font-family:'Sora',sans-serif;font-weight:800;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--txt-2)}
-.plan-stat .v{font-family:'Sora',sans-serif;font-weight:900;font-size:1rem;text-transform:uppercase;margin-top:2px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;hyphens:none}
+.plan-stat .k{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--txt-2)}
+.plan-stat .v{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1rem;text-transform:uppercase;margin-top:2px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;hyphens:none}
 .plan-stat .s{font-size:.74rem;font-weight:600;color:var(--txt-2);margin-top:2px;line-height:1.3;overflow-wrap:break-word}
 .plan-stat.wx{flex-direction:row;align-items:center;gap:10px}
 .plan-stat.wx canvas{flex:0 0 48px;width:48px;height:48px}
@@ -1548,7 +1670,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 
 .cat-empty-card{text-align:center;max-width:330px;padding:24px}
 .cat-empty-card .ce-emoji{font-size:3rem;line-height:1;margin-bottom:10px}
-.cat-empty-card h3{font-family:'Sora',sans-serif;font-weight:900;font-size:1.1rem;margin:0 0 6px;text-transform:uppercase}
+.cat-empty-card h3{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.1rem;margin:0 0 6px;text-transform:uppercase}
 .cat-empty-card p{color:var(--txt-2);font-size:.9rem;margin:0 0 16px;line-height:1.5}
 .cat-empty-banner{
   display:flex;align-items:center;gap:12px;
@@ -1558,7 +1680,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .cat-empty-banner[hidden]{display:none}
 .cat-empty-banner .ce-emoji{font-size:1.7rem}
-.cat-empty-banner h3{font-family:'Sora',sans-serif;font-weight:900;font-size:.9rem;text-transform:uppercase}
+.cat-empty-banner h3{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.9rem;text-transform:uppercase}
 .cat-empty-banner .hint{color:rgba(16,16,16,.72)}
 
 .auth-wrap{
@@ -1571,7 +1693,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   border-radius:var(--r-lg);padding:28px;box-shadow:var(--shadow);
 }
 .auth-logo{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:2rem;text-transform:uppercase;
   letter-spacing:-.03em;margin-bottom:4px;display:flex;align-items:center;gap:10px;
 }
 /* ⚠️ CES DEUX RÈGLES FORÇAIENT LE GLOBE À 42 px, et c'était le défaut du logo.
@@ -1588,7 +1710,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .auth-logo .logo-mark{flex:none}
 .auth-switch{font-size:.85rem;font-weight:700;margin-top:14px}
 .auth-switch a{color:var(--accent-orange);cursor:pointer;text-decoration:underline}
-.code-inp{font-family:'Sora',sans-serif;font-weight:900;font-size:1.5rem;letter-spacing:.4em;text-align:center}
+.code-inp{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.5rem;letter-spacing:.4em;text-align:center}
 /* ⚠️ L'ancienne déclaration de .profile-big vivait ICI — un pavé jaune encadré,
    avec min-height:60px, du padding, une bordure et une ombre. Elle a été
    SUPPRIMÉE, pas corrigée : la seule qui compte est celle du bloc « écran de
@@ -1644,7 +1766,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .dest-facts .fk{
   font-weight:800;flex-shrink:0;
-  font-family:'Sora',sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em;
 }
 .dest-facts .fv{
   font-weight:600;color:var(--txt);
@@ -1656,8 +1778,15 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    BOARDING PASS — carte de voyage (refonte)
    Un vrai billet : bande jaune + talon détachable + code-barres
 ============================================================ */
+/* ⚠️ LE BILLET EST ARRONDI, et ça change ce qu'il est.
+   Un rectangle à angles vifs de bord à bord se lisait comme un BANDEAU, pas
+   comme un objet posé sur la page — d'autant qu'il est en aplat jaune plein.
+   Le rayon lui rend son statut de carte, et les encoches du talon (les deux
+   ronds de .pass-tear) deviennent enfin lisibles comme une perforation plutôt
+   que comme deux accidents dans un bord droit. */
 .pass{
   border:1px solid var(--stroke);
+  border-radius:var(--r-lg);
   box-shadow:var(--shadow);
   background:var(--primary);
   margin-bottom:20px;
@@ -1668,84 +1797,161 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:16px 18px 12px;
 }
+/* ⚠️ La route ne s'ÉTIRE plus sur toute la largeur. Les deux codes étaient
+   plaqués aux extrémités, séparés par un pointillé de plusieurs centaines de
+   pixels : à 1440 px, « PAR » et « VCE » n'appartenaient plus à la même ligne
+   de lecture, et le trait devenait le sujet du billet. Un trajet se lit d'un
+   coup d'œil, donc il tient dans une largeur d'œil — d'où le plafond. */
 .pass-route{
-  display:flex;align-items:center;gap:8px;min-width:0;flex:1;
+  display:flex;align-items:center;gap:10px;min-width:0;flex:1;
+  max-width:420px;
   color:#101010;
 }
 .pass-route .iata{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:1.9rem;letter-spacing:-.03em;line-height:1;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.9rem;letter-spacing:-.03em;line-height:1;
 }
 .pass-route .dash{
   flex:1;min-width:14px;height:0;
-  border-top:3px dashed #101010;opacity:.5;
+  border-top:2px dashed #101010;opacity:.45;
 }
-.pass-route .plane{font-size:1.05rem;flex-shrink:0}
+.pass-route .plane{font-size:1.05rem;flex-shrink:0;opacity:.8}
+/* ⚠️ Le bouton « changer de destination » était un carré NOIR de 38 px collé
+   au bord droit du jaune : une pièce rapportée, du mauvais côté du contraste,
+   et sous la cible tactile. Il devient un rond en ENCRE DU BILLET (--primary-
+   ink sur un voile sombre) — il appartient au billet au lieu de s'y poser. */
 .pass-change{
-  flex-shrink:0;width:38px;height:38px;
-  background:var(--secondary);color:var(--txt);
-  border:1px solid var(--stroke);box-shadow:var(--shadow);
-  font-size:1rem;font-weight:900;cursor:pointer;
-  transition:transform .1s,box-shadow .1s;
+  flex-shrink:0;width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;
+  background:rgba(16,16,16,.10);color:var(--primary-ink);
+  border:0;box-shadow:none;
+  font-size:1.05rem;font-weight:900;cursor:pointer;
+  transition:background .12s ease,transform .12s ease;
 }
-.pass-change:active{transform:translate(3px,3px);box-shadow:none}
-/* --- Infos, en colonnes lisibles --- */
+.pass-change:hover{background:rgba(16,16,16,.2)}
+.pass-change:active{transform:scale(.92)}
+/* --- Infos ---
+   ⚠️ `1fr 1fr` étalait DEUX colonnes sur toute la largeur : sur un écran large,
+   « Destination » restait collé à gauche, « Dates » partait à droite, et il
+   s'ouvrait au milieu un trou de plusieurs centaines de pixels que rien ne
+   remplissait. Un billet se lit en BLOC, pas aux deux extrémités d'une bande.
+   `auto-fit` + `minmax` fait tenir les quatre champs ensemble et laisse le
+   surplus À DROITE, où il ne sépare rien — c'est le même principe que sur un
+   vrai talon, où les mentions sont groupées. */
 .pass-info{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;
-  padding:0 18px 16px;color:#101010;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,max-content));
+  justify-content:start;
+  /* ⚠️ Gouttière ÉLASTIQUE. À 40 px fixes, deux colonnes de 130 demandaient
+     320 px pour 315 disponibles sur un téléphone : il s'en fallait de 5 px, et
+     les quatre champs s'empilaient en UNE colonne — un billet de 421 px de
+     haut pour quatre lignes d'information. Le clamp laisse l'air sur grand
+     écran et le reprend là où il coûte une colonne. */
+  gap:12px clamp(18px,5vw,40px);
+  padding:0 18px 18px;color:#101010;
+}
+/* ⚠️ DEUX COLONNES EXPLICITES SUR TÉLÉPHONE. `auto-fit` calcule le nombre de
+   pistes sur le minimum, mais avec `max-content` en borne haute il n'en gardait
+   qu'UNE ici (mesuré : une piste de 313 px) — les quatre champs s'empilaient
+   donc, et le billet montait à 421 px de haut pour quatre lignes.
+   Sous 460 px on ne cherche plus à deviner : deux colonnes, point. La
+   destination et les dates tiennent côte à côte, les passagers et le budget
+   dessous — c'est la disposition d'un vrai talon. */
+@media(max-width:460px){
+  .pass-info{grid-template-columns:1fr 1fr;gap:12px 16px}
 }
 .pass-info .pi{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pass-info .pk{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.58rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.58rem;
   text-transform:uppercase;letter-spacing:.12em;opacity:.65;
 }
 .pass-info .pv{
   font-weight:700;font-size:.86rem;line-height:1.25;
   overflow-wrap:break-word;
 }
-/* --- Talon détachable --- */
+/* --- Talon : SUR LE JAUNE, plus en dessous ---
+   ⚠️ LE BILLET ÉTAIT DEUX BLOCS, et c'était ça le vrai défaut.
+   Le talon portait `background:var(--secondary)` : une bande SOMBRE pleine
+   largeur collée sous l'aplat jaune. Deux surfaces qui se disputaient l'écran,
+   dont la seconde — la plus lourde visuellement — ne contenait que quatre
+   boutons secondaires. On lisait « une carte jaune » PUIS « une barre noire »,
+   au lieu d'un billet.
+   Le talon reste un talon — la perforation est toujours là, en pointillé
+   d'encre sur le jaune, avec ses deux encoches — mais il ne change plus de
+   couleur. Le billet redevient UN objet. */
 .pass-tear{
   position:relative;
-  background:var(--secondary);
-  border-top:1px dashed var(--stroke);
-  padding:14px 18px;
+  background:none;
+  border-top:2px dashed rgba(16,16,16,.28);
+  padding:14px 18px 4px;
   display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
 }
+/* Les encoches percent jusqu'au fond de la PAGE : c'est ce qui fait lire une
+   perforation plutôt qu'un simple trait. */
 .pass-tear::before,.pass-tear::after{
-  content:'';position:absolute;top:-14px;
-  width:24px;height:24px;border-radius:50%;
+  content:'';position:absolute;top:-13px;
+  width:26px;height:26px;border-radius:50%;
   background:var(--bg);
-  border:1px solid var(--stroke);
 }
-.pass-tear::before{left:-16px}
-.pass-tear::after{right:-16px}
-/* --- Les 3 actions : pleine largeur, alignées, texte lisible --- */
-.pass-acts{display:flex;gap:10px;flex:1;min-width:190px}
+.pass-tear::before{left:-17px}
+.pass-tear::after{right:-17px}
+/* --- Les quatre actions du talon ---
+   ⚠️ Les émojis (📷 🖼️ 🔗 📅) ont été remplacés par des TRACÉS SVG, au même
+   stroke-width 1,75 que la barre de navigation. Deux raisons, et la seconde
+   compte plus que la première : un émoji se dessine différemment sur chaque
+   système (et en couleur, alors que tout le reste de l'interface est en
+   tracé monochrome), et surtout il portait à lui seul tout le poids visuel de
+   quatre boîtes noires posées SOUS un aplat jaune — c'est ce qui faisait lire
+   le talon comme un bloc étranger collé au billet.
+   Les boîtes deviennent donc des boutons plats, séparés par un filet : le
+   talon redevient la suite du billet, pas une rangée d'icônes. */
+/* --- Les quatre actions : DES PASTILLES, plus une rangée de cases ---
+   ⚠️ Ce qui les rendait laides tenait à trois choses, toutes corrigées ici :
+   · elles étaient GRISES (--txt-2) sur fond sombre — délavées, sans présence,
+     alors que ce sont les seules actions du billet ;
+   · elles étaient séparées par des FILETS verticaux, ce qui donnait une ligne
+     de tableau, pas des boutons ;
+   · elles s'étiraient chacune sur un quart de la largeur (flex:1), donc quatre
+     grandes cases vides autour de quatre petites icônes.
+   Elles deviennent des pastilles d'encre sur le jaune : elles se dimensionnent
+   à leur contenu, l'icône et le mot sont CÔTE À CÔTE (plus lisible que
+   empilés à cette taille), et le contraste est celui du billet lui-même. */
+.pass-acts{display:flex;gap:8px;flex-wrap:wrap;flex:1;min-width:190px}
 .pact{
-  flex:1;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  min-width:64px;padding:8px 6px;
-  background:var(--bg);
-  color:var(--txt);                     /* ← le texte n'est plus bleu */
-  border:1px solid var(--stroke);
-  box-shadow:var(--shadow);
-  font-size:1rem;cursor:pointer;
-  transition:transform .1s,box-shadow .1s;
+  flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:40px;padding:0 16px;
+  background:rgba(16,16,16,.09);
+  color:var(--primary-ink);
+  border:0;border-radius:999px;box-shadow:none;
+  cursor:pointer;
+  transition:background .14s ease,transform .12s ease;
 }
-.pact:active{transform:translate(3px,3px);box-shadow:none}
+.pact:hover{background:rgba(16,16,16,.18)}
+.pact:active{transform:scale(.96)}
+.pact:focus-visible{outline:2px solid var(--primary-ink);outline-offset:2px}
+/* L'icône garde la taille des pictogrammes de la nav : c'est le même langage,
+   donc la même échelle — sinon on lit deux jeux d'icônes au lieu d'un. */
+.pact-i{width:18px;height:18px;flex:none}
 .pact span{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.56rem;
-  text-transform:uppercase;letter-spacing:.06em;color:var(--txt);
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.68rem;
+  text-transform:uppercase;letter-spacing:.04em;color:inherit;white-space:nowrap;
 }
+/* La mention légale reste sur le jaune, en encre atténuée : c'est une note de
+   bas de billet, pas un troisième bloc. */
 .pass-note{
-  background:var(--secondary);
-  border-top:1px solid var(--stroke);
-  padding:9px 18px;margin:0;
-  font-size:.62rem;font-weight:600;line-height:1.4;
-  color:var(--txt-2);
+  background:none;border:0;
+  padding:10px 18px 16px;margin:0;
+  font-size:.66rem;font-weight:600;line-height:1.45;
+  color:rgba(16,16,16,.62);
 }
 @media(max-width:420px){
   .pass-route .iata{font-size:1.5rem}
-  .pass-info{grid-template-columns:1fr}
+  /* ⚠️ PLUS de `grid-template-columns:1fr` ici. Cette ligne écrasait la règle
+     à deux colonnes posée juste au-dessus (même sélecteur, déclarée plus bas,
+     donc gagnante) : les quatre champs s'empilaient et le billet montait à
+     421 px de haut pour quatre lignes d'information. Une colonne se justifiait
+     quand le bloc était en `1fr 1fr` étiré ; avec deux colonnes serrées à
+     16 px de gouttière, « Destination / Dates » et « Passagers / Budget »
+     tiennent côte à côte dès 320 px. */
   .pass-tear{justify-content:center}
   .pass-acts{justify-content:center;min-width:0}
 }
@@ -1768,10 +1974,10 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    mascotte (qui y est positionnée en absolu) */
 .sb-mark:has(.travel-scene){width:auto;height:auto}
 .sb-mark .mascot:not(.traveler){width:42px;height:42px}
-.sb-mark span{font-family:'Sora',sans-serif;font-weight:900;font-size:1.15rem;color:var(--primary-ink);line-height:1}
+.sb-mark span{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.15rem;color:var(--primary-ink);line-height:1}
 .sb-body{flex:1;min-width:0}
 .sb-text{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.72rem;text-transform:uppercase;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;text-transform:uppercase;
   letter-spacing:.04em;color:#101010;margin-bottom:5px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
@@ -1805,7 +2011,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .arcade-card:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow);background:var(--card-hover)}
 .arcade-card:active{transform:translateY(1px);box-shadow:var(--shadow)}
 .ac-ico{font-size:1.9rem;line-height:1}
-.ac-nom{font-family:'Sora',sans-serif;font-weight:900;font-size:.95rem;text-transform:uppercase}
+.ac-nom{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.95rem;text-transform:uppercase}
 .ac-desc{font-size:.78rem;color:var(--txt-2);line-height:1.35}
 
 /* ===== Jeu « Où est-ce ? » ===== */
@@ -1821,7 +2027,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .geo-hint{margin:0;font-size:.82rem;font-weight:700;color:var(--txt-2);text-align:center}
 .geo-names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.geo-q{grid-column:1/-1;margin:0;font-family:'Sora',sans-serif;font-weight:900;font-size:.9rem;text-align:center}
+.geo-q{grid-column:1/-1;margin:0;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.9rem;text-align:center}
 .geo-name{
   border:1px solid var(--stroke);background:var(--secondary);color:var(--txt);
   box-shadow:var(--shadow);border-radius:var(--r-md);
@@ -1879,7 +2085,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   width:32px;height:32px;display:grid;place-items:center;padding:0;
   border:3px solid #101010;box-shadow:2px 2px 0 #101010;border-radius:50%;
   background:var(--primary);color:#101010;
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.82rem;line-height:1;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.82rem;line-height:1;
   cursor:pointer;pointer-events:auto;
 }
 .am-mark:active{transform-origin:center;box-shadow:0 0 0 #101010}
@@ -1900,15 +2106,23 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .am-zb{
   width:34px;height:34px;display:grid;place-items:center;padding:0;
   background:#fff;color:#101010;border:3px solid #101010;box-shadow:2px 2px 0 #101010;
-  border-radius:9px;font-family:'Sora',sans-serif;font-weight:900;font-size:1.05rem;
+  border-radius:9px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.05rem;
   line-height:1;cursor:pointer;
 }
 .am-zb:active{transform:translate(2px,2px);box-shadow:0 0 0 #101010}
+/* ⚠️ 24 px de haut, pas 44 — et c'est délibéré. L'attribution OpenStreetMap
+   est OBLIGATOIRE (condition d'usage des tuiles) et doit rester cliquable,
+   mais elle est posée SUR la carte : la grossir la ferait masquer le terrain
+   qu'elle documente. 24 px est le minimum réellement exigé (WCAG 2.5.8, AA) ;
+   les 44 px sont la recommandation AAA 2.5.5, et elle prévoit une exception
+   pour les liens d'attribution en incrustation. On vise donc la norme qui
+   s'applique, sans dégrader ce que la carte doit montrer. */
 .am-credit{
   position:absolute;right:8px;bottom:6px;z-index:7;
+  display:inline-flex;align-items:center;min-height:24px;
   background:rgba(255,255,255,.82);color:#101010;
   font-size:.6rem;font-weight:700;text-decoration:none;
-  padding:2px 6px;border-radius:var(--r-sm);
+  padding:2px 8px;border-radius:var(--r-sm);
 }
 
 /* ===== Panneau Préférences ===== */
@@ -1958,7 +2172,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   min-height:52px;
   background:var(--secondary);color:var(--txt);
   border:1px solid var(--stroke);box-shadow:var(--shadow);
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.85rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.85rem;
   text-transform:uppercase;letter-spacing:.06em;
   cursor:pointer;
 }
@@ -1981,7 +2195,9 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .btn.danger:active{transform:translate(4px,4px);box-shadow:none}
 
 /* ===== Safe area : la nav ne chevauche jamais l'indicateur gestuel ===== */
-.catnav{padding-bottom:calc(9px + env(safe-area-inset-bottom, 0px))}
+/* 6px et non 9 : la barre a été resserrée plus bas (voir @media pointer:coarse).
+   La zone sûre du système, elle, n'est pas négociable et reste intacte. */
+.catnav{padding-bottom:calc(6px + env(safe-area-inset-bottom, 0px))}
 .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom, 0px))}
 
 
@@ -2109,22 +2325,22 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
     border:2.5pt solid #111;border-radius:6pt;padding:16pt 18pt;margin-bottom:16pt;
     background:#FFE600;break-inside:avoid;
   }
-  #dossier .cover .brand{font-family:'Sora',Arial,sans-serif;font-weight:900;font-size:9pt;letter-spacing:.16em;margin:0 0 6pt}
-  #dossier h1{font-family:'Sora',Arial,sans-serif;font-weight:900;font-size:27pt;line-height:1.05;margin:0}
+  #dossier .cover .brand{font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:9pt;letter-spacing:.16em;margin:0 0 6pt}
+  #dossier h1{font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:27pt;line-height:1.05;margin:0}
   #dossier .cover .meta{margin:10pt 0 0;font-size:11pt;font-weight:600}
   #dossier .cover .rule{height:3pt;background:#111;width:64pt;margin:9pt 0 0;border-radius:2pt}
   /* ---- sections ---- */
   #dossier section{break-inside:avoid;margin-bottom:15pt}
   #dossier h2{
-    font-family:'Sora',Arial,sans-serif;font-weight:900;font-size:12pt;
+    font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:12pt;
     margin:0 0 7pt;padding:4pt 8pt;background:#111;color:#fff;border-radius:3pt;
   }
-  #dossier h3{font-family:'Sora',Arial,sans-serif;font-size:11pt;margin:0 0 2pt}
+  #dossier h3{font-family:'Fraunces',Georgia,serif;font-size:11pt;margin:0 0 2pt}
   /* ---- tableaux clé/valeur ---- */
   #dossier table{width:100%;border-collapse:collapse;font-size:10pt}
   #dossier th{
     text-align:left;vertical-align:top;width:96pt;padding:5pt 10pt 5pt 0;
-    font-family:'Sora',Arial,sans-serif;font-size:8.5pt;text-transform:uppercase;
+    font-family:'Fraunces',Georgia,serif;font-size:8.5pt;text-transform:uppercase;
     letter-spacing:.06em;color:#555;font-weight:800;
   }
   #dossier td{padding:5pt 0;border-bottom:.75pt solid #ddd;vertical-align:top}
@@ -2138,12 +2354,12 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   #dossier .lieux{margin:1pt 0 0;font-size:9.5pt;color:#444}
   #dossier .heures{margin:4pt 0 0;padding-left:13pt;font-size:9.5pt}
   #dossier .heures li{margin-bottom:2.5pt}
-  #dossier .heures strong{font-family:'Sora',Arial,sans-serif;font-size:9pt}
+  #dossier .heures strong{font-family:'Fraunces',Georgia,serif;font-size:9pt}
   #dossier ul{margin:2pt 0 0;padding-left:14pt}
   #dossier li{margin-bottom:2pt}
   /* ---- références de réservation : bien visibles ---- */
   #dossier .refs td{font-size:11pt}
-  #dossier .refs strong{font-family:'Sora',Arial,sans-serif;font-size:12pt;letter-spacing:.02em}
+  #dossier .refs strong{font-family:'Fraunces',Georgia,serif;font-size:12pt;letter-spacing:.02em}
   #dossier .lnk{display:block;font-size:8pt;color:#666;word-break:break-all;margin-top:1pt}
   /* ---- carte du jour ---- */
   #dossier .djmap{display:block;width:100%;max-width:400pt;margin:5pt 0 3pt;border:1pt solid #bbb;border-radius:3pt}
@@ -2168,10 +2384,20 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
     display:flex;flex-direction:column;gap:26px;
     position:fixed;top:0;left:0;bottom:0;width:250px;z-index:40;
     padding:30px 24px;overflow:hidden;
-    /* ⚠️ AUCUN fond. La maquette 1b ne sépare la colonne du contenu que par un
-       filet : un aplat --bg-2 en faisait une deuxième surface, donc une carte
-       de la largeur de l'écran — exactement ce que 1b supprime. */
-    background:none;border-right:1px solid var(--stroke);
+    /* ⚠️ UN FOND OPAQUE, ET IL EST DEVENU OBLIGATOIRE.
+       La règle d'origine disait « AUCUN fond » : la maquette 1b ne sépare la
+       colonne du contenu que par un filet, et un aplat --bg-2 en faisait une
+       deuxième surface. Ce raisonnement tenait tant que la colonne reposait
+       sur le fond de la page.
+       Depuis que le terrain de la carte occupe TOUT l'écran (.map-card en
+       position fixe), une colonne transparente laisse passer les tuiles : les
+       titres et les journées se lisent alors sur des rues, c'est-à-dire pas.
+       On prend --bg — le fond du SITE, pas --bg-2 : la colonne reste la même
+       surface que la page, elle ne redevient pas une carte posée dessus.
+       L'intention de 1b est donc tenue, et la colonne reste lisible au-dessus
+       de la carte. Elle suit le thème toute seule : quasi noir en sombre,
+       quasi blanc en clair. */
+    background:var(--bg);border-right:1px solid var(--stroke);
   }
   /* la colonne devient un vrai repère : on la rend au lecteur d'écran */
   .rail[aria-hidden="true"]{display:flex}
@@ -2185,7 +2411,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   /* .logo-word ne porte QUE la mise en place des lettres : la fonte, la
      graisse et les capitales viennent normalement de .logo, absent ici. */
   .rail-logoword{
-    font-family:'Sora',sans-serif;font-weight:900;font-size:1.7rem;
+    font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.7rem;
     letter-spacing:-.03em;text-transform:uppercase;color:var(--txt);
   }
   .rail-tag{
@@ -2236,7 +2462,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
     border-radius:999px;border:1.5px solid var(--stroke-2);background:var(--bg);
   }
   .rs-t b{
-    display:block;font-family:'Sora',sans-serif;font-weight:600;font-size:.875rem;
+    display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:600;font-size:.875rem;
     /* ni capitales ni interlettrage : 1b réserve ça aux intertitres */
     color:var(--txt-2);line-height:1.2;
   }
@@ -2249,8 +2475,23 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   /* étape en cours : c'est le seul endroit où le jaune revient dans la colonne */
   .rail-steps li.on .rs-n:not(.rs-cnt)::before{background:var(--primary);border-color:transparent}
   .rail-steps li.on .rs-t b{color:var(--txt);font-weight:700}
-  /* étape verrouillée : visible mais clairement hors d'atteinte */
-  .rail-steps li.off{cursor:not-allowed;opacity:.45}
+  /* Étape verrouillée : visible mais clairement hors d'atteinte.
+     ⚠️ PLUS D'OPACITÉ, et la règle huit lignes plus haut disait déjà pourquoi :
+     « pas d'opacity ici : à .7 sur --txt-2 le contraste tombait à 3,5:1 ». Ce
+     `opacity:.45` défaisait cette intention depuis le sélecteur PARENT — donc
+     sans jamais croiser le commentaire qui l'interdit — et descendait bien plus
+     bas que le .7 refusé : 1,92:1 en clair, 2,46:1 en sombre (mesurés).
+     Ça touchait « Les choix », « Ton voyage », « Pas encore de voyage »,
+     « Aucune demande » — c'est-à-dire ce que voit TOUT nouveau compte, dont les
+     deux étapes verrouillées de son premier écran.
+     L'état « hors d'atteinte » reste porté par ce qui ne coûte pas de
+     lisibilité : le curseur, l'absence de puce jaune, et un texte volontairement
+     plus pâle que l'étape active — mais pâle par une COULEUR choisie, pas par un
+     voile qui s'applique aussi au texte déjà secondaire. */
+  .rail-steps li.off{cursor:not-allowed}
+  .rail-steps li.off .rs-t b,
+  .rail-steps li.off .rs-t em{color:var(--txt-2)}
+  .rail-steps li.off .rs-n::before{opacity:.45}
 
   .rail-art{
     width:100%;height:auto;margin-top:auto;color:var(--txt-2);opacity:.30;
@@ -2310,7 +2551,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .hero-in{position:relative;max-width:34rem}
 .hero h1{
-  font-family:'Sora',sans-serif;font-weight:900;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;
   font-size:clamp(1.7rem,4.4vw,2.7rem);line-height:1.06;
   letter-spacing:-.03em;text-transform:uppercase;margin:0;
 }
@@ -2419,21 +2660,50 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   background:var(--surface-2);color:var(--txt-2);
   border:1px solid var(--stroke);border-radius:999px;
   padding:9px 16px;
-  font-family:'Sora',sans-serif;font-weight:800;font-size:.74rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.74rem;
   text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;
   transition:background .12s ease,color .12s ease;
 }
 .mapbar .rt:hover:not(.on){color:var(--txt);border-color:var(--stroke-2)}
 .mapbar .rt.on{background:var(--primary);color:var(--primary-ink);border-color:transparent}
 
-/* ---- La carte elle-même ---- */
-.map-card{padding:0;overflow:hidden}
+/* ---- La carte elle-même : ELLE EST LE FOND DU SITE ----
+   ⚠️ Ce n'est plus une carte posée dans la page, c'est le terrain SUR lequel
+   la page est posée. Un plan enfermé dans un rectangle de 620 px se consulte
+   par petits bouts ; en fond, on voit enfin la journée entière.
+   Conséquences à ne pas rater :
+   · `position:fixed` la sort du flux — le reste de l'onglet flotte AU-DESSUS,
+     d'où le z-index sur .map-head et .mapstops, qui sinon passeraient dessous
+     (un élément statique se peint sous un élément positionné) ;
+   · l'en-tête du site et la colonne de gauche doivent rester au-dessus : ils
+     ont leur propre z-index plus bas dans ce fichier ;
+   · #catMap.hidden{display:none} suffit à la retirer quand on change d'onglet.
+     Sans ça, une carte en position fixe resterait affichée sur tout le site. */
+.map-card{
+  position:fixed;inset:0;z-index:0;
+  padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:none;
+  overflow:hidden;
+}
 #catMap #projMap{
-  /* hauteur généreuse mais bornée : la carte doit dominer sans pousser les
-     étapes hors de l'écran */
-  height:clamp(320px,58vh,620px);
+  height:100%;width:100%;
   background:#e9e5dc;              /* teinte des tuiles OSM avant chargement */
 }
+/* L'en-tête de la carte flotte sur le terrain, au lieu de le surmonter. */
+#catMap .map-head{position:relative;z-index:2}
+/* Les étapes se posent en bas du terrain — elles étaient dans le flux d'un
+   bloc qui n'en a plus. Le sélecteur de source, lui, garde sa place en haut à
+   gauche : elle est déjà décidée et justifiée plus bas dans ce fichier, et la
+   redéfinir ici en ferait un second endroit à tenir d'accord. */
+#catMap .mapstops{
+  position:absolute;left:0;right:0;bottom:0;z-index:2;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  /* un voile sous les pastilles : sur une carte claire comme sur une carte
+     sombre, du texte posé à nu devient illisible dès qu'une rue passe dessous */
+  background:linear-gradient(to top, var(--bg) 30%, transparent);
+}
+/* L'en-tête du site et la colonne passent DEVANT le terrain. Sans ça, la carte
+   fixe (positionnée) se peint par-dessus un en-tête resté statique. */
+header{position:relative;z-index:5}
 /* ---- Étapes du jour, SOUS le terrain ---- */
 .mapstops{
   display:flex;gap:8px;align-items:center;
@@ -2454,7 +2724,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .stop b{
   flex:none;width:22px;height:22px;display:grid;place-items:center;
   border-radius:50%;background:var(--primary);color:var(--primary-ink);
-  font-family:'Sora',sans-serif;font-size:.68rem;font-weight:900;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.68rem;font-weight:900;
 }
 /* étape que le relevé n'a pas su situer : montrée, mais clairement inactive */
 .stop.off{opacity:.5;cursor:not-allowed}
@@ -2462,8 +2732,10 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 
 @media (max-width:720px){
   .map-head{grid-template-columns:1fr}
+  /* ⚠️ Plus de hauteur en clamp ici : le terrain remplit l'écran (voir
+     .map-card). Laisser l'ancienne règle l'aurait ramené à 460 px sur
+     téléphone, c'est-à-dire exactement le rectangle qu'on vient de retirer. */
   .map-acts{justify-content:flex-start}
-  #catMap #projMap{height:clamp(300px,52vh,460px)}
 }
 
 /* ============================================================
@@ -2496,13 +2768,13 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .bc-body{display:flex;flex-direction:column;gap:6px;padding:16px 18px;min-width:0}
 .bc-cat{
   display:inline-block;align-self:flex-start;
-  font-family:'Sora',sans-serif;font-weight:800;font-size:.62rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.62rem;
   text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);
   background:var(--surface-2);border:1px solid var(--stroke);
   border-radius:999px;padding:4px 10px;
 }
 .bc-titre{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:1.05rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.05rem;
   line-height:1.25;color:var(--txt);
 }
 .bc-sous{font-size:.86rem;line-height:1.5;color:var(--txt-2)}
@@ -2520,7 +2792,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   padding:8px 2px 0;text-align:right;
 }
 .art-titre{
-  font-family:'Sora',sans-serif;font-weight:900;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;
   font-size:clamp(1.5rem,3.4vw,2.2rem);line-height:1.12;
   letter-spacing:-.02em;margin:12px 0 0;
 }
@@ -2543,11 +2815,11 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   display:block;font-size:.64rem;font-weight:800;text-transform:uppercase;
   letter-spacing:.07em;color:var(--txt-2);
 }
-.af-v{display:block;font-family:'Sora',sans-serif;font-weight:900;font-size:.95rem;margin-top:3px}
+.af-v{display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.95rem;margin-top:3px}
 
 .art-sec{margin-top:26px}
 .art-sec h2{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:1.22rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.22rem;
   line-height:1.3;margin:0 0 10px;
 }
 /* Le corps du texte : une largeur de lecture confortable, pas la pleine
@@ -2648,7 +2920,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .foot-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px 30px}
 .foot-col h2{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.72rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;
   text-transform:uppercase;letter-spacing:.09em;
   color:var(--txt);margin:0 0 8px;
 }
@@ -2727,7 +2999,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   position:absolute;left:-9999px;top:0;z-index:200;
   padding:12px 20px;border-radius:0 0 var(--r-md) 0;
   background:var(--primary);color:var(--primary-ink);
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.85rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.85rem;
   text-decoration:none;
 }
 .skip:focus{left:0}
@@ -2754,7 +3026,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .urg-n:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
 .urg-ico{font-size:1.5rem;line-height:1;flex:none}
 .urg-n b{
-  display:block;font-family:'Sora',sans-serif;font-weight:900;font-size:1.4rem;
+  display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.4rem;
   line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:.02em;
 }
 .urg-n i{display:block;font-style:normal;font-size:.74rem;font-weight:700;color:var(--txt-2);margin-top:2px}
@@ -2774,7 +3046,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   padding:10px 12px;background:var(--surface-2);
   border:1px solid var(--stroke);border-radius:var(--r-sm);font-size:.88rem;
 }
-.tableau-ami .l b{font-family:'Sora',sans-serif;font-weight:900;color:var(--primary)}
+.tableau-ami .l b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;color:var(--primary)}
 .tableau-ami .l i{font-style:normal;font-size:.8rem;color:var(--txt-2)}
 
 /* ---- Prix d'entrée d'une visite ----
@@ -2782,7 +3054,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    lit AVEC le lieu, pas comme une information séparée. */
 .tl-prix{
   display:inline-block;margin-left:8px;vertical-align:2px;
-  font:800 .68rem 'Sora',sans-serif;white-space:nowrap;
+  font:600 .68rem 'Fraunces',Georgia,serif;white-space:nowrap;
   background:var(--surface-2);color:var(--txt-2);
   border:1px solid var(--stroke);border-radius:999px;padding:2px 9px;
 }
@@ -2793,7 +3065,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   background:var(--surface-2);border:1px solid var(--stroke);
   font-size:.86rem;font-weight:700;
 }
-.tl-total b{font-family:'Sora',sans-serif;font-size:1.02rem}
+.tl-total b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:1.02rem}
 /* ⚠️ L'avertissement fait partie du chiffre : un tarif vient d'un modèle et
    peut être périmé. Ne le retire pas pour « faire propre ». */
 .tl-total span{font-size:.74rem;font-weight:600;color:var(--txt-2)}
@@ -2826,11 +3098,11 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .breel-moyen{border-left-color:var(--accent-orange)}
 .breel-mal{border-left-color:var(--danger)}
 .breel-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.breel-mot{font-family:'Sora',sans-serif;font-weight:900;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}
+.breel-mot{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}
 .breel-ok .breel-mot{color:var(--ok)}
 .breel-moyen .breel-mot{color:var(--accent-orange)}
 .breel-mal .breel-mot{color:var(--danger)}
-.breel-chiffres{font-family:'Sora',sans-serif;font-weight:900;font-size:.95rem;font-variant-numeric:tabular-nums}
+.breel-chiffres{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.95rem;font-variant-numeric:tabular-nums}
 .breel-jauge{
   position:relative;height:10px;margin:10px 0 8px;
   background:var(--bg);border:1px solid var(--stroke);border-radius:999px;overflow:hidden;
@@ -2854,21 +3126,21 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    la règle groupée de fin de fichier. Ne pose pas de couleur claire ici.
 ============================================================ */
 .jj-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-.jj-jour{font-family:'Sora',sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase}
+.jj-jour{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.1rem;text-transform:uppercase}
 .jj-jour i{font-style:normal;opacity:.55;font-size:.85rem}
-.jj-heure{font-family:'Sora',sans-serif;font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.jj-heure{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums}
 .jj-lbl{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.62rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.62rem;
   text-transform:uppercase;letter-spacing:.1em;opacity:.62;margin:14px 0 2px;
 }
 /* La prochaine étape : l'heure et le lieu, en grand. C'est LA réponse. */
 .jj-suiv{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .jj-h{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:1.9rem;line-height:1;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.9rem;line-height:1;
   font-variant-numeric:tabular-nums;
 }
 .jj-t{font-weight:800;font-size:1.05rem;line-height:1.3;flex:1;min-width:140px}
-.jj-suiv-t{font-family:'Sora',sans-serif;font-weight:900;font-size:1.1rem;margin:0}
+.jj-suiv-t{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.1rem;margin:0}
 .jj-dist{margin:8px 0 0;font-weight:800;font-size:.92rem}
 .jj-lieux{margin:6px 0 0;font-size:.86rem;opacity:.8;line-height:1.5}
 .jj-libre{margin:10px 0 0;font-weight:700}
@@ -2878,7 +3150,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   margin-top:14px;padding-top:12px;border-top:1px solid rgba(20,20,20,.18);
   font-size:.88rem;font-weight:700;
 }
-.jj-budget b{font-family:'Sora',sans-serif;font-size:1.05rem}
+.jj-budget b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:1.05rem}
 .jj-b2{opacity:.7;font-size:.8rem}
 .jj-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .jj-acts .btn{flex:1 1 auto;justify-content:center}
@@ -2895,12 +3167,12 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   border-left:3px solid var(--primary);border-radius:var(--r-md);
 }
 .art-som-t{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.66rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.66rem;
   text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);margin:0 0 8px;
 }
 .art-som ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .art-som li{font-size:.9rem;line-height:1.45}
-.art-som li::marker{font-family:'Sora',sans-serif;font-weight:900;color:var(--primary)}
+.art-som li::marker{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;color:var(--primary)}
 .art-som a{color:var(--txt);text-decoration:none;border-bottom:1px solid transparent}
 .art-som a:hover{border-bottom-color:var(--primary)}
 .art-sec{scroll-margin-top:92px}
@@ -2946,7 +3218,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 
 /* ---- Papiers & formalités : sous-titres du panneau ---- */
 .pan-h3{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:.8rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.8rem;
   text-transform:uppercase;letter-spacing:.07em;color:var(--txt);
   margin:0 0 10px;
 }
@@ -2956,7 +3228,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    bouton), donc les étapes doivent se lire d'un coup d'œil, pas se déchiffrer. */
 .inst-pas{margin:14px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
 .inst-pas li{font-size:.92rem;line-height:1.55;color:var(--txt)}
-.inst-pas li::marker{font-family:'Sora',sans-serif;font-weight:900;color:var(--primary)}
+.inst-pas li::marker{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;color:var(--primary)}
 .inst-pas strong{color:var(--txt);font-weight:800}
 
 /* ============================================================
@@ -2988,14 +3260,59 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   .pass-wrap input{ padding-right:52px }
   /* Les liens du pied de page, alignés sur la même règle. */
   .foot-links a{ min-height:44px }
-  /* Navigation du bas : 11 px → 12 px, et l'icône reprend de l'air. Ce sont les
-     quatre libellés les plus lus de l'app. */
-  .catnav button{ font-size:.75rem; padding:8px 4px 7px }
-  .catnav button .ico{ font-size:1.45rem }
+  /* ---- Navigation du bas : RESSERRÉE ----
+     ⚠️ Mesurée à 87 px de haut, pour une barre d'onglets dont la norme est
+     56–64 (Material : 56–80 ; iOS : 49 pt + zone sûre). Elle mangeait un
+     dixième de l'écran d'un téléphone sans rien apporter : l'icône à 1,45 rem
+     faisait 34 px de côté, presque la taille d'une cible tactile entière, pour
+     un pictogramme qu'on reconnaît à 24.
+     La cible, elle, ne rétrécit pas : la barre garde ses ~60 px de hauteur
+     utile, bien au-dessus des 44 px exigés — on retire du vide, pas du doigt. */
+  .catnav button{ font-size:.7rem; padding:5px 4px 4px; gap:3px }
+  .catnav button .ico{ font-size:1.22rem }
+  /* ⚠️ « ASSISTANT » fait 9 lettres — le plus long libellé de la barre, et le
+     seul qui ne tenait pas dans une colonne sur cinq (mesuré tronqué à 67 px).
+     On réduit le corps et l'interlettrage pour la barre ENTIÈRE plutôt que le
+     seul onglet fautif : cinq libellés de tailles différentes se liraient comme
+     une erreur, et c'est la colonne la plus étroite qui doit fixer la règle. */
+  @media (max-width:430px){
+    .catnav button{ font-size:.6rem; letter-spacing:0 }
+    .catnav button .ico{ font-size:1.15rem }
+  }
   /* Le fil des étapes : même traitement, même raison. */
   .steps .step{ font-size:.78rem; min-height:44px }
+  /* ---- Les commandes de la CARTE ----
+     ⚠️ Toutes sous le seuil au doigt : pastilles de journée 36 px, bascule
+     Google/Acolyte 32, marqueurs 32, zoom 34. Or depuis que le terrain occupe
+     tout l'écran, la carte est l'écran qu'on manipule LE PLUS au doigt — c'est
+     l'endroit où ces quelques pixels comptent le plus, pas le moins.
+     Les marqueurs et le zoom restent ronds : on élargit la cible, pas le
+     dessin, en gardant le même diamètre visuel perçu. */
+  .mapbar .rt{ min-height:44px }
+  .map-src-b{ min-height:44px; padding-left:16px; padding-right:16px }
+  .am-zb{ width:44px; height:44px }
+  .am-mark{ width:44px; height:44px }
   /* Boutons d'action des journées et du programme : ils étaient serrés. */
-  .tl-act, .plan-tab{ min-height:44px }
+  /* ⚠️ min-WIDTH autant que min-HEIGHT sur .tl-act — le correctif n'était posé
+     que sur un axe. Ces boutons sont carrés (34×34) : leur donner 44 de haut
+     les laissait à 34 de LARGE, mesurés au doigt. Or ce sont ▲ ▼ ✏️ 🗑️ collés
+     à 6 px d'écart, et le dernier SUPPRIME un moment du programme. La cible la
+     plus étroite de l'app était accolée à la seule action destructrice. */
+  .tl-act{ min-height:44px; min-width:44px }
+  .plan-tab{ min-height:44px }
+  /* Les pastilles du billet : 40 px au repos, ce qui suffit à l'œil mais pas au
+     doigt. (Ce bloc est déclaré APRÈS .pact dans le fichier — il gagne donc
+     bien, contrairement au cas .ia-saisie plus bas. Vérifié.) */
+  .pact{ min-height:44px }
+  /* Le champ d'affinage des propositions, mesuré à 40,4 px.
+     ⚠️ La zone de saisie de l'assistant N'EST PAS corrigée ici, et c'est
+     volontaire : `.ia-saisie textarea` est déclarée bien plus BAS dans le
+     fichier, à spécificité égale — elle gagnerait, exactement comme
+     `.map-src-b` gagnait sur ce même bloc. Poser la règle ici aurait donné un
+     second correctif mort. Elle est donc corrigée à sa source. */
+  .refine-inp{ min-height:44px }
+  /* Les votes du tableau comparatif : mesurés à 66×33 au doigt. */
+  .cvote{ min-height:44px }
   /* On respire un peu plus entre les cartes : au doigt, deux cartes collées
      donnent l'impression d'un seul bloc. */
   .card{ margin-bottom:16px }
@@ -3094,7 +3411,9 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   background:var(--primary);
   color:var(--primary-ink);
   border-radius:999px;
-  padding:5px 18px;
+  /* pastille resserrée avec la barre : 5px de haut ajoutaient 10px à TOUTE la
+     hauteur, puisque c'est l'élément le plus haut de la colonne */
+  padding:3px 15px;
   transform:none;                     /* pas de sursaut : Material ne fait pas ça */
   transition:background .25s cubic-bezier(.2,0,0,1), padding .25s cubic-bezier(.2,0,0,1);
 }
@@ -3161,16 +3480,16 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    ajouter de texte à lire. aria-hidden sur le panneau entier, il est décoratif. */
 .auth-brand::after{
   content:'A';position:absolute;right:-6%;bottom:-22%;
-  font:900 34rem 'Sora',sans-serif;line-height:.8;
+  font:700 34rem 'Fraunces',Georgia,serif;line-height:.8;
   color:var(--txt);opacity:.028;pointer-events:none;user-select:none;
 }
 .auth-brand-logo{margin-bottom:auto}
 .auth-brand-logo .logo-word{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:2.1rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:2.1rem;
   text-transform:uppercase;letter-spacing:-.03em;
 }
 .auth-brand-h{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:1.9rem;line-height:1.22;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.9rem;line-height:1.22;
   letter-spacing:-.02em;margin:0 0 26px;max-width:20ch;
 }
 .auth-brand-l{list-style:none;margin:0 0 auto;padding:0;display:flex;flex-direction:column;gap:14px}
@@ -3196,7 +3515,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .auth-card > *{width:100%;max-width:30rem;margin-left:auto;margin-right:auto}
 
 .auth-h1{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:1.85rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.85rem;
   letter-spacing:-.02em;margin:0 0 4px;
 }
 .auth-card .sub{margin:0 0 26px;font-size:.92rem;color:var(--txt-2)}
@@ -3224,12 +3543,15 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    l'écran, et le focus se voit mieux parce que seul le trait change. */
 .auth-card .field{margin-top:18px;position:relative}
 .auth-card .field label{
-  display:block;font-family:'Sora',sans-serif;font-weight:800;font-size:.66rem;
+  display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.66rem;
   text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);margin-bottom:6px;
 }
+/* Même seuil que plus haut : .98rem = 15,68px, donc zoom iOS au focus. C'est le
+   pire endroit pour ça — l'inscription est le premier écran d'un nouveau
+   visiteur. 16px, et 12px de padding pour atteindre les 44px de cible. */
 .auth-card .field input{
   width:100%;background:transparent;border:0;border-bottom:1px solid var(--stroke-2);
-  border-radius:0;padding:10px 0 10px 0;font-size:.98rem;color:var(--txt);
+  border-radius:0;padding:12px 0;font-size:16px;color:var(--txt);
   transition:border-color .16s ease;
 }
 .auth-card .field input::placeholder{color:var(--txt-2);opacity:.75}
@@ -3256,7 +3578,13 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .auth-card .privacy-check{
   margin-top:22px;font-size:.86rem;line-height:1.45;color:var(--txt-2);
 }
-.auth-card .privacy-check a{color:var(--primary);text-decoration:underline;text-underline-offset:2px}
+/* ⚠️ ÉTAIT var(--primary) : du JAUNE #FFE600 sur le fond clair de la carte,
+   soit 1,15:1 — illisible, et c'est le lien vers la politique de
+   confidentialité, sur la case de consentement de l'inscription. Le jaune est
+   une couleur de FOND dans cette charte (il porte --primary-ink par-dessus) ;
+   posé en texte sur du clair il ne peut pas fonctionner. On reprend la couleur
+   de lien du reste du site, celle de la règle de base .privacy-check a. */
+.auth-card .privacy-check a{color:var(--accent-orange);text-decoration:underline;text-underline-offset:2px}
 .auth-card .btn{border-radius:var(--r-md);padding:16px 24px;font-size:.95rem}
 .auth-card .auth-switch{margin-top:18px;text-align:center;color:var(--txt-2);font-weight:600}
 /* ⚠️ inline-flex + min-height : mesuré à 16 px de haut sans ça, sous le
@@ -3303,18 +3631,36 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 
 /* ---- Bascule entre les deux cartes ----
    Posée SUR la carte, en haut à gauche : c'est là qu'on la cherche, et elle ne
-   masque ni l'attribution OpenStreetMap (en bas) ni les commandes de zoom. */
-.map-card{position:relative}
+   masque ni l'attribution OpenStreetMap (en bas) ni les commandes de zoom.
+   ⚠️ Le `.map-card{position:relative}` qui était ICI a été RETIRÉ. Il servait
+   uniquement à donner un repère aux enfants absolus ci-dessous — mais posé
+   après la règle du bloc CARTE, à spécificité égale, il gagnait et annulait le
+   `position:fixed` qui met le terrain en fond de site. La carte restait dans
+   son rectangle sans qu'aucune des deux règles n'ait l'air fautive.
+   `position:fixed` établit le même repère pour les enfants absolus : rien
+   n'est perdu, et il n'y a plus deux endroits qui décident de la même
+   propriété. (C'est la dette que compte le contrôle n°6 de verifie.js.) */
 .map-src{
   position:absolute;top:10px;left:10px;z-index:5;display:flex;gap:3px;
   background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.22);
   border-radius:999px;padding:3px;
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
 }
+/* ⚠️ PAS DE min-height ICI — il TUAIT le correctif tactile.
+   Cette règle portait `min-height:32px`. Plus haut dans le fichier, le bloc
+   `@media (pointer:coarse)` pose `min-height:44px` sur le même sélecteur, à
+   spécificité égale (0,1,0). À égalité, c'est la DERNIÈRE qui gagne — et
+   celle-ci est 340 lignes plus bas. Le correctif tactile était donc écrit,
+   commenté, et sans le moindre effet : la bascule restait à 32 px au doigt.
+   Rien ne le signalait, parce que les deux règles ont l'air justes séparément.
+   La hauteur au doigt appartient au bloc tactile ; ici on ne décrit que le
+   dessin. Un balayage des 1 267 règles de la feuille dit que c'est le SEUL
+   endroit où un doublon de sélecteur mord réellement — la dette des « 40
+   sélecteurs doublés » que compte verifie.js est bénigne partout ailleurs. */
 .map-src-b{
   border:0;background:transparent;color:#fff;cursor:pointer;
-  font:800 .68rem 'Sora',sans-serif;letter-spacing:.03em;
-  padding:6px 12px;min-height:32px;border-radius:999px;white-space:nowrap;
+  font:600 .68rem 'Fraunces',Georgia,serif;letter-spacing:.03em;
+  padding:6px 12px;border-radius:999px;white-space:nowrap;
 }
 .map-src-b.on{background:var(--primary);color:var(--primary-ink)}
 .map-src-b:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
@@ -3327,10 +3673,10 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 #projGoogle[hidden]{display:none}
 
 /* ⚠️ Le cadre Google doit avoir EXACTEMENT la hauteur de la carte maison,
-   sinon basculer de l'une à l'autre fait sauter toute la page. On reprend donc
-   les mêmes valeurs que « #catMap #projMap », y compris au petit écran. */
-#catMap #projGoogle{height:clamp(320px,58vh,620px)}
-@media (max-width:640px){ #catMap #projGoogle{height:clamp(300px,52vh,460px)} }
+   sinon basculer de l'une à l'autre fait sauter toute la page. Maintenant que
+   le terrain est le FOND du site, cette hauteur vaut 100 % dans les deux cas —
+   et il n'y a plus de valeur à tenir en double, ni de rupture au petit écran. */
+#catMap #projGoogle{height:100%;width:100%;border-radius:0}
 
 /* ============================================================
    LE JOURNAL — DIRECTION ÉDITORIALE
@@ -3348,7 +3694,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   margin:0 0 26px;padding-bottom:22px;border-bottom:1px solid var(--stroke);
 }
 .blog-head h2{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:1.85rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.85rem;
   letter-spacing:-.025em;margin:0 0 8px;
 }
 .blog-head .sub{margin:0;font-size:.86rem;color:var(--txt-2)}
@@ -3374,11 +3720,14 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    voir sans crier. */
 .bu-badge{
   display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;
-  background:rgba(255,230,0,.13);color:var(--primary);
-  font:700 .6rem 'Sora',sans-serif;letter-spacing:.16em;text-transform:uppercase;
+  /* ⚠️ Le fond n'est qu'un VOILE de jaune à 13 % : sur une page claire il reste
+     presque blanc. Écrire par-dessus en --primary donnait 1,12:1 — du jaune sur
+     du jaune pâle. --primary-txt le rend lisible sans toucher au voile. */
+  background:rgba(255,230,0,.13);color:var(--primary-txt);
+  font:700 .6rem 'Fraunces',Georgia,serif;letter-spacing:.16em;text-transform:uppercase;
 }
 .bu-titre{
-  font-family:'Sora',sans-serif;font-weight:900;font-size:1.5rem;line-height:1.25;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.5rem;line-height:1.25;
   letter-spacing:-.02em;margin:16px 0 10px;
 }
 .bu-sous{font-size:.86rem;line-height:1.6;color:var(--txt-2);margin-bottom:16px;max-width:44ch}
@@ -3407,11 +3756,11 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .blog-grille .bc-img img, .blog-grille .bc-img svg{width:100%;height:100%;object-fit:cover;display:block}
 .blog-grille .bc-cat{
   background:transparent;border:0;border-radius:0;padding:0;
-  font:700 .58rem 'Sora',sans-serif;letter-spacing:.16em;text-transform:uppercase;
+  font:700 .58rem 'Fraunces',Georgia,serif;letter-spacing:.16em;text-transform:uppercase;
   color:var(--txt-2);
 }
 .blog-grille .bc-titre{
-  font-family:'Sora',sans-serif;font-weight:800;font-size:.98rem;line-height:1.35;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.98rem;line-height:1.35;
   letter-spacing:-.01em;transition:color .14s ease;
 }
 .blog-grille .bc-sous{font-size:.8rem;line-height:1.55;color:var(--txt-2)}
@@ -3427,7 +3776,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 /* ---- Les compteurs de la colonne ---- */
 .rs-cnt{
   background:transparent !important;border:0 !important;
-  font:700 .72rem 'Sora',sans-serif;color:var(--txt-2);
+  font:700 .72rem 'Fraunces',Georgia,serif;color:var(--txt-2);
   width:auto !important;height:auto !important;margin-left:auto;
 }
 /* ⚠️ PAS --primary-ink ici. Cette encre foncée suppose un aplat jaune derrière,
@@ -3571,7 +3920,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
     width:30px;height:30px;flex:none;border-radius:999px;
     display:flex;align-items:center;justify-content:center;
     background:var(--surface-2);
-    font-family:'Sora',sans-serif;font-weight:700;font-size:.69rem;color:var(--txt);
+    font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700;font-size:.69rem;color:var(--txt);
     text-transform:uppercase;
   }
   .nt-nom{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -3622,10 +3971,10 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
      ce bloc sans connaître l'histoire, on ne comprend pas pourquoi elle est là. */
   display:flex;align-items:center;justify-content:center;
   background:var(--primary);color:var(--primary-ink);
-  font-family:'Sora',sans-serif;font-weight:800;font-size:1.37rem;line-height:1;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:1.37rem;line-height:1;
   padding:0;letter-spacing:0;text-transform:uppercase;
 }
-#pfEmail{font-family:'Sora',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:-.02em}
+#pfEmail{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:1.3rem;letter-spacing:-.02em}
 /* La pastille d'installation, à droite comme dans la maquette. */
 .pf-inst{
   margin-left:auto;flex:none;
@@ -3648,13 +3997,18 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
      Sur ordinateur la carte est retirée, donc la gouttière n'a plus de raison
      d'être — elle est remise à zéro dans la requête média plus bas. */
   padding:16px 16px 14px;margin:0;
-  font-family:'Sora',sans-serif;font-weight:700;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700;
   /* .7rem et non .63 : à .2em d'interlettrage sur un petit écran, c'est la
      taille qui décide si l'étiquette se lit ou se devine. */
   font-size:.7rem;
   letter-spacing:.2em;text-transform:uppercase;
-  /* le jaune passe du FOND au TEXTE : c'est tout le principe de 1g */
-  color:var(--primary);
+  /* Le jaune passe du FOND au TEXTE : c'est tout le principe de 1g.
+     ⚠️ --primary-txt et NON --primary. Le principe est bon, la variable ne
+     l'était pas : #FFE600 écrit sur le fond clair du profil donne 1,15:1, donc
+     « PRÉFÉRENCES » et « ACTIONS » étaient illisibles en thème clair — et
+     parfaitement lisibles en sombre, ce qui explique que ça ait tenu.
+     --primary-txt EST ce jaune, simplement assombri quand le fond est clair. */
+  color:var(--primary-txt);
 }
 /* Le chevron ne doit pas se faire pousser hors du cadre par un libellé long :
    il garde sa place, le texte se réduit avant lui. */
@@ -3687,7 +4041,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .danger-zone h3{
   display:flex;align-items:center;gap:9px;margin:0;
-  font-family:'Sora',sans-serif;font-weight:700;font-size:.82rem;color:var(--danger);
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700;font-size:.82rem;color:var(--danger);
 }
 .danger-zone p{margin:9px 0 12px;font-size:.78rem;line-height:1.5;color:var(--txt-2)}
 .danger-zone p strong{color:var(--txt);font-weight:600}
@@ -3696,7 +4050,13 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .danger-zone .btn.danger{
   background:none;border:1px solid color-mix(in srgb, var(--danger) 50%, transparent);
   color:var(--danger);box-shadow:none;
-  border-radius:999px;height:36px;padding:0 15px;font-size:.78rem;
+  /* ⚠️ 36px de haut mesurés au doigt, sur le bouton le MOINS rattrapable du
+     site — la suppression définitive du compte. Une cible sous le seuil est
+     gênante partout ; ici elle est doublement mauvaise, parce qu'un bouton
+     qu'on doit viser deux fois est un bouton qu'on finit par toucher de
+     travers. Le dessin discret est conservé (contour, pas d'aplat) : c'est la
+     HAUTEUR qui change, pas le poids visuel. */
+  border-radius:999px;min-height:44px;padding:0 18px;font-size:.78rem;
 }
 .danger-zone .btn.danger:hover{background:color-mix(in srgb, var(--danger) 12%, transparent)}
 /* ⚠️ RIEN à surcharger ici pour le thème clair, et c'était une fausse piste :
@@ -3731,8 +4091,16 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   /* La carte partie, la gouttière de l'en-tête n'a plus rien à border : le
      libellé se réaligne sur la colonne, comme dans la maquette. */
   .pf-panels .acc-head{padding:0 0 14px;font-size:.63rem}
-  /* La zone sensible se range sous la colonne des actions, comme en 1g. */
-  .danger-zone{margin-left:auto;max-width:392px}
+  /* ⚠️ ELLE NE FAIT PLUS 392 px COLLÉS À DROITE. `margin-left:auto` +
+     `max-width:392px` la plaquaient dans le coin droit de l'écran, quelle que
+     soit sa largeur : sur un grand moniteur, un encadré rouge de 392 px flottait
+     seul à 1 400 px du bord gauche, sans rien au-dessous ni à côté pour
+     l'ancrer. C'est ce qui la faisait lire comme un élément égaré plutôt que
+     comme la fin de la page.
+     Elle suit désormais la largeur du contenu, avec un plafond de confort :
+     une ligne de texte de plus de ~70 caractères se lit mal, mais ce plafond
+     doit S'ADAPTER, pas figer une valeur. */
+  .danger-zone{width:100%;max-width:min(100%,640px)}
 
   /* Une ligne d'action = UNE ligne. Mesuré à 97 px de haut : le libellé et son
      bouton s'empilaient, ce qui donnait seize pavés au lieu d'une liste.
@@ -3802,15 +4170,32 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    C'est le trait le plus caractéristique de 1b. Un cadre complet autour de
    quatorze champs, ça fait quatorze boîtes ; un trait, ça fait une ligne
    d'écriture — et le regard descend au lieu de sauter de boîte en boîte. */
+/* ⚠️ LE PADDING FAIT LA CIBLE, PAS SEULEMENT LA MARGE.
+   Cette règle retire le cadre — c'est le trait voulu. Mais elle écrasait aussi
+   le `padding:12px` de la règle de base par `padding:0 0 8px`, et c'est LUI qui
+   donnait sa hauteur au champ. Résultat mesuré sur iPhone : 26px de haut au
+   lieu de 44, sur les onze champs du questionnaire — le formulaire principal du
+   site. Le trait ne coûtait rien ; le padding retiré avec, si.
+   On garde donc le dessin (aucun cadre, un trait dessous) et on rend la
+   hauteur : padding vertical restauré, seul le padding HORIZONTAL reste à 0,
+   puisque c'est lui qui alignerait le texte sur une boîte invisible. */
 #catTrip .field input:not([type="checkbox"]):not([type="range"]),
 #catTrip .field select,
 #catTrip .field textarea{
   background:none;border:0;border-radius:0;box-shadow:none;
   border-bottom:1px solid var(--stroke-2);
-  padding:0 0 8px;
-  font-family:'Inter',sans-serif;font-weight:500;font-size:.9rem;
+  padding:10px 0;
+  font-family:'Inter',sans-serif;font-weight:500;font-size:16px;
   transition:border-color .14s ease;
 }
+/* ⚠️ Le plancher de 44px vise les champs d'UNE ligne, et le textarea en est
+   EXCLU volontairement. Posé sur lui aussi, il devenait plus spécifique que le
+   `textarea{min-height:80px}` de la règle de base, le battait, et la zone de
+   texte libre rétrécissait de 80 à 59px : un plancher pour les uns est un
+   plafond pour l'autre. L'exclure ici évite en prime de déclarer min-height
+   deux fois sur le même sélecteur — le conflit que compte verifie.js. */
+#catTrip .field input:not([type="checkbox"]):not([type="range"]),
+#catTrip .field select{ min-height:44px }
 /* ⚠️ Sans cadre, le focus n'a plus de boîte à colorer : le trait DOIT réagir,
    sinon on ne sait plus dans quel champ on écrit. Le contour global du focus
    reste par-dessus, celui-ci s'adresse à la souris comme au clavier. */
@@ -3818,8 +4203,12 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 #catTrip .field select:focus,
 #catTrip .field textarea:focus{border-bottom-color:var(--primary)}
 /* Le libellé passe en micro-étiquette, comme dans la maquette. */
+/* ⚠️ .66rem faisait 10,6px, en gris atténué. Ce sont ces mots-là qui portent le
+   sens de chaque champ (« Budget total / personne ») : sous ~12px et en couleur
+   secondaire, ils passent sous le seuil de lecture confortable sur un
+   téléphone. .75rem = 12px, la micro-étiquette reste une micro-étiquette. */
 #catTrip .field > label{
-  font-family:'Inter',sans-serif;font-weight:500;font-size:.66rem;
+  font-family:'Inter',sans-serif;font-weight:500;font-size:.75rem;
   letter-spacing:.02em;text-transform:none;color:var(--txt-2);
   margin-bottom:8px;
 }
@@ -3831,7 +4220,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 #view1 .go-acts .btn:not(.ghost),
 #btnGo{
   border-radius:999px;height:46px;padding:0 26px;
-  font-family:'Sora',sans-serif;font-weight:700;font-size:.87rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700;font-size:.87rem;
   box-shadow:none;
 }
 /* ⚠️ Les trois autres cessent d'être des boutons DESSINÉS, pas d'être des
@@ -3894,7 +4283,7 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   letter-spacing:.2em;text-transform:uppercase;color:var(--txt-2);
 }
 .qz-q{
-  font-family:'Sora',sans-serif;font-weight:800;font-size:1.5rem;line-height:1.18;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:1.5rem;line-height:1.18;
   letter-spacing:-.02em;color:var(--txt);margin:14px 0 8px;
 }
 .qz-s{margin:0 0 22px;font-size:.85rem;line-height:1.55;color:var(--txt-2)}
@@ -3912,7 +4301,7 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 .qz-points{display:flex;gap:6px;flex:1}
 .qz-points i{width:6px;height:6px;border-radius:999px;background:var(--stroke-2);display:block}
 .qz-points i.on{background:var(--primary);width:18px}
-.qz-bas .btn{border-radius:999px;height:46px;padding:0 26px;font-family:'Sora',sans-serif;font-weight:700}
+.qz-bas .btn{border-radius:999px;height:46px;padding:0 26px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700}
 .qz-tout{
   background:none;border:0;box-shadow:none;margin-top:14px;
   min-height:44px;font-size:.78rem;font-weight:600;color:var(--txt-2);
@@ -3981,20 +4370,27 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   border:1px solid var(--stroke);border-radius:var(--r-lg);
   background:var(--secondary);padding:16px;margin-bottom:18px;
 }
-.asst-l{
-  display:block;font-family:'Sora',sans-serif;font-weight:700;font-size:.63rem;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--primary);margin-bottom:12px;
+/* (.asst-l retiré avec le formulaire en double — voir asstMonte.) */
+
+/* ---- Le renvoi vers l'onglet Assistant (ordinateur) ----
+   Une ligne, pas un formulaire : la fonction complète est à un clic, et le
+   billet du voyageur reprend la tête de l'écran. */
+.asst-vers{
+  display:flex;width:100%;align-items:center;gap:14px;text-align:left;min-height:44px;
+  background:none;border:0;padding:2px 0;cursor:pointer;color:var(--txt);
+  font-family:'Inter',sans-serif;
 }
-.asst-ligne{display:flex;gap:10px;flex-wrap:wrap}
-.asst-ligne input{
-  flex:1;min-width:180px;
-  background:none;border:0;border-bottom:1px solid var(--stroke-2);border-radius:0;
-  padding:0 0 9px;font-size:.9rem;color:var(--txt);
-}
-.asst-ligne input:focus{border-bottom-color:var(--primary)}
-.asst-ligne .btn{border-radius:999px;min-height:44px;padding:0 22px;flex:none}
-/* Pendant l'attente : le bouton se calme, le champ reste lisible. */
-.asst-bar.occupe .asst-ligne .btn{opacity:.55;pointer-events:none}
+.asst-vers-ico{font-size:1.2rem;flex:none;line-height:1}
+.asst-vers-t{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.asst-vers-t b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.9rem}
+.asst-vers-t em{font-style:normal;font-size:.8rem;color:var(--txt-2);line-height:1.4}
+.asst-vers-fl{flex:none;color:var(--txt-2);font-size:1.1rem;transition:transform .14s ease}
+.asst-vers:hover .asst-vers-fl{transform:translateX(3px);color:var(--txt)}
+.asst-vers:hover .asst-vers-t b{color:var(--primary-txt)}
+
+/* (Plus de basculement : l'onglet Assistant existe à toutes les tailles, donc
+   le renvoi est le seul contenu — il n'y a plus de formulaire à masquer.)
+   (.asst-l, .asst-ligne et leurs règles sont partis avec ce formulaire.) */
 .asst-etat{margin:12px 0 0;font-size:.82rem;line-height:1.55;color:var(--txt-2)}
 .asst-etat b{color:var(--txt);font-weight:600}
 .asst-etat:empty{display:none}
@@ -4008,14 +4404,6 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 }
 .asst-bar.modifie .asst-undo{display:inline-flex;align-items:center}
 .asst-undo:hover{color:var(--txt);text-decoration:underline;text-underline-offset:3px}
-
-@media (pointer:coarse){
-  /* Mesuré à 318×27 : le champ de l'assistant est SOULIGNÉ, donc sa hauteur
-     vient du texte seul — 27 px, sous le seuil confortable. Le padding du bas
-     porte le trait, on ajoute la hauteur par min-height pour ne pas décoller le
-     soulignement du texte. */
-  .asst-ligne input{min-height:44px;padding-bottom:14px}
-}
 
 /* Le bouton de vérification des horaires : secondaire, à côté d'« Annuler ». */
 .asst-oh{
@@ -4053,7 +4441,7 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   padding:0;flex:none;
   background:var(--primary-ink);color:var(--primary);
   border:0;border-radius:var(--r-md);box-shadow:var(--shadow);
-  font-family:'Sora',sans-serif;font-weight:800;font-size:.82rem;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.82rem;
   cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;
 }
 .ph-discord:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow-lg)}
@@ -4123,3 +4511,371 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
    la mise en page sur les vieux Safari au lieu de l'améliorer. */
 body{ min-height:100dvh }
 .modal{ max-height:88dvh }
+
+/* ============================================================
+   ASSISTANT IA (bêta) — TÉLÉPHONE ET ORDINATEUR
+   ------------------------------------------------------------
+   ⚠️ `.cat-pc` A ÉTÉ RETIRÉ, ET IL NE DOIT PAS REVENIR. L'onglet était réservé
+   à l'ordinateur ; il existe partout maintenant, donc la barre du bas est
+   passée à 5 colonnes (voir `.catnav`). Plus rien n'utilise cette classe :
+   la laisser masquerait l'onglet à la prochaine reprise, ce qui est exactement
+   ce qui était arrivé la fois d'avant — d'où cette note à sa place.
+============================================================ */
+
+/* ---- L'onglet EST la conversation ----
+   ⚠️ La section prend toute la hauteur disponible et la distribue : en-tête et
+   saisie gardent leur taille, le fil prend TOUT le reste. C'est pour ça que
+   #iaFil passe en flex:1 plus bas et perd sa hauteur en vh — une hauteur fixe
+   laissait du vide sous la saisie sur grand écran et débordait sur petit.
+   La hauteur de l'en-tête du site (64px) et la gouttière du .wrap sont
+   retranchées : sans ça la page gagne une barre de défilement pour rien. */
+/* ⚠️ La hauteur est posée en JS (iaHauteur), PAS ici. J'avais écrit
+   `calc(100dvh - 64px - 30px - var(--wrap-pad) * 2)` : trois nombres recopiés
+   à la main, et `--wrap-pad` qui n'existe même pas dans cette feuille — donc
+   c'est le repli 18px qui s'appliquait, alors que .wrap réserve en réalité
+   120px en bas (la place de la barre d'onglets du téléphone). Résultat : la
+   section dépassait de la fenêtre et la page gagnait une barre de défilement.
+   Un calcul qui recopie des mesures prises ailleurs se périme au premier
+   changement de l'une d'elles ; on les MESURE au lieu de les redire. */
+#catIA{ display:flex;flex-direction:column;min-height:420px }
+
+/* L'en-tête, au langage éditorial du blog : pas de cadre, un titre posé.
+   Compact : c'est une barre d'outils, pas une présentation. */
+.ia-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px;flex:none}
+.ia-head h2{margin:0;display:inline-flex;align-items:center;gap:10px}
+.ia-head-acts{display:flex;align-items:center;gap:8px;flex:none}
+
+/* L'étiquette bêta : elle doit se lire comme une mention, pas comme un bouton.
+   D'où le contour et non l'aplat — le jaune plein est réservé à ce sur quoi on
+   clique, règle posée par le bloc des onglets d'ordinateur. */
+.ia-beta{
+  font-family:'Inter',sans-serif;font-weight:700;font-size:.6rem;
+  text-transform:uppercase;letter-spacing:.1em;
+  color:var(--accent-orange);border:1px solid var(--accent-orange);
+  border-radius:999px;padding:3px 9px;vertical-align:middle;
+  position:relative;top:-2px;
+}
+
+/* La liste de la pop-up de bêta. Elle remplace l'ancien encadré permanent
+   .ia-avis, retiré avec ses trois règles : une classe qui ne sert plus est une
+   fausse piste pour la prochaine lecture. */
+.ia-beta-liste{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.ia-beta-liste li{font-size:.86rem;line-height:1.5;color:var(--txt-2)}
+.ia-beta-liste b{color:var(--txt)}
+
+/* ---- Ce qu'Acolyte a compris ----
+   Remplace l'ancien sélecteur de mode : ce n'est plus un choix, c'est une
+   ANNONCE. Elle est donc dessinée comme une information (fond neutre, filet
+   jaune à gauche) et non comme un contrôle — rien ici ne se clique, et rien ne
+   doit donner envie d'essayer. */
+.ia-intent{
+  align-self:flex-start;flex:none;
+  display:inline-flex;align-items:center;gap:2px;
+  font-family:'Inter',sans-serif;font-weight:600;font-size:.8rem;color:var(--txt);
+  background:var(--surface-2);border:1px solid var(--stroke);
+  border-left:3px solid var(--primary);border-radius:var(--r-sm);
+  padding:7px 14px;margin:0 0 12px;line-height:1.4;
+}
+/* ⚠️ `hidden` doit gagner contre le display:inline-flex ci-dessus, sinon la
+   ligne s'affiche vide au chargement — l'attribut ne suffit pas face à une
+   règle de classe. */
+.ia-intent[hidden]{display:none}
+/* ⚠️ MÊME PIÈGE, DEUXIÈME FOIS — donc on le règle pour TOUS les boutons.
+   L'attribut `hidden` du navigateur vaut `display:none`, mais il vient de la
+   feuille par défaut : n'importe quelle règle de classe le bat. `.btn` pose
+   display:inline-flex, si bien qu'un `<button class="btn" hidden>` restait
+   VISIBLE. C'est ce qui laissait « ↩ Annuler la modification » occuper 40px
+   sous la saisie alors qu'aucune modification n'avait eu lieu. */
+.btn[hidden]{display:none}
+
+/* Le bouton « C'est parti » attire l'œil quand l'assistant vient de remplir le
+   questionnaire : c'est l'humain qui lance, encore faut-il qu'il voie où. */
+@keyframes iaPulse{
+  0%,100%{ box-shadow:0 0 0 0 rgba(255,230,0,0) }
+  35%    { box-shadow:0 0 0 6px rgba(255,230,0,.55) }
+}
+.pulse{animation:iaPulse 1.2s ease-out 2}
+:root.no-motion .pulse{animation:none}
+@media (prefers-reduced-motion:reduce){ .pulse{animation:none} }
+
+/* ---- Le fil de conversation : il PREND TOUT LE RESTE ----
+   ⚠️ `flex:1` + `min-height:0`, et surtout PLUS DE max-height en vh. L'ancienne
+   version plafonnait à min(52vh,520px) : sur un grand écran il restait une
+   bande vide sous la saisie, et le fil ne profitait jamais de la place.
+   ⚠️ `min-height:0` n'est pas décoratif : un enfant flex refuse par défaut de
+   descendre sous sa hauteur de contenu. Sans lui, un fil bien rempli pousse la
+   saisie hors de l'écran au lieu de défiler à l'intérieur — le défilement
+   interne ne s'active jamais. C'est LE piège du flex vertical. */
+/* ⚠️ AUCUN CADRE. Le fil n'est pas une carte posée sur la page : c'est la page.
+   Une bordure autour d'une conversation qui occupe déjà tout l'onglet ne
+   sépare de rien — elle dessine juste une boîte dans une boîte. Ce sont les
+   bulles qui portent la forme ; le fond reste celui du site. */
+.ia-fil{
+  display:flex;flex-direction:column;gap:16px;
+  flex:1;min-height:0;overflow-y:auto;
+  background:none;border:0;border-radius:0;box-shadow:none;
+  padding:4px 2px 18px;margin-bottom:12px;
+}
+.ia-vide{margin:auto;text-align:center;color:var(--txt-2);font-size:.86rem;line-height:1.6;max-width:44ch}
+.ia-vide .ia-vide-ico{font-size:2rem;display:block;margin-bottom:10px;opacity:.5}
+
+.ia-msg{display:flex;flex-direction:column;gap:5px;max-width:78%}
+.ia-msg .ia-qui{
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.6rem;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);
+}
+.ia-msg .ia-txt{
+  font-size:.88rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;
+  border:1px solid var(--stroke);border-radius:var(--r-md);padding:11px 14px;
+}
+/* Le voyageur à droite en jaune, Acolyte à gauche : la même asymétrie que
+   n'importe quelle conversation, on ne réinvente rien ici. */
+/* L'heure dans la colonne d'historique : elle remplace le numéro d'étape, donc
+   elle en prend la place mais pas le poids — on repère par le TEXTE. */
+.rs-h{font-variant-numeric:tabular-nums;font-size:.62rem;opacity:.7}
+/* Le message qu'on vient d'atteindre depuis l'historique : un halo bref, le
+   temps de le retrouver des yeux. Sans repère, on ne sait pas lequel des
+   messages visibles était celui qu'on demandait. */
+@keyframes iaVise{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,230,0,0) } 30%{ box-shadow:0 0 0 4px rgba(255,230,0,.5) } }
+.ia-msg.vise .ia-txt{animation:iaVise 1.4s ease-out 1;border-radius:var(--r-md)}
+:root.no-motion .ia-msg.vise .ia-txt{animation:none}
+@media (prefers-reduced-motion:reduce){ .ia-msg.vise .ia-txt{animation:none} }
+
+.ia-msg.moi{align-self:flex-end;align-items:flex-end}
+.ia-msg.moi .ia-txt{background:var(--primary);color:var(--primary-ink);border-color:transparent}
+.ia-msg.aco{align-self:flex-start}
+.ia-msg.aco .ia-txt{background:var(--surface-2);color:var(--txt)}
+/* Un refus ou une erreur ne se déguise pas en réponse normale. */
+.ia-msg.rate .ia-txt{border-color:var(--accent-orange);background:none;color:var(--txt-2)}
+
+/* ---- La barre d'écriture : UNE barre, pas deux champs côte à côte ----
+   Le cadre est porté par la barre entière ; la zone de texte à l'intérieur n'a
+   plus ni bordure, ni fond, ni ombre. C'est ce qui fait lire l'ensemble comme
+   une barre de messagerie plutôt que comme un formulaire.
+   flex:none sur elle et sur l'état : ils gardent leur taille, c'est le fil
+   au-dessus qui absorbe toute la variation de hauteur. */
+.ia-saisie{
+  display:flex;gap:8px;align-items:flex-end;flex:none;
+  background:var(--secondary);
+  border:1px solid var(--stroke-2);
+  border-radius:26px;
+  padding:6px 6px 6px 20px;
+  transition:border-color .14s ease;
+}
+/* Le focus se voit sur la BARRE, puisque c'est elle qu'on perçoit comme le
+   champ. Sans ça, plus rien n'indique où l'on écrit une fois le cadre du
+   textarea retiré. */
+.ia-saisie:focus-within{border-color:var(--primary)}
+.ia-saisie textarea{
+  /* 44 et non 38 : c'est la hauteur AU REPOS de la zone d'écriture, donc la
+     cible qu'on vise pour commencer à taper. Corrigé ICI et pas dans le bloc
+     `pointer:coarse` — cette règle est déclarée plus bas dans le fichier, à
+     spécificité égale, et l'aurait donc emporté. C'est le piège qui avait déjà
+     tué le correctif de .map-src-b. */
+  flex:1;min-height:44px;max-height:160px;resize:none;
+  background:none;border:0;border-radius:0;box-shadow:none;
+  padding:9px 0;
+  font-family:'Inter',sans-serif;font-weight:500;line-height:1.5;
+}
+/* ⚠️ La règle de base pose un `transform` au focus sur tout champ : ici il
+   ferait sauter le texte à l'intérieur de la barre, qui elle ne bouge pas. */
+.ia-saisie textarea:focus{background:none;transform:none;box-shadow:none}
+.ia-saisie .btn{flex:none;height:44px;padding:0 24px;border-radius:999px;white-space:nowrap}
+.ia-etat{font-size:.78rem;font-weight:600;color:var(--txt-2);margin:10px 0 0;min-height:1.2em;flex:none}
+
+/* Pendant un appel : on empêche le double envoi ET on le montre. */
+.ia-occupe .ia-saisie textarea,
+.ia-occupe .ia-saisie .btn{opacity:.55;pointer-events:none}
+
+/* ============================================================
+   LE PASSEPORT VOYAGEUR — refonte du profil
+   ------------------------------------------------------------
+   L'écran disait « Mon compte » et montrait une adresse email. C'est
+   l'information la moins utile d'une page qu'on ouvre pour se reconnaître :
+   personne ne se pense comme son adresse email. Le passeport montre ce qui
+   parle — un avatar choisi, un pseudo, un niveau, une devise, et les chiffres
+   de ce qu'on a préparé.
+============================================================ */
+.passport{
+  position:relative;overflow:hidden;
+  background:var(--secondary);border:1px solid var(--stroke);
+  border-radius:var(--r-lg);box-shadow:var(--shadow);
+  margin-bottom:18px;
+}
+/* Le bandeau jaune en tête : la tranche d'un passeport. Purement décoratif,
+   donc aria-hidden côté HTML. */
+.pp-band{height:8px;background:var(--primary)}
+.pp-main{display:flex;align-items:flex-start;gap:16px;padding:18px;flex-wrap:wrap}
+
+/* L'avatar est un BOUTON : on clique dessus pour en changer. Un rond qui a
+   l'air décoratif mais qui réagit au clic est une promesse à moitié tenue —
+   d'où le curseur, le contour au focus et le titre. */
+.pp-avatar{
+  flex:none;width:64px;height:64px;border-radius:50%;
+  display:grid;place-items:center;font-size:2rem;line-height:1;
+  background:var(--primary);color:var(--primary-ink);
+  border:0;cursor:pointer;box-shadow:var(--shadow);
+  transition:transform .12s ease;
+}
+.pp-avatar:hover{transform:scale(1.05)}
+.pp-avatar:active{transform:scale(.96)}
+.pp-avatar:focus-visible{outline:2px solid var(--txt);outline-offset:3px}
+
+.pp-id{flex:1;min-width:0}
+.pp-nom-l{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pp-nom-l h2{
+  margin:0;font-size:1.25rem;border:0;padding:0;display:inline;
+  overflow-wrap:anywhere;
+}
+/* Le niveau : une mention, pas un bouton — contour et non aplat, comme
+   l'étiquette « bêta » de l'assistant. */
+.pp-niveau{
+  flex:none;font-family:'Inter',sans-serif;font-weight:700;font-size:.62rem;
+  text-transform:uppercase;letter-spacing:.1em;
+  color:var(--primary-txt);border:1px solid var(--primary-txt);
+  border-radius:999px;padding:3px 10px;white-space:nowrap;
+}
+.pp-bio{margin:8px 0 0;font-size:.86rem;line-height:1.45;color:var(--txt);font-style:italic}
+.pp-bio:empty{display:none}
+.pp-meta{margin:6px 0 0;font-size:.78rem;line-height:1.45;color:var(--txt-2);overflow-wrap:anywhere}
+.pp-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:none}
+
+/* La barre de chiffres. `auto-fit` : quatre colonnes sur ordinateur, deux sur
+   téléphone, sans requête média à tenir d'accord. */
+.pp-stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));
+  border-top:1px solid var(--stroke);
+}
+.pp-stat{
+  padding:12px 18px;border-right:1px solid var(--stroke);min-width:0;
+}
+.pp-stat:last-child{border-right:0}
+.pp-stat .k{
+  display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.58rem;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--txt-2);
+}
+.pp-stat .v{
+  display:block;margin-top:3px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;
+  font-size:1rem;color:var(--txt);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ---- Les onglets du profil ----
+   Même langage que la rangée « Ton voyage », indice de défilement compris :
+   deux barres qui se ressemblent doivent se comporter pareil. */
+.pf-tabs-wrap{position:relative;margin:0 0 18px}
+.pf-tabs-wrap::before,.pf-tabs-wrap::after{
+  content:'';position:absolute;top:1px;bottom:1px;width:34px;
+  pointer-events:none;opacity:0;transition:opacity .18s ease;z-index:2;
+}
+.pf-tabs-wrap::before{left:1px;border-radius:var(--r-lg) 0 0 var(--r-lg);
+  background:linear-gradient(to right,var(--bg),transparent)}
+.pf-tabs-wrap::after{right:1px;border-radius:0 var(--r-lg) var(--r-lg) 0;
+  background:linear-gradient(to left,var(--bg),transparent)}
+.pf-tabs-wrap.a-gauche::before{opacity:1}
+.pf-tabs-wrap.a-droite::after{opacity:1}
+.pf-tabs{
+  display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;
+  padding:6px;background:var(--bg);
+  border:1px solid var(--stroke);border-radius:var(--r-lg);box-shadow:var(--shadow);
+}
+.pf-tabs::-webkit-scrollbar{display:none}
+/* ⚠️ min-height POSÉ ICI et non dans le bloc `@media (pointer:coarse)`.
+   Ce bloc est déclaré ~1 300 lignes PLUS HAUT : à spécificité égale il
+   perdrait contre cette règle, exactement comme il perdait pour .map-src-b et
+   .ia-saisie. Mesuré à 42 px sans lui. 44 ne coûte rien à la souris. */
+.pf-tab{
+  flex:none;display:flex;align-items:center;gap:7px;white-space:nowrap;cursor:pointer;
+  min-height:44px;
+  padding:11px 16px;border:2px solid transparent;border-radius:var(--r-md);
+  background:transparent;font:700 .78rem 'Fraunces',Georgia,serif;color:var(--txt-2);
+  transition:color .12s ease,background .12s ease;
+}
+.pf-tab span{font-size:1.05rem;line-height:1}
+.pf-tab:hover:not(.on){color:var(--txt);background:var(--surface-2)}
+.pf-tab.on{background:var(--primary);color:var(--primary-ink)}
+.pf-panel.hidden{display:none}
+
+/* ---- Les badges ---- */
+.pp-badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.pp-badge{
+  display:flex;align-items:center;gap:10px;min-width:0;
+  padding:12px;border:1px solid var(--stroke);border-radius:var(--r-md);
+  background:var(--surface-2);
+}
+/* Un badge non débloqué reste LISIBLE : on le montre en gris, pas en
+   transparence. L'opacité sur du texte déjà secondaire, c'est le défaut qu'on
+   vient de corriger dans la colonne de gauche. */
+.pp-badge.off{background:none;border-style:dashed}
+.pp-badge.off .pb-i{filter:grayscale(1)}
+.pp-badge.off .pb-t b{color:var(--txt-2)}
+.pb-i{font-size:1.5rem;line-height:1;flex:none}
+.pb-t{min-width:0}
+.pb-t b{display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.78rem;color:var(--txt)}
+.pb-t em{display:block;font-style:normal;font-size:.72rem;color:var(--txt-2);margin-top:2px;line-height:1.35}
+
+/* ---- Le résumé du voyage actif, dans l'onglet Passeport ---- */
+.pp-voyage{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pp-voyage-i{font-size:1.8rem;line-height:1;flex:none}
+.pp-voyage-t{flex:1;min-width:0}
+.pp-voyage-t h3{margin:0;font-size:1.05rem}
+.pp-voyage-t p{margin:4px 0 0;font-size:.82rem;color:var(--txt-2);line-height:1.4}
+.pp-raccourcis{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* ---- Le choix d'avatar, dans la modale ---- */
+.ed-av{
+  width:48px;height:48px;min-width:48px;padding:0;
+  display:grid;place-items:center;font-size:1.4rem;
+  border-radius:50%;border:2px solid var(--stroke);background:var(--secondary);
+  cursor:pointer;transition:transform .1s ease,border-color .1s ease;
+}
+.ed-av:hover{transform:scale(1.08)}
+.ed-av.on{border-color:var(--primary);background:var(--primary);}
+
+/* ============================================================
+   ICÔNES AU TRAIT — remplacement des émojis
+   ------------------------------------------------------------
+   Un seul alphabet : même grille de 24, même épaisseur de trait que la barre
+   de navigation, et `currentColor` — l'icône suit la couleur de son texte,
+   donc les deux thèmes sont gérés sans une ligne de plus.
+============================================================ */
+.ico-t{flex:none;display:inline-block;vertical-align:-.18em}
+/* Un bouton réduit à son icône : la cible reste carrée et pleine taille, le
+   libellé passe en title/aria-label. */
+.ico-btn{
+  display:inline-grid;place-items:center;
+  width:40px;min-width:40px;height:40px;padding:0;
+}
+@media (pointer:coarse){ .ico-btn{width:44px;min-width:44px;height:44px} }
+/* Bouton icône + mot : l'espace entre les deux, une seule fois pour tout le
+   site plutôt qu'un gap répété partout. */
+.btn > .ico-t + span{margin-left:8px}
+.btn > .ico-t{margin-right:0}
+
+/* ============================================================
+   LES PROPOSITIONS DANS LA DISCUSSION
+   ------------------------------------------------------------
+   Elles ne sont pas une réplique : ce sont des objets à comparer. D'où la
+   pleine largeur (.ia-msg.large) et une grille, pas une bulle.
+============================================================ */
+.ia-msg.large{max-width:100%;align-self:stretch}
+.ia-cartes{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:12px;margin-top:12px;
+}
+.ia-carte{
+  display:flex;flex-direction:column;gap:8px;min-width:0;
+  background:var(--secondary);border:1px solid var(--stroke);
+  border-radius:var(--r-md);padding:16px;
+}
+.iac-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.iac-t b{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.1rem;line-height:1.2;color:var(--txt)}
+.iac-t em{font-style:normal;font-size:.74rem;color:var(--txt-2);text-transform:uppercase;letter-spacing:.08em}
+.iac-r{margin:0;font-size:.84rem;line-height:1.5;color:var(--txt-2)}
+.iac-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.iac-f span{
+  font-size:.7rem;font-weight:600;color:var(--txt);
+  background:var(--surface-2);border:1px solid var(--stroke);
+  border-radius:999px;padding:4px 10px;
+}
+.iac-go{width:100%;justify-content:center;margin-top:4px;min-height:44px}

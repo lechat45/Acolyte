@@ -64,7 +64,19 @@
 <meta name="twitter:description" content="D'une simple envie à un programme jour par jour : destination, transport, logement et itinéraire, organisés pour toi.">
 <meta name="twitter:image" content="https://lechat45.github.io/Acolyte/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- ⚠️ L'ASSOCIATION TYPOGRAPHIQUE, ET POURQUOI SORA EST PARTIE.
+     Sora est une grotesque géométrique — exactement la police que porte la
+     moitié des outils d'IA. Employée sur les titres, elle datait le site avant
+     même qu'on lise un mot, et aucune couleur ne rattrape ça.
+     · FRAUNCES pour les titres : une serif à taille optique, avec du caractère
+       (les empattements s'épaississent, le « g » a une queue dessinée). Elle
+       apporte ce qu'aucune grotesque ne donne — une main, une époque.
+     · INTER pour le texte courant : neutre, faite pour l'écran, elle ne
+       cherche pas à exister. C'est le contraste entre les deux qui structure
+       la page, pas la taille des caractères.
+     opsz : Fraunces ajuste son dessin à la taille — plus contrastée en grand,
+     plus robuste en petit. C'est ce qui l'empêche de paraître décorative. -->
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <!-- Données structurées : décrit le site à Google dans son vocabulaire.
      Ce n'est PAS du script exécuté (type application/ld+json = bloc de
@@ -202,6 +214,16 @@
       <button data-cat="trip" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.4c.85 0 1.5.65 1.5 1.5v4.9l7.1 4.1v2l-7.1-2.2v4.2l2.5 1.8v1.5L12 19.6l-4 .6v-1.5l2.5-1.8v-4.2L3.4 15v-2l7.1-4.1v-5c0-.84.65-1.5 1.5-1.5Z"/></svg>Voyage</button>
       <button data-cat="blog"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 21.2h12.2a2 2 0 0 0 2-2V6.6l-3.4-3.4H6.5a2 2 0 0 0-2 2v3.4"/><path d="M4.5 9.5H3.2a1 1 0 0 0-1 1v8.7a2 2 0 0 0 2 2"/><path d="M8 8h4M8 12h7M8 16h7"/></svg>Blog</button>
       <button data-cat="profile"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20.8v-1.9a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1.9"/><path d="M12 3.2a4.1 4.1 0 1 0 0 8.2 4.1 4.1 0 0 0 0-8.2Z"/></svg>Profil</button>
+      <!-- ⚠️ L'ONGLET EST MAINTENANT SUR TÉLÉPHONE AUSSI. Il était réservé à
+           l'ordinateur ; la barre du bas passe donc de 4 à 5 colonnes — voir
+           `.catnav` (grid-template-columns), qui doit rester d'accord avec le
+           nombre réel de boutons, sinon le cinquième déborde ou se replie.
+           C'est exactement l'avertissement que porte déjà le bloc BLOG, pour
+           le même motif quand il est passé de 3 à 4.
+           La classe .cat-pc et ses règles sont retirées : plus rien ne les
+           utilise, et les laisser masquerait l'onglet à la prochaine reprise —
+           c'est mot pour mot ce qui était arrivé la fois précédente. -->
+      <button data-cat="ia"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 13.6 8l4.8 1.6-4.8 1.6L12 16l-1.6-4.8L5.6 9.6 10.4 8 12 3.2Z"/><path d="M18.4 14.8l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg>Assistant</button>
     </nav>
 
     <!-- Le côté droit de la barre du haut (maquette 1b) : le thème,
@@ -516,6 +538,61 @@
     <article id="blogOne" class="card hidden"></article>
   </section>
 
+  <!-- ============================================================
+       ASSISTANT IA — console de conversation (ORDINATEUR UNIQUEMENT)
+       ------------------------------------------------------------
+       Trois usages d'un même champ, parce que c'est le même geste pour le
+       voyageur : décrire ce qu'il veut. Ce qui change, c'est ce qu'Acolyte a le
+       DROIT de faire de sa phrase — et c'est le mode qui le décide, pas
+       l'humeur du modèle :
+         · Créer   → remplit le questionnaire et lance des propositions
+         · Modifier→ passe par l'assistant d'opérations VALIDÉES (aperçu + annuler)
+         · Question→ ne touche à RIEN, répond seulement
+       Le mode est un choix explicite et visible : « je réponds » et « je
+       modifie ton voyage » ne doivent jamais dépendre d'une interprétation.
+  ============================================================ -->
+  <!-- ⚠️ AUCUN TEXTE DE PRÉSENTATION ICI, ET C'EST VOULU. Une console de
+       conversation s'explique en s'utilisant : le pavé d'introduction et
+       l'encadré « bêta » mangeaient un tiers de la hauteur au premier coup
+       d'œil, c'est-à-dire la place de la conversation elle-même. L'avertissement
+       de bêta n'a pas disparu — il est devenu une pop-up (#ovIaBeta), montrée
+       une fois. Un avertissement qu'on lit une fois vaut mieux qu'un bandeau
+       qu'on cesse de voir dès la deuxième visite. -->
+  <section class="hidden" id="catIA">
+    <div class="ia-head">
+      <h2>Assistant<span class="ia-beta" title="Fonctionnalité en test">bêta</span></h2>
+      <div class="ia-head-acts">
+        <!-- Boutons-icônes : le libellé passe en title/aria-label, l'action se
+             lit au dessin. « Effacer » devient une corbeille — on ne déguise
+             pas une action destructrice en mot neutre. -->
+        <button class="btn ghost sm ico-btn" id="iaInfo" type="button" title="À propos de la bêta" aria-label="À propos de la bêta"></button>
+        <button class="btn ghost sm ico-btn" id="iaClear" type="button" title="Nouvelle discussion" aria-label="Nouvelle discussion"></button>
+      </div>
+    </div>
+
+    <!-- ⚠️ PLUS DE SÉLECTEUR DE MODE : Acolyte décide lui-même s'il répond,
+         s'il crée ou s'il modifie. Ce qui remplace le choix manuel, c'est
+         l'ANNONCE : il dit ce qu'il a compris AVANT d'agir, et la ligne reste
+         affichée. On échange une case à cocher contre une phrase — l'important
+         n'était pas que l'humain choisisse, c'est qu'il ne soit jamais surpris. -->
+    <p class="ia-intent" id="iaIntent" role="status" aria-live="polite" hidden></p>
+
+    <div class="ia-fil" id="iaFil" role="log" aria-live="polite" aria-label="Conversation avec l'assistant"></div>
+
+    <div class="ia-saisie">
+      <!-- aria-label plutôt qu'un <label> masqué : il n'existe pas de classe
+           « visuellement caché » dans cette feuille, et en créer une pour un
+           seul usage laisserait une utilité orpheline de plus. -->
+      <!-- rows="1" : la barre démarre à la hauteur du bouton Envoyer et grandit
+           avec le texte (iaGrandit). À deux lignes par défaut, elle faisait
+           80 px de haut pour un bouton de 44, qui pendait alors dans le vide. -->
+      <textarea id="iaInp" rows="1" autocomplete="off" aria-label="Ta demande à l'assistant"
+                placeholder="Pose une question, décris un voyage, ou demande une modification…"></textarea>
+      <button class="btn" id="iaGo" type="button">Envoyer</button>
+    </div>
+    <p class="ia-etat" id="iaEtat" role="status" aria-live="polite"></p>
+  </section>
+
   <section class="hidden" id="catProfile">
     <div class="cat-empty-banner" id="profileEmpty" hidden>
       <div class="ce-emoji">✈️</div>
@@ -525,37 +602,77 @@
       </div>
       <button class="btn sm ghost" id="profileEmptyGo">Commencer</button>
     </div>
-    <!-- En-tête du compte, maquette 1g : un rond jaune avec l'initiale,
-         l'adresse en titre, la ligne d'état en dessous, et l'installation en
-         pastille à droite. ⚠️ Ce n'était PAS une carte dans la maquette : un
-         simple filet la sépare du reste. -->
-    <div class="card pf-head">
-      <h2>Mon compte 👤</h2>
-      <div class="row pf-id">
-        <div class="profile-big" id="pfAvatar">?</div>
-        <div style="min-width:0">
-          <h3 style="margin:0;overflow-wrap:anywhere" id="pfEmail">—</h3>
-          <p class="hint" style="margin:4px 0 0" id="pfMeta">—</p>
+    <!-- ===== LE PASSEPORT VOYAGEUR =====
+         L'en-tête ne dit plus « Mon compte » avec une adresse email : c'est
+         une fiche de voyageur. L'adresse email était l'information la plus
+         visible d'un écran qu'on ouvre pour se reconnaître — or elle ne
+         raconte rien. Le pseudo, l'avatar, le niveau et les statistiques,
+         oui.
+         ⚠️ Tous les identifiants de l'ancien bloc sont conservés (#pfAvatar,
+         #pfEmail, #pfMeta, #pfInstTop) : ils sont câblés dans app.js à
+         plusieurs endroits, et les renommer aurait cassé majNavTools(),
+         renderProfile() et la ligne d'installation. -->
+    <div class="passport">
+      <div class="pp-band" aria-hidden="true"></div>
+      <div class="pp-main">
+        <button class="pp-avatar" id="pfAvatar" type="button"
+                title="Changer d'avatar" aria-label="Changer d'avatar">🌍</button>
+        <div class="pp-id">
+          <div class="pp-nom-l">
+            <h2 id="pfEmail">—</h2>
+            <span class="pp-niveau" id="pfNiveau">Explorateur</span>
+          </div>
+          <p class="pp-bio" id="pfBio">—</p>
+          <p class="pp-meta" id="pfMeta">—</p>
         </div>
-        <!-- Le même bouton que la ligne « Installer » de la liste d'actions,
-             remonté ici comme dans la maquette. Il ne s'affiche que s'il y a
-             quelque chose à installer : majNavTools() s'en charge. -->
-        <button class="pf-inst" id="pfInstTop" type="button" style="display:none">
-          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11.8"/><path d="m7 10.5 5 5 5-5M4.2 20h15.6"/></svg>Installer Acolyte
-        </button>
+        <div class="pp-actions">
+          <button class="btn sm ghost" id="pfEdit" type="button">✏️ Modifier</button>
+          <!-- Le même bouton que la ligne « Installer » de la liste d'actions.
+               Il ne s'affiche que s'il y a quelque chose à installer :
+               majNavTools() s'en charge. -->
+          <button class="pf-inst" id="pfInstTop" type="button" style="display:none">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11.8"/><path d="m7 10.5 5 5 5-5M4.2 20h15.6"/></svg>Installer
+          </button>
+        </div>
+      </div>
+      <!-- Les chiffres qui disent où on en est. Remplis par renderProfile. -->
+      <div class="pp-stats" id="pfStats"></div>
+    </div>
+
+    <!-- Les quatre onglets du profil. Même langage que la rangée « Ton voyage » :
+         une barre qui défile, avec le même indice de contenu caché. -->
+    <div class="pf-tabs-wrap">
+      <div class="pf-tabs" id="pfTabs" role="tablist" aria-label="Sections du profil">
+        <button class="pf-tab on" data-pftab="passeport" role="tab" aria-selected="true"><span>👤</span>Mon passeport</button>
+        <button class="pf-tab" data-pftab="ia" role="tab" aria-selected="false"><span>🧭</span>Préférences IA</button>
+        <button class="pf-tab" data-pftab="look" role="tab" aria-selected="false"><span>🎨</span>Apparence &amp; langue</button>
+        <button class="pf-tab" data-pftab="outils" role="tab" aria-selected="false"><span>🗂️</span>Outils &amp; données</button>
+      </div>
+    </div>
+
+    <!-- ===== ONGLET 1 — MON PASSEPORT ===== -->
+    <div class="pf-panel" id="pfPanPasseport">
+      <div class="card" id="pfVoyageActif"></div>
+      <div class="card">
+        <h3 style="margin:0 0 4px">🏅 Tes badges</h3>
+        <p class="hint" style="margin:0 0 14px">Ils se débloquent en préparant tes voyages — rien à acheter, rien à partager.</p>
+        <div class="pp-badges" id="pfBadges"></div>
       </div>
     </div>
 
 
-    <!-- pf-panels : sur ordinateur, ce bloc devient les DEUX COLONNES de la
-         maquette 1g — préférences à gauche, actions à droite. Les deux
-         accordéons sont déjà frères ici, il n'y a rien à déplacer.
-         Sur téléphone il reste ce qu'il est : deux accordéons empilés, car une
-         liste de réglages aussi longue a besoin de se replier. -->
-    <div class="card pf-panels">
-      <div class="acc" id="accPrefs">
-        <div class="acc-head" data-acc>PRÉFÉRENCES <span class="arr">›</span></div>
-        <div class="acc-body">
+    <!-- ===== ONGLET 2 — PRÉFÉRENCES IA =====
+         ⚠️ Les accordéons ont disparu, pas leurs contenus. Chaque identifiant
+         de réglage (#stStyle, #stRythme, #stSurPlace, #stFood, #stAcces,
+         #stEco, #stDetail, #stIA, #stHome, #stAdults, #stKids, #stReset…) est
+         conservé À L'IDENTIQUE : renderSettings() et applySettings() les
+         câblent depuis app.js, et les renommer aurait tout débranché en
+         silence. Seule la MISE EN PAGE change.
+         Ce qui part d'ici : l'apparence et la langue, qui n'ont rien à faire
+         dans « ce qu'Acolyte doit comprendre de toi » — elles ont leur propre
+         onglet. -->
+    <div class="pf-panel hidden" id="pfPanIa">
+      <div class="card">
 
           <h3 style="margin:0 0 6px">🧭 Ton style de voyage</h3>
           <p class="hint" style="margin:0 0 8px">L'IA en tient compte à chaque proposition et à chaque plan.</p>
@@ -596,27 +713,6 @@
 
           <div class="divider"></div>
 
-          <h3 style="margin:0 0 6px">🌐 Langue</h3>
-          <p class="hint" style="margin:0 0 8px">Change la langue de l'interface et celle des voyages qu'Acolyte écrit pour toi.</p>
-          <div class="chips" id="stLang" data-noi18n>
-            <button class="chip" data-lang="fr">🇫🇷 Français</button>
-            <button class="chip" data-lang="en">🇬🇧 English</button>
-          </div>
-
-          <div class="divider"></div>
-
-          <h3 style="margin:0 0 6px">🎨 Apparence</h3>
-          <p class="hint" style="margin:0 0 8px">« Système » suit automatiquement le thème clair/sombre de ton appareil.</p>
-          <div class="chips" id="stTheme"></div>
-          <div class="field" style="margin-top:12px">
-            <label for="stFont">Taille du texte : <span id="stFsVal">100 %</span></label>
-            <input type="range" id="stFont" min="90" max="130" step="5" value="100"
-                   aria-valuemin="90" aria-valuemax="130" aria-valuenow="100" aria-valuetext="100 %">
-          </div>
-          <div class="chips" id="stUI" style="margin-top:8px"></div>
-
-          <div class="divider"></div>
-
           <h3 style="margin:0 0 6px">📌 Valeurs par défaut</h3>
           <p class="hint" style="margin:0 0 8px">Pré-remplies à chaque nouveau voyage — tu peux toujours les changer dans le questionnaire.</p>
           <div class="grid tight">
@@ -637,24 +733,48 @@
           <div class="row" style="margin-top:14px">
             <button class="btn sm ghost" id="stReset">↺ Tout réinitialiser</button>
           </div>
+      </div>
+    </div>
+
+    <!-- ===== ONGLET 3 — APPARENCE & LANGUE =====
+         Trois réglages qui ne concernent QUE l'affichage. Ils étaient noyés au
+         milieu des préférences de voyage, entre « alimentation » et « valeurs
+         par défaut » — deux sujets qui n'ont rien à voir. -->
+    <div class="pf-panel hidden" id="pfPanLook">
+      <div class="card">
+        <h3 style="margin:0 0 6px">🎨 Thème</h3>
+        <p class="hint" style="margin:0 0 8px">« Système » suit automatiquement le thème clair/sombre de ton appareil.</p>
+        <div class="chips" id="stTheme"></div>
+
+        <div class="divider"></div>
+
+        <h3 style="margin:0 0 6px">🔠 Taille du texte</h3>
+        <div class="field">
+          <label for="stFont">Taille : <span id="stFsVal">100 %</span></label>
+          <input type="range" id="stFont" min="90" max="130" step="5" value="100"
+                 aria-valuemin="90" aria-valuemax="130" aria-valuenow="100" aria-valuetext="100 %">
+        </div>
+        <div class="chips" id="stUI" style="margin-top:8px"></div>
+
+        <div class="divider"></div>
+
+        <h3 style="margin:0 0 6px">🌐 Langue</h3>
+        <p class="hint" style="margin:0 0 8px">Change la langue de l'interface et celle des voyages qu'Acolyte écrit pour toi.</p>
+        <div class="chips" id="stLang" data-noi18n>
+          <button class="chip" data-lang="fr">🇫🇷 Français</button>
+          <button class="chip" data-lang="en">🇬🇧 English</button>
         </div>
       </div>
+    </div>
 
-      <div class="acc" id="accActions">
-      <div class="acc-head" data-acc>ACTIONS <span class="arr">›</span></div>
-      <div class="acc-body">
-      <div class="item act">
-        <div class="head"><div class="emo">✨</div><h4>Nouveautés <span id="pfVersion" class="hint" style="margin:0"></span></h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfNews">Voir</button></div>
-      </div>
-      <!-- Le serveur Discord. ⚠️ Cette ligne est MASQUÉE tant que l'adresse
-           n'est pas renseignée dans config.js : proposer « rejoindre la
-           communauté » et ouvrir une page morte est pire que ne rien proposer.
-           C'est le même principe que les liens d'affiliation. -->
-      <div class="item act" id="pfDiscordRow" style="display:none">
-        <div class="head"><div class="emo">💬</div><h4>Rejoindre la communauté</h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfDiscord">Ouvrir</button></div>
-      </div>
+    <!-- ===== ONGLET 4 — OUTILS & DONNÉES =====
+         Toutes les lignes d'action de l'ancien accordéon, dans le même ordre,
+         avec les mêmes identifiants — mais regroupées par ce qu'elles font
+         plutôt qu'en une liste de seize entrées indifférenciées. -->
+    <div class="pf-panel hidden" id="pfPanOutils">
+      <div class="card">
+      <h3 style="margin:0 0 4px">📤 Emporter ton voyage</h3>
+      <p class="hint" style="margin:0 0 12px">Tout part en fichier, sans compte à créer chez qui que ce soit.</p>
       <div class="item act">
         <div class="head"><div class="emo">⬇</div><h4>Exporter mon voyage</h4></div>
         <div class="side"><button class="btn sm ghost" id="pfExport">Exporter</button></div>
@@ -675,16 +795,13 @@
       </div>
       <input type="file" id="amiFile" accept="application/json,.json" hidden
              aria-label="Choisir le fichier de voyage d'un ami">
-      <!-- Personne ne retient huit écrans du premier coup : on doit pouvoir y
-           revenir, y compris après avoir cliqué « Passer ». -->
       <div class="item act">
-        <div class="head"><div class="emo">❓</div><h4>Comment marche Acolyte</h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfAide">Revoir</button></div>
+        <div class="head"><div class="emo">📷</div><h4>Importer un voyage (scanner un ticket)</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfScan">Ouvrir le scanner</button></div>
       </div>
-      <div class="item act">
-        <div class="head"><div class="emo">↺</div><h4>Recommencer un voyage</h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfNewTrip">Nouveau voyage</button></div>
-      </div>
+
+      <div class="divider"></div>
+      <h3 style="margin:0 0 12px">🧑‍✈️ Ton compte</h3>
       <div class="item act">
         <div class="head"><div class="emo">🔑</div><h4>Changer le mot de passe</h4></div>
         <div class="side"><button class="btn sm ghost" id="pfChangePass">Changer</button></div>
@@ -693,36 +810,63 @@
         <div class="head"><div class="emo">📧</div><h4>Changer d'adresse email</h4></div>
         <div class="side"><button class="btn sm ghost" id="pfChangeEmail">Changer</button></div>
       </div>
-      <div class="item act" id="pwaItem" style="display:none">
-        <div class="head"><div class="emo">📲</div><h4>Installer Acolyte sur l'appareil</h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfInstall">Installer</button></div>
+      <div class="item act">
+        <div class="head"><div class="emo">↺</div><h4>Recommencer un voyage</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfNewTrip">Nouveau voyage</button></div>
       </div>
       <div class="item act">
-        <div class="head"><div class="emo">📷</div><h4>Importer un voyage (scanner un ticket)</h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfScan">Ouvrir le scanner</button></div>
+        <div class="head"><div class="emo">🚪</div><h4>Se déconnecter</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfLogout">Déconnexion</button></div>
+      </div>
+
+      <div class="divider"></div>
+      <h3 style="margin:0 0 4px">🗄️ Tes données</h3>
+      <p class="hint" style="margin:0 0 12px">Elles vivent dans ce navigateur. Rien n'est revendu, rien n'est pisté.</p>
+      <div class="item act">
+        <div class="head"><div class="emo">📄</div><h4>Télécharger mes données</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfMyData">Télécharger (.json)</button></div>
       </div>
       <div class="item act">
         <div class="head"><div class="emo">🧹</div><h4>Régénérer les contenus IA</h4></div>
         <div class="side"><button class="btn sm ghost" id="pfClearCache">Vider le cache IA</button></div>
       </div>
       <div class="item act">
-        <div class="head"><div class="emo">📄</div><h4>Télécharger mes données</h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfMyData">Télécharger (.json)</button></div>
+        <div class="head"><div class="emo">🔒</div><h4>Politique de confidentialité</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfPrivacy">Consulter</button></div>
       </div>
+
+      <div class="divider"></div>
+      <h3 style="margin:0 0 12px">💬 Aide &amp; communauté</h3>
+      <!-- Personne ne retient huit écrans du premier coup : on doit pouvoir y
+           revenir, y compris après avoir cliqué « Passer ». -->
+      <div class="item act">
+        <div class="head"><div class="emo">❓</div><h4>Comment marche Acolyte</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfAide">Revoir</button></div>
+      </div>
+      <div class="item act">
+        <div class="head"><div class="emo">✨</div><h4>Nouveautés <span id="pfVersion" class="hint" style="margin:0"></span></h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfNews">Voir</button></div>
+      </div>
+      <!-- Le serveur Discord. ⚠️ Cette ligne est MASQUÉE tant que l'adresse
+           n'est pas renseignée dans config.js : proposer « rejoindre la
+           communauté » et ouvrir une page morte est pire que ne rien proposer.
+           C'est le même principe que les liens d'affiliation. -->
+      <div class="item act" id="pfDiscordRow" style="display:none">
+        <div class="head"><div class="emo">💬</div><h4>Rejoindre la communauté</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfDiscord">Ouvrir</button></div>
+      </div>
+      <div class="item act" id="pwaItem" style="display:none">
+        <div class="head"><div class="emo">📲</div><h4>Installer Acolyte sur l'appareil</h4></div>
+        <div class="side"><button class="btn sm ghost" id="pfInstall">Installer</button></div>
+      </div>
+      <!-- ⚠️ « Vol de nuit » bascule le thème : il vit ici pour compatibilité
+           (le bouton est câblé dans app.js), mais le vrai réglage de thème est
+           dans l'onglet Apparence. -->
       <div class="item act">
         <div class="head"><div class="emo">🌙</div><h4>Mode "Vol de nuit"</h4></div>
         <div class="side"><button class="btn sm ghost" id="pfTheme">Activer / désactiver</button></div>
       </div>
-      <div class="item act">
-        <div class="head"><div class="emo">🔒</div><h4>Politique de confidentialité</h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfPrivacy">Consulter</button></div>
       </div>
-      <div class="item act">
-        <div class="head"><div class="emo">🚪</div><h4>Se déconnecter</h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfLogout">Déconnexion</button></div>
-      </div>
-      </div><!-- /acc-body -->
-      </div><!-- /acc -->
     </div>
 
     <!-- ===== Product Hunt — placé AVANT la zone sensible : demander un
@@ -748,8 +892,16 @@
                marque, et un contour de 1,75 px la rendait maigre à côté du
                badge Product Hunt qui est un aplat. currentColor pour qu'elle
                suive la couleur du bouton dans les deux thèmes. -->
+          <!-- ⚠️ TRACÉ OFFICIEL DE LA MARQUE DISCORD, pas un redessin.
+               Le précédent était une approximation faite à la main : la tête
+               était trop ronde, les yeux trop petits et trop hauts, et la
+               découpe du bas — le détail qui fait reconnaître Clyde — absente.
+               Un logo de marque se RECOPIE, il ne se devine pas : c'est la
+               même règle que les icônes de la barre de navigation, dont le
+               commentaire dit déjà « une icône de 24 px ne se devine pas,
+               elle se recopie ». -->
           <svg class="dc-logo" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M19.6 5.6A15.6 15.6 0 0 0 15.8 4.4l-.3.6a11.6 11.6 0 0 1 3.3 1.6 15.2 15.2 0 0 0-9.6 0 11.6 11.6 0 0 1 3.3-1.6l-.3-.6A15.6 15.6 0 0 0 8.4 5.6C6 8.9 5.2 12.3 5.4 15.8a15.4 15.4 0 0 0 4.7 2.4l.6-1a10.4 10.4 0 0 1-1.7-.8l.4-.3a11.2 11.2 0 0 0 9.2 0l.4.3c-.5.3-1.1.6-1.7.8l.6 1a15.4 15.4 0 0 0 4.7-2.4c.3-4-.8-7.4-2.9-10.2ZM10.3 13.9c-.9 0-1.7-.8-1.7-1.9s.7-1.9 1.7-1.9 1.7.9 1.7 1.9-.8 1.9-1.7 1.9Zm7.4 0c-.9 0-1.7-.8-1.7-1.9s.7-1.9 1.7-1.9 1.7.9 1.7 1.9-.8 1.9-1.7 1.9Z"/>
+            <path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/>
           </svg>
           Discord
         </button>
@@ -762,59 +914,76 @@
       <button class="btn danger" id="pfDelete">🗑️ Supprimer définitivement mon compte</button>
     </div>
 
+    <!-- ⚠️ LE PIED DE PAGE VIT ICI DÉSORMAIS, sous le profil, et nulle part
+         ailleurs. Il était en bas de CHAQUE onglet : trois colonnes de texte
+         sous une conversation, sous un questionnaire, et — depuis que le
+         terrain occupe le fond de l'écran — posées par-dessus la carte. Un
+         repère utile au premier chargement devenait un encombrement sur tous
+         les autres.
+         Il garde sa largeur : il suit le flux de la section, donc celle du
+         reste du site, sans règle de largeur à lui.
+         ⚠️ CE QU'ON PERD, ET C'EST À SAVOIR : le bloc reste dans le HTML servi
+         (donc lisible par un robot dès le premier octet, ce pour quoi il avait
+         été écrit), mais les MENTIONS LÉGALES ne sont plus atteignables depuis
+         n'importe quel onglet — il faut passer par Profil. L'obligation
+         française vise l'accessibilité depuis le site, pas depuis chaque vue
+         d'une application d'une seule page, et le lien reste à un clic. Si tu
+         préfères le garantir, la parade est un lien « Mentions légales » dans
+         la barre du bas plutôt que le retour du pavé partout. -->
+    <footer class="foot">
+      <div class="foot-cols">
+        <section class="foot-col">
+          <h2>Acolyte, en deux lignes</h2>
+          <p>Décris ton envie de voyage en une phrase. Acolyte choisit la destination,
+             compare les transports sur le prix, la durée et le CO₂, propose un quartier
+             et un logement, puis construit ton programme heure par heure.</p>
+        </section>
+        <section class="foot-col">
+          <h2>Ce que ça sait faire</h2>
+          <ul>
+            <li>Trouver une destination à partir d'une simple envie</li>
+            <li>Comparer train, voiture et avion sur le prix et le CO₂</li>
+            <li>Organiser chaque journée par proximité, pas au hasard</li>
+            <li>Traverser plusieurs pays dans un même itinéraire</li>
+            <li>Garder la carte et le programme consultables hors-ligne</li>
+          </ul>
+        </section>
+        <section class="foot-col">
+          <h2>Le journal</h2>
+          <p>Acolyte publie ses propres articles de fond sur les merveilles du monde,
+             les grandes villes et les lieux qui valent le détour.</p>
+          <p class="foot-links">
+            <a href="./" id="footBlog">Lire le journal</a>
+            <a href="#mentions-legales" id="footLegal">Mentions légales et confidentialité</a>
+          </p>
+        </section>
+      </div>
+      <p class="foot-bas">
+        Acolyte — copilote de voyage. Application web gratuite, installable sur
+        téléphone et ordinateur, utilisable sans connexion.
+      </p>
+    </footer>
+
   </section>
 
   </main>
 
-  <!-- ⚠️ Le pied de page est HORS de <main> : ce n'est pas le contenu principal,
-       c'est un repère « contentinfo ». Un lecteur d'écran annonce alors les deux
-       zones séparément, ce qui est justement l'intérêt des repères. -->
-  <!-- ===== Pied de page =====
-       ⚠️ CE BLOC EXISTE POUR ÊTRE LU SANS JAVASCRIPT. Tout le reste de la page
-       est construit par app.js : un robot qui n'exécute pas le script ne voit
-       donc presque aucun texte, et Google n'a rien à se mettre sous la dent
-       pour comprendre de quoi parle le site. Ces quelques paragraphes sont en
-       HTML brut, présents dès le premier octet servi.
-       ⚠️ On ne met ici QUE des liens utiles à un humain. Pas de lien vers
-       sitemap.xml ni manifest.json : ce sont des fichiers machine, les lier
-       n'apporte rien au référencement et encombre l'interface. -->
-  <footer class="foot">
-    <div class="foot-cols">
-      <section class="foot-col">
-        <h2>Acolyte, en deux lignes</h2>
-        <p>Décris ton envie de voyage en une phrase. Acolyte choisit la destination,
-           compare les transports sur le prix, la durée et le CO₂, propose un quartier
-           et un logement, puis construit ton programme heure par heure.</p>
-      </section>
-      <section class="foot-col">
-        <h2>Ce que ça sait faire</h2>
-        <ul>
-          <li>Trouver une destination à partir d'une simple envie</li>
-          <li>Comparer train, voiture et avion sur le prix et le CO₂</li>
-          <li>Organiser chaque journée par proximité, pas au hasard</li>
-          <li>Traverser plusieurs pays dans un même itinéraire</li>
-          <li>Garder la carte et le programme consultables hors-ligne</li>
-        </ul>
-      </section>
-      <section class="foot-col">
-        <h2>Le journal</h2>
-        <p>Acolyte publie ses propres articles de fond sur les merveilles du monde,
-           les grandes villes et les lieux qui valent le détour.</p>
-        <p class="foot-links">
-          <a href="./" id="footBlog">Lire le journal</a>
-          <!-- ⚠️ Obligatoire, et pas seulement souhaitable : la loi française
-               exige que les mentions légales soient accessibles depuis
-               n'importe quelle page. Le pied de page est le seul endroit
-               présent partout, y compris sans JavaScript. -->
-          <a href="#mentions-legales" id="footLegal">Mentions légales et confidentialité</a>
-        </p>
-      </section>
-    </div>
-    <p class="foot-bas">
-      Acolyte — copilote de voyage. Application web gratuite, installable sur
-      téléphone et ordinateur, utilisable sans connexion.
-    </p>
-  </footer>
+  <!-- ⚠️ LE PIED DE PAGE A ÉTÉ DÉPLACÉ dans #catProfile (voir le commentaire
+       là-bas). Il n'est plus ici, et il ne doit PAS y revenir « aussi » : deux
+       exemplaires, ce sont #footBlog et #footLegal en double — donc un bouton
+       sur deux qui ne répond plus, exactement ce que traque le contrôle n°3 de
+       verifie.js. Ce qui a motivé le déplacement était sa présence sous CHAQUE
+       onglet, y compris par-dessus la carte en plein écran. -->
+
+  <!-- ⚠️ Le raisonnement d'origine reste vrai et vaut d'être gardé : ce bloc
+       existe POUR ÊTRE LU SANS JAVASCRIPT. Tout le reste de la page est
+       construit par app.js ; un robot qui n'exécute pas le script n'y verrait
+       presque aucun texte. Il est toujours en HTML brut, présent dès le
+       premier octet servi — être dans une section masquée par défaut ne le
+       retire pas du document.
+       (Aucune ancre à ajouter ici : « mentions-legales » existe déjà sur le
+       titre de la fenêtre de confidentialité, plus bas. En poser une seconde
+       fait un identifiant en double — le contrôle n°3 l'a signalé aussitôt.) -->
 </div>
 
 <!-- ===== Auth (création de compte / connexion / vérification) =====
@@ -959,6 +1128,98 @@
     </div>
     <button class="btn danger" id="delGo" style="width:100%;justify-content:center;margin-top:14px" disabled>🗑️ Supprimer définitivement</button>
     <button class="btn ghost sm" data-close="ovDel" style="width:100%;justify-content:center;margin-top:8px">Annuler</button>
+  </div>
+</div>
+
+<!-- ===== Modale : MODIFIER SON PASSEPORT =====
+     ⚠️ Elle remplace un `prompt()` natif. Le pseudo se changeait par une boîte
+     de dialogue du navigateur : pas stylable, pas traduisible, bloquante, et
+     elle ne pouvait porter qu'UN champ — d'où l'absence d'avatar, de bio et de
+     contact d'urgence jusqu'ici. Un formulaire les porte tous d'un coup. -->
+<div class="overlay" id="ovProfil">
+  <div class="modal" style="max-height:88vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0">✏️ Mon passeport</h2>
+      <button class="close-btn" data-close="ovProfil" aria-label="Fermer">✕</button>
+    </div>
+    <p class="sub" style="margin-bottom:16px">Ces informations restent sur cet appareil. Seul le pseudo et l'adresse email sont synchronisés.</p>
+
+    <div class="field">
+      <label>Ton avatar</label>
+      <div class="chips" id="edAvatars"></div>
+    </div>
+
+    <div class="field" style="margin-top:14px">
+      <label for="edPseudo">Pseudo</label>
+      <input id="edPseudo" maxlength="20" autocomplete="nickname" placeholder="ex : Sacha">
+    </div>
+
+    <div class="field" style="margin-top:12px">
+      <label for="edBio">Ta devise de voyage</label>
+      <input id="edBio" maxlength="70" placeholder="ex : Partir léger, revenir plein">
+    </div>
+
+    <div class="grid tight" style="margin-top:12px">
+      <div class="field">
+        <label for="edHome">🏠 Ville de départ habituelle</label>
+        <input id="edHome" maxlength="60" autocomplete="off" placeholder="ex : Paris">
+      </div>
+      <div class="field">
+        <label for="edDevise">💱 Devise préférée</label>
+        <select id="edDevise">
+          <option value="EUR">€ Euro (EUR)</option>
+          <option value="USD">$ Dollar (USD)</option>
+          <option value="GBP">£ Livre (GBP)</option>
+          <option value="CHF">CHF Franc suisse</option>
+          <option value="CAD">$ Dollar canadien (CAD)</option>
+          <option value="JPY">¥ Yen (JPY)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:12px">
+      <label for="edUrgence">🆘 Contact d'urgence</label>
+      <input id="edUrgence" maxlength="80" placeholder="ex : Marie — 06 12 34 56 78">
+      <!-- ⚠️ Volontairement un champ LIBRE et purement local : on ne demande ni
+           de séparer nom et numéro, ni de valider un format. C'est une note
+           qu'on relit soi-même en cas de pépin, pas une donnée qu'on traite. -->
+      <p class="hint" style="margin:6px 0 0">Affiché dans ta fiche voyageur. Jamais envoyé, jamais synchronisé.</p>
+    </div>
+
+    <div class="field" style="margin-top:12px">
+      <label for="edEmail">📧 Adresse email</label>
+      <input id="edEmail" type="email" autocomplete="email" readonly>
+      <p class="hint" style="margin:6px 0 0">Elle sert à te connecter — on la change depuis <b>Outils &amp; données</b>, avec vérification.</p>
+    </div>
+
+    <button class="btn" id="edSave" style="width:100%;justify-content:center;margin-top:18px">Enregistrer</button>
+    <button class="btn ghost sm" data-close="ovProfil" style="width:100%;justify-content:center;margin-top:8px">Annuler</button>
+  </div>
+</div>
+
+<!-- ===== Pop-up BÊTA DE L'ASSISTANT =====
+     Montrée UNE fois, au premier passage sur l'onglet. Elle porte ce que
+     l'encadré permanent disait, mais au moment où ça compte : avant la
+     première question, pas à chaque visite. Le bouton 🧪 de l'onglet permet de
+     la relire — un avertissement qu'on ne peut plus retrouver n'en est pas un. -->
+<div class="overlay" id="ovIaBeta">
+  <div class="modal">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0">🧪 Assistant en bêta</h2>
+      <button class="close-btn" data-close="ovIaBeta" aria-label="Fermer">✕</button>
+    </div>
+    <p class="sub" style="margin-bottom:14px">
+      Écris ce que tu veux, en français. Acolyte comprend tout seul s'il doit
+      <b>répondre</b>, <b>créer un voyage</b> ou <b>modifier le tien</b> — et il te dit
+      ce qu'il a compris avant d'agir.
+    </p>
+    <ul class="ia-beta-liste">
+      <li><b>Il se trompe encore</b>, surtout sur les horaires et les prix.</li>
+      <li>Chaque modification est <b>vérifiée</b> avant d'être appliquée, et un bouton <b>Annuler</b> remet tout en place.</li>
+      <li>Une création <b>remplit le questionnaire</b> mais ne lance rien : c'est toi qui décides.</li>
+      <li><b>Vérifie toujours avant de réserver.</b></li>
+    </ul>
+    <button class="btn" data-close="ovIaBeta" style="width:100%;justify-content:center;margin-top:16px">J'ai compris</button>
   </div>
 </div>
 

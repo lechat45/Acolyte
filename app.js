@@ -197,28 +197,102 @@ const ETAT_MIGRATIONS = {
   2: o => { if(o.mode === 'car') o.mode = 'voiture'; return o; }
   */
 };
-/* Vrai quand on a lu des données écrites par une version PLUS RÉCENTE. L'app
-   peut s'en servir pour prévenir l'utilisateur : il vaut mieux lui dire que son
-   voyage vient d'une version plus neuve que de lui montrer un plan silencieux. */
+/* Vrai quand on RETIENT des valeurs qu'on ne sait pas lire — soit qu'on vienne
+   de lire des données d'une version plus récente, soit qu'on transporte une
+   quarantaine posée par une autre version. Lu par futurBarMaj(). */
 var _etatDuFutur = false;
+
+/* ------------------------------------------------------------
+   LA QUARANTAINE — pourquoi neutraliser ne suffisait PAS.
+   ------------------------------------------------------------
+   ⚠️ CE BLOC EXISTE À CAUSE D'UN TROU RÉEL, signalé par le même lecteur du post
+   Reddit que la rétrogradation elle-même. La première version remettait les
+   champs interprétés à leur valeur sûre, levait le drapeau, et s'arrêtait là.
+   C'était correct pour AFFICHER. C'était destructeur pour ÉCRIRE :
+
+     la v9 écrit {v:9, mode:'car'}
+     la v1 lit    → drapeau levé, mode ramené à 'plane'   ← correct
+     un seul save() → le disque contient {v:1, mode:'plane'}
+     la v9 revient → tampon v1, aucun drapeau : pour elle ce sont de VIEILLES
+                     données parfaitement normales. Le 'car' n'existe plus
+                     nulle part, et rien ne dit qu'il a existé.
+
+   La perte devenait indiscernable d'un choix de l'utilisateur — exactement le
+   « faussement juste » que tout ce mécanisme devait empêcher. Et comme save()
+   déclenche la synchro, l'état appauvri partait sur le serveur et redescendait
+   sur l'appareil resté en v9 : le rayon d'action n'était pas un navigateur,
+   c'était le compte.
+
+   La règle est donc : on ne DÉTRUIT pas ce qu'on ne comprend pas, on le MET DE
+   CÔTÉ. La version courante affiche une valeur sûre ; l'originale voyage dans
+   `_futur`, jamais lue, jamais interprétée, seulement transportée — jusqu'à une
+   version qui sait enfin la relire, qui la restaure et jette la boîte.
+------------------------------------------------------------ */
+/* La boîte vient du disque, donc de l'EXTÉRIEUR : même méfiance que le reste.
+   Numéro de version entier plausible, et uniquement les clés interprétées. */
+function safeFutur(q){
+  if(!q || typeof q !== 'object' || Array.isArray(q)) return null;
+  const v = Number(q.v);
+  if(!Number.isInteger(v) || v <= 0 || v > 9999) return null;
+  const boite = { v };
+  for(const k of Object.keys(ETAT_INTERPRETE)){
+    if(q[k] !== undefined) boite[k] = safeJSON(q[k], 4);
+  }
+  return boite;
+}
 
 /* Reconstruit un état propre à partir de données non fiables.
    On part TOUJOURS de la forme attendue : une clé inconnue est ignorée. */
 function safeState(raw){
   let s = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+  s = { ...s };
   /* Version du contrat qui a ÉCRIT ces données. Absente = antérieure au tampon. */
   const vu = Number(s.v) || 0;
   _etatDuFutur = false;
+  let futur = safeFutur(s._futur);
+  /* Version DEPUIS laquelle la chaîne de migration doit repartir. C'est `vu`
+     en temps normal, mais la version de la BOÎTE quand on restaure : les
+     valeurs qui en sortent sont dans la sémantique de celle-là, pas dans celle
+     du disque. */
+  let depuis = vu;
+
   if(vu > ETAT_V){
-    /* Données du futur : on ne peut pas migrer vers le passé. On neutralise les
-       seuls champs dont le sens peut avoir changé, et on garde le reste. */
-    _etatDuFutur = true;
-    s = { ...s };
+    /* Données du futur : on ne peut pas migrer vers le passé. On met de côté
+       AVANT de neutraliser — c'est tout l'objet du correctif.
+       On n'écrase une boîte existante que si celle-ci vient de plus loin :
+       la plus ancienne mise de côté est la plus proche de l'original. */
+    if(!futur || futur.v < vu){
+      futur = { v: vu };
+      for(const k of Object.keys(ETAT_INTERPRETE)){
+        if(s[k] !== undefined) futur[k] = safeJSON(s[k], 4);
+      }
+    }
     for(const [k, def] of Object.entries(ETAT_INTERPRETE)) s[k] = def;
-  }else if(vu < ETAT_V){
-    /* Migrations vers l'avant, dans l'ordre des versions. */
-    s = { ...s };
-    for(let n = vu + 1; n <= ETAT_V; n++){
+  }else if(futur && futur.v <= ETAT_V){
+    /* On comprend enfin le contrat qui a rempli la boîte : on restaure, et on
+       la jette. C'est le retour de la v9 dans le scénario ci-dessus. */
+    for(const k of Object.keys(ETAT_INTERPRETE)){
+      if(futur[k] !== undefined) s[k] = futur[k];
+    }
+    depuis = futur.v;
+    futur = null;
+  }
+
+  /* Le drapeau ne dit plus « je viens de lire du futur » mais « je retiens des
+     valeurs que je ne sais pas lire ». C'est ce qui compte pour l'utilisateur,
+     et ça reste vrai tant que la boîte voyage — y compris pour une v5 qui lit
+     un disque v1 portant une boîte v9. */
+  _etatDuFutur = !!futur;
+
+  if(depuis < ETAT_V){
+    /* Migrations vers l'avant, dans l'ordre des versions.
+       ⚠️ Départ à `depuis` et non à `vu` : après une restauration, rejouer les
+       migrations depuis le tampon du disque les appliquerait DEUX FOIS aux
+       valeurs sorties de la boîte. Ceci suppose qu'une migration ne touche que
+       des champs INTERPRÉTÉS — c'est la promesse de ETAT_INTERPRETE. Le jour où
+       une migration devra corriger un autre champ, ce champ doit d'abord être
+       déclaré interprété. */
+    for(let n = depuis + 1; n <= ETAT_V; n++){
       const m = ETAT_MIGRATIONS[n];
       if(typeof m === 'function'){ try{ s = m(s) || s; }catch(e){} }
     }
@@ -244,7 +318,28 @@ function safeState(raw){
     _qsDone:      _sBool(s._qsDone)
   };
   if(!st.trip) st.step = 1;      /* pas de voyage → on ne peut pas être à l'étape 3 */
+  /* ⚠️ LA BOÎTE DOIT ÊTRE DANS LA LISTE BLANCHE, sinon elle meurt ici.
+     Ironie utile : le filtre qui protège l'état est exactement ce qui
+     supprimerait la quarantaine. On ne l'écrit que si elle contient quelque
+     chose — un `_futur:null` dans chaque sauvegarde ne servirait personne. */
+  if(futur) st._futur = futur;
   return st;
+}
+
+/* L'utilisateur vient de CHOISIR lui-même un champ interprété. Sa décision
+   d'aujourd'hui prime sur la valeur mise de côté hier : restaurer plus tard un
+   'car' venu de la v9 par-dessus le 'train' qu'il vient de sélectionner serait
+   défaire son travail sous prétexte de le protéger. On retire donc ce champ de
+   la boîte, et la boîte elle-même quand elle est vide. */
+function etatChoixExplicite(champ){
+  const q = state && state._futur;
+  if(!q || q[champ] === undefined) return;
+  delete q[champ];
+  if(!Object.keys(ETAT_INTERPRETE).some(k => q[k] !== undefined)){
+    delete state._futur;
+    _etatDuFutur = false;
+    if(typeof futurBarMaj === 'function') futurBarMaj();
+  }
 }
 
 /* Écriture localStorage tolérante : en navigation privée ou stockage plein,
@@ -321,7 +416,22 @@ const groqKey = () => CFG.groq || localStorage.getItem(LS_GROQ) || '';
 const GROQ_PREFERRED = ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile', 'openai/gpt-oss-20b'];
 const groqModel = () => localStorage.getItem(LS_GROQM) || GROQ_PREFERRED[0];
 const tpKey   = () => CFG.travelpayouts || localStorage.getItem(LS_TP) || '';
+/* hasGroq() dit si Groq est CONFIGURÉ. groqDispo() dit s'il est joignable
+   MAINTENANT — la nuance compte : après un 429, Groq reste configuré mais
+   l'appeler ne fait que perdre du temps et du quota. */
 const hasGroq = () => useBackend() || !!groqKey();
+/* Fin de la mise au frais de Groq (horodatage). Volontairement en mémoire et
+   non dans localStorage : une limitation dure une poignée de secondes, la
+   garder d'une session à l'autre priverait l'app de Groq sans raison. */
+let _groqFroidJusqu = 0;
+function groqRefroidit(ms){
+  /* borné : ni un délai ridicule qui ne sert à rien, ni une mise à l'écart
+     interminable sur un message mal lu */
+  const d = Math.min(Math.max(Number(ms) || 60000, 5000), 600000);
+  _groqFroidJusqu = Math.max(_groqFroidJusqu, Date.now() + d);
+  console.warn('[acolyte] Groq mis au frais ' + Math.round(d / 1000) + ' s — Gemini prend le relais');
+}
+const groqDispo = () => hasGroq() && Date.now() >= _groqFroidJusqu;
 
 /* ============================================================
    RÉSEAU FAIBLE — le site doit rester utilisable en 2G/EDGE,
@@ -538,7 +648,32 @@ async function groq(prompt, expectJson = true, maxTok = 2048, _retryModel = fals
         body: JSON.stringify(body)
       });
   if(r.status === 401){ throw new Error('BAD_GROQ'); }   /* silencieux : bascule interne, l'utilisateur n'a rien à savoir */
-  if(r.status === 429){ throw new Error('GROQ_RATE'); }
+  if(r.status === 429){
+    /* ⚠️ DEUX 429 TRÈS DIFFÉRENTS ARRIVENT PAR CE MÊME TUYAU, et les confondre
+       coûte cher :
+         · celui de GROQ (trop d'appels chez eux) → Gemini peut prendre le
+           relais, il n'y a rien de perdu ;
+         · celui de NOTRE aiGuard (plafond de 120 appels/heure par compte) →
+           /gemini passe par la MÊME garde et répondra 429 aussi. Basculer est
+           alors inutile : on brûle un second appel pour rien et l'utilisateur
+           attend deux fois plus longtemps avant de voir l'échec.
+       On les distingue sur la forme du corps : aiGuard renvoie {"error":"…"}
+       (une chaîne), Groq renvoie {"error":{"message":…,"code":…}} (un objet). */
+    let corps = null;
+    try{ corps = await r.json(); }catch(e){}
+    if(corps && typeof corps.error === 'string'){
+      throw new Error('QUOTA_COMPTE:' + corps.error.slice(0, 160));
+    }
+    /* Limitation de Groq. On la MÉMORISE : sans ça, chaque appel « light »
+       suivant refait le même aller-retour perdant — un 429 de plus dans la
+       console, une unité de plus consommée sur notre propre quota (aiGuard
+       compte AVANT de relayer), et une attente inutile avant la bascule.
+       Groq indique souvent le délai dans son message ; à défaut, une minute. */
+    const msg = String(corps && corps.error && corps.error.message || '');
+    const s = parseFloat((msg.match(/try again in ([\d.]+)\s*s/i) || [])[1]);
+    groqRefroidit(Number.isFinite(s) ? s * 1000 : 60000);
+    throw new Error('GROQ_RATE');
+  }
   if(r.status === 404 && !_retryModel){
     /* modèle retiré par Groq → on passe au suivant de la liste et on mémorise */
     const cur = groqModel();
@@ -569,7 +704,10 @@ async function parseAI(txt, allowRepair = true){
   for(const cand of [slice('{', '}'), slice('[', ']')]){
     if(cand){ v = tryP(cand); if(v !== undefined) return v; }
   }
-  if(allowRepair && hasGroq()){
+  /* Réparation de JSON : c'est du confort, jamais un passage obligé. Pendant
+     une mise au frais on n'insiste pas — mieux vaut échouer tout de suite que
+     dépenser un appel condamné pour rattraper une réponse déjà ratée. */
+  if(allowRepair && groqDispo()){
     try{
       const fixed = await groq('Ce JSON est invalide. Corrige-le sans changer son contenu. Réponds UNIQUEMENT avec le JSON corrigé, rien d\'autre :\n' + txt.slice(0, 6000), false, 4096);
       v = tryP(clean(fixed)); if(v !== undefined) return v;
@@ -580,17 +718,96 @@ async function parseAI(txt, allowRepair = true){
 
 /* ai('heavy'|'light', prompt) — retourne {data, via} */
 async function ai(kind, prompt, expectJson = true, maxTok = 4096){
-  if(kind === 'light' && hasGroq()){
+  /* groqDispo() et non hasGroq() : pendant une mise au frais on va DIRECTEMENT
+     sur Gemini, sans l'aller-retour perdant. */
+  if(kind === 'light' && groqDispo()){
     try{
       const data = await groq(prompt, expectJson, Math.min(maxTok, 4096));
       return { data, via:'groq' };
     }catch(e){
-      // fallback silencieux sur Gemini si Groq plante (rate limit…)
-      if(e.message === 'BAD_GROQ') throw e;
+      const m = String(e.message || '');
+      if(m === 'BAD_GROQ') throw e;
+      /* ⚠️ Plafond de NOTRE compte : /gemini passe par la même garde et
+         répondra 429 lui aussi. Basculer serait un second appel perdu et une
+         attente doublée avant le même échec. On s'arrête et on le DIT — c'est
+         la seule erreur de ce lot où l'utilisateur peut agir (attendre). */
+      if(m.startsWith('QUOTA_COMPTE')){
+        toast('⏳ ' + (m.split(':')[1] || 'Beaucoup de demandes d’un coup — réessaie dans un moment'));
+        throw new Error('QUOTA_COMPTE');
+      }
     }
   }
   const data = await gemini(prompt, expectJson, maxTok);
   return { data, via:'gemini' };
+}
+
+/* ============================================================
+   LE JEU D'ICÔNES — des tracés, plus des émojis
+   ------------------------------------------------------------
+   ⚠️ POURQUOI REMPLACER LES ÉMOJIS. Trois raisons, et la troisième est la plus
+   coûteuse :
+   1. Ils ne se dessinent pas pareil d'un système à l'autre — on l'a payé cher
+      avec les drapeaux, que Windows ne sait tout simplement pas afficher.
+   2. Ils sont en COULEUR, au milieu d'une interface entièrement au trait : ils
+      attirent l'œil bien plus que leur importance ne le justifie.
+   3. Ils datent une interface. Un écran couvert d'émojis se lit comme un
+      brouillon, et c'est exactement la signature qu'on cherche à éviter ici.
+
+   Chaque tracé est écrit à la main sur une grille de 24, avec le MÊME
+   stroke-width 1.75 que la barre de navigation — c'est ce qui fait qu'ils
+   appartiennent tous au même alphabet. `currentColor` partout : une icône suit
+   la couleur de son texte, dans les deux thèmes, sans une ligne de CSS.
+   ⚠️ « var » et fonction déclarée : ICO() est appelé depuis des rendus situés
+   bien plus haut dans le fichier.
+============================================================ */
+var ICO_D = {
+  /* — navigation & lieux — */
+  monde:    '<circle cx="12" cy="12" r="8.6"/><path d="M3.4 12h17.2"/><path d="M12 3.4a13 13 0 0 1 0 17.2 13 13 0 0 1 0-17.2Z"/>',
+  boussole: '<circle cx="12" cy="12" r="8.6"/><path d="m15.2 8.8-1.9 4.5-4.5 1.9 1.9-4.5 4.5-1.9Z"/>',
+  epingle:  '<path d="M12 21.2s6.4-5.6 6.4-10.4a6.4 6.4 0 1 0-12.8 0C5.6 15.6 12 21.2 12 21.2Z"/><circle cx="12" cy="10.6" r="2.4"/>',
+  carte:    '<path d="M9 3.5 2.8 6v14.5L9 18l6 2.5 6.2-2.5V3.5L15 6 9 3.5Z"/><path d="M9 3.5V18M15 6v14.5"/>',
+  /* — transports — */
+  avion:    '<path d="M12 2.4c.85 0 1.5.65 1.5 1.5v4.9l7.1 4.1v2l-7.1-2.2v4.2l2.5 1.8v1.5L12 19.6l-4 .6v-1.5l2.5-1.8v-4.2L3.4 15v-2l7.1-4.1v-5c0-.84.65-1.5 1.5-1.5Z"/>',
+  train:    '<rect x="5.4" y="3.6" width="13.2" height="12.6" rx="3"/><path d="M5.4 10.2h13.2"/><path d="M8.4 19.6 6.2 22M15.6 19.6 17.8 22M7.6 16.2h8.8"/><circle cx="8.8" cy="13.2" r=".9"/><circle cx="15.2" cy="13.2" r=".9"/>',
+  voiture:  '<path d="M4.2 16.4v2.2a1 1 0 0 0 1 1h1.6a1 1 0 0 0 1-1v-1.2M19.8 16.4v2.2a1 1 0 0 1-1 1h-1.6a1 1 0 0 1-1-1v-1.2"/><path d="M3.6 17.4h16.8v-4.2l-2-4.6a2 2 0 0 0-1.8-1.2H7.4a2 2 0 0 0-1.8 1.2l-2 4.6v4.2Z"/><path d="M3.8 13.2h16.4"/><circle cx="7.4" cy="15.2" r=".9"/><circle cx="16.6" cy="15.2" r=".9"/>',
+  /* — voyage — */
+  valise:   '<rect x="3.4" y="7.4" width="17.2" height="12.8" rx="2.4"/><path d="M8.6 7.4V5.6a2 2 0 0 1 2-2h2.8a2 2 0 0 1 2 2v1.8"/><path d="M3.4 12.4h17.2"/>',
+  hotel:    '<path d="M3.6 20.4V5.2a1.6 1.6 0 0 1 1.6-1.6h9.6a1.6 1.6 0 0 1 1.6 1.6v15.2"/><path d="M16.4 10.4h2.8a1.6 1.6 0 0 1 1.6 1.6v8.4"/><path d="M2.6 20.4h18.8"/><path d="M7 7.6h1.6M11 7.6h1.6M7 11.4h1.6M11 11.4h1.6M7 15.2h5.6v5.2H7Z"/>',
+  billet:   '<path d="M4 8.5A2 2 0 0 1 6 6.5h12a2 2 0 0 1 2 2v1a2.5 2.5 0 0 0 0 5v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1a2.5 2.5 0 0 0 0-5v-1Z"/><path d="M14 6.5v11" stroke-dasharray="2 2.5"/>',
+  passeport:'<rect x="4.6" y="2.8" width="14.8" height="18.4" rx="2.2"/><circle cx="12" cy="10" r="3.2"/><path d="M8.8 17.2h6.4"/>',
+  /* — actions — */
+  poubelle: '<path d="M4.4 6.6h15.2"/><path d="M9.4 6.6V4.8a1.4 1.4 0 0 1 1.4-1.4h2.4a1.4 1.4 0 0 1 1.4 1.4v1.8"/><path d="M6.4 6.6v13a1.8 1.8 0 0 0 1.8 1.8h7.6a1.8 1.8 0 0 0 1.8-1.8v-13"/><path d="M10.2 10.8v6.4M13.8 10.8v6.4"/>',
+  crayon:   '<path d="M15.4 4.6a2.1 2.1 0 0 1 3 3L8.6 17.4l-4 1 1-4 9.8-9.8Z"/><path d="m14 6 3 3"/>',
+  plus:     '<path d="M12 5.2v13.6M5.2 12h13.6"/>',
+  envoyer:  '<path d="M4.2 11.8 20.4 4.2l-7.6 16.2-2.2-6.4-6.4-2.2Z"/><path d="m10.6 13.4 4.6-4.6"/>',
+  telecharger:'<path d="M12 3.6v11.2"/><path d="m7.4 10.4 4.6 4.6 4.6-4.6"/><path d="M4.4 19.8h15.2"/>',
+  partager: '<circle cx="18" cy="6" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="m8.3 10.8 7.4-3.6M8.3 13.2l7.4 3.6"/>',
+  scanner:  '<path d="M3.6 8.4V5.6a2 2 0 0 1 2-2h2.8M15.6 3.6h2.8a2 2 0 0 1 2 2v2.8M20.4 15.6v2.8a2 2 0 0 1-2 2h-2.8M8.4 20.4H5.6a2 2 0 0 1-2-2v-2.8"/><path d="M3.6 12h16.8"/>',
+  calendrier:'<rect x="3.4" y="5.4" width="17.2" height="15.2" rx="2"/><path d="M3.4 10.2h17.2M8.4 3.4v4M15.6 3.4v4"/><path d="M8 14h3v3H8z"/>',
+  lien:     '<path d="M10.4 13.6a3.4 3.4 0 0 0 5 .3l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1.5 1.5"/><path d="M13.6 10.4a3.4 3.4 0 0 0-5-.3L6 12.7a3.4 3.4 0 0 0 4.8 4.8l1.5-1.5"/>',
+  image:    '<rect x="3.2" y="5.2" width="17.6" height="13.6" rx="2"/><path d="m3.6 15.5 4.2-4a1.6 1.6 0 0 1 2.2 0l3.4 3.3"/><path d="m14.2 13.4 1.6-1.5a1.6 1.6 0 0 1 2.2 0l2.4 2.3"/><circle cx="9" cy="9.6" r="1.3"/>',
+  /* — état & sens — */
+  etincelle:'<path d="M12 3.2 13.6 8l4.8 1.6-4.8 1.6L12 16l-1.6-4.8L5.6 9.6 10.4 8 12 3.2Z"/><path d="m18.4 14.8.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/>',
+  ampoule:  '<path d="M9.4 18.4h5.2"/><path d="M10 21h4"/><path d="M8 13.4a5.4 5.4 0 1 1 8 0c-.8.9-1.3 1.7-1.4 2.6H9.4c-.1-.9-.6-1.7-1.4-2.6Z"/>',
+  bouclier: '<path d="M12 3 19.4 6v6c0 4.2-3 7.4-7.4 9-4.4-1.6-7.4-4.8-7.4-9V6L12 3Z"/><path d="m9 12 2.2 2.2L15.4 10"/>',
+  aide:     '<circle cx="12" cy="12" r="8.6"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.6v.4"/><path d="M12 17.2h.01"/>',
+  cle:      '<circle cx="8.4" cy="15.6" r="3.6"/><path d="m11 13 8-8"/><path d="m16.4 7.6 2 2M19 5l2 2"/>',
+  porte:    '<path d="M14.4 3.6H6.2a1.6 1.6 0 0 0-1.6 1.6v13.6a1.6 1.6 0 0 0 1.6 1.6h8.2"/><path d="m14.4 12 6 0M17.6 8.8 20.8 12l-3.2 3.2"/>',
+  balai:    '<path d="M14.4 3.6 20.4 9.6"/><path d="m10.6 7.4 6 6-6.6 6.6a2 2 0 0 1-2.8 0l-3.2-3.2a2 2 0 0 1 0-2.8l6.6-6.6Z"/><path d="m8 10 6 6"/>',
+  document: '<path d="M14 3.4H7.4a2 2 0 0 0-2 2v13.2a2 2 0 0 0 2 2h9.2a2 2 0 0 0 2-2V8L14 3.4Z"/><path d="M13.8 3.6V8h4.4"/><path d="M9 13h6M9 16.4h6"/>',
+  discussion:'<path d="M20.4 12.4a7.6 7.6 0 0 1-8.2 7.6l-5.4 1.4 1.4-4.2a7.6 7.6 0 1 1 12.2-4.8Z"/><path d="M9 11.6h.01M12 11.6h.01M15 11.6h.01"/>',
+  telephone:'<rect x="6.6" y="2.6" width="10.8" height="18.8" rx="2.4"/><path d="M10.6 18.6h2.8"/>',
+  fermer:   '<path d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"/>',
+  retour:   '<path d="M9.6 5.4 3.6 11.4l6 6"/><path d="M3.6 11.4h11a5.8 5.8 0 0 1 0 11.6h-1"/>'
+};
+/* Rend une icône. `taille` en px, `cls` pour les cas où il faut la viser en CSS. */
+function ICO(nom, taille, cls){
+  const d = ICO_D[nom];
+  if(!d) return '';
+  const t = taille || 18;
+  return `<svg class="ico-t${cls ? ' ' + cls : ''}" width="${t}" height="${t}" viewBox="0 0 24 24"`
+    + ' fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"'
+    + ` stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 }
 
 /* ---- Mascotte Acolyte : la Terre aux grands yeux, qui regarde autour d'elle
@@ -910,7 +1127,7 @@ function openGame(){
     ctx.globalAlpha = 1;
     /* points gagnés, qui s'élèvent et s'effacent */
     ctx.textAlign = 'center';
-    ctx.font = '900 17px Sora, system-ui, sans-serif';
+    ctx.font = '900 17px Fraunces, Georgia, serif';
     texts.forEach(t => {
       ctx.globalAlpha = Math.max(0, Math.min(1, t.life * 1.4));
       ctx.fillStyle = t.col;
@@ -1178,10 +1395,18 @@ function readPrefs(extra){
 }
 
 let _genBusy = false;   /* garde anti double-appel des générations IA */
-async function proposeTrips(extra = '', lucky = false, country = ''){
+/* Où le résultat de la recherche doit atterrir : 'page' (le parcours en trois
+   étapes) ou 'chat' (la discussion de l'assistant). Déclaré en `var` — il est
+   lu dans proposeTrips, bien avant sa position dans le fichier. */
+var _propVers = 'page';
+async function proposeTrips(extra = '', lucky = false, country = '', vers){
+  /* ⚠️ LA PORTE EST ICI, pas à l'entrée du site. C'est le premier geste qui
+     consomme réellement l'IA — donc le premier qui exige un compte. */
+  if(!exigeCompte('Crée ton compte pour lancer une recherche de destinations')) return;
   if(_genBusy) return;
+  _propVers = vers === 'chat' ? 'chat' : 'page';
   _genBusy = true;
-  _retryFns.propose = () => proposeTrips(extra, lucky, country);
+  _retryFns.propose = () => proposeTrips(extra, lucky, country, vers);
   const prefs = readPrefs(extra);
   state.prefs = prefs; save();
   const zone = $('#zoneResults');
@@ -1190,7 +1415,12 @@ async function proposeTrips(extra = '', lucky = false, country = ''){
     : lucky
     ? ['Roulette mondiale en cours… 🎲', 'Tirage de destinations inattendues…', 'Vérification budget & saison…', 'Presque prêt…']
     : ['Acolyte explore le monde pour toi… 🌍', 'Analyse de tes envies & ton budget…', 'Sélection de destinations réelles…', 'Transport & quartier pour chacune…', 'Presque prêt…'];
-  zone.innerHTML = `<div class="card">${loaderHTML(msgs[0])}</div>` + skelCards(3);
+  /* ⚠️ Le squelette de chargement ne se pose QUE sur la page. Depuis la
+     discussion, il peindrait dans un onglet qu'on ne regarde pas — et comme
+     renderDestinations n'y sera jamais appelé, il y resterait indéfiniment. */
+  if(_propVers === 'page'){
+    zone.innerHTML = `<div class="card">${loaderHTML(msgs[0])}</div>` + skelCards(3);
+  }
   let mi = 0;
   const msgTimer = setInterval(() => { mi++; const m = zone.querySelector('.loader-msg'); if(m) m.textContent = msgs[mi % msgs.length]; }, 2600);
   searchBar(true, lucky ? 'Roulette mondiale en cours… 🎲' : 'Acolyte explore le monde…');
@@ -1255,6 +1485,17 @@ Réponds UNIQUEMENT en JSON valide, structure exacte. Commence OBLIGATOIREMENT p
     state.destinations = d.destinations || [];
     state.seen = [...new Set([...(state.seen||[]), ...state.destinations.map(x=>x.nom)])].slice(-15);
     state.lastProps = d; save();
+    /* ⚠️ MÊME MOTEUR, DEUX SORTIES. Quand la demande vient de l'assistant, le
+       résultat s'affiche DANS la discussion : on ne bascule plus d'onglet, on
+       ne perd plus le fil de la conversation, et la phrase qui a produit ces
+       propositions reste juste au-dessus d'elles.
+       C'est la SORTIE qui change, pas la recherche : même prompt, mêmes
+       données réelles, même relecture croisée, mêmes garde-fous. Dupliquer
+       tout ça pour l'assistant aurait fait deux moteurs à tenir d'accord. */
+    if(_propVers === 'chat'){
+      iaAjouteCartes(d);
+      return;                       /* pas de changement d'étape, pas de pop-up */
+    }
     renderDestinations(d);
     gotoStep(2);
     /* → Questions de précision AVANT que tu ne choisisses : la pop-up s'ouvre ici */
@@ -1264,7 +1505,11 @@ Réponds UNIQUEMENT en JSON valide, structure exacte. Commence OBLIGATOIREMENT p
   }catch(e){
     const msg = e.message === 'RATE' ? 'Beaucoup de monde en ce moment — réessaie dans une minute.'
       : (e.name === 'AbortError' ? 'La recherche a mis trop de temps — réessaie.' : 'Un souci technique. Vérifie ta connexion et réessaie.');
-    if(e.message !== 'NO_KEY') zone.innerHTML = `<div class="card">${errHTML(msg, 'propose')}</div>`;
+    /* L'échec doit revenir là où la demande a été faite : dans la discussion si
+       elle en vient, sinon sur la page. Une erreur affichée dans un onglet
+       qu'on ne regarde pas équivaut à un silence. */
+    if(_propVers === 'chat'){ if(e.message !== 'NO_KEY') iaAjoute('aco', msg, true); }
+    else if(e.message !== 'NO_KEY') zone.innerHTML = `<div class="card">${errHTML(msg, 'propose')}</div>`;
     else zone.innerHTML = '';
   }finally{
     clearInterval(msgTimer);
@@ -1288,7 +1533,7 @@ function renderDestinations(d){
     const tIco = ({avion:'✈️',train:'🚆',voiture:'🚗'})[x.transport_conseille]||'✈️';
     html += `<div class="dest" data-i="${i}">
       <div class="dest-main">
-        <div class="flag">${esc(x.drapeau||'📍')}</div>
+        <div class="flag">${esc(drapeauOuPoint(x.drapeau))}</div>
         <h3>${esc(x.nom)}</h3><div class="country">${esc(x.pays)}</div>
         <p>${esc(x.resume)}</p>
       </div>
@@ -1323,7 +1568,7 @@ function renderDestinations(d){
     html += `<div class="card"><h3 style="margin:0 0 4px">📊 Comparatif</h3>
       <p class="sub" style="margin:0 0 10px">Tout est aligné — compare point par point, puis choisis ta colonne.</p>
       <div class="cmp-wrap"><table class="cmp">
-        <thead><tr><th></th>${D.map((x, i) => `<th data-i="${i}"><span class="cmp-flag">${esc(x.drapeau || '📍')}</span><br>${esc(x.nom)}</th>`).join('')}</tr></thead>
+        <thead><tr><th></th>${D.map((x, i) => `<th data-i="${i}"><span class="cmp-flag">${esc(drapeauOuPoint(x.drapeau))}</span><br>${esc(x.nom)}</th>`).join('')}</tr></thead>
         <tbody>
           ${rows.map(r => `<tr><th scope="row">${r[0]}</th>${r[1].map(v => `<td>${v}</td>`).join('')}</tr>`).join('')}
           <tr class="cmp-actions"><td></td>${D.map((x, i) => `<td><button class="btn sm cmp-choose" data-i="${i}">Choisir →</button></td>`).join('')}</tr>
@@ -1466,6 +1711,44 @@ function chooseTrip(i){
 /* ============================================================
    BOARDING PASS
 ============================================================ */
+/* ============================================================
+   LES DRAPEAUX NE SE DESSINENT PAS PARTOUT
+   ------------------------------------------------------------
+   ⚠️ Windows n'embarque AUCUNE police pour les indicateurs régionaux : un
+   « 🇮🇹 » parfaitement valide y sort en glyphes de repli — c'est le « Venise π »
+   qu'on voyait sur le billet. La donnée est bonne, c'est le RENDU qui n'existe
+   pas, donc aucun filtre sur la valeur ne peut y remédier.
+   On mesure donc une fois si le système sait le faire : un vrai drapeau est
+   dessiné comme UN seul glyphe, un système sans support en dessine DEUX, donc
+   plus large. Le repli est un marqueur neutre, qui lui s'affiche partout.
+   ⚠️ Mesuré une seule fois et mémorisé : c'est un test qui force un calcul de
+   rendu, on ne le refait pas à chaque carte de destination.
+============================================================ */
+/* ⚠️ « var », pas « let » — même piège que _blogIdx, et il est réel ici :
+   renderDestinations() vit ligne ~1439, soit 200 lignes AVANT cette
+   déclaration, et appelle drapeauOuPoint(). Avec « let », un affichage des
+   propositions déclenché pendant l'évaluation du fichier lirait la variable en
+   zone morte → ReferenceError, et plus aucune destination à l'écran. */
+var _drapeauxOK = null;
+function drapeauxDessinables(){
+  if(_drapeauxOK !== null) return _drapeauxOK;
+  try{
+    const c = document.createElement('canvas').getContext('2d');
+    c.font = '32px sans-serif';
+    /* 🇮🇹 rendu en drapeau = un glyphe ; sans support = deux lettres côte à
+       côte, donc nettement plus large qu'un caractère seul. */
+    _drapeauxOK = c.measureText('\u{1F1EE}\u{1F1F9}').width < c.measureText('\u{1F1EE}').width * 1.6;
+  }catch(e){ _drapeauxOK = false; }
+  return _drapeauxOK;
+}
+/* Le drapeau s'il est dessinable, sinon un marqueur qui l'est partout. */
+function drapeauOuPoint(d){
+  const s = String(d || '').trim();
+  if(!s) return '📍';
+  if(/^[\u{1F1E6}-\u{1F1FF}]{2}$/u.test(s)) return drapeauxDessinables() ? s : '📍';
+  return s;   /* le modèle a renvoyé autre chose qu'un drapeau : on le laisse */
+}
+
 function passHTML(){
   const t = state.trip, p = state.prefs || {};
   if(!t) return '';
@@ -1483,12 +1766,36 @@ function passHTML(){
     : '';
   const budget = plan?.budget?.total ? `${plan.budget.total} €` : (t.budget_estime || '—').replace(/\/pers.*$/i, '');
 
+  /* ⚠️ PLUS DE DRAPEAU DU TOUT, ET LA RAISON N'EST PAS UNE DONNÉE FAUSSE.
+     L'écran montrait « Venise π ». J'ai d'abord cru à une valeur abîmée venue
+     du modèle et posé un filtre sur la paire d'indicateurs régionaux. Vérifié
+     ensuite : la donnée est PARFAITE (U+1F1EE U+1F1F9 = 🇮🇹). C'est WINDOWS qui
+     ne sait pas dessiner les drapeaux — il n'embarque aucune police pour les
+     indicateurs régionaux, et les remplace par des glyphes de repli.
+     Aucun filtre ne peut donc corriger ça : la donnée est bonne, c'est le
+     rendu qui n'existe pas. Tout visiteur sous Windows — la majorité sur
+     ordinateur — voyait ce symbole à côté du nom de sa ville.
+     Un ornement qui casse sur une plateforme entière n'est pas un ornement,
+     c'est un défaut. Le pays est déjà écrit ailleurs dans le voyage ; on ne
+     perd aucune information. */
+
+  /* Icônes en SVG, tracé de 1,75 comme la barre de navigation — les émojis
+     précédents (📷 🖼️ 🔗 📅) se dessinaient différemment sur chaque système et
+     juraient avec le reste de l'interface, qui n'utilise que des tracés. */
+  const ICO = {
+    ticket: '<path d="M4 8.5A2 2 0 0 1 6 6.5h12a2 2 0 0 1 2 2v1a2.5 2.5 0 0 0 0 5v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1a2.5 2.5 0 0 0 0-5v-1Z"/><path d="M14 6.5v11" stroke-dasharray="2 2.5"/>',
+    postale: '<rect x="3.2" y="5.2" width="17.6" height="13.6" rx="2"/><path d="m3.6 15.5 4.2-4a1.6 1.6 0 0 1 2.2 0l3.4 3.3"/><path d="m14.2 13.4 1.6-1.5a1.6 1.6 0 0 1 2.2 0l2.4 2.3"/><circle cx="9" cy="9.6" r="1.3"/>',
+    lien: '<path d="M10.4 13.6a3.4 3.4 0 0 0 5 .3l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1.5 1.5"/><path d="M13.6 10.4a3.4 3.4 0 0 0-5-.3L6 12.7a3.4 3.4 0 0 0 4.8 4.8l1.5-1.5"/>',
+    agenda: '<rect x="3.4" y="5.4" width="17.2" height="15.2" rx="2"/><path d="M3.4 10.2h17.2M8.4 3.4v4M15.6 3.4v4"/><path d="M8 14h3v3H8z"/>'
+  };
+  const svg = d => `<svg class="pact-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+
   return `<div class="pass">
     <div class="pass-top">
       <div class="pass-route">
         <span class="iata">${esc(from)}</span>
         <span class="dash"></span>
-        <span class="plane">✈</span>
+        <span class="plane" aria-hidden="true">✈</span>
         <span class="dash"></span>
         <span class="iata">${esc(to)}</span>
       </div>
@@ -1496,7 +1803,7 @@ function passHTML(){
     </div>
 
     <div class="pass-info">
-      <div class="pi"><span class="pk">Destination</span><span class="pv">${esc(t.nom)} ${esc(t.drapeau || '')}</span></div>
+      <div class="pi"><span class="pk">Destination</span><span class="pv">${esc(t.nom)}</span></div>
       <div class="pi"><span class="pk">Dates</span><span class="pv">${esc(dates)}${nuits ? ` · ${nuits} n.` : ''}</span></div>
       <div class="pi"><span class="pk">Passagers</span><span class="pv">${esc(pax)}</span></div>
       <div class="pi"><span class="pk">Budget</span><span class="pv">${esc(budget)}${logt ? ` · ${esc(logt)}` : ''}</span></div>
@@ -1504,10 +1811,10 @@ function passHTML(){
 
     <div class="pass-tear">
       <div class="pass-acts">
-        <button class="pact" data-passpng title="Télécharger le ticket avec son QR code">📷<span>Ticket</span></button>
-        <button class="pact" data-postcard title="Créer une carte postale à partager">🖼️<span>Postale</span></button>
-        <button class="pact" data-sharelink title="Partager un lien qui importe ce voyage">🔗<span>Lien</span></button>
-        <button class="pact" data-ics title="Ajouter le programme à ton agenda">📅<span>Agenda</span></button>
+        <button class="pact" data-passpng title="Télécharger le ticket avec son QR code">${svg(ICO.ticket)}<span>Ticket</span></button>
+        <button class="pact" data-postcard title="Créer une carte postale à partager">${svg(ICO.postale)}<span>Postale</span></button>
+        <button class="pact" data-sharelink title="Partager un lien qui importe ce voyage">${svg(ICO.lien)}<span>Lien</span></button>
+        <button class="pact" data-ics title="Ajouter le programme à ton agenda">${svg(ICO.agenda)}<span>Agenda</span></button>
       </div>
     </div>
     <p class="pass-note">Ticket souvenir — ne permet pas d'embarquer. Le QR sert uniquement à importer ce voyage dans Acolyte.</p>
@@ -2168,7 +2475,9 @@ async function realData(){
 
 /* --- Relecture croisée : Groq vérifie le plan de Gemini, Gemini corrige si besoin --- */
 async function reviewPlan(d, basePrompt){
-  if(!hasGroq()) return d;
+  /* La relecture croisée est un BONUS : sans elle le plan reste valable. On la
+     saute pendant une mise au frais plutôt que de retarder le voyage. */
+  if(!groqDispo()) return d;
   try{
     const v = await groq(`Tu es un vérificateur impitoyable de plans de voyage. ${ctx()}
 PLAN À VÉRIFIER (JSON) : ${JSON.stringify(d).slice(0, 5500)}
@@ -2194,7 +2503,7 @@ Réponds en JSON : {"ok":true} si tout est cohérent, sinon {"ok":false,"problem
 /* Relecture croisée des PROPOSITIONS (étape 1) : Groq vérifie, Gemini corrige si besoin.
    Réglable via SET.verif ; jamais en mode surprise (on y veut de la liberté). */
 async function reviewProps(d, basePrompt){
-  if(!hasGroq() || !(d.destinations||[]).length) return d;
+  if(!groqDispo() || !(d.destinations||[]).length) return d;
   try{
     const v = await groq(`Tu es un vérificateur voyage strict. ${ctx()}
 PROPOSITIONS À VÉRIFIER (JSON) : ${JSON.stringify(d.destinations).slice(0, 4500)}
@@ -2212,7 +2521,11 @@ Réponds en JSON : {"ok":true} si tout est bon, sinon {"ok":false,"problemes":["
 
 async function loadPlan(force = false){
   const zone = $('#zonePlan');
+  /* ⚠️ Le raccourci « plan déjà en cache » passe AVANT la porte, et c'est
+     voulu : un voyage déjà généré (ou importé par un lien d'ami) se consulte
+     sans compte. On ne demande un compte que pour en FABRIQUER un nouveau. */
   if(state.cache.plan && !force){ renderPlan(state.cache.plan); syncModeFromPlan(state.cache.plan); return; }
+  if(!exigeCompte('Crée ton compte pour générer ton programme')) return;
   const t = state.trip;
   if(!t){ zone.innerHTML = errHTML('Choisis d’abord un voyage.'); return; }
   if(_genBusy) return;
@@ -2364,8 +2677,19 @@ function renderEvents(data){
     const deja = prog.some(j => (j.lieux || []).some(l => String(l).toLowerCase() === String(e.nom).toLowerCase()));
     return `<div class="item" style="align-items:flex-start">
       <div class="emo">${ico[String(e.type||'').toLowerCase()] || '📅'}</div>
+      <!-- ⚠️ LE BADGE DE DATE N'EST PLUS DANS LE <h4>. Il y était en flux
+           inline : dès que le nom était un peu long (« Festa del Redentore »),
+           la pastille se cassait EN PLEIN MILIEU sur deux lignes, moitié au
+           bout du titre, moitié en dessous — illisible, et ça n'avait plus
+           l'air d'une pastille du tout.
+           Un badge est un bloc indivisible : titre et badge deviennent deux
+           enfants d'un conteneur qui se replie proprement, le badge passant
+           entier à la ligne quand il n'y a plus la place. -->
       <div style="flex:1;min-width:0">
-        <h4>${esc(e.nom)} ${e.quand ? `<span class="tag cyan" style="font-size:.66rem">${esc(e.quand)}</span>` : ''}</h4>
+        <div class="ev-tete">
+          <h4>${esc(e.nom)}</h4>
+          ${e.quand ? `<span class="tag cyan ev-quand">${esc(e.quand)}</span>` : ''}
+        </div>
         <p class="hint" style="margin:2px 0 0">${esc(e.note || '')}</p>
       </div>
       <div class="side">${deja
@@ -3185,12 +3509,15 @@ function renderSections(d){
   zone.innerHTML = `
     <div class="card sections-card">
       <h2 class="sections-title">Ton voyage 🧳</h2>
-      <div class="plan-tabs" role="tablist" aria-label="Détails du voyage">
-        ${PLAN_TABS.map(t => `<button class="plan-tab${t.id === _planTab ? ' on' : ''}" data-plantab="${t.id}" role="tab" aria-selected="${t.id === _planTab}">
-          <span>${t.ico}</span>${esc(t.nom)}</button>`).join('')}
+      <div class="plan-tabs-wrap">
+        <div class="plan-tabs" role="tablist" aria-label="Détails du voyage">
+          ${PLAN_TABS.map(t => `<button class="plan-tab${t.id === _planTab ? ' on' : ''}" data-plantab="${t.id}" role="tab" aria-selected="${t.id === _planTab}">
+            <span>${t.ico}</span>${esc(t.nom)}</button>`).join('')}
+        </div>
       </div>
       <div class="plan-panel">${(panels[_planTab] || panTransport)(d)}</div>
     </div>`;
+  planTabsOmbre();
   if(_planTab === 'logement') loadHotels();
   if(_planTab === 'events') loadEvents();
   /* le bandeau trajet (avec #realPrice) est dans l'onglet Transport : on
@@ -3198,6 +3525,35 @@ function renderSections(d){
      PLAN (avion/train/voiture), pas state.mode qui a un autre vocabulaire. */
   if(_planTab === 'transport') autoRealPrices(d.transport?.mode);
 }
+
+/* ------------------------------------------------------------
+   L'INDICE DE DÉFILEMENT DE LA RANGÉE D'ONGLETS
+   ------------------------------------------------------------
+   La rangée déborde sur téléphone et son ascenseur est masqué : « Budget »
+   restait hors champ, et rien ne disait qu'on pouvait glisser. Un contenu
+   atteignable mais invisible équivaut à un contenu absent.
+   ⚠️ LE VOILE NE DOIT JAMAIS MENTIR. Il n'apparaît que du côté où il reste
+   RÉELLEMENT du contenu — sinon c'est une invitation à glisser vers du vide,
+   ce qui est pire que pas d'indice du tout. D'où la marge de 2 px : sans elle,
+   des largeurs fractionnaires (313,6 px) laissent le voile allumé en butée.
+------------------------------------------------------------ */
+function planTabsOmbre(){
+  const box = $('.plan-tabs');
+  const wrap = box && box.parentElement;
+  if(!box || !wrap || !wrap.classList.contains('plan-tabs-wrap')) return;
+  const reste = box.scrollWidth - box.clientWidth;
+  const x = box.scrollLeft;
+  wrap.classList.toggle('a-gauche', x > 2);
+  wrap.classList.toggle('a-droite', reste > 2 && x < reste - 2);
+}
+/* Un seul écouteur, posé une fois : la rangée est reconstruite à chaque
+   changement d'onglet, donc un écouteur posé SUR elle serait perdu. On écoute
+   donc en capture, au niveau du document. */
+document.addEventListener('scroll', e => {
+  const t = e.target;
+  if(t && t.classList && t.classList.contains('plan-tabs')) planTabsOmbre();
+}, true);
+window.addEventListener('resize', () => { try{ planTabsOmbre(); }catch(e){} });
 
 /* changement d'onglet : on ne re-rend QUE la barre des détails */
 function goPlanTab(id, focus){
@@ -3297,6 +3653,7 @@ function trackPrice(prix, source){
 
 /* --- PLAN B : régénère UNE seule journée (sans tout refaire) --- */
 async function planB(jour){
+  if(!exigeCompte('Crée ton compte pour refaire une journée')) return;
   const d = state.cache.plan;
   if(!d?.programme) return;
   const jr = d.programme.find(x => +x.jour === +jour);
@@ -3431,7 +3788,14 @@ async function loadDayDetail(jour){
   box.dataset.open = '1';
   _openDays.add(String(jour));   /* mémorisé : survit à un changement d'onglet */
   state.cache.days = state.cache.days || {};
+  /* Une journée DÉJÀ détaillée se relit sans compte — c'est la construire qui
+     coûte un appel. Le repli conserve donc l'état plié/déplié pour tout le
+     monde, et la porte ne s'ouvre qu'au moment de fabriquer. */
   if(state.cache.days[jour]){ box.innerHTML = timelineHTML(state.cache.days[jour], jour); return; }
+  if(!exigeCompte('Crée ton compte pour détailler cette journée')){
+    box.dataset.open = '0'; _openDays.delete(String(jour)); box.innerHTML = '';
+    return;
+  }
   box.innerHTML = loaderHTML('Construction de la journée heure par heure…');
   const jr = (state.cache.plan?.programme || []).find(x => String(x.jour) === String(jour)) || {};
   const pace = { doux:'doux (peu d\'activités, du temps libre)', equilibre:'équilibré (2-3 activités)', intense:'intense (programme dense)' }[SET?.rythme] || 'équilibré';
@@ -3483,7 +3847,7 @@ function openQsPopup(qs){
   const pg = $('#qsProg');
   if(pg) pg.innerHTML = _qsList.map(() => '<i></i>').join('');
   $('#zoneQs').innerHTML = _qsList.map((q, i) => `
-    <h4 style="margin:14px 0 6px;font-family:'Sora'">${i+1}. ${esc(q.texte)}</h4>
+    <h4 style="margin:14px 0 6px;font-family:'Fraunces',Georgia,serif">${i+1}. ${esc(q.texte)}</h4>
     <div class="chips even" data-qi="${i}">${q.options.map(o=>`<div class="chip qsopt" data-qi="${i}" data-a="${esc(o)}">${esc(o)}</div>`).join('')}</div>`).join('');
   $('#btnQsGo').disabled = true;
   $('#ovQs').classList.add('show');
@@ -3610,6 +3974,9 @@ const _e3 = $('#tgPlane'); if(_e3) _e3.onclick = () => setMode('plane');
 const _e4 = $('#tgCar'); if(_e4) _e4.onclick   = () => setMode('car');
 const _e5 = $('#tgTrain'); if(_e5) _e5.onclick = () => setMode('train');
 function setMode(m){
+  /* Choix explicite : il libère « mode » de toute quarantaine en cours (voir
+     etatChoixExplicite). À faire AVANT save(), sinon on réenregistre la boîte. */
+  etatChoixExplicite('mode');
   state.mode = m; state.modeManual = true; save();
   $('#tgPlane').classList.toggle('on', m==='plane');
   $('#tgCar').classList.toggle('on', m==='car');
@@ -3928,7 +4295,7 @@ async function ryCalendar(){
         const best = f.price.value === min;
         return `<div style="min-width:74px;text-align:center;padding:9px 6px;border-radius:var(--r-md);border:2px solid ${best?'var(--ok)':'var(--stroke)'};background:${best?'rgba(34,197,94,.15)':'var(--secondary)'}">
           <div style="font-size:.68rem;color:var(--txt-2)">${esc(frDate(f.day))}</div>
-          <div style="font-family:'Sora';font-weight:900;font-size:.9rem;color:${best?'var(--ok)':'var(--txt)'}">${f.price.value.toFixed(0)}€</div>
+          <div style="font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:.9rem;color:${best?'var(--ok)':'var(--txt)'}">${f.price.value.toFixed(0)}€</div>
           ${f.soldOut?'<div style="font-size:.6rem;color:var(--danger)">complet</div>':''}
         </div>`;
       }).join('') +
@@ -5012,13 +5379,13 @@ async function buildDayMap(jour){
     g.fillStyle = '#101010'; g.beginPath(); g.arc(x + 2, y + 2, 15, 0, 7); g.fill();
     g.fillStyle = '#FFE600'; g.beginPath(); g.arc(x, y, 15, 0, 7); g.fill();
     g.strokeStyle = '#101010'; g.lineWidth = 3; g.stroke();
-    g.fillStyle = '#101010'; g.font = '900 16px Sora, Arial'; g.textAlign = 'center';
+    g.fillStyle = '#101010'; g.font = '900 16px Fraunces, Georgia'; g.textAlign = 'center';
     g.fillText(String(i + 1), x, y + 6); g.textAlign = 'left';
   });
   /* bandeau titre + légende + attribution */
   g.fillStyle = '#FFE600'; g.fillRect(0, 0, 768, 40);
   g.strokeStyle = '#101010'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, 765, 37);
-  g.fillStyle = '#101010'; g.font = '900 19px Sora, Arial';
+  g.fillStyle = '#101010'; g.font = '900 19px Fraunces, Georgia';
   g.fillText(`Jour ${jour} — ${String(jr.resume || '').slice(0, 44)}`, 14, 27);
   const leg = pts.map((p, i) => `${i + 1}·${String(p.nom).split(',')[0].slice(0, 18)}`).join('   ');
   g.fillStyle = 'rgba(255,255,255,.94)'; g.fillRect(0, 512 - 30, 768, 30);
@@ -5260,7 +5627,7 @@ async function loadMeteo(){
         <div style="font-size:.74rem;color:var(--txt-2);text-transform:capitalize">${jour}</div>
         <div style="font-size:1.6rem;margin:4px 0">${w[0]}</div>
         <div style="font-size:.72rem;color:var(--txt-2)">${w[1]}</div>
-        <div style="font-family:'Sora';font-weight:900;margin-top:4px">${Math.round(d.daily.temperature_2m_max[i])}°<span style="color:var(--txt-2);font-weight:400"> / ${Math.round(d.daily.temperature_2m_min[i])}°</span></div>
+        <div style="font-family:'Fraunces',Georgia,serif;font-weight:900;margin-top:4px">${Math.round(d.daily.temperature_2m_max[i])}°<span style="color:var(--txt-2);font-weight:400"> / ${Math.round(d.daily.temperature_2m_min[i])}°</span></div>
         <div style="font-size:.7rem;color:#00F0FF;margin-top:3px;font-weight:800">💧 ${d.daily.precipitation_probability_max[i]??0}%</div>
       </div>`;
     }).join('');
@@ -5459,6 +5826,40 @@ function authShow(which){
 ============================================================ */
 const LS_TOKEN = 'acolite_token';
 const authToken = () => { try{ return localStorage.getItem(LS_TOKEN) || ''; }catch(e){ return ''; } };
+/* ⚠️ LE PRÉDICAT DE CONNEXION, NOMMÉ UNE FOIS.
+   requireAuth() ne RENVOIE rien : c'est une fonction d'AIGUILLAGE — elle entre
+   dans l'app ou affiche l'écran de connexion, puis s'arrête. Je l'avais prise
+   pour un booléen dans l'assistant (`if(!requireAuth()) return;`) : comme elle
+   renvoie undefined dans toutes ses branches, la garde se déclenchait TOUJOURS
+   et le bouton « Envoyer » ne faisait rien — connecté ou non, sans une erreur.
+   Une fonction dont le nom commence par « require » a l'air d'un test ; celle-ci
+   n'en est pas un. D'où ce prédicat séparé, qui porte la condition réelle et
+   sert désormais de source unique aux deux. */
+const estConnecte = () => {
+  try{ return !!(getUser() && authToken() && localStorage.getItem(LS_AUTH) === '1'); }
+  catch(e){ return false; }
+};
+/* Vrai quand on parcourt l'app sans compte. Déclarés en `var` : requireAuth()
+   et les points d'entrée IA vivent bien plus haut dans le fichier, et un
+   `let` les mettrait en zone morte au démarrage — le piège du _blogIdx. */
+var _visiteLibre = false;
+var _authForcee  = false;   /* mis à vrai quand on demande VOLONTAIREMENT l'écran */
+
+/* ⚠️ LA PORTE, AU MOMENT OÙ ELLE SERT.
+   À appeler juste avant toute action qui passe par l'IA. Renvoie true si on
+   peut continuer ; sinon elle explique POURQUOI on demande un compte, ouvre
+   l'écran de connexion, et renvoie false.
+   Dire la raison n'est pas une politesse : sans elle, un écran de connexion qui
+   surgit après un clic ressemble à une panne. */
+function exigeCompte(raison){
+  if(estConnecte()) return true;
+  toast('🔑 ' + (raison || 'Un compte est nécessaire pour cette action'));
+  _authForcee = true;
+  _visiteLibre = false;
+  try{ requireAuth(); }catch(e){}
+  _authForcee = false;
+  return false;
+}
 /* Vrai dès qu'un 401 est tombé : on cesse alors d'appeler les routes
    authentifiées. Déclaré ICI, avant setToken qui s'en sert — le mettre plus bas
    marcherait par chance (setToken n'est appelé qu'à l'exécution), mais un
@@ -6581,13 +6982,42 @@ const _eAide = $('#pfAide'); if(_eAide) _eAide.onclick = () => {
   const nx = $('#onboardNext'); if(nx) nx.onclick = () => { if(_onbI < ONB_STEPS.length - 1){ _onbI++; renderOnboard(); } else closeOnboard(); };
   const sk = $('#onboardSkip'); if(sk) sk.onclick = closeOnboard;
 }
+/* ============================================================
+   L'ENTRÉE N'EST PLUS UN MUR
+   ------------------------------------------------------------
+   L'écran de connexion s'ouvrait AVANT tout : on ne voyait rien d'Acolyte tant
+   qu'on n'avait pas créé un compte. Pour quelqu'un qui découvre le site, c'est
+   un péage devant une vitrine fermée.
+   Il s'ouvre désormais directement. La connexion reste nécessaire, mais elle
+   est demandée AU MOMENT où elle sert — pas une seconde avant.
+
+   ⚠️ POURQUOI ON NE PEUT PAS LA SUPPRIMER TOUT À FAIT, et c'est vérifié dans le
+   backend, pas supposé : `aiGuard()` répond 401 « Connecte-toi pour utiliser
+   Acolyte » sur /gemini, /groq, /hotels et le relais. Le compte n'est pas une
+   formalité d'interface, c'est ce qui porte le compteur de quota (AI_MAX_H par
+   heure et par compte). Un profil local fabriqué côté navigateur ne franchit
+   pas cette porte : l'app s'ouvrirait, et RIEN ne se générerait — on aurait
+   déplacé le mur au lieu de l'enlever.
+   Ce qui change vraiment : on peut tout PARCOURIR sans compte (le journal, la
+   carte, un voyage importé, ses réglages), et le compte n'est demandé qu'à la
+   première action qui appelle l'IA.
+============================================================ */
+/* ⚠️ NE RENVOIE RIEN — c'est un AIGUILLAGE, pas un test. Pour savoir si
+   quelqu'un est connecté, utilise estConnecte(). */
 function requireAuth(){
   const u = getUser();
   /* la présence d'un jeton fait foi : c'est le serveur qui tranchera à la
      première synchronisation si la session est encore valable */
-  if(u && authToken() && localStorage.getItem(LS_AUTH) === '1'){
+  if(estConnecte()){
     enterApp();
     pullSync();
+    return;
+  }
+  /* Pas de session : on ouvre quand même. `_visiteLibre` dit au reste de l'app
+     qu'on navigue sans compte — c'est lui que lisent les points d'entrée IA. */
+  if(!_authForcee){
+    _visiteLibre = true;
+    enterApp();
     return;
   }
   $('#authWrap').classList.remove('hidden');
@@ -6600,18 +7030,32 @@ function requireAuth(){
    CATÉGORIES — 🗺️ Carte · 🤖 Voyage · 👤 Profil
 ============================================================ */
 function switchCat(cat){
+  /* (Le renvoi « Assistant → Voyage sur petit écran » a été retiré : l'onglet
+     existe désormais sur téléphone aussi, il n'y a plus rien à refuser.) */
   $$('.catnav button').forEach(b => b.classList.toggle('on', b.dataset.cat === cat));
   $('#catTrip').classList.toggle('hidden', cat !== 'trip');
   $('#catMap').classList.toggle('hidden', cat !== 'map');
   $('#catProfile').classList.toggle('hidden', cat !== 'profile');
   $('#catBlog')?.classList.toggle('hidden', cat !== 'blog');
+  $('#catIA')?.classList.toggle('hidden', cat !== 'ia');
   window.scrollTo({top:0});
   /* Un compteur par ecran : c'est ce qui dit si le blog ou la carte servent
      vraiment, ou si personne n'y va jamais. */
-  statCompte({ map:'carte_ouverte', blog:'blog_ouvert', trip:'voyage_ouvert' }[cat], true);
+  statCompte({ map:'carte_ouverte', blog:'blog_ouvert', trip:'voyage_ouvert', ia:'assistant_ouvert' }[cat], true);
   if(cat === 'map') buildProjectMap();
   if(cat === 'profile'){ renderProfile(); renderSettings(); }
   if(cat === 'blog') openBlog();
+  /* Le fil peut avoir changé depuis le dernier passage (autre appareil, via la
+     synchro) : on le relit à l'ouverture plutôt que de garder l'affichage
+     construit au chargement de la page. */
+  if(cat === 'ia' && typeof iaRender === 'function'){
+    iaRender();
+    if(typeof iaHauteur === 'function') iaHauteur();
+    /* L'avertissement de bêta arrive ICI, à la première ouverture de l'onglet —
+       pas au chargement de l'app. Quelqu'un qui ne vient jamais sur l'assistant
+       n'a aucune raison de voir une pop-up à son sujet. */
+    if(typeof iaBetaSiPremiereFois === 'function') iaBetaSiPremiereFois();
+  }
   /* états vides : pas de voyage → invitations plutôt qu'écrans vides */
   const noTrip = !state.trip;
   $('#catMap')?.classList.toggle('empty', noTrip);
@@ -6712,6 +7156,38 @@ function renderRail(){
         <span class="rs-n rs-cnt">${n}</span>
       </li>`;
     }).join('');
+  }else if(_cat === 'ia'){
+    /* ---- La colonne de l'assistant : L'HISTORIQUE DE LA CONVERSATION ----
+       Elle listait « ce qu'Acolyte sait faire » : trois lignes fixes, vraies au
+       premier passage et inutiles ensuite. Or dans une conversation longue,
+       c'est retrouver SA question d'il y a dix messages qui coûte — un fil se
+       parcourt mal en remontant à l'aveugle.
+       On ne liste donc QUE les demandes du voyageur : ce sont ses repères à
+       lui, et les réponses d'Acolyte n'en sont pas (il ne s'en souvient pas
+       comme d'un point de repère). Un clic ramène au message. */
+    titre = isEN() ? 'Your questions' : 'Tes demandes';
+    const L = Array.isArray(state.chatLog) ? state.chatLog : [];
+    /* On garde l'index RÉEL dans le fil : c'est lui qui sert d'ancre, et il ne
+       doit pas se décaler quand on ne retient qu'un message sur deux. */
+    const miennes = L.map((m, i) => ({ m, i })).filter(x => x.m && x.m.qui === 'moi');
+    if(!miennes.length){
+      html = `<li class="off"><span class="rs-n">—</span><span class="rs-t"><b>${
+        esc(isEN() ? 'No question yet' : 'Aucune demande')}</b><em>${
+        esc(isEN() ? 'Your questions will be listed here' : 'Tes demandes s’afficheront ici')}</em></span></li>`;
+    }else{
+      /* Les plus RÉCENTES en premier : dans une conversation, c'est ce qu'on
+         vient de dire qu'on relit, pas le début. Plafonné à 20 — au-delà la
+         colonne devient elle-même une chose à parcourir. */
+      html = miennes.slice(-20).reverse().map(({ m, i }) => {
+        const t = String(m.t || '').replace(/\s+/g, ' ').trim();
+        const court = t.length > 46 ? t.slice(0, 45) + '…' : t;
+        const h = new Date(m.ts || Date.now()).toLocaleTimeString(LOC(), { hour:'2-digit', minute:'2-digit' });
+        return `<li data-rail="iah:${i}" title="${esc(t.slice(0, 200))}">
+          <span class="rs-n rs-h">${esc(h)}</span>
+          <span class="rs-t"><b>${esc(court)}</b></span>
+        </li>`;
+      }).join('');
+    }
   }else{
     const n = state.step || 1;
     const bloque2 = !(state.destinations || []).length, bloque3 = !state.trip;
@@ -6741,6 +7217,17 @@ document.addEventListener('click', e => {
   if(!li || li.classList.contains('off')) return;
   const [genre, val] = li.dataset.rail.split(':');
   if(genre === 'step') gotoStep(+val);
+  /* Historique de l'assistant : on ramène au message, et on le SIGNALE.
+     Faire défiler sans rien marquer laisse chercher lequel des messages
+     visibles était celui qu'on venait de demander. */
+  else if(genre === 'iah'){
+    const cible = document.querySelector('#iaFil .ia-msg[data-i="' + Number(val) + '"]');
+    if(cible){
+      cible.scrollIntoView({ block:'center', behavior: motionOff() ? 'auto' : 'smooth' });
+      cible.classList.add('vise');
+      setTimeout(() => cible.classList.remove('vise'), 1600);
+    }
+  }
   else if(genre === 'day'){
     /* renderRail() remplace les <li> : si l'activation venait du clavier, le
        focus tomberait dans le vide. On le repose sur la nouvelle ligne active,
@@ -7681,25 +8168,221 @@ document.addEventListener('keydown', e => {
 });
 
 /* --- Profil : infos + stats + paramètres --- */
+/* ============================================================
+   LE PASSEPORT VOYAGEUR
+   ------------------------------------------------------------
+   ⚠️ CE QUI A ÉTÉ RETIRÉ, ET POURQUOI : le pseudo se changeait par un
+   `prompt()` natif. Une boîte du navigateur ne se met pas au thème, ne se
+   traduit pas, bloque tout le fil d'exécution, et — surtout — ne porte qu'UN
+   champ. C'est pour ça qu'il n'y avait ni avatar, ni devise, ni contact
+   d'urgence : il n'y avait pas de place pour les demander. Une modale les
+   porte tous, et le geste devient « modifier mon passeport » plutôt que
+   « changer une chaîne de caractères ».
+============================================================ */
+const PP_AVATARS = ['🌍','✈️','🎒','🧭','🏖️','🏔️','🚆','🗺️','⛵','🏛️','🌋','🐘'];
+const LS_PP = 'acolite_passeport';
+
+/* Le passeport vit à part du compte : le compte porte ce que le SERVEUR
+   connaît (email, pseudo), le passeport ce qui ne quitte jamais l'appareil. */
+function ppLire(){
+  try{ return JSON.parse(localStorage.getItem(LS_PP)) || {}; }catch(e){ return {}; }
+}
+function ppEcrire(p){ lsSet(LS_PP, JSON.stringify(p || {})); }
+
+/* Le niveau : il se déduit de ce qu'on a fait, il ne s'achète pas et ne se
+   règle pas. Les seuils sont volontairement bas — un niveau qu'on n'atteint
+   jamais ne récompense personne. */
+function ppNiveau(n){
+  if(n >= 10) return 'Globe-trotteur';
+  if(n >= 5)  return 'Grand voyageur';
+  if(n >= 2)  return 'Baroudeur';
+  if(n >= 1)  return 'Explorateur';
+  return 'Nouveau venu';
+}
+
+function ppBadges(){
+  const h = getHistory(), n = h.length;
+  const t = state.trip, c = state.cache || {};
+  const jours = Object.keys(c.days || {}).length;
+  const pays = new Set(h.map(x => x && x.pays).filter(Boolean)).size;
+  return [
+    { i:'🧳', nom:'Premier départ',   d:'Préparer un voyage',            ok: n >= 1 },
+    { i:'🗺️', nom:'Cartographe',      d:'Détailler une journée',          ok: jours >= 1 },
+    { i:'📅', nom:'Organisé',         d:'Détailler 3 journées',           ok: jours >= 3 },
+    { i:'🌏', nom:'Deux pays',        d:'Préparer 2 pays différents',     ok: pays >= 2 },
+    { i:'⭐', nom:'Habitué',          d:'Préparer 5 voyages',             ok: n >= 5 },
+    { i:'📴', nom:'Hors-ligne',       d:'Installer Acolyte sur l’appareil', ok: pwaInstalle() }
+  ];
+}
+
 function renderProfile(){
-  const u = getUser(); if(!u) return;
-  const pseudo = u.pseudo || u.email.split('@')[0];
-  /* L'INITIALE seule, pas le pseudo entier : c'est un rond de 58 px (maquette
-     1g), et « Sacha » y tenait avant parce que le bloc était un pavé large
-     comme la carte. Array.from et non pseudo[0] : une initiale peut être un
-     emoji ou une lettre accentuée composée, que l'indexation couperait en deux.
-     Le nom complet reste juste à côté, dans #pfEmail — rien n'est perdu. */
-  $('#pfAvatar').textContent = (Array.from(pseudo)[0] || '?').toUpperCase();
-  $('#pfAvatar').setAttribute('aria-hidden', 'true');
-  $('#pfEmail').innerHTML = `${esc(pseudo)} <span style="cursor:pointer;font-size:.9rem" id="pfEditPseudo" title="Changer de pseudo">✏️</span>`;
+  const u = getUser();
+  const pp = ppLire();
+  const av = $('#pfAvatar'), nom = $('#pfEmail'), meta = $('#pfMeta');
+  if(!av || !nom || !meta) return;
+
+  /* ⚠️ Le profil s'affiche AUSSI sans compte, depuis que l'entrée n'est plus
+     un mur : `u` peut être null. Avant, la fonction sortait immédiatement et
+     l'écran restait sur ses tirets. */
+  const pseudo = (u && (u.pseudo || String(u.email || '').split('@')[0])) || 'Voyageur';
+  const h = getHistory();
+
+  av.textContent = pp.avatar || PP_AVATARS[0];
+  nom.textContent = pseudo;
+  const niv = $('#pfNiveau'); if(niv) niv.textContent = ppNiveau(h.length);
+  const bio = $('#pfBio'); if(bio) bio.textContent = pp.bio || '';
+
   /* connecté = vérifié : le serveur refuse la connexion tant que l'adresse
      n'est pas confirmée, il n'y a donc plus d'état intermédiaire à afficher */
-  $('#pfMeta').innerHTML = `${esc(u.email)} · ${authToken() ? '☁️ synchronisé' : '📴 hors ligne'}`
-    + (u.created ? ` · membre depuis le ${new Date(u.created).toLocaleDateString(LOC())}` : '');
-  const _e24 = $('#pfEditPseudo'); if(_e24) _e24.onclick = () => {
-    const np = prompt('Ton nouveau pseudo :', pseudo);
-    if(np && np.trim()){ u.pseudo = np.trim().slice(0,20); setUser(u); renderProfile(); toast('Pseudo mis à jour ✔'); }
-  };
+  meta.textContent = u
+    ? `${u.email} · ${authToken() ? '☁️ synchronisé' : '📴 hors ligne'}`
+      + (u.created ? ` · membre depuis le ${new Date(u.created).toLocaleDateString(LOC())}` : '')
+    : 'Visite libre — crée un compte pour générer tes voyages';
+
+  /* --- Les chiffres --- */
+  const jours = Object.keys((state.cache || {}).days || {}).length;
+  const stats = [
+    ['Voyages préparés', String(h.length)],
+    ['Journées détaillées', String(jours)],
+    ['Ville de départ', pp.home || (state.prefs && state.prefs.from) || '—'],
+    ['Hors-ligne', pwaInstalle() ? '✔ installé' : 'navigateur']
+  ];
+  const box = $('#pfStats');
+  if(box) box.innerHTML = stats.map(([k, v]) =>
+    `<div class="pp-stat"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join('');
+
+  /* --- Le voyage en cours, avec ses raccourcis --- */
+  const zv = $('#pfVoyageActif');
+  if(zv){
+    const t = state.trip;
+    zv.innerHTML = t
+      ? `<div class="pp-voyage">
+           <div class="pp-voyage-i" aria-hidden="true">🧳</div>
+           <div class="pp-voyage-t">
+             <h3>${esc(t.nom || '?')}${t.pays ? ' · ' + esc(t.pays) : ''}</h3>
+             <p>${esc(state.prefs && state.prefs.from ? 'Départ de ' + state.prefs.from : 'Voyage en préparation')}${
+               jours ? ` · ${jours} journée${jours > 1 ? 's' : ''} détaillée${jours > 1 ? 's' : ''}` : ''}</p>
+           </div>
+         </div>
+         <div class="pp-raccourcis">
+           <button class="btn sm ghost" data-ppgo="trip">🧭 Ouvrir le voyage</button>
+           <button class="btn sm ghost" data-ppgo="map">🗺️ Voir la carte</button>
+           <button class="btn sm ghost" data-ppgo="ia">✨ Demander à l’assistant</button>
+         </div>`
+      : `<div class="pp-voyage">
+           <div class="pp-voyage-i" aria-hidden="true">✈️</div>
+           <div class="pp-voyage-t">
+             <h3>Aucun voyage en cours</h3>
+             <p>Décris une envie, Acolyte s’occupe du reste.</p>
+           </div>
+         </div>
+         <div class="pp-raccourcis">
+           <button class="btn sm" data-ppgo="trip">✨ Commencer un voyage</button>
+         </div>`;
+  }
+
+  /* --- Les badges --- */
+  const zb = $('#pfBadges');
+  if(zb) zb.innerHTML = ppBadges().map(b =>
+    `<div class="pp-badge${b.ok ? '' : ' off'}">
+       <span class="pb-i" aria-hidden="true">${b.i}</span>
+       <span class="pb-t"><b>${esc(b.nom)}</b><em>${esc(b.ok ? 'Débloqué' : b.d)}</em></span>
+     </div>`).join('');
+}
+
+/* Les raccourcis du passeport : un seul écouteur, posé une fois — le bloc est
+   reconstruit à chaque rendu, un écouteur posé dessus serait perdu. */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-ppgo]');
+  if(!b) return;
+  const ou = b.dataset.ppgo;
+  switchCat(ou);
+  if(ou === 'trip' && !state.trip) gotoStep(1);
+});
+
+/* ---- La modale d'édition ---- */
+function ppOuvreEdition(){
+  const u = getUser() || {}, pp = ppLire();
+  const pseudo = u.pseudo || String(u.email || '').split('@')[0] || '';
+  const choisi = pp.avatar || PP_AVATARS[0];
+  const grille = $('#edAvatars');
+  if(grille) grille.innerHTML = PP_AVATARS.map(a =>
+    `<button type="button" class="ed-av${a === choisi ? ' on' : ''}" data-edav="${esc(a)}"
+             aria-label="Avatar ${esc(a)}" aria-pressed="${a === choisi}">${a}</button>`).join('');
+  const p = (id, v) => { const e = $(id); if(e) e.value = v || ''; };
+  p('#edPseudo', pseudo);
+  p('#edBio', pp.bio);
+  p('#edHome', pp.home || (state.prefs && state.prefs.from));
+  p('#edUrgence', pp.urgence);
+  p('#edEmail', u.email);
+  const dv = $('#edDevise'); if(dv) dv.value = pp.devise || 'EUR';
+  $('#ovProfil')?.classList.add('show');
+}
+/* Le choix d'avatar : délégué, parce que la grille est reconstruite à chaque
+   ouverture. */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-edav]');
+  if(!b) return;
+  $$('#edAvatars .ed-av').forEach(x => { x.classList.remove('on'); x.setAttribute('aria-pressed','false'); });
+  b.classList.add('on'); b.setAttribute('aria-pressed','true');
+});
+function ppEnregistre(){
+  const u = getUser();
+  const pp = ppLire();
+  const v = id => ($(id) && $(id).value || '').trim();
+  const choisi = $('#edAvatars .ed-av.on');
+  pp.avatar  = choisi ? choisi.dataset.edav : (pp.avatar || PP_AVATARS[0]);
+  pp.bio     = v('#edBio').slice(0, 70);
+  pp.home    = v('#edHome').slice(0, 60);
+  pp.urgence = v('#edUrgence').slice(0, 80);
+  pp.devise  = ($('#edDevise') && $('#edDevise').value) || 'EUR';
+  ppEcrire(pp);
+  /* Le pseudo appartient au COMPTE, pas au passeport : il est synchronisé. */
+  const np = v('#edPseudo').slice(0, 20);
+  if(u && np && np !== (u.pseudo || '')){ u.pseudo = np; setUser(u); }
+  /* La ville de départ nourrit aussi les valeurs par défaut du questionnaire —
+     la saisir deux fois serait absurde. */
+  if(pp.home){ const sh = $('#stHome'); if(sh && !sh.value) sh.value = pp.home; }
+  $('#ovProfil')?.classList.remove('show');
+  renderProfile();
+  try{ majNavTools(); }catch(e){}
+  toast('✔ Passeport mis à jour');
+}
+
+/* ---- Les quatre onglets ---- */
+const PF_PANNEAUX = { passeport:'#pfPanPasseport', ia:'#pfPanIa', look:'#pfPanLook', outils:'#pfPanOutils' };
+function pfOnglet(id){
+  if(!PF_PANNEAUX[id]) id = 'passeport';
+  $$('.pf-tab').forEach(b => {
+    const on = b.dataset.pftab === id;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  Object.entries(PF_PANNEAUX).forEach(([k, sel]) => $(sel)?.classList.toggle('hidden', k !== id));
+  pfTabsOmbre();
+}
+/* Même indice de défilement que la rangée « Ton voyage » — deux barres qui se
+   ressemblent doivent se comporter pareil. */
+function pfTabsOmbre(){
+  const box = $('#pfTabs'), wrap = box && box.parentElement;
+  if(!box || !wrap) return;
+  const reste = box.scrollWidth - box.clientWidth, x = box.scrollLeft;
+  wrap.classList.toggle('a-gauche', x > 2);
+  wrap.classList.toggle('a-droite', reste > 2 && x < reste - 2);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pftab]');
+  if(b) pfOnglet(b.dataset.pftab);
+});
+document.addEventListener('scroll', e => {
+  if(e.target && e.target.id === 'pfTabs') pfTabsOmbre();
+}, true);
+window.addEventListener('resize', () => { try{ pfTabsOmbre(); }catch(e){} });
+
+{
+  const e = $('#pfEdit');   if(e) e.onclick = ppOuvreEdition;
+  const a = $('#pfAvatar'); if(a) a.onclick = ppOuvreEdition;
+  const s = $('#edSave');   if(s) s.onclick = ppEnregistre;
 }
 const _e25 = $('#pfExport'); if(_e25) _e25.onclick = () => $('#btnExport').click();
 
@@ -8227,7 +8910,7 @@ async function passPNG(){
   const CW = W - M * 2, CH = H - M * 2 - 12;        /* carte */
   const STUB = 300;                                  /* largeur du talon */
   /* la police du site, si elle est déjà chargée sur la page */
-  try{ await document.fonts.load('900 76px Sora'); await document.fonts.load('800 15px Sora'); }catch(e){}
+  try{ await document.fonts.load('900 76px Fraunces'); await document.fonts.load('800 15px Fraunces'); }catch(e){}
   const fit = (txt, size, max, weight = '700', fam = 'Inter, Arial') => {
     let px = size;
     do { g.font = `${weight} ${px}px ${fam}`; px -= 1; } while(g.measureText(txt).width > max && px > 9);
@@ -8249,18 +8932,18 @@ async function passPNG(){
   /* logo : carré noir + A jaune, comme l'écran de démarrage */
   g.fillStyle = K; g.fillRect(M + 34, M + 26, 46, 46);
   g.fillStyle = Y; g.textAlign = 'center';
-  g.font = '900 30px Sora, Arial';
+  g.font = '900 30px Fraunces, Georgia';
   g.fillText('A', M + 57, M + 60);
   g.textAlign = 'left';
   g.fillStyle = K;
-  g.font = '900 26px Sora, Arial';
+  g.font = '900 26px Fraunces, Georgia';
   g.fillText('ACOLYTE · BOARDING PASS', M + 96, M + 58);
   g.fillRect(M + 96, M + 68, 372, 5);
   /* route : départ à gauche, arrivée alignée à droite, avion au centre */
   const from = (p.from || 'PAR').slice(0, 3).toUpperCase();
   const to = (t.iata || t.nom.slice(0, 3)).toUpperCase();
   const bodyR = M + CW - STUB - 34;                  /* bord droit interne du corps */
-  g.font = '900 76px Sora, Arial';
+  g.font = '900 76px Fraunces, Georgia';
   /* espacement entre lettres : sinon le Y colle au O et le code devient illisible */
   const LS = 9;
   const spacedW = s => { let w = 0; for(const ch of s) w += g.measureText(ch).width + LS; return Math.max(0, w - LS); };
@@ -8301,7 +8984,7 @@ async function passPNG(){
     const x = M + 34 + (i % 3) * colW;
     const y = M + 232 + Math.floor(i / 3) * 74;
     g.fillStyle = 'rgba(16,16,16,0.62)';
-    g.font = '800 14px Sora, Arial';
+    g.font = '800 14px Fraunces, Georgia';
     g.fillText(c[0], x, y);
     g.fillStyle = K;
     g.font = fit(c[1], 25, colW - 24, '800');
@@ -8369,12 +9052,12 @@ async function passPNG(){
   g.fillStyle = K;
   g.textAlign = 'center';
   if(!qrOK){
-    g.font = '900 17px Sora, Arial';
+    g.font = '900 17px Fraunces, Georgia';
     g.fillText('QR INDISPONIBLE', sx, M + 150);
     g.font = '600 12px Inter, Arial';
     g.fillText('hors-ligne — regénère le ticket', sx, M + 172);
   }
-  g.font = '900 16px Sora, Arial';
+  g.font = '900 16px Fraunces, Georgia';
   /* le texte reflète le nouveau comportement : n'importe quel téléphone suffit */
   g.fillText('SCANNE-MOI', sx, M + 306);
   g.font = '600 12px Inter, Arial';
@@ -8384,7 +9067,7 @@ async function passPNG(){
   g.setLineDash([10, 8]); g.lineWidth = 3;
   g.beginPath(); g.moveTo(sx - 105, M + 358); g.lineTo(sx + 105, M + 358); g.stroke();
   g.setLineDash([]);
-  g.font = fit(`${from} ✈ ${to}`, 30, STUB - 60, '900', 'Sora, Arial');
+  g.font = fit(`${from} ✈ ${to}`, 30, STUB - 60, '900', 'Fraunces, Georgia, serif');
   g.fillText(`${from} ✈ ${to}`, sx, M + 402);
   g.font = '800 13px Inter, Arial';
   g.fillStyle = 'rgba(16,16,16,0.62)';
@@ -8505,7 +9188,7 @@ function pcTile(g, x, y, w, h){
   g.fillStyle = 'rgba(0,0,0,.4)'; g.textAlign = 'center';
   g.font = `${Math.round(u * 0.24)}px Arial`;
   g.fillText('📷', cx, cy + u * 0.02);
-  g.font = `900 ${Math.max(12, Math.round(u * 0.11))}px Sora, Arial`;
+  g.font = `900 ${Math.max(12, Math.round(u * 0.11))}px Fraunces, Georgia`;
   g.fillText('PHOTO', cx, cy + u * 0.28);
   g.textAlign = 'left';
 }
@@ -8516,7 +9199,7 @@ function pcPostmark(g, cx, cy, r, txt, sub){
   g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke();
   g.beginPath(); g.arc(cx, cy, r - 7, 0, 7); g.stroke();
   g.textAlign = 'center'; g.fillStyle = '#2b2b2b';
-  g.font = `900 ${Math.round(r * 0.30)}px Sora, Arial`;
+  g.font = `900 ${Math.round(r * 0.30)}px Fraunces, Georgia`;
   g.fillText(String(txt || '').slice(0, 9).toUpperCase(), cx, cy - 1);
   g.font = `700 ${Math.round(r * 0.21)}px Inter, Arial`;
   g.fillText(String(sub || '').slice(0, 12), cx, cy + r * 0.34);
@@ -8533,7 +9216,7 @@ function pcStamp(g, x, y){
   g.strokeRect(x + 5, y + 5, w - 10, h - 10); g.setLineDash([]);
   g.textAlign = 'center';
   g.fillStyle = '#C0392B'; g.font = '34px Arial'; g.fillText('✈', x + w / 2, y + h / 2 + 8);
-  g.fillStyle = '#2b2b2b'; g.font = '900 10px Sora, Arial'; g.fillText('PAR AVION', x + w / 2, y + h - 14);
+  g.fillStyle = '#2b2b2b'; g.font = '900 10px Fraunces, Georgia'; g.fillText('PAR AVION', x + w / 2, y + h - 14);
   g.textAlign = 'left';
 }
 /* La disposition dépend UNIQUEMENT du choix de l'utilisateur : les emplacements
@@ -8582,7 +9265,7 @@ function pcInfo(t){
   };
 }
 /* règle la taille de police pour tenir dans `max` */
-function pcFit(g, txt, max, start, weight = '900', fam = 'Sora, Arial'){
+function pcFit(g, txt, max, start, weight = '900', fam = 'Fraunces, Georgia, serif'){
   let fs = start;
   do { g.font = `${weight} ${fs}px ${fam}`; fs -= 2; } while(g.measureText(txt).width > max && fs > 14);
   return Math.min(g.measureText(txt).width, max);
@@ -8628,7 +9311,7 @@ function tplClassique(g, W, H, { S, I, style, layout, photos }){
   const tx = pad + 24;
   pcStamp(g, W - pad - 104, by + 16);
   g.textAlign = 'left';
-  g.font = '800 12px Sora, Arial'; g.fillStyle = S.hlt;
+  g.font = '800 12px Fraunces, Georgia'; g.fillStyle = S.hlt;
   pcTrack(g, 'CARNET DE VOYAGE', tx, by + 30, 3);          /* sur-titre */
   const tw = pcFit(g, I.nom, W - 2*pad - 150, 58);
   g.fillStyle = S.bandInk; g.fillText(I.nom, tx, by + 78);
@@ -8636,7 +9319,7 @@ function tplClassique(g, W, H, { S, I, style, layout, photos }){
   g.font = '800 22px Inter, Arial'; g.fillStyle = S.sub;
   g.fillText(`${I.pays}  ·  ${I.dates}`, tx, by + 124);
   if(I.hl.length){ g.font = '700 17px Inter, Arial'; g.fillStyle = S.hlt; g.fillText('📍 ' + I.hl.slice(0,3).join('  ·  ').slice(0,62), tx, by + 152); }
-  g.textAlign = 'right'; g.font = '900 19px Sora, Arial'; g.fillStyle = S.bandInk;
+  g.textAlign = 'right'; g.font = '900 19px Fraunces, Georgia'; g.fillStyle = S.bandInk;
   g.fillText('ACOLYTE ✈', W - pad - 20, by + bandH - 14); g.textAlign = 'left';
 }
 
@@ -8650,7 +9333,7 @@ function tplMagazine(g, W, H, { S, I, layout, photos, style }){
   const tx = 48;
   g.textAlign = 'left';
   /* sur-titre façon magazine, en haut à gauche */
-  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '800 13px Sora, Arial';
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '800 13px Fraunces, Georgia';
   pcTrack(g, 'CARNET DE VOYAGE', tx, 56, 4);
   const tw = pcFit(g, I.nom, W - 210, 86);
   g.fillStyle = '#fff'; g.fillText(I.nom, tx, H - 112);
@@ -8659,7 +9342,7 @@ function tplMagazine(g, W, H, { S, I, layout, photos, style }){
   g.fillText(`${I.pays}  ·  ${I.dates}`, tx, H - 54);
   if(I.hl.length){ g.font = '700 18px Inter, Arial'; g.fillStyle = 'rgba(255,255,255,.72)'; g.fillText('📍 ' + I.hl.slice(0,3).join('  ·  ').slice(0,64), tx, H - 22); }
   pcStamp(g, W - 132, 32);
-  g.textAlign = 'right'; g.font = '900 18px Sora, Arial'; g.fillStyle = 'rgba(255,255,255,.85)';
+  g.textAlign = 'right'; g.font = '900 18px Fraunces, Georgia'; g.fillStyle = 'rgba(255,255,255,.85)';
   g.fillText('ACOLYTE ✈', W - 40, H - 22); g.textAlign = 'left';
 }
 
@@ -8687,7 +9370,7 @@ function tplDos(g, W, H, { S, I, photos, style }){
   /* droite : timbre + lignes d'adresse */
   const rx = mid + 46;
   /* en-tête façon vraie carte postale */
-  g.font = '800 13px Sora, Arial'; g.fillStyle = S.hlt;
+  g.font = '800 13px Fraunces, Georgia'; g.fillStyle = S.hlt;
   pcTrack(g, 'CARTE POSTALE · CORRESPONDANCE', rx, pad + 22, 3);
   pcStamp(g, W - pad - 96, pad + 44);
   pcPostmark(g, W - pad - 124, pad + 88, 38, I.pays.slice(0, 3), I.dates.slice(0, 5));
@@ -8699,7 +9382,7 @@ function tplDos(g, W, H, { S, I, photos, style }){
   g.font = '700 18px Inter, Arial'; g.fillStyle = S.sub;
   g.fillText(I.pays, rx + 6, H / 2 + 34);
   g.fillText(I.dates, rx + 6, H / 2 + 80);
-  g.textAlign = 'right'; g.font = '900 17px Sora, Arial'; g.fillStyle = S.ink;
+  g.textAlign = 'right'; g.font = '900 17px Fraunces, Georgia'; g.fillStyle = S.ink;
   g.fillText('ACOLYTE ✈', W - pad, H - pad + 10); g.textAlign = 'left';
 }
 
@@ -8726,7 +9409,7 @@ function tplPellicule(g, W, H, { S, I, layout, photos, style }){
   g.fillText(`${I.pays}  ·  ${I.dates}`, tx, y + 56);
   if(I.hl.length){ g.font = '700 17px Inter, Arial'; g.fillStyle = S.hlt; g.fillText('📍 ' + I.hl.slice(0,3).join('  ·  ').slice(0,58), tx, y + 88); }
   pcStamp(g, W - 138, H - 156);
-  g.textAlign = 'right'; g.font = '900 17px Sora, Arial'; g.fillStyle = S.ink;
+  g.textAlign = 'right'; g.font = '900 17px Fraunces, Georgia'; g.fillStyle = S.ink;
   g.fillText('ACOLYTE ✈', W - 44, H - 26); g.textAlign = 'left';
 }
 
@@ -8743,7 +9426,7 @@ function tplMosaique(g, W, H, { S, I, photos, style }){
   g.fillStyle = S.accent; g.fillRect(bx, by, 8, bh);
   const tx = bx + 26;
   g.textAlign = 'left'; g.fillStyle = S.bg;
-  g.font = '800 12px Sora, Arial'; pcTrack(g, 'CARNET DE VOYAGE', tx, by + 30, 3);
+  g.font = '800 12px Fraunces, Georgia'; pcTrack(g, 'CARNET DE VOYAGE', tx, by + 30, 3);
   pcFit(g, I.nom, bw - 52, 46); g.fillStyle = S.bg; g.fillText(I.nom, tx, by + 76);
   g.font = '800 19px Inter, Arial'; g.globalAlpha = .8;
   g.fillText(`${I.pays}  ·  ${I.dates}`, tx, by + 108);
@@ -8751,7 +9434,7 @@ function tplMosaique(g, W, H, { S, I, photos, style }){
   g.globalAlpha = 1;
   pcStamp(g, W - pad - 100, pad + 14);
   /* signature posée sur une photo → blanc + ombre pour rester lisible */
-  g.textAlign = 'right'; g.font = '900 16px Sora, Arial';
+  g.textAlign = 'right'; g.font = '900 16px Fraunces, Georgia';
   g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText('ACOLYTE ✈', W - pad - 11, H - pad - 7);
   g.fillStyle = '#fff'; g.fillText('ACOLYTE ✈', W - pad - 12, H - pad - 8); g.textAlign = 'left';
 }
@@ -8759,7 +9442,7 @@ function tplMosaique(g, W, H, { S, I, photos, style }){
 /* ---- MODÈLE 6 : Passeport (page de passeport + tampon d'entrée) ---- */
 function tplPasseport(g, W, H, { S, I, photos }){
   const pad = 42;
-  g.textAlign = 'left'; g.fillStyle = S.ink; g.font = '900 20px Sora, Arial';
+  g.textAlign = 'left'; g.fillStyle = S.ink; g.font = '900 20px Fraunces, Georgia';
   pcTrack(g, 'PASSEPORT · PASSPORT', pad, pad + 24, 4);
   g.strokeStyle = S.ink; g.globalAlpha = .35; g.lineWidth = 2;
   g.beginPath(); g.moveTo(pad, pad + 42); g.lineTo(W - pad, pad + 42); g.stroke(); g.globalAlpha = 1;
@@ -8791,7 +9474,7 @@ function tplMinimal(g, W, H, { S, I, photos, style }){
   g.strokeStyle = S.ink; g.lineWidth = 2; g.strokeRect(px, py, pw, ph);
   g.textAlign = 'center';
   const cy = py + ph + 62;
-  g.fillStyle = S.hlt; g.font = '800 11px Sora, Arial';
+  g.fillStyle = S.hlt; g.font = '800 11px Fraunces, Georgia';
   const ew = g.measureText('CARNET DE VOYAGE').width + 15 * 3;
   pcTrack(g, 'CARNET DE VOYAGE', W / 2 - ew / 2, cy - 34, 3);
   pcFit(g, I.nom, W * .8, 52); g.fillStyle = S.ink; g.fillText(I.nom, W / 2, cy);
@@ -8799,7 +9482,7 @@ function tplMinimal(g, W, H, { S, I, photos, style }){
   g.font = '700 20px Inter, Arial'; g.fillStyle = S.sub;
   g.fillText(`${I.pays}  ·  ${I.dates}`, W / 2, cy + 60);
   if(I.hl.length){ g.font = '600 16px Inter, Arial'; g.fillStyle = S.hlt; g.fillText(I.hl.slice(0,3).join('   ·   ').slice(0,56), W / 2, cy + 92); }
-  g.font = '900 15px Sora, Arial'; g.fillStyle = S.ink; g.fillText('ACOLYTE ✈', W / 2, H - 34);
+  g.font = '900 15px Fraunces, Georgia'; g.fillStyle = S.ink; g.fillText('ACOLYTE ✈', W / 2, H - 34);
   g.textAlign = 'left';
 }
 
@@ -8809,7 +9492,7 @@ function tplVertical(g, W, H, { S, I, layout, photos, style }){
   pcDrawPhotos(g, pcLayoutRects({ x: pad, y: pad, w: W - 2*pad, h: pzh }, layout), photos, style, S);
   const tx = pad + 8; let y = pad + pzh + 78;
   g.textAlign = 'left';
-  g.font = '800 12px Sora, Arial'; g.fillStyle = S.hlt;
+  g.font = '800 12px Fraunces, Georgia'; g.fillStyle = S.hlt;
   pcTrack(g, 'CARNET DE VOYAGE', tx, y - 48, 3);
   const tw = pcFit(g, I.nom, W - 2*pad - 16, 58);
   g.fillStyle = S.ink; g.fillText(I.nom, tx, y);
@@ -8820,7 +9503,7 @@ function tplVertical(g, W, H, { S, I, layout, photos, style }){
   let ly = y + 100;
   I.hl.slice(0, 4).forEach(l => { if(ly < H - 70){ g.fillText('📍 ' + String(l).slice(0, 28), tx, ly); ly += 30; } });
   pcStamp(g, W - pad - 96, pad + pzh + 16);
-  g.textAlign = 'right'; g.font = '900 17px Sora, Arial'; g.fillStyle = S.ink;
+  g.textAlign = 'right'; g.font = '900 17px Fraunces, Georgia'; g.fillStyle = S.ink;
   g.fillText('ACOLYTE ✈', W - pad - 8, H - 28); g.textAlign = 'left';
 }
 
@@ -10169,7 +10852,7 @@ function pongInit(){
 
     /* bulle de bande dessinée : c'est la mascotte qui parle */
     if(bulle){
-      g.font = '900 16px Sora, sans-serif';
+      g.font = '900 16px Fraunces, Georgia, serif';
       const w = g.measureText(bulle.txt).width + 22;
       const bx = Math.max(8, Math.min(W - w - 8, ball.x - w / 2));
       const by = Math.max(8, ball.y - ball.r - 42);
@@ -10376,7 +11059,7 @@ function packInit(){
       if(it.pris) continue;
       g.font = '40px serif';
       g.fillText(it.o.ico, it.x, it.y - 6);
-      g.font = '900 12px Sora, sans-serif';
+      g.font = '900 12px Fraunces, Georgia, serif';
       g.fillStyle = '#F4F3EF';
       g.fillText(isEN() ? it.o.en : it.o.fr, it.x, it.y + 26);
     }
@@ -10384,7 +11067,7 @@ function packInit(){
     /* gains et pertes */
     for(const f of flashs){
       g.globalAlpha = Math.max(0, f.t);
-      g.font = '900 20px Sora, sans-serif';
+      g.font = '900 20px Fraunces, Georgia, serif';
       g.fillStyle = f.bon ? '#4ADE80' : '#FF5F5F';
       g.fillText(f.txt, f.x, f.y - 40 - (1 - f.t) * 26);
       g.globalAlpha = 1;
@@ -10398,7 +11081,7 @@ function packInit(){
       g.strokeStyle = '#101010'; g.lineWidth = 4;
       g.strokeRect(0, H / 2 - 42, W, 74);
       g.fillStyle = '#101010';
-      g.font = '900 26px Sora, sans-serif';
+      g.font = '900 26px Fraunces, Georgia, serif';
       g.fillText((isEN() ? 'Now: ' : 'Cap sur : ') + dest.ico + ' ' + destNom(dest), W / 2, H / 2 - 4);
       g.globalAlpha = 1;
     }
@@ -10488,7 +11171,21 @@ const LS_BLOGIDX = 'acolyte_blog_index';
    _blogCat est déclaré ici pour la même raison. */
 var _blogListe = null;      /* liste des articles, en cache pour la session */
 var _blogCat = '';          /* catégorie filtrée dans la colonne ('' = toutes) */
-let _blogIdx = null;        /* index léger : sert à repérer les lieux qui ont un article */
+/* ⚠️ « var » ET PAS « let » — le voisin du dessus décrit le piège, celui-ci y
+   était encore tombé. Le chemin est réel, pas théorique :
+     loadPlan() → renderPlan → renderSections → panProgramme → blogLienHTML
+     → blogPour() → lit _blogIdx
+   panProgramme vit vers la ligne 3030, soit 7 500 lignes AVANT cette
+   déclaration. Quand un plan est déjà en cache, loadPlan() rend la main
+   SYNCHRONEMENT (le raccourci « if(state.cache.plan) renderPlan(...) » est en
+   tête, avant tout await) : tout ce chemin s'exécute donc pendant l'évaluation
+   du fichier, alors que `let` laisse encore _blogIdx en zone morte.
+   → « Cannot access '_blogIdx' before initialization », et le plan ne
+   s'affichait plus du tout. Avec « var » la déclaration remonte, la valeur est
+   `undefined`, blogPour() renvoie null, et le programme s'affiche simplement
+   sans les icônes d'article jusqu'à ce que l'index arrive. Dégrader, pas
+   casser — la même règle que partout ailleurs ici. */
+var _blogIdx = null;        /* index léger : sert à repérer les lieux qui ont un article */
 
 /* Index des lieux qui ont un article. Gardé en mémoire ET dans le stockage :
    il sert à chaque affichage du programme, on ne va pas le redemander. */
@@ -11564,26 +12261,28 @@ function asstMonte(){
   const bar = document.createElement('div');
   bar.className = 'asst-bar';
   bar.id = 'asstBar';
+  /* ⚠️ PLUS DE FORMULAIRE ICI — un RENVOI vers l'onglet Assistant.
+     Cette barre faisait exactement ce que fait l'onglet : deux endroits pour
+     une seule fonction, et le doublon occupait 211 px en TÊTE du voyage,
+     au-dessus du billet. On ne voyait plus son propre voyage en arrivant
+     dessus.
+     Le formulaire avait d'abord été gardé pour le téléphone, où l'onglet
+     n'existait pas. Il existe partout maintenant : il n'y a plus rien à
+     dupliquer, et la barre se réduit à une ligne. Ce qui RESTE ici, c'est
+     « Vérifier les horaires » — une fonction distincte, pas un doublon. */
   bar.innerHTML = `
-    <label class="asst-l" for="asstInp">${EN ? 'Change your trip' : 'Modifie ton voyage'}</label>
-    <div class="asst-ligne">
-      <input id="asstInp" type="text" autocomplete="off"
-             placeholder="${EN ? 'Remove the museum on day 3, add a market…' : 'Enlève le musée du jour 3, ajoute un marché…'}">
-      <button class="btn" id="asstGo" type="button">${EN ? 'Ask' : 'Demander'}</button>
-    </div>
+    <button class="asst-vers" id="asstVers" type="button">
+      <span class="asst-vers-ico" aria-hidden="true">✨</span>
+      <span class="asst-vers-t"><b>${EN ? 'Ask the assistant' : 'Demander à l’assistant'}</b>
+      <em>${EN ? 'Change your trip, or just ask a question' : 'Modifie ton voyage, ou pose simplement une question'}</em></span>
+      <span class="asst-vers-fl" aria-hidden="true">→</span>
+    </button>
     <p class="asst-etat" id="asstEtat" role="status" aria-live="polite"></p>
     <button class="asst-undo" id="asstUndo" type="button">${EN ? '↩ Undo' : '↩ Annuler'}</button>`;
   hote.insertBefore(bar, hote.firstChild);
-  const envoie = () => {
-    const v = $('#asstInp').value.trim();
-    if(!v) return;
-    $('#asstInp').value = '';
-    asstDemande(v);
-  };
-  $('#asstGo').onclick = envoie;
-  /* Entrée envoie : c'est un champ à une ligne, on n'attend rien d'autre. */
-  $('#asstInp').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); envoie(); } });
   $('#asstUndo').onclick = asstAnnule;
+  const vers = $('#asstVers');
+  if(vers) vers.onclick = () => { if(typeof switchCat === 'function') switchCat('ia'); };
 }
 asstMonte();
 
@@ -11961,3 +12660,739 @@ function agesEnfantsTexte(ages){
   L.push('Signale les tarifs enfants et les gratuités quand ils existent, et évite les lieux avec un âge minimum.');
   return L.join(' ');
 }
+
+/* ============================================================
+   ASSISTANT IA (bêta) — la console de l'onglet « Assistant »
+   ------------------------------------------------------------
+   ⚠️ RÉSERVÉ À L'ORDINATEUR. Le bouton est masqué en CSS sous 900 px, mais un
+   bouton caché n'est pas une porte fermée : on peut arriver ici par le retour
+   arrière, par un rechargement, ou en rétrécissant la fenêtre. Le garde-fou
+   est donc DANS switchCat(), pas seulement dans la feuille de style.
+
+   ⚠️ LE MODE EST UNE PERMISSION, PAS UNE PRÉFÉRENCE. C'est la décision de
+   fond : « répondre » et « modifier ton voyage » n'ont pas les mêmes
+   conséquences, et laisser un modèle deviner laquelle on veut, c'est accepter
+   qu'il modifie un programme quand on lui posait une question. Le mode est
+   donc choisi par l'humain, visible en permanence, et il borne ce que le CODE
+   accepte de faire de la réponse — pas ce qu'on demande gentiment au modèle.
+
+   ⚠️ ON NE RÉÉCRIT PAS L'ASSISTANT DE MODIFICATION. Le mode « modifier »
+   réutilise asstPrompt() et asstApplique() — le contrat du prompt et la
+   validation opération par opération. Recopier cette logique ici en aurait
+   fait une seconde version, qui aurait dérivé, et la sécurité serait tombée
+   du côté le moins relu.
+============================================================ */
+let _iaOccupe = false;
+let _iaAvant = null;                   /* instantané du programme, pour annuler */
+
+/* Ce qu'Acolyte annonce avoir compris, avant d'agir. */
+const IA_INTENTS = {
+  question: { mot: 'Je réponds à ta question',        ico: '💬' },
+  creer:    { mot: 'Je prépare un nouveau voyage',    ico: '🧭' },
+  modifier: { mot: 'Je modifie ton programme',        ico: '✏️' }
+};
+
+/* ------------------------------------------------------------
+   DÉTECTION D'INTENTION
+   ------------------------------------------------------------
+   ⚠️ CE CHOIX EST CELUI DU MODÈLE, ET C'EST UN VRAI RISQUE ASSUMÉ. Classer
+   « et si je rajoutais un marché le matin ? » en modification alors que c'est
+   une question, ça arrivera. Trois choses le rendent supportable, et il faut
+   les garder toutes les trois :
+     1. Acolyte ANNONCE ce qu'il a compris avant d'agir, et la phrase reste à
+        l'écran. Une erreur se voit au lieu de se subir.
+     2. Une modification passe toujours par asstApplique() : chaque opération
+        est validée contre le voyage réel, et le bouton Annuler restaure
+        l'état d'avant.
+     3. La création REMPLIT le questionnaire mais ne lance RIEN toute seule —
+        c'est l'action la plus chère (quota IA) et la plus visible, donc elle
+        garde un clic humain. Détecter l'intention n'oblige pas à tout
+        déclencher sans confirmation.
+   ⚠️ En cas de doute, le classificateur doit répondre « question » : c'est le
+   seul des trois qui ne touche à rien. Un défaut sûr, pas un défaut probable.
+------------------------------------------------------------ */
+function iaPromptIntention(demande){
+  const aUnVoyage = !!(state.cache && state.cache.days && Object.keys(state.cache.days).length);
+  /* ⚠️ Le dernier échange compte pour classer. « Et le lendemain ? » n'est ni
+     une création ni une modification : c'est la SUITE de ce qui précède, et
+     sans lui la phrase est illisible. Deux tours suffisent — au-delà on paie
+     des jetons pour du contexte que la question ne mobilise plus. */
+  /* Pour CLASSER, deux tours suffisent — on cherche à savoir si la phrase
+     prolonge l'échange, pas à en comprendre le fond. C'est la réponse qui a
+     besoin de tout l'historique (voir iaHistorique), pas le classificateur :
+     lui payer 6 000 caractères à chaque message serait du gaspillage. */
+  const avant = (Array.isArray(state.chatLog) ? state.chatLog : []).slice(-3, -1)
+    .map(m => (m.qui === 'moi' ? 'Voyageur' : 'Acolyte') + ' : ' + String(m.t || '').slice(0, 160))
+    .join('\n');
+  return 'Classe la demande d’un voyageur en UNE catégorie.\n\n'
+    + (avant ? 'Ce qui vient d’être dit :\n' + avant + '\n\n' : '')
+    + 'Demande à classer : « ' + String(demande).slice(0, 400) + ' »\n\n'
+    + 'Contexte : ' + (aUnVoyage
+        ? 'il a DÉJÀ un voyage avec un programme jour par jour.'
+        : "il n'a PAS encore de voyage.") + '\n\n'
+    + 'Catégories :\n'
+    + '· "question" — il demande une information, un conseil, une explication. RIEN ne doit changer.\n'
+    + '· "creer" — il décrit une envie de NOUVEAU voyage (destination, durée, budget, période).\n'
+    + '· "modifier" — il demande de CHANGER son programme existant (ajouter, enlever, déplacer, décaler une étape).\n\n'
+    + 'Règles :\n'
+    + '1. Dans le DOUTE, réponds "question" : c\'est la seule catégorie qui ne modifie rien.\n'
+    + '2. Une phrase interrogative qui évoque un changement sans le demander ("est-ce que je pourrais…", "ça vaut le coup de…") est une "question".\n'
+    + "3. \"modifier\" exige un ordre clair ET un voyage existant. Sans voyage, ce n'est jamais \"modifier\".\n"
+    + "4. Une demande de NOUVEAU voyage alors qu'il en a déjà un reste \"creer\" : changer de destination n'est pas retoucher un programme.\n"
+    + "5. Une phrase courte qui prolonge l'échange précédent (\"et le lendemain ?\", \"pourquoi ?\", \"et sinon ?\") est une \"question\".\n\n"
+    /* ⚠️ La difficulté est demandée DANS LE MÊME APPEL que l'intention : elle ne
+       coûte donc pas un aller-retour de plus, alors qu'elle décide du modèle
+       qui répondra. C'est le meilleur rapport qualité/prix du dispositif. */
+    + 'Évalue AUSSI la difficulté de la demande :\n'
+    + '· "simple" — un fait à lire dans les informations du voyage, ou une réponse courte et directe.\n'
+    + '· "complexe" — il faut comparer, arbitrer, réorganiser, tenir plusieurs contraintes ensemble, '
+    + 'ou raisonner sur une conséquence (budget, temps, distances, faisabilité).\n\n'
+    + 'Réponds en JSON : {"intention":"question|creer|modifier","difficulte":"simple|complexe"}';
+}
+
+/* Renvoie { intention, difficulte }, avec repli sûr. Une classification
+   illisible, un modèle saturé, une catégorie inventée : tout retombe sur
+   « question » — la seule qui ne touche à rien. */
+async function iaIntention(texte){
+  try{
+    const r = await ai('light', iaPromptIntention(texte), true, 140);
+    const d = r && r.data || {};
+    const v = String(d.intention || '').toLowerCase().trim();
+    const dur = String(d.difficulte || '').toLowerCase().trim() === 'complexe';
+    if(IA_INTENTS[v]){
+      /* Garde-fou de bon sens : on ne modifie pas un programme qui n'existe pas.
+         Le modèle a beau l'avoir dit, le code garde le dernier mot. */
+      if(v === 'modifier' && !(state.cache && state.cache.days && Object.keys(state.cache.days).length))
+        return { intention:'creer', complexe:dur };
+      return { intention:v, complexe:dur };
+    }
+  }catch(e){}
+  /* Le repli est « simple » : sans classification fiable, rien ne justifie de
+     dépenser le modèle lourd. */
+  return { intention:'question', complexe:false };
+}
+
+function iaAnnonce(intent){
+  const el = $('#iaIntent');
+  if(!el) return;
+  const i = IA_INTENTS[intent];
+  if(!i){ el.hidden = true; return; }
+  el.textContent = i.ico + '  ' + i.mot;
+  el.hidden = false;
+}
+
+/* Le fil vit dans state.chatLog — un champ présent dans le contrat de l'état
+   depuis le début : déclaré, assaini, synchronisé… et jamais rempli. Il est
+   déjà borné à 100 entrées par safeState : rien à plafonner ici. */
+function iaLog(){ if(!Array.isArray(state.chatLog)) state.chatLog = []; return state.chatLog; }
+
+function iaAjoute(qui, texte, rate){
+  iaLog().push({ qui, t: String(texte || '').slice(0, 4000), rate: !!rate, ts: Date.now() });
+  save();
+  iaRender();
+}
+
+/* ------------------------------------------------------------
+   LES PROPOSITIONS S'AFFICHENT DANS LA DISCUSSION
+   ------------------------------------------------------------
+   ⚠️ Avant, décrire un voyage à l'assistant remplissait le questionnaire puis
+   BASCULAIT sur l'onglet Voyage. On perdait le fil : la phrase qu'on venait
+   d'écrire disparaissait, et il fallait revenir en arrière pour se souvenir de
+   ce qu'on avait demandé. Les propositions arrivent maintenant sous la
+   question qui les a produites, comme une réponse.
+   Le message porte les destinations dans `cartes` — un tableau d'objets simples
+   qui traverse safeState (chatLog est assaini par safeJSON, profondeur 6) et
+   la synchronisation, donc la conversation se retrouve d'un appareil à l'autre
+   avec ses propositions.
+------------------------------------------------------------ */
+function iaAjouteCartes(d){
+  const dest = (d && d.destinations || []).slice(0, 3).map(x => ({
+    nom: String(x.nom || '').slice(0, 80),
+    pays: String(x.pays || '').slice(0, 60),
+    resume: String(x.resume || '').slice(0, 300),
+    budget: String(x.budget_estime || '').slice(0, 60),
+    duree: String(x.duree_ideale || '').slice(0, 40),
+    meteo: String(x.meteo_periode || '').slice(0, 60),
+    transport: String(x.transport_conseille || '').slice(0, 20),
+    quartier: String(x.logement_quartier || '').slice(0, 60)
+  }));
+  if(!dest.length){
+    iaAjoute('aco', "Je n'ai pas réussi à sortir de proposition. Reformule en donnant un lieu ou une période.", true);
+    return;
+  }
+  iaLog().push({
+    qui: 'aco',
+    t: dest.length > 1
+      ? `Voilà ${dest.length} pistes vraiment différentes. Dis-moi ce qui t'attire, ou ajoute-en une à tes voyages.`
+      : `Voilà ce que je te propose. Dis-moi ce que tu en penses, ou ajoute-le à tes voyages.`,
+    cartes: dest,
+    ts: Date.now()
+  });
+  save();
+  iaRender();
+}
+
+/* ⚠️ L'AJOUT SE FAIT DEPUIS LA CONVERSATION, sans quitter l'assistant.
+   On réutilise chooseTrip() — c'est lui qui pose le voyage, l'inscrit dans
+   l'historique, débloque l'étape 3 et vide les caches périmés. Réécrire cette
+   séquence ici en aurait fait une deuxième version, et c'est exactement le
+   genre de duplication qui finit par diverger. */
+function iaAjouteAuxVoyages(i, j){
+  const m = iaLog()[i];
+  const c = m && m.cartes && m.cartes[j];
+  if(!c) return;
+  /* chooseTrip lit state.destinations : on y remet la proposition choisie sous
+     la forme que le reste de l'app attend. */
+  const src = (state.lastProps && state.lastProps.destinations || [])
+    .find(x => x && String(x.nom) === c.nom);
+  if(!src){
+    toast('Cette proposition n’est plus disponible — relance la recherche');
+    return;
+  }
+  state.destinations = [src];
+  chooseTrip(0);
+  iaAjoute('aco', `« ${c.nom} » est ajouté à tes voyages. Tu peux me demander le programme, ou aller le voir dans l’onglet Voyage.`);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-iaadd]');
+  if(!b) return;
+  const [i, j] = b.dataset.iaadd.split(':').map(Number);
+  iaAjouteAuxVoyages(i, j);
+});
+
+function iaRender(){
+  const fil = $('#iaFil');
+  if(!fil) return;
+  const L = iaLog();
+  /* posé ici, avant les deux sorties : c'est le seul endroit traversé par tout
+     changement du fil (envoi, réponse, effacement, arrivée par la synchro) */
+  iaClearMaj();
+  if(!L.length){
+    fil.innerHTML = '<div class="ia-vide">'
+      + '<span class="ia-vide-ico" aria-hidden="true">✨</span>'
+      + "Pose une question sur ton voyage, décris-en un nouveau, ou demande une modification. "
+      + 'En français, comme à quelqu’un.</div>';
+    return;
+  }
+  /* data-i porte l'index RÉEL dans chatLog : c'est l'ancre utilisée par
+     l'historique de la colonne de gauche pour ramener à un message précis. */
+  fil.innerHTML = L.map((m, i) => {
+    const moi = m.qui === 'moi';
+    /* Les propositions occupent toute la largeur du fil : ce sont des objets à
+       comparer, pas une réplique dans une bulle. */
+    const cartes = Array.isArray(m.cartes) && m.cartes.length
+      ? '<div class="ia-cartes">' + m.cartes.map((c, j) => `
+          <div class="ia-carte">
+            <div class="iac-t">
+              <b>${esc(c.nom)}</b>
+              ${c.pays ? `<em>${esc(c.pays)}</em>` : ''}
+            </div>
+            ${c.resume ? `<p class="iac-r">${esc(c.resume)}</p>` : ''}
+            <div class="iac-f">
+              ${c.budget ? `<span>${esc(c.budget)}</span>` : ''}
+              ${c.duree ? `<span>${esc(c.duree)}</span>` : ''}
+              ${c.meteo ? `<span>${esc(c.meteo)}</span>` : ''}
+              ${c.quartier ? `<span>${esc(c.quartier)}</span>` : ''}
+            </div>
+            <button class="btn sm iac-go" data-iaadd="${i}:${j}" type="button">
+              ${ICO('plus')} Ajouter à mes voyages
+            </button>
+          </div>`).join('') + '</div>'
+      : '';
+    return '<div class="ia-msg ' + (moi ? 'moi' : 'aco') + (m.rate ? ' rate' : '')
+      + (cartes ? ' large' : '') + '" data-i="' + i + '">'
+      + '<span class="ia-qui">' + (moi ? 'Toi' : 'Acolyte') + '</span>'
+      + '<div class="ia-txt">' + esc(m.t) + '</div>'
+      + cartes + '</div>';
+  }).join('');
+  /* on colle au dernier message : sans ça, chaque réponse arrive hors champ */
+  fil.scrollTop = fil.scrollHeight;
+  /* la colonne de gauche EST l'historique : elle doit suivre chaque message.
+     ⚠️ Seulement quand on est sur l'onglet — sinon on redessine la colonne
+     d'une autre catégorie. */
+  if(typeof _cat !== 'undefined' && _cat === 'ia' && typeof renderRail === 'function') renderRail();
+}
+
+function iaEtat(msg){ const e = $('#iaEtat'); if(e) e.textContent = msg || ''; }
+
+/* « Effacer » n'a de sens que s'il y a quelque chose à effacer. Actif sur une
+   conversation vide, c'est une commande qui ne fait rien — et une commande qui
+   ne fait rien apprend à douter de toutes les autres. */
+function iaClearMaj(){
+  const b = $('#iaClear');
+  if(b) b.disabled = !(Array.isArray(state.chatLog) && state.chatLog.length);
+}
+
+/* ⚠️ `_iaDernier` a été SUPPRIMÉ avec la liste « Ce qu'Acolyte fait » : la
+   colonne de gauche porte désormais l'historique de la conversation, et plus
+   rien ne lisait cette variable. Une valeur qu'on continue d'écrire sans que
+   personne ne la lise est une fausse piste pour la prochaine lecture — c'est
+   la même raison qui avait fait retirer .cat-pc de la feuille de style.
+   L'intention reste affichée là où elle compte : la ligne #iaIntent. */
+
+/* ---- Mode QUESTION : lecture seule, et c'est tout son intérêt ----
+   ⚠️ expectJson = false. On veut une phrase, pas une structure : demander du
+   JSON pour en extraire un champ « reponse » ajouterait un point de rupture
+   (JSON invalide → échec) sans rien apporter. */
+/* ------------------------------------------------------------
+   CE QUE L'ASSISTANT SAIT DU VOYAGE
+   ------------------------------------------------------------
+   ⚠️ IL NE RECEVAIT QUE LA LISTE DES ÉTAPES. Tout le reste — le budget calculé,
+   le mode de transport retenu, le quartier du logement, les formalités, et
+   surtout les DONNÉES RÉELLES déjà relevées (météo, distance, taux de change,
+   jours fériés, horaires de train) — dormait dans state.cache sans jamais lui
+   être montré. Il répondait donc de mémoire sur des faits que l'app avait
+   pourtant vérifiés, et se contredisait avec ses propres écrans.
+   Tout ce qui suit est DÉJÀ en mémoire : rien n'est recalculé, aucun appel
+   réseau. C'est de l'information qu'on cessait simplement de transmettre. */
+function iaContexteVoyage(){
+  const t = state.trip, p = state.prefs || {}, c = state.cache || {};
+  if(!t) return "Le voyageur n'a pas encore de voyage en cours.";
+  const L = [];
+  L.push('VOYAGE EN COURS : ' + (t.nom || '?') + (t.pays ? ', ' + t.pays : ''));
+  if(p.from) L.push('Départ depuis : ' + p.from);
+  if(p.depart){
+    const d = new Date(p.depart + 'T12:00:00');
+    if(!isNaN(d)){
+      const jours = Math.round((d - new Date()) / 86400000);
+      L.push('Date de départ : ' + d.toLocaleDateString(LOC())
+        + (jours > 0 ? ' (dans ' + jours + ' jour(s))' : jours === 0 ? " (c'est aujourd'hui)" : ' (voyage commencé)'));
+    }
+  }
+  if(p.days) L.push('Durée : ' + p.days);
+
+  /* Le plan retenu : ce que le voyageur VOIT dans ses onglets. Répondre à côté
+     de ses propres écrans est la pire façon de perdre sa confiance. */
+  const pl = c.plan;
+  if(pl){
+    if(pl.budget && pl.budget.total) L.push('Budget total annoncé : ' + pl.budget.total);
+    if(pl.transport) L.push('Transport retenu : ' + (pl.transport.mode || '?')
+      + (pl.transport.details ? ' — ' + String(pl.transport.details).slice(0, 200) : ''));
+    if(pl.logement) L.push('Logement : quartier ' + (pl.logement.quartier || '?'));
+    if(pl.formalites) L.push('Formalités annoncées : ' + String(pl.formalites).slice(0, 250));
+    if(pl.couts_sur_place) L.push('Coûts sur place : ' + String(pl.couts_sur_place).slice(0, 250));
+    if(pl.conseil_cle) L.push('Conseil clé du plan : ' + String(pl.conseil_cle).slice(0, 200));
+  }
+
+  /* Les relevés réels. Ce sont les SEULS chiffres sur lesquels il a le droit
+     d'être affirmatif — ils viennent d'API, pas du modèle. */
+  const R = c._real;
+  if(R){
+    const V = [];
+    if(R.dist)  V.push('distance à vol d’oiseau : ' + R.dist + ' km');
+    if(R.meteo) V.push('météo : ' + R.meteo);
+    if(R.train) V.push('train : ' + R.train);
+    if(R.fx)    V.push('change : ' + R.fx);
+    if(R.feries)V.push('jours fériés pendant le séjour : ' + R.feries);
+    if(R.wv)    V.push('infos voyageur (Wikivoyage) : ' + String(R.wv).slice(0, 250));
+    if(V.length) L.push('\nDONNÉES RÉELLES DÉJÀ VÉRIFIÉES (API, pas des souvenirs — appuie-toi dessus et ne les contredis jamais) :\n- ' + V.join('\n- '));
+  }
+
+  const prog = (typeof asstResume === 'function') ? asstResume() : '';
+  if(prog) L.push('\nPROGRAMME JOUR PAR JOUR :\n' + prog);
+  return L.join('\n');
+}
+
+/* ------------------------------------------------------------
+   TOUTE LA CONVERSATION, PAS SES CINQ DERNIERS MESSAGES
+   ------------------------------------------------------------
+   ⚠️ L'assistant ne recevait que `slice(-6,-1)` : cinq messages. Au sixième
+   échange il avait déjà oublié la contrainte posée au deuxième (« je pars avec
+   un enfant de 3 ans », « pas d'avion »), et il fallait la répéter. Une
+   conversation dont on doit se souvenir à la place de son interlocuteur n'en
+   est pas une.
+   Il reçoit désormais TOUTE la session. Deux bornes, et elles sont là pour ne
+   pas exploser le budget de jetons, pas pour oublier :
+     · chaque message est tronqué à 400 caractères — au-delà, c'est du détail
+       qu'on ne mobilise pas pour comprendre un sous-entendu ;
+     · l'ensemble est plafonné à IA_CTX_MAX caractères, en gardant les plus
+       RÉCENTS. Si on doit couper, on coupe le début : c'est ce qu'on vient de
+       dire qui éclaire la phrase suivante.
+   Le fil lui-même est déjà borné à 100 entrées par safeState : ce plafond n'est
+   donc atteint que dans des conversations très longues.
+------------------------------------------------------------ */
+const IA_CTX_MAX = 6000;
+function iaHistorique(){
+  const L = Array.isArray(state.chatLog) ? state.chatLog : [];
+  /* on retire le dernier : c'est la question qu'on est en train de poser */
+  const lignes = L.slice(0, -1).map(m =>
+    (m.qui === 'moi' ? 'Voyageur' : 'Toi') + ' : ' + String(m.t || '').replace(/\s+/g, ' ').slice(0, 400));
+  let total = 0;
+  const gardes = [];
+  for(let i = lignes.length - 1; i >= 0; i--){
+    total += lignes[i].length + 1;
+    if(total > IA_CTX_MAX) break;
+    gardes.unshift(lignes[i]);
+  }
+  /* On DIT qu'on a coupé plutôt que de laisser croire à un fil complet : le
+     modèle doit savoir qu'il lui manque un début, sinon il répond comme si le
+     premier message visible était le premier de la conversation. */
+  const coupe = gardes.length < lignes.length;
+  return { texte: gardes.join('\n'), coupe, gardes: gardes.length, total: lignes.length };
+}
+
+function iaPromptQuestion(demande, complexe){
+  const h = iaHistorique();
+  const derniers = h.texte;
+  return "Tu es Acolyte, copilote de voyage. Tu réponds à la question d'un voyageur "
+    + 'à partir de SON voyage, pas de généralités.\n\n'
+    + iaContexteVoyage() + '\n'
+    /* ⚠️ Les échanges précédents : sans eux, « et le lendemain ? » ne veut rien
+       dire. C'est ce qui sépare une conversation d'une suite de questions. */
+    + (derniers ? '\nTOUTE VOTRE CONVERSATION jusqu’ici'
+        + (h.coupe ? ' (le début a été coupé, elle a commencé plus tôt)' : '')
+        + ' — tiens compte de TOUT ce qui y a été dit, notamment des contraintes '
+        + 'que le voyageur a posées une seule fois :\n' + derniers + '\n' : '')
+    + '\nQuestion : « ' + String(demande).slice(0, 400) + ' »\n\n'
+    + 'RÈGLES, dans cet ordre de priorité :\n'
+    + "1. Appuie-toi D'ABORD sur les informations ci-dessus. Si la réponse s'y trouve, cite-la telle quelle — ne la recalcule pas et ne la contredis pas.\n"
+    + "2. Si tu n'es pas sûr d'un horaire, d'un prix, d'une disponibilité ou d'une règle d'entrée, DIS-LE franchement et renvoie à la source officielle. "
+    + "Un « je ne suis pas sûr, vérifie sur leur site » est une bonne réponse ; un chiffre inventé fait rater un train. Ne devine JAMAIS un nombre.\n"
+    + '3. Sois CONCRET : un lieu, une heure, un ordre de grandeur, un conseil actionnable. Pas de généralités touristiques.\n'
+    /* Une question complexe attend un ARBITRAGE, pas un résumé : on autorise la
+       longueur nécessaire, et on demande explicitement de trancher. Une réponse
+       qui expose deux options sans choisir ne sert à rien à quelqu'un qui part
+       dans douze jours. */
+    + (complexe
+        ? "4. Cette question demande de comparer ou d'arbitrer. Prends le temps : pose les termes du choix, "
+          + 'pèse-les avec les données ci-dessus (budget, durée, distances, météo, jours fériés), puis TRANCHE en '
+          + "recommandant une option et en disant pourquoi. 8 phrases maximum. Une réponse qui n'ose pas choisir ne "
+          + "sert à rien. En français, tutoiement, ton direct.\n"
+        : '4. 4 phrases maximum, en français, tutoiement, ton direct. Pas de liste à puces, pas de titre : une réponse parlée.\n')
+    + "5. Tu ne modifies RIEN ici. Si la demande implique un changement du programme, réponds à la question ET dis-lui qu'il peut simplement te demander la modification.";
+}
+
+/* ---- Mode CRÉER : la phrase libre devient le questionnaire ----
+   On ne fabrique pas un voyage ici. On remplit les champs, puis on laisse le
+   pipeline existant travailler — c'est lui qui a les données réelles, la
+   relecture croisée et les garde-fous. */
+/* ⚠️ LES VALEURS PERMISES SONT LUES DANS LE <select>, JAMAIS RECOPIÉES ICI.
+   Première version : le prompt demandait « week|1sem|2sem » et « petit|moyen|
+   large ». Les vraies valeurs du formulaire sont des phrases françaises
+   (« une semaine », « budget moyen (500-1200€) ») : rien ne correspondait,
+   iaPoseSelect refusait — correctement, sans forcer de valeur fausse — et la
+   durée comme le budget n'étaient tout simplement jamais remplis. Le bug était
+   SILENCIEUX : le questionnaire s'ouvrait, à moitié rempli, sans une erreur.
+   En listant les options réelles, le vocabulaire ne peut plus diverger : le
+   jour où une option change dans index.html, le prompt suit tout seul. */
+function iaOptions(sel){
+  const el = $(sel);
+  if(!el) return '';
+  return [...el.options].map(o => '"' + o.value + '"').join(' | ');
+}
+function iaPromptCreer(demande){
+  return 'Transforme cette envie de voyage en champs de formulaire.\n\n'
+    + 'Envie : « ' + String(demande).slice(0, 500) + ' »\n\n'
+    + 'Réponds en JSON strict, uniquement avec les champs que la phrase permet de déduire :\n'
+    + '{"from":"ville de départ","dest":"destination ou pays souhaité","days":"…","when":"période en clair (ex. mai, été)",'
+    + '"budget":"…","adults":2,"kids":0,"libre":"le reste de l\'envie, en une phrase"}\n\n'
+    + 'Règles :\n'
+    + "1. N'INVENTE RIEN. Un champ que la phrase ne permet pas de déduire est ABSENT du JSON — surtout \"from\" et \"dest\".\n"
+    + '2. "days" doit être COPIÉ MOT POUR MOT depuis cette liste : ' + iaOptions('#fDays') + '\n'
+    + '3. "budget" doit être COPIÉ MOT POUR MOT depuis cette liste : ' + iaOptions('#fBudget') + '\n'
+    + '   (le budget s\'entend PAR PERSONNE ; si la phrase n\'en donne aucun, omets le champ)\n'
+    + "4. \"libre\" reprend les envies qui n'entrent dans aucun champ (ambiance, contraintes, centres d'intérêt).";
+}
+
+/* Pose une valeur dans un <select> SEULEMENT si l'option existe vraiment.
+   Un select forcé à une valeur inconnue retombe silencieusement sur sa
+   première option — donc sur un choix que personne n'a fait. */
+function iaPoseSelect(sel, valeur){
+  const el = $(sel);
+  if(!el || !valeur) return false;
+  const v = String(valeur).toLowerCase();
+  const opt = [...el.options].find(o =>
+    o.value.toLowerCase() === v || o.value.toLowerCase().includes(v) || v.includes(o.value.toLowerCase()));
+  if(!opt) return false;
+  el.value = opt.value;
+  return true;
+}
+
+async function iaCreer(demande){
+  const r = await ai('light', iaPromptCreer(demande), true, 700);
+  const data = r && r.data;
+  if(!data || typeof data !== 'object') throw new Error('IA_FORME');
+  const mis = [];
+  const texte = (sel, val, nom) => {
+    const el = $(sel);
+    if(el && val && String(val).trim()){ el.value = String(val).slice(0, 90); mis.push(nom); }
+  };
+  texte('#fFrom', data.from, 'départ');
+  texte('#fDest', data.dest, 'destination');
+  texte('#fWhen', data.when, 'période');
+  if(iaPoseSelect('#fDays', data.days)) mis.push('durée');
+  if(iaPoseSelect('#fBudget', data.budget)) mis.push('budget');
+  const el = $('#fAdults');
+  if(el && Number.isFinite(+data.adults) && +data.adults > 0){ el.value = String(Math.min(+data.adults, 6)); mis.push('voyageurs'); }
+  const ek = $('#fKids');
+  if(ek && Number.isFinite(+data.kids) && +data.kids >= 0) ek.value = String(Math.min(+data.kids, 4));
+  const libre = $('#fFree');
+  if(libre && data.libre) libre.value = String(data.libre).slice(0, 600);
+
+  if(!mis.length){
+    iaAjoute('aco', "Je n'ai pas réussi à en tirer de quoi remplir le questionnaire. "
+      + 'Donne-moi au moins un lieu ou une période — par exemple « une semaine au Portugal en mai ».', true);
+    return;
+  }
+  /* ⚠️ PLUS DE BASCULE D'ONGLET. La recherche part d'ici et son résultat
+     revient ICI, sous la phrase qui l'a demandée.
+     L'ancienne version remplissait le questionnaire puis emmenait sur l'onglet
+     Voyage en demandant de lancer soi-même. C'était prudent — une intention
+     mal classée n'aurait pas brûlé le quota — mais ça coupait la conversation
+     en deux et obligeait à un aller-retour pour une demande qu'on venait
+     d'exprimer clairement.
+     La prudence est conservée autrement : les champs déduits sont ANNONCÉS
+     avant la recherche, donc une erreur de lecture se voit dans le fil. */
+  iaAjoute('aco', 'Compris : ' + mis.join(', ') + '. Je cherche…');
+  iaEtat('Acolyte explore le monde…');
+  await proposeTrips('', false, '', 'chat');
+}
+
+/* ---- Mode MODIFIER : le noyau validé de l'assistant, piloté depuis ici ---- */
+async function iaModifier(demande, complexe){
+  if(!state.cache || !state.cache.days || !Object.keys(state.cache.days).length){
+    iaAjoute('aco', "Tu n'as pas encore de programme jour par jour à modifier. "
+      + 'Crée d’abord un voyage, puis reviens me voir.', true);
+    return;
+  }
+  statCompte('assistant_utilise');
+  /* Réorganiser une journée (déplacer, décaler, recomposer) demande de tenir
+     l'ordre, les heures et la géographie ensemble — c'est là que le modèle
+     léger produit des opérations incohérentes, que asstApplique rejette
+     ensuite. Mieux vaut payer le modèle lourd que faire refuser la demande. */
+  const r = await ai(complexe ? 'heavy' : 'light', asstPrompt(demande), true, complexe ? 2200 : 1400);
+  const data = r && r.data;
+  const ops = Array.isArray(data && data.operations) ? data.operations : [];
+  if(!ops.length){
+    iaAjoute('aco', String((data && data.resume) || "Je n'ai rien trouvé à changer."), true);
+    return;
+  }
+  _iaAvant = JSON.stringify(state.cache.days);
+  const res = asstApplique(ops);
+  if(!res.faites.length){
+    _iaAvant = null;
+    iaAjoute('aco', 'Je n’ai rien pu appliquer : ' + res.refusees.map(x => x.err).join(' · ').slice(0, 300), true);
+    return;
+  }
+  save();
+  res.faites.forEach(f => { try{ tlRender(Number(f.op.jour)); }catch(e){} });
+  try{ buildProjectMap(); }catch(e){}
+  const signe = { supprimer:'−', ajouter:'+', modifier:'~', deplacer:'→' };
+  const lignes = res.faites.map(f => (signe[f.op.action] || '·') + ' jour ' + f.op.jour + ' : ' + f.quoi);
+  const bloc = [String((data && data.resume) || 'C’est fait.'), ''].concat(lignes);
+  if(res.refusees.length){
+    bloc.push('', '(' + res.refusees.length + ' opération(s) ignorée(s) : '
+      + res.refusees.map(x => x.err).join(' · ').slice(0, 160) + ')');
+  }
+  iaAjoute('aco', bloc.join('\n'));
+  const u = $('#iaUndo'); if(u) u.hidden = false;
+}
+
+function iaAnnule(){
+  if(!_iaAvant) return;
+  statCompte('assistant_annule');
+  try{
+    state.cache.days = JSON.parse(_iaAvant);
+    _iaAvant = null;
+    save();
+    Object.keys(state.cache.days).forEach(j => { try{ tlRender(Number(j)); }catch(e){} });
+    try{ buildProjectMap(); }catch(e){}
+    iaAjoute('aco', '↩ Modification annulée : ton programme est revenu à son état d’avant.');
+    const u = $('#iaUndo'); if(u) u.hidden = true;
+  }catch(e){}
+}
+
+/* ⚠️ AUCUNE SORTIE MUETTE DANS CETTE FONCTION.
+   « J'appuie sur Envoyer et il ne se passe rien » a déjà coûté deux allers-
+   retours de débogage, pour deux causes différentes. La leçon n'est pas la
+   cause, c'est la FORME : chaque `return` précoce était invisible. Un bouton
+   qui sort sans rien dire ne laisse rien à diagnostiquer — ni à l'utilisateur,
+   ni à moi. Désormais chaque refus s'écrit à l'écran, et tout ce qui pourrait
+   lever une exception est enveloppé. */
+async function iaEnvoie(){
+  const inp = $('#iaInp');
+  if(_iaOccupe){
+    iaEtat('Un instant — je termine la demande précédente.');
+    return;
+  }
+  const texte = (inp && inp.value || '').trim();
+  if(!texte){
+    iaEtat('Écris ta demande d’abord.');
+    if(inp) try{ inp.focus(); }catch(e){}
+    return;
+  }
+  /* Les appels IA passent par le compte : même porte que partout ailleurs.
+     ⚠️ On TESTE avec estConnecte(), et on n'appelle requireAuth() que pour son
+     effet — ouvrir l'écran de connexion. L'inverse (`if(!requireAuth())`)
+     sortait toujours, puisqu'elle ne renvoie jamais rien. */
+  if(!estConnecte()){
+    iaAjoute('aco', 'Il faut un compte pour que je puisse répondre — je t’ouvre la page de connexion.', true);
+    iaEtat('');
+    exigeCompte('Crée ton compte pour parler à l’assistant');
+    return;
+  }
+  inp.value = '';
+  iaGrandit();                 /* la barre se replie après l'envoi */
+  iaAjoute('moi', texte);
+  _iaOccupe = true;
+  const hote = $('#catIA'); if(hote) hote.classList.add('ia-occupe');
+  iaEtat('Acolyte lit ta demande…');
+  try{
+    /* 1. QU'EST-CE QU'ON ME DEMANDE ? — un appel court et bon marché (120
+       jetons), avant tout le reste. Il coûte moins qu'une réponse mal ciblée. */
+    const { intention: intent, complexe } = await iaIntention(texte);
+    iaAnnonce(intent);
+    /* 2. On le DIT avant d'agir. Une intention mal lue doit se voir dans le fil,
+       pas seulement dans ses conséquences. */
+    iaEtat(IA_INTENTS[intent].ico + '  ' + IA_INTENTS[intent].mot
+      + (complexe ? ' — je prends le temps de réfléchir…' : '…'));
+    if(intent === 'question'){
+      /* ⚠️ LE MODÈLE SUIT LA DIFFICULTÉ, il n'est plus le même pour tout.
+         Tout partait sur « light » (Groq, petit modèle) avec 700 jetons : bien
+         assez pour « à quelle heure ouvre le musée », beaucoup trop court dès
+         qu'il faut comparer deux options, tenir un budget et une durée
+         ensemble, ou expliquer une conséquence. Les réponses devenaient vagues
+         exactement là où on attendait un avis.
+         La difficulté est lue dans le MÊME appel que l'intention : ce
+         discernement ne coûte donc aucun aller-retour supplémentaire, et le
+         modèle lourd n'est dépensé que quand la question le mérite. */
+      const r = await ai(complexe ? 'heavy' : 'light', iaPromptQuestion(texte, complexe),
+                         false, complexe ? 1400 : 700);
+      iaAjoute('aco', String(r && r.data || '').trim() || "Je n'ai pas su répondre.");
+    }else if(intent === 'creer'){
+      await iaCreer(texte);
+    }else{
+      await iaModifier(texte, complexe);
+    }
+    iaEtat('');
+  }catch(e){
+    statCompte('ia_echec');
+    iaAjoute('aco', "Je n'ai pas pu répondre — le service est peut-être saturé. Réessaie dans un instant.", true);
+    iaEtat('');
+  }finally{
+    _iaOccupe = false;
+    if(hote) hote.classList.remove('ia-occupe');
+  }
+}
+
+/* ⚠️ REPÈRE DE VERSION. « Ça ne fait rien » a une cause bête et fréquente sur
+   ce projet : le navigateur exécute un ANCIEN app.js servi par le service
+   worker, pendant que le index.html, lui, est à jour — on voit donc le nouveau
+   bouton branché sur l'ancien code. C'est exactement le défaut que le README
+   appelle le plus coûteux du projet, et il ne laisse aucune trace.
+   Cette ligne le rend vérifiable en une seconde : si la console ne l'affiche
+   pas au chargement, le fichier qui tourne n'est pas celui qu'on croit. */
+const IA_BUILD = 'assistant-2026-08-09';
+
+/* ---- La pop-up de bêta ----
+   Montrée UNE fois, au premier passage sur l'onglet, et relisable par le
+   bouton 🧪. Elle a remplacé un encadré permanent : celui-ci mangeait un tiers
+   de la hauteur à chaque visite et cessait d'être lu dès la deuxième.
+   ⚠️ Le drapeau est posé à l'OUVERTURE, pas à la fermeture. Si on attendait le
+   clic sur « J'ai compris », un rechargement pendant la lecture la ferait
+   revenir indéfiniment — et un avertissement qui se répète devient un obstacle
+   qu'on apprend à écarter sans lire. */
+const IA_BETA_VUE = 'acolite_ia_beta_vue';
+function iaBetaOuvre(){
+  lsSet(IA_BETA_VUE, '1');
+  $('#ovIaBeta')?.classList.add('show');
+}
+function iaBetaSiPremiereFois(){
+  let vue = '1';
+  try{ vue = localStorage.getItem(IA_BETA_VUE); }catch(e){}
+  if(!vue) iaBetaOuvre();
+}
+
+/* La hauteur de la console : tout ce qui reste sous elle, moins la réserve du
+   bas de page. On MESURE au lieu de recopier des constantes de la feuille de
+   style — un `calc()` avec la hauteur de l'en-tête écrite en dur se périme au
+   premier ajustement, et personne ne fait le lien.
+   ⚠️ Appelé APRÈS l'affichage de la section : sur un élément encore masqué,
+   getBoundingClientRect() renvoie 0 et la console naîtrait à 420px. */
+function iaHauteur(){
+  const s = $('#catIA');
+  if(!s || s.classList.contains('hidden')) return;
+  /* ⚠️ ON RÉSERVE CE QUI GÊNE VRAIMENT, PAS LE PADDING DE .wrap.
+     Je retranchais son padding-bas — 120 px, la place de la barre d'onglets du
+     téléphone. Sur ordinateur cette barre est DANS l'en-tête, en haut : les
+     120 px n'obstruaient rien et laissaient un trou sous la zone d'écriture,
+     qui flottait au milieu de l'écran au lieu de se poser en bas.
+     On mesure donc l'obstacle réel : la barre d'onglets seulement si elle est
+     réellement fixée en bas. Ailleurs, une simple respiration. */
+  const nav = document.querySelector('.catnav');
+  let reserve = 16;
+  if(nav && getComputedStyle(nav).position === 'fixed'){
+    reserve = Math.round(nav.getBoundingClientRect().height) + 12;
+  }
+  const dispo = window.innerHeight - s.getBoundingClientRect().top - reserve;
+  s.style.height = Math.max(420, Math.round(dispo)) + 'px';
+}
+
+/* La zone de texte grandit avec ce qu'on écrit, au lieu d'être haute « au cas
+   où ». Elle démarre à une ligne — donc à la hauteur du bouton Envoyer, qui
+   cesse ainsi de flotter au bas d'une barre trop grande — et s'étire jusqu'au
+   plafond posé par le CSS (max-height), au-delà duquel elle défile. */
+function iaGrandit(){
+  const t = $('#iaInp');
+  if(!t) return;
+  t.style.height = 'auto';
+  const max = parseFloat(getComputedStyle(t).maxHeight) || 160;
+  t.style.height = Math.min(t.scrollHeight, max) + 'px';
+}
+
+function iaMonte(){
+  if(!$('#catIA')) return;
+  console.info('[acolyte] assistant IA monté — build ' + IA_BUILD);
+  /* Les icônes sont posées en JS : elles vivent dans ICO_D, un seul endroit à
+     tenir. Les écrire en dur dans index.html en aurait fait deux. */
+  { const b = $('#iaInfo'); if(b) b.innerHTML = ICO('ampoule', 17); }
+  { const b = $('#iaClear'); if(b) b.innerHTML = ICO('poubelle', 17); }
+  { const b = $('#iaGo'); if(b) b.innerHTML = ICO('envoyer', 18) + '<span>Envoyer</span>'; }
+  window.__acolyteIA = { build: IA_BUILD, envoie: () => iaEnvoie() };
+  const go = $('#iaGo'); if(go) go.onclick = iaEnvoie;
+  const info = $('#iaInfo'); if(info) info.onclick = iaBetaOuvre;
+  const inp = $('#iaInp');
+  /* Entrée envoie, Maj+Entrée passe à la ligne : la convention de toutes les
+     zones de conversation. C'est une zone MULTILIGNE, donc il faut le dire —
+     son comportement par défaut est l'inverse. */
+  if(inp) inp.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); iaEnvoie(); }
+  });
+  if(inp) inp.addEventListener('input', iaGrandit);
+  /* ⚠️ « Effacer » est devenu « Nouvelle discussion », et ce n'est pas qu'un
+     changement de mot. Depuis que l'assistant garde TOUTE la session en
+     mémoire, ce bouton est le seul moyen de repartir d'une page blanche —
+     c'est lui qui délimite une conversation. Son icône est une corbeille :
+     l'action reste destructrice, on ne l'adoucit pas. */
+  const cl = $('#iaClear');
+  if(cl) cl.onclick = () => {
+    if(iaLog().length && !confirm('Démarrer une nouvelle discussion ? Acolyte oubliera tout ce qui a été dit ici.')) return;
+    state.chatLog = []; _iaAvant = null; save(); iaRender(); iaEtat('');
+    const u = $('#iaUndo'); if(u) u.hidden = true;
+    const ti = $('#iaIntent'); if(ti) ti.hidden = true;
+    /* iaRender() ci-dessus redessine déjà la colonne d'historique, qui se vide
+       en même temps que le fil. */
+  };
+  /* Le bouton d'annulation est créé ICI et non dans index.html : il n'a de
+     sens qu'après une modification, et un bouton présent mais inerte au
+     chargement est une promesse qu'on ne tient pas. */
+  const saisie = $('.ia-saisie');
+  if(saisie && !$('#iaUndo')){
+    const u = document.createElement('button');
+    u.id = 'iaUndo'; u.type = 'button'; u.className = 'btn ghost sm'; u.hidden = true;
+    u.textContent = '↩ Annuler la modification';
+    u.onclick = iaAnnule;
+    saisie.parentNode.insertBefore(u, saisie.nextSibling);
+  }
+  iaRender();
+}
+iaMonte();
+
+/* La fenêtre change de taille (ordinateur qu'on réduit, téléphone qu'on
+   tourne) → la console se réajuste, sinon elle garde la hauteur en pixels
+   calculée pour l'ancienne.
+   (Le renvoi vers l'onglet Voyage sous 900 px a disparu avec la restriction :
+   l'Assistant existe désormais à toutes les tailles.) */
+window.addEventListener('resize', () => {
+  if(_cat === 'ia' && typeof iaHauteur === 'function') iaHauteur();
+});
