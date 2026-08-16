@@ -6348,6 +6348,37 @@ function enterApp(){
    (date au format AAAA-MM-JJ) et incrémente CACHE dans sw.js.
 ============================================================ */
 const CHANGELOG = [
+  { v:'7.6', date:'2026-08-16', titre:'Acolyte te suit sur place', items:[
+    '📍 « Autour de moi » : où manger, se soigner, retirer de l’argent près de toi — relevé sur la carte réelle, pas inventé, et ajouté au programme du jour en un bouton',
+    '🎚️ Trois curseurs de dosage avant la recherche : Ville ou Nature, Lent ou Intense, Économe ou Confort. Laissés au centre, ils ne disent rien — c’est voulu',
+    '🧠 Acolyte retient ce que tu retires de tes journées : trois musées supprimés et il cesse d’en proposer',
+    '🍽️ Ton régime et tes allergies sont désormais une contrainte, pas une préférence : chaque adresse proposée doit avoir une vraie option pour toi',
+    '🏘️ Mode « comme un habitant » : les pièges à touristes sautent de tout le voyage, pas seulement des restaurants'
+  ]},
+  { v:'7.5', date:'2026-08-15', titre:'Les lieux inventés, c’est fini', items:[
+    '🛡️ Chaque lieu de ton programme est confronté à la carte après coup. Un nom réel situé à 1000 km de ta destination est signalé — rien n’est supprimé, tu tranches',
+    '🧩 Le glisser-déposer arrive dans tes journées : déplace une activité au doigt, les horaires restent à leur place',
+    '🔑 Nouvel onglet « Avant de partir » : couper l’eau, confier le chat, faire suivre le courrier. La liste s’adapte à ton voyage et ne part sur aucun serveur',
+    '🎨 Le fond du site prend la couleur de ta destination — sable pour la plage, gris bleuté pour la montagne. Une nuance, jamais une repeinte',
+    '🕹️ « Où est-ce ? » pioche dans les lieux de TON voyage, avec leurs vraies photos'
+  ]},
+  { v:'7.4', date:'2026-08-14', titre:'Attendre autrement', items:[
+    '🎮 Quand la génération prend du temps, Acolyte te propose un jeu. Et si ton voyage arrive pendant la partie, il attend que tu aies fini',
+    '⏳ Mode plein écran « compte à rebours » : le nombre de jours avant le départ, en grand, pour poser sur un meuble. Raccourci depuis l’écran d’accueil une fois l’application installée',
+    '🔄 « Refaire cette journée » ne passe plus par une boîte grise du navigateur : six raisons proposées, ou la tienne'
+  ]},
+  { v:'7.3', date:'2026-08-12', titre:'Le questionnaire respire', items:[
+    '🧾 Trois blocs au lieu d’un mur de champs : où et quand, budget et compagnie, style de voyage',
+    '📊 Une barre de progression suit les trois étapes du parcours',
+    '💶 Mode « budget inversé » : tu donnes ce que tu as, Acolyte ajuste la durée et le transport pour y tenir — et dit ce qu’il a sacrifié',
+    '📖 Choisir une ambiance fait remonter un article du Journal, pour donner envie au bon moment'
+  ]},
+  { v:'7.2', date:'2026-08-10', titre:'Corrections', items:[
+    '🔍 L’animation de recherche tournait en boucle et cachait les onglets quand c’était l’assistant qui cherchait — corrigé',
+    '💾 Un voyage préparé sur une version récente puis rouvert sur une ancienne perdait ses réglages. Ils sont maintenant mis de côté et rendus au retour',
+    '📨 Le bouton « Envoyer » de l’assistant ne répondait plus du tout — corrigé',
+    '🚩 Les drapeaux ne s’affichent plus en carrés vides sur Windows : une épingle prend le relais'
+  ]},
   { v:'7.1', date:'2026-08-06', titre:'Plus facile à viser au pouce', items:[
     '👍 Sur téléphone, 20 boutons trop petits passent à 44 px de haut — ceux du profil, la réinitialisation, le curseur de taille du texte',
     '✏️ L’œil des champs de mot de passe est dessiné au trait : le même sur tous les appareils, et barré quand le mot de passe est visible',
