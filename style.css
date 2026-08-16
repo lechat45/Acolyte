@@ -158,7 +158,7 @@ body{
   animation:bootUp .45s .1s ease both;
 }
 .boot-sub{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.66rem;letter-spacing:.22em;
+  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.66rem;letter-spacing:.22em;
   color:var(--txt-2);text-transform:uppercase;
   animation:bootUp .45s .18s ease both;
 }
@@ -177,7 +177,7 @@ body{
   transition:width .35s ease;
 }
 .boot-step{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.62rem;letter-spacing:.1em;
+  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.62rem;letter-spacing:.1em;
   text-transform:uppercase;color:var(--txt-2);
   animation:bootUp .45s .34s ease both;
 }
@@ -578,7 +578,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .cmp .cmp-flag{font-size:1.7rem;display:inline-block;margin-bottom:2px}
 /* colonne des critères : étiquettes claires, collées à gauche au défilement */
 .cmp tbody th[scope="row"]{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;
   text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;
   color:var(--txt-2);background:var(--bg);position:sticky;left:0;z-index:1;
   border-right:1px solid var(--stroke);
@@ -732,7 +732,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .pc-preview img:not([src]){display:none}
 .pc-loading{position:absolute;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;color:var(--txt-2);font-size:.85rem}
 .pc-group{margin-bottom:10px}
-.pc-label{display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;text-transform:uppercase;color:var(--txt-2);margin-bottom:6px}
+.pc-label{display:block;font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;text-transform:uppercase;color:var(--txt-2);margin-bottom:6px}
 .pc-chips{display:flex;gap:8px;flex-wrap:wrap}
 .pc-chip{
   padding:8px 14px;border:1px solid var(--stroke);border-radius:var(--r-lg);
@@ -776,7 +776,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(76px + env(safe-area-inset-bottom, 0px));z-index:60;
   max-width:calc(100% - 24px);padding:8px 14px;
-  font:600 .74rem 'Fraunces',Georgia,serif;text-align:center;
+  font:600 .74rem 'Inter',system-ui,sans-serif;text-align:center;
   background:var(--accent-orange);color:var(--on-accent);
   border:1px solid var(--stroke);border-radius:var(--r-lg);box-shadow:var(--shadow);
 }
@@ -819,14 +819,14 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 
 .news-entry .news-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .news-v{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;
   background:var(--secondary);color:var(--txt);
   padding:2px 9px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
 .news-entry.latest .news-v{background:var(--primary);color:#101010}
 .news-date{font-size:.72rem;font-weight:700;color:var(--txt-2)}
 .news-new{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.6rem;text-transform:uppercase;
+  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.6rem;text-transform:uppercase;
   letter-spacing:.08em;background:var(--ok);color:var(--on-accent);
   padding:3px 8px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
@@ -870,7 +870,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 /* fond jaune dans les deux thèmes : l'encre reste donc foncée */
 .ph-eyebrow{
   display:inline-block;margin-bottom:8px;padding:3px 10px;
-  font:700 .62rem 'Fraunces',Georgia,serif;text-transform:uppercase;letter-spacing:.1em;
+  font:700 .62rem 'Inter',system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;
   background:#101010;color:var(--primary);border-radius:var(--r-md);
 }
 .ph-card h3{margin:0 0 8px;font-size:1.5rem;line-height:1.1;color:#101010}
@@ -914,7 +914,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 /* les infos deviennent des étiquettes distinctes : même contenu, plus clair */
 .tr-facts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
 .tr-fact{
-  font:600 .72rem 'Fraunces',Georgia,serif;color:var(--txt);white-space:nowrap;
+  font:600 .72rem 'Inter',system-ui,sans-serif;color:var(--txt);white-space:nowrap;
   padding:4px 10px;background:var(--bg);
   border:1px solid var(--stroke);border-radius:var(--r-lg);
 }
@@ -1032,12 +1032,17 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
    ascenseur masqué, donc le défilement était prévu depuis le début. */
 @media(max-width:460px){
   .plan-tabs{gap:3px;padding:4px}
-  .plan-tab{flex:none;flex-direction:column;gap:3px;padding:8px 10px;font-size:.62rem}
+  /* ⚠️ La FAMILLE change avec la taille. La police est déclarée dans la règle
+     de base (.plan-tab, 12,8 px) ; ici on descend à 9,9 px, et Fraunces — une
+     serif d'affichage — s'y referme. La taille et la police sont posées à deux
+     endroits différents, donc rien ne signalait l'incohérence. */
+  .plan-tab{flex:none;flex-direction:column;gap:3px;padding:8px 10px;font-size:.62rem;
+            font-family:'Inter',system-ui,sans-serif}
   .plan-tab span{font-size:1.2rem}
 }
 .plan-panel{animation:pop .25s ease both}
 .pan-intro{font-size:.82rem;font-weight:600;color:var(--txt-2);line-height:1.5;margin:0 0 14px}
-.pan-sub{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
+.pan-sub{font-family:'Inter',system-ui,sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
   color:var(--txt-2);margin:18px 0 8px}
 
 /* --- panneau Logement --- */
@@ -1106,7 +1111,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .tc-body{flex:1;min-width:0}
 .tc-body h4{margin:0;font-size:1.15rem}
 .tc-facts{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
-.tc-fact{font:600 .74rem 'Fraunces',Georgia,serif;background:#101010;color:var(--primary);padding:4px 10px;border-radius:var(--r-lg);white-space:nowrap}
+.tc-fact{font:600 .74rem 'Inter',system-ui,sans-serif;background:#101010;color:var(--primary);padding:4px 10px;border-radius:var(--r-lg);white-space:nowrap}
 .tc-why{margin:6px 0 0;font-size:.9rem;font-weight:600;line-height:1.5}
 .carbon-card .carbon-big{margin:0;font-size:1rem}
 .carbon-card .carbon-big strong{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:1.15rem}
@@ -1141,7 +1146,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .hotel-card.best{box-shadow:var(--shadow);border-width:1px}
 .hc-badge{
   position:absolute;top:-11px;left:12px;
-  font:700 .62rem 'Fraunces',Georgia,serif;text-transform:uppercase;letter-spacing:.04em;
+  font:700 .62rem 'Inter',system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em;
   background:var(--ok);color:var(--on-accent);padding:3px 9px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
 .hc-top{display:flex;align-items:flex-start;gap:11px}
@@ -1169,7 +1174,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .bt-num{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.9rem}
 .bt-lbl{font-weight:800;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;opacity:.75;margin-top:3px}
 .budget-chips{display:flex;flex-wrap:wrap;gap:7px}
-.budget-chip{font:600 .74rem 'Fraunces',Georgia,serif;background:#101010;color:var(--primary);
+.budget-chip{font:600 .74rem 'Inter',system-ui,sans-serif;background:#101010;color:var(--primary);
   padding:5px 11px;border-radius:var(--r-lg);white-space:nowrap}
 .budget-breakdown{margin-bottom:4px}
 .budget-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:7px 0}
@@ -1441,7 +1446,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .gc-swatch{
   display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;
   background:rgba(255,255,255,.08);border:2px solid transparent;border-radius:var(--r-md);
-  padding:8px 10px;color:#fff;font:700 .64rem 'Fraunces',Georgia,serif;
+  padding:8px 10px;color:#fff;font:700 .64rem 'Inter',system-ui,sans-serif;
 }
 .gc-swatch:hover{background:rgba(255,255,255,.16)}
 .gc-swatch.on{border-color:var(--primary);background:rgba(255,230,0,.18)}
@@ -1605,7 +1610,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   width:100%;min-width:0;                       /* aucune colonne ne peut s'élargir */
   border:2px solid transparent;border-radius:var(--r-md);
   background:transparent;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;
+  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;
   /* ⚠️ ENCRE PLEINE (--txt) ET NON L'ENCRE ATTÉNUÉE (--txt-2).
      Les pictogrammes de la barre du bas étaient en gris moyen : lisibles au
      calme, mais c'est la navigation principale de l'app sur téléphone, souvent
@@ -1640,7 +1645,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 /* Plan clé en main : 3 stats compactes */
 .plan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .plan-stat{border:1px solid var(--stroke);background:var(--secondary);padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:104px;overflow:hidden}
-.plan-stat .k{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--txt-2)}
+.plan-stat .k{font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--txt-2)}
 .plan-stat .v{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1rem;text-transform:uppercase;margin-top:2px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;hyphens:none}
 .plan-stat .s{font-size:.74rem;font-weight:600;color:var(--txt-2);margin-top:2px;line-height:1.3;overflow-wrap:break-word}
 .plan-stat.wx{flex-direction:row;align-items:center;gap:10px}
@@ -1766,7 +1771,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .dest-facts .fk{
   font-weight:800;flex-shrink:0;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em;
+  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em;
 }
 .dest-facts .fv{
   font-weight:600;color:var(--txt);
@@ -1860,7 +1865,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .pass-info .pi{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pass-info .pk{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.58rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.58rem;
   text-transform:uppercase;letter-spacing:.12em;opacity:.65;
 }
 .pass-info .pv{
@@ -1932,7 +1937,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    donc la même échelle — sinon on lit deux jeux d'icônes au lieu d'un. */
 .pact-i{width:18px;height:18px;flex:none}
 .pact span{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.68rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.68rem;
   text-transform:uppercase;letter-spacing:.04em;color:inherit;white-space:nowrap;
 }
 /* La mention légale reste sur le jaune, en encre atténuée : c'est une note de
@@ -1977,7 +1982,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .sb-mark span{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.15rem;color:var(--primary-ink);line-height:1}
 .sb-body{flex:1;min-width:0}
 .sb-text{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;text-transform:uppercase;
+  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;text-transform:uppercase;
   letter-spacing:.04em;color:#101010;margin-bottom:5px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
@@ -2660,7 +2665,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   background:var(--surface-2);color:var(--txt-2);
   border:1px solid var(--stroke);border-radius:999px;
   padding:9px 16px;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.74rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.74rem;
   text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;
   transition:background .12s ease,color .12s ease;
 }
@@ -2724,7 +2729,7 @@ header{position:relative;z-index:5}
 .stop b{
   flex:none;width:22px;height:22px;display:grid;place-items:center;
   border-radius:50%;background:var(--primary);color:var(--primary-ink);
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.68rem;font-weight:900;
+  font-family:'Inter',system-ui,sans-serif;font-size:.68rem;font-weight:900;
 }
 /* étape que le relevé n'a pas su situer : montrée, mais clairement inactive */
 .stop.off{opacity:.5;cursor:not-allowed}
@@ -2768,7 +2773,7 @@ header{position:relative;z-index:5}
 .bc-body{display:flex;flex-direction:column;gap:6px;padding:16px 18px;min-width:0}
 .bc-cat{
   display:inline-block;align-self:flex-start;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.62rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.62rem;
   text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);
   background:var(--surface-2);border:1px solid var(--stroke);
   border-radius:999px;padding:4px 10px;
@@ -2920,7 +2925,7 @@ header{position:relative;z-index:5}
 }
 .foot-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px 30px}
 .foot-col h2{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.72rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;
   text-transform:uppercase;letter-spacing:.09em;
   color:var(--txt);margin:0 0 8px;
 }
@@ -3054,7 +3059,7 @@ header{position:relative;z-index:5}
    lit AVEC le lieu, pas comme une information séparée. */
 .tl-prix{
   display:inline-block;margin-left:8px;vertical-align:2px;
-  font:600 .68rem 'Fraunces',Georgia,serif;white-space:nowrap;
+  font:600 .68rem 'Inter',system-ui,sans-serif;white-space:nowrap;
   background:var(--surface-2);color:var(--txt-2);
   border:1px solid var(--stroke);border-radius:999px;padding:2px 9px;
 }
@@ -3130,7 +3135,7 @@ header{position:relative;z-index:5}
 .jj-jour i{font-style:normal;opacity:.55;font-size:.85rem}
 .jj-heure{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums}
 .jj-lbl{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.62rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.62rem;
   text-transform:uppercase;letter-spacing:.1em;opacity:.62;margin:14px 0 2px;
 }
 /* La prochaine étape : l'heure et le lieu, en grand. C'est LA réponse. */
@@ -3167,7 +3172,7 @@ header{position:relative;z-index:5}
   border-left:3px solid var(--primary);border-radius:var(--r-md);
 }
 .art-som-t{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.66rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.66rem;
   text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);margin:0 0 8px;
 }
 .art-som ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
@@ -3543,7 +3548,7 @@ header{position:relative;z-index:5}
    l'écran, et le focus se voit mieux parce que seul le trait change. */
 .auth-card .field{margin-top:18px;position:relative}
 .auth-card .field label{
-  display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.66rem;
+  display:block;font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.66rem;
   text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);margin-bottom:6px;
 }
 /* Même seuil que plus haut : .98rem = 15,68px, donc zoom iOS au focus. C'est le
@@ -3659,7 +3664,7 @@ header{position:relative;z-index:5}
    sélecteurs doublés » que compte verifie.js est bénigne partout ailleurs. */
 .map-src-b{
   border:0;background:transparent;color:#fff;cursor:pointer;
-  font:600 .68rem 'Fraunces',Georgia,serif;letter-spacing:.03em;
+  font:600 .68rem 'Inter',system-ui,sans-serif;letter-spacing:.03em;
   padding:6px 12px;border-radius:999px;white-space:nowrap;
 }
 .map-src-b.on{background:var(--primary);color:var(--primary-ink)}
@@ -3724,7 +3729,7 @@ header{position:relative;z-index:5}
      presque blanc. Écrire par-dessus en --primary donnait 1,12:1 — du jaune sur
      du jaune pâle. --primary-txt le rend lisible sans toucher au voile. */
   background:rgba(255,230,0,.13);color:var(--primary-txt);
-  font:700 .6rem 'Fraunces',Georgia,serif;letter-spacing:.16em;text-transform:uppercase;
+  font:700 .6rem 'Inter',system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;
 }
 .bu-titre{
   font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.5rem;line-height:1.25;
@@ -3756,7 +3761,7 @@ header{position:relative;z-index:5}
 .blog-grille .bc-img img, .blog-grille .bc-img svg{width:100%;height:100%;object-fit:cover;display:block}
 .blog-grille .bc-cat{
   background:transparent;border:0;border-radius:0;padding:0;
-  font:700 .58rem 'Fraunces',Georgia,serif;letter-spacing:.16em;text-transform:uppercase;
+  font:700 .58rem 'Inter',system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;
   color:var(--txt-2);
 }
 .blog-grille .bc-titre{
@@ -3776,7 +3781,7 @@ header{position:relative;z-index:5}
 /* ---- Les compteurs de la colonne ---- */
 .rs-cnt{
   background:transparent !important;border:0 !important;
-  font:700 .72rem 'Fraunces',Georgia,serif;color:var(--txt-2);
+  font:700 .72rem 'Inter',system-ui,sans-serif;color:var(--txt-2);
   width:auto !important;height:auto !important;margin-left:auto;
 }
 /* ⚠️ PAS --primary-ink ici. Cette encre foncée suppose un aplat jaune derrière,
@@ -3920,7 +3925,7 @@ header{position:relative;z-index:5}
     width:30px;height:30px;flex:none;border-radius:999px;
     display:flex;align-items:center;justify-content:center;
     background:var(--surface-2);
-    font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700;font-size:.69rem;color:var(--txt);
+    font-family:'Inter',system-ui,sans-serif;font-weight:700;font-size:.69rem;color:var(--txt);
     text-transform:uppercase;
   }
   .nt-nom{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -3997,7 +4002,7 @@ header{position:relative;z-index:5}
      Sur ordinateur la carte est retirée, donc la gouttière n'a plus de raison
      d'être — elle est remise à zéro dans la requête média plus bas. */
   padding:16px 16px 14px;margin:0;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700;
+  font-family:'Inter',system-ui,sans-serif;font-weight:700;
   /* .7rem et non .63 : à .2em d'interlettrage sur un petit écran, c'est la
      taille qui décide si l'étiquette se lit ou se devine. */
   font-size:.7rem;
@@ -4621,7 +4626,7 @@ body{ min-height:100dvh }
 
 .ia-msg{display:flex;flex-direction:column;gap:5px;max-width:78%}
 .ia-msg .ia-qui{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.6rem;
+  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.6rem;
   text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);
 }
 .ia-msg .ia-txt{
@@ -4756,7 +4761,7 @@ body{ min-height:100dvh }
 }
 .pp-stat:last-child{border-right:0}
 .pp-stat .k{
-  display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.58rem;
+  display:block;font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.58rem;
   text-transform:uppercase;letter-spacing:.1em;color:var(--txt-2);
 }
 .pp-stat .v{
@@ -4847,11 +4852,17 @@ body{ min-height:100dvh }
 .ico-t{flex:none;display:inline-block;vertical-align:-.18em}
 /* Un bouton réduit à son icône : la cible reste carrée et pleine taille, le
    libellé passe en title/aria-label. */
-.ico-btn{
+/* ⚠️ `.btn.ico-btn` et non `.ico-btn` seul — SIXIÈME fois que la spécificité
+   mord dans ce fichier. `.btn.sm` vaut (0,2,0) et pose `padding:10px 18px` ;
+   `.ico-btn` seul vaut (0,1,0) et perdait. Le padding horizontal de 18 px
+   restait donc, et l'icône se retrouvait décalée de 8 px vers la droite dans
+   un bouton carré — mesuré, pas supposé.
+   On égale le sélecteur qu'on corrige au lieu de surenchérir ailleurs. */
+.btn.ico-btn{
   display:inline-grid;place-items:center;
-  width:40px;min-width:40px;height:40px;padding:0;
+  width:40px;min-width:40px;height:40px;padding:0;gap:0;
 }
-@media (pointer:coarse){ .ico-btn{width:44px;min-width:44px;height:44px} }
+@media (pointer:coarse){ .btn.ico-btn{width:44px;min-width:44px;height:44px} }
 /* Bouton icône + mot : l'espace entre les deux, une seule fois pour tout le
    site plutôt qu'un gap répété partout. */
 .btn > .ico-t + span{margin-left:8px}
@@ -4950,3 +4961,197 @@ body{ min-height:100dvh }
 /* Le voyage actif, en tête du passeport : c'est le bloc qu'on vient chercher. */
 #pfVoyageActif{border-left:3px solid var(--primary)}
 .pp-voyage-i .ico-t{color:var(--primary-txt)}
+
+/* ============================================================
+   LES CARTES DE PROPOSITION — expliquer, pas lister
+   ------------------------------------------------------------
+   Chaque ligne porte une icône, un fait ET son pourquoi. C'est le « pourquoi »
+   qui explique un voyage : « avion · 90-140 € · 2h15 » décrit, « parce que le
+   train demanderait deux nuits pour 40 € d'écart » explique.
+============================================================ */
+.iac-forts{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.iac-forts li{font-size:.8rem;line-height:1.4;color:var(--txt-2)}
+.iac-forts li::marker{color:var(--primary-txt)}
+
+.iac-lignes{display:flex;flex-direction:column;gap:10px;padding:12px 0;
+  border-top:1px solid var(--stroke);border-bottom:1px solid var(--stroke)}
+.iac-l{display:flex;gap:10px;align-items:flex-start;min-width:0}
+.iac-li{flex:none;color:var(--primary-txt);line-height:1}
+.iac-lt{min-width:0;display:flex;flex-direction:column;gap:2px}
+.iac-lt b{font-size:.78rem;font-weight:700;color:var(--txt);line-height:1.3}
+.iac-lt em{font-style:normal;font-size:.74rem;color:var(--txt-2);line-height:1.4}
+
+/* ============================================================
+   ANIMATIONS — brèves, et jamais indispensables
+   ------------------------------------------------------------
+   ⚠️ TROIS RÈGLES QUE CE FICHIER SE DONNE DÉJÀ, et qu'on tient ici :
+   1. Rien d'essentiel ne dépend d'une animation : tout reste lisible et
+      cliquable si elles ne jouent pas.
+   2. `:root.no-motion` ET `prefers-reduced-motion` les coupent — le réglage de
+      l'app comme celui du système.
+   3. Elles sont COURTES. Une interface qui fait attendre son animation est
+      plus lente qu'une interface qui n'en a pas.
+============================================================ */
+@keyframes iaEntre{ from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+@keyframes iaCarteEntre{ from{opacity:0;transform:translateY(12px) scale(.98)} to{opacity:1;transform:none} }
+@keyframes iaPointe{ 0%,60%,100%{transform:translateY(0);opacity:.35} 30%{transform:translateY(-4px);opacity:1} }
+
+/* Chaque message arrive par le bas, comme dans une conversation. */
+.ia-msg{animation:iaEntre .22s cubic-bezier(.2,.7,.3,1) both}
+/* Les cartes se posent l'une après l'autre : le décalage se lit comme « voici
+   la première, voici la deuxième », pas comme un bloc qui apparaît. */
+.ia-carte{animation:iaCarteEntre .3s cubic-bezier(.2,.7,.3,1) both}
+.ia-carte:nth-child(2){animation-delay:.07s}
+.ia-carte:nth-child(3){animation-delay:.14s}
+
+/* Les trois points pendant qu'Acolyte réfléchit : c'est le signal qui manquait
+   le plus — un écran figé pendant 40 s ne dit pas s'il travaille. */
+.ia-pense{display:inline-flex;align-items:center;gap:5px;vertical-align:middle;margin-left:8px}
+.ia-pense i{
+  width:5px;height:5px;border-radius:50%;background:var(--primary-txt);
+  animation:iaPointe 1.1s ease-in-out infinite;
+}
+.ia-pense i:nth-child(2){animation-delay:.18s}
+.ia-pense i:nth-child(3){animation-delay:.36s}
+
+/* Le survol d'une carte : elle se soulève à peine. */
+.ia-carte{transition:transform .16s ease, border-color .16s ease}
+.ia-carte:hover{transform:translateY(-2px);border-color:var(--stroke-2)}
+
+:root.no-motion .ia-msg,
+:root.no-motion .ia-carte,
+:root.no-motion .ia-pense i{animation:none}
+:root.no-motion .ia-carte:hover{transform:none}
+@media (prefers-reduced-motion:reduce){
+  .ia-msg,.ia-carte,.ia-pense i{animation:none}
+  .ia-carte{transition:none}
+  .ia-carte:hover{transform:none}
+}
+
+/* ============================================================
+   L'ENTONNOIR DE CRÉATION — on doit voir où l'on en est
+   ------------------------------------------------------------
+   Les trois étapes étaient trois pastilles côte à côte : rien ne disait
+   qu'elles formaient un PARCOURS, ni combien il en restait. Un rail les relie
+   désormais, et sa portion remplie suit l'avancement (--avance, écrite par
+   gotoStep — une seule variable, rien à resynchroniser).
+============================================================ */
+.steps{position:relative}
+.steps-rail{
+  position:absolute;left:12%;right:12%;top:50%;height:3px;
+  transform:translateY(-50%);
+  background:var(--stroke);border-radius:999px;z-index:0;pointer-events:none;
+}
+.steps-rail i{
+  display:block;height:100%;width:var(--avance,0%);
+  background:var(--primary);border-radius:999px;
+  transition:width .45s cubic-bezier(.2,.7,.3,1);
+}
+/* Les pastilles passent DEVANT le rail, sinon il les traverse. */
+.steps .step{position:relative;z-index:1}
+:root.no-motion .steps-rail i{transition:none}
+@media (prefers-reduced-motion:reduce){ .steps-rail i{transition:none} }
+/* Sur téléphone la barre du bas est fixe : le rail se resserre pour ne pas
+   dépasser des pastilles, plus étroites. */
+@media (max-width:520px){ .steps-rail{left:16%;right:16%} }
+
+/* ============================================================
+   LE QUESTIONNAIRE EN TROIS BLOCS
+   ------------------------------------------------------------
+   Quatorze champs à la suite ne se lisent pas : on ne sait ni ce qui va
+   ensemble, ni combien il en reste. Trois blocs numérotés donnent une carte
+   mentale — où, avec qui, comment — et chacun tient dans un coup d'œil.
+============================================================ */
+.q-bloc{position:relative}
+.q-tete{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+.q-tete h3{margin:0;font-size:1.05rem}
+.q-tete .hint{margin:3px 0 0}
+/* Le numéro : un rond jaune, comme l'étape active du parcours — c'est le même
+   langage, donc on comprend qu'on est toujours dans la même progression. */
+.q-n{
+  flex:none;width:30px;height:30px;border-radius:50%;
+  display:grid;place-items:center;
+  background:var(--primary);color:var(--primary-ink);
+  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.85rem;
+}
+
+/* ============================================================
+   L'ACTION PRINCIPALE DOIT SE VOIR
+   ------------------------------------------------------------
+   Le bouton qui lance la recherche avait la même présence que « J'ai de la
+   chance » ou « Choisir un pays » à côté de lui. Or c'est LUI qu'on cherche.
+   On ne change pas sa couleur — le jaune est déjà celle de l'action — on lui
+   donne du corps, une ombre portée, et un halo au survol.
+============================================================ */
+/* ⚠️ `#view1 #btnGo` et non `#btnGo` seul — SEPTIÈME fois que la spécificité
+   mord dans ce fichier, et la mesure l'a montrée avant que je le devine :
+   « ombre=false » alors que la règle était écrite.
+   La règle groupée `#view1 .go-acts .btn:not(.ghost)` vaut (1,2,2) et pose
+   `height:46px; box-shadow:none`. Un `#btnGo` seul vaut (1,0,0) : il perdait.
+   `#view1 #btnGo` vaut (2,0,0) et l'emporte franchement. */
+#view1 #btnGo{
+  font-size:.95rem;padding:0 34px;height:52px;
+  box-shadow:0 4px 0 color-mix(in srgb, var(--primary) 55%, #000);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+#view1 #btnGo:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 0 color-mix(in srgb, var(--primary) 55%, #000);
+}
+#view1 #btnGo:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb, var(--primary) 55%, #000)}
+:root.no-motion #view1 #btnGo{transition:none}
+@media (prefers-reduced-motion:reduce){ #view1 #btnGo{transition:none} }
+
+/* ============================================================
+   MICRO-INTERACTIONS — confirmer le geste, sans le retarder
+   ------------------------------------------------------------
+   Une sélection qui ne répond pas laisse douter qu'elle a été prise. Toutes
+   ces animations durent moins de 200 ms : elles confirment, elles ne font pas
+   attendre.
+============================================================ */
+@keyframes chipPris{ 0%{transform:scale(1)} 45%{transform:scale(1.07)} 100%{transform:scale(1)} }
+.chip.vient-de-changer{animation:chipPris .22s cubic-bezier(.2,.7,.3,1)}
+/* Un champ qu'on vient de renseigner : son trait s'allume brièvement. */
+@keyframes champOk{ 0%{border-bottom-color:var(--stroke-2)} 40%{border-bottom-color:var(--primary)} 100%{border-bottom-color:var(--stroke-2)} }
+#catTrip .field input.vient-de-changer,
+#catTrip .field select.vient-de-changer{animation:champOk .6s ease}
+:root.no-motion .chip.vient-de-changer,
+:root.no-motion #catTrip .field input.vient-de-changer,
+:root.no-motion #catTrip .field select.vient-de-changer{animation:none}
+@media (prefers-reduced-motion:reduce){
+  .chip.vient-de-changer,
+  #catTrip .field input.vient-de-changer,
+  #catTrip .field select.vient-de-changer{animation:none}
+}
+
+/* ============================================================
+   LA SUGGESTION DU JOURNAL, dans le questionnaire
+   ------------------------------------------------------------
+   Le Journal contient une trentaine d'articles de fond déjà écrits, et
+   personne ne les voit avant d'avoir fini son voyage. Choisir une ambiance
+   fait remonter celui qui correspond : le contenu sert enfin à donner envie,
+   au moment où l'envie se forme.
+============================================================ */
+.vb-carte{
+  display:flex;align-items:center;gap:14px;
+  background:var(--surface-2);border:1px solid var(--stroke);
+  border-left:3px solid var(--primary);
+  border-radius:var(--r-md);padding:12px 14px;cursor:pointer;width:100%;text-align:left;
+  transition:transform .14s ease,border-color .14s ease;
+}
+.vb-carte:hover{transform:translateX(2px);border-color:var(--stroke-2)}
+.vb-i{flex:none;color:var(--primary-txt)}
+.vb-t{min-width:0;flex:1}
+.vb-t b{display:block;font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:.92rem;color:var(--txt);line-height:1.25}
+.vb-t em{display:block;font-style:normal;font-size:.76rem;color:var(--txt-2);margin-top:2px}
+.vb-fl{flex:none;color:var(--txt-2)}
+:root.no-motion .vb-carte{transition:none}
+/* Le champ du budget inversé : l'unité collée au nombre, et la tranche grisée
+   quand un plafond dur la remplace — deux réglages contradictoires ne doivent
+   pas rester actifs en même temps. */
+.bi-unite{
+  display:grid;place-items:center;flex:none;min-width:44px;min-height:44px;
+  font-family:'Inter',system-ui,sans-serif;font-weight:800;color:var(--txt-2);
+}
+.q-inactif{opacity:.55}
+.q-inactif label{color:var(--txt-2)}

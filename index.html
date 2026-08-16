@@ -264,7 +264,12 @@
       <button class="fb-x" id="futurX" type="button" aria-label="Masquer cet avertissement">✕</button>
     </div>
   <div id="catTrip">
-  <nav class="steps">
+  <!-- ⚠️ La barre de progression est posée SOUS les trois étapes, pas autour :
+       elle relie les pastilles au lieu de les encadrer. Sa largeur est pilotée
+       par --avance (0 / 50 / 100 %), écrite par gotoStep — une seule variable,
+       donc rien à resynchroniser quand une étape change. -->
+  <nav class="steps" id="steps" style="--avance:0%">
+    <div class="steps-rail" aria-hidden="true"><i></i></div>
     <div class="step active" data-step="1"><span class="n">1</span>Questions</div>
     <div class="step locked" data-step="2"><span class="n">2</span>Les choix</div>
     <div class="step locked" data-step="3"><span class="n">3</span>Ton voyage</div>
@@ -295,7 +300,18 @@
       <p class="sub" style="margin:0 0 12px">Reprends un voyage déjà exploré, ou lances-en un nouveau ci-dessous.</p>
       <div class="gallery" id="galleryList"></div>
     </div>
-    <div class="card">
+    <!-- ⚠️ TROIS BLOCS AU LIEU D'UNE GRILLE DE QUATORZE CHAMPS.
+         Le questionnaire était une seule carte : quatorze champs à la suite,
+         sans respiration ni regroupement. On ne savait pas combien il en
+         restait, ni ce qui allait ensemble. Trois cartes numérotées — où, avec
+         qui, comment — donnent une carte mentale : on voit qu'il y a trois
+         sujets, et chacun tient dans un coup d'œil.
+         Aucun identifiant de champ ne change : readPrefs les lit un par un
+         depuis app.js, et les renommer aurait tout débranché en silence. -->
+    <div class="card q-bloc">
+      <div class="q-tete"><span class="q-n">1</span>
+        <div><h3>Où, et quand</h3><p class="hint">Le minimum pour qu'Acolyte cherche juste.</p></div>
+      </div>
       <div class="grid">
         <div class="field"><label for="fFrom">Ville de départ</label><input id="fFrom" placeholder="Paris" autocomplete="off"></div>
         <div class="field"><label for="fDest">Destination souhaitée</label><input id="fDest" placeholder="Pays ou ville — vide = surprends-moi" autocomplete="off"></div>
@@ -309,6 +325,14 @@
         </div>
         <div class="field"><label for="fWhen">Période</label><input id="fWhen" placeholder="août 2026, vacances de la Toussaint…"></div>
         <div class="field"><label for="fDepart">Date de départ (optionnel)</label><input id="fDepart" type="date"></div>
+      </div>
+    </div>
+
+    <div class="card q-bloc">
+      <div class="q-tete"><span class="q-n">2</span>
+        <div><h3>Budget et compagnie</h3><p class="hint">Ce qui contraint le plus le résultat.</p></div>
+      </div>
+      <div class="grid">
         <div class="field"><label for="fBudget">Budget total / personne</label>
           <select id="fBudget">
             <option value="petit budget (moins de 500€)">Petit (&lt; 500 €)</option>
@@ -333,6 +357,45 @@
           <input id="fKidsAges" type="text" inputmode="numeric" autocomplete="off"
                  placeholder="ex. 3 et 7" maxlength="40">
         </div>
+        <div class="field"><label for="fWith">Avec qui</label>
+          <select id="fWith">
+            <option value="" selected>Peu importe</option>
+            <option value="en solo">En solo</option>
+            <option value="en couple">En couple</option>
+            <option value="entre amis">Entre amis</option>
+            <option value="en famille">En famille</option>
+            <option value="entre collègues">Entre collègues</option>
+          </select>
+        </div>
+        <!-- BUDGET INVERSÉ. La tranche ci-dessus convient à qui est souple ;
+             elle ne dit rien de quelqu'un qui a exactement 800 € et pas un
+             euro de plus. Ici le montant devient un PLAFOND, et c'est la durée,
+             le transport et le logement qui s'ajustent pour tenir dedans. -->
+        <div class="field wide">
+          <label class="opt-check" for="fBudgetStrict">
+            <input type="checkbox" id="fBudgetStrict">
+            <span>
+              <b>J'ai un budget précis à ne pas dépasser</b>
+              <em>Acolyte ajuste la durée, le transport et le logement pour rentrer exactement dedans — et te dit ce qu'il a sacrifié.</em>
+            </span>
+          </label>
+          <div class="pays-box" id="fBudgetMaxBox" hidden>
+            <label for="fBudgetMax">Ton plafond, par personne, tout compris</label>
+            <div class="pays-add">
+              <input id="fBudgetMax" type="number" inputmode="numeric" min="80" max="20000" step="10"
+                     placeholder="ex : 800" autocomplete="off">
+              <span class="bi-unite">€</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card q-bloc">
+      <div class="q-tete"><span class="q-n">3</span>
+        <div><h3>Style de voyage</h3><p class="hint">Facultatif — laisse vide et Acolyte décide.</p></div>
+      </div>
+      <div class="grid">
         <div class="field"><label for="fVibe">Ambiance recherchée</label>
           <select id="fVibe">
             <option value="" selected>Peu importe — surprends-moi</option>
@@ -344,16 +407,9 @@
             <option value="bien-être & repos">Bien-être &amp; repos</option>
           </select>
         </div>
-        <div class="field"><label for="fWith">Avec qui</label>
-          <select id="fWith">
-            <option value="" selected>Peu importe</option>
-            <option value="en solo">En solo</option>
-            <option value="en couple">En couple</option>
-            <option value="entre amis">Entre amis</option>
-            <option value="en famille">En famille</option>
-            <option value="entre collègues">Entre collègues</option>
-          </select>
-        </div>
+        <!-- La suggestion du Journal se pose ICI : elle réagit à l'ambiance
+             choisie juste au-dessus, et propose un article déjà écrit. -->
+        <div class="field wide" id="vibeBlog" hidden></div>
         <div class="field"><label for="fTransport">Comment tu veux voyager</label>
           <select id="fTransport">
             <option value="" selected>Peu importe — Acolyte décide</option>

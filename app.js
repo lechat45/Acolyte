@@ -778,6 +778,10 @@ var ICO_D = {
   avion:    '<path d="M12 2.4c.85 0 1.5.65 1.5 1.5v4.9l7.1 4.1v2l-7.1-2.2v4.2l2.5 1.8v1.5L12 19.6l-4 .6v-1.5l2.5-1.8v-4.2L3.4 15v-2l7.1-4.1v-5c0-.84.65-1.5 1.5-1.5Z"/>',
   train:    '<rect x="5.4" y="3.6" width="13.2" height="12.6" rx="3"/><path d="M5.4 10.2h13.2"/><path d="M8.4 19.6 6.2 22M15.6 19.6 17.8 22M7.6 16.2h8.8"/><circle cx="8.8" cy="13.2" r=".9"/><circle cx="15.2" cy="13.2" r=".9"/>',
   voiture:  '<path d="M4.2 16.4v2.2a1 1 0 0 0 1 1h1.6a1 1 0 0 0 1-1v-1.2M19.8 16.4v2.2a1 1 0 0 1-1 1h-1.6a1 1 0 0 1-1-1v-1.2"/><path d="M3.6 17.4h16.8v-4.2l-2-4.6a2 2 0 0 0-1.8-1.2H7.4a2 2 0 0 0-1.8 1.2l-2 4.6v4.2Z"/><path d="M3.8 13.2h16.4"/><circle cx="7.4" cy="15.2" r=".9"/><circle cx="16.6" cy="15.2" r=".9"/>',
+  /* — déplacements sur place — */
+  pied:     '<path d="M13.8 3.4a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6Z"/><path d="M11.2 20.6l1.4-4.6-2.4-2.2.8-4.4 2.4-1.4 2.6 1.6 2.4.6"/><path d="m10.2 13.8-2.6 1.6-1.4 3.4"/><path d="m14 16 2.2 4.6"/>',
+  velo:     '<circle cx="5.8" cy="16.6" r="3.6"/><circle cx="18.2" cy="16.6" r="3.6"/><path d="m8.6 16.6 3.4-7.4h4"/><path d="m12 9.2 3.6 7.4"/><path d="M14.6 5.4h2.6"/><circle cx="12" cy="9.2" r=".9"/>',
+  metro:    '<rect x="4.6" y="3.6" width="14.8" height="12.4" rx="3.4"/><path d="M4.6 10.4h14.8"/><circle cx="8.6" cy="13.2" r=".9"/><circle cx="15.4" cy="13.2" r=".9"/><path d="m8 20.4 2-3M16 20.4l-2-3M7.6 20.4h8.8"/>',
   /* — voyage — */
   valise:   '<rect x="3.4" y="7.4" width="17.2" height="12.8" rx="2.4"/><path d="M8.6 7.4V5.6a2 2 0 0 1 2-2h2.8a2 2 0 0 1 2 2v1.8"/><path d="M3.4 12.4h17.2"/>',
   hotel:    '<path d="M3.6 20.4V5.2a1.6 1.6 0 0 1 1.6-1.6h9.6a1.6 1.6 0 0 1 1.6 1.6v15.2"/><path d="M16.4 10.4h2.8a1.6 1.6 0 0 1 1.6 1.6v8.4"/><path d="M2.6 20.4h18.8"/><path d="M7 7.6h1.6M11 7.6h1.6M7 11.4h1.6M11 11.4h1.6M7 15.2h5.6v5.2H7Z"/>',
@@ -1398,7 +1402,13 @@ function readPrefs(extra){
     itin:  $('#fMulti')?.checked ? 'pays' : '',
     /* pays imposés — n'a de sens que si la case est cochée */
     pays:  $('#fMulti')?.checked ? _paysChoisis.slice(0, PAYS_MAX) : [],
-    free:  $('#fFree').value.trim().slice(0,600) + (extra ? ' | Affinage : ' + String(extra).slice(0,600) : '')
+    /* ⚠️ Le budget inversé s'ajoute ICI, dans « free », et pas ailleurs : c'est
+       le champ que ctx() transmet mot pour mot au modèle sous « Limites &
+       conditions ». Il profite donc de tout ce qui existe déjà — données
+       réelles, relecture croisée, garde-fous — sans un seul appel de plus. */
+    free:  ($('#fFree').value.trim().slice(0,600)
+            + (typeof budgetInverseTexte === 'function' ? budgetInverseTexte() : '')
+            + (extra ? ' | Affinage : ' + String(extra).slice(0,600) : '')).slice(0, 1600)
   };
 }
 
@@ -1787,16 +1797,12 @@ function passHTML(){
      c'est un défaut. Le pays est déjà écrit ailleurs dans le voyage ; on ne
      perd aucune information. */
 
-  /* Icônes en SVG, tracé de 1,75 comme la barre de navigation — les émojis
-     précédents (📷 🖼️ 🔗 📅) se dessinaient différemment sur chaque système et
-     juraient avec le reste de l'interface, qui n'utilise que des tracés. */
-  const ICO = {
-    ticket: '<path d="M4 8.5A2 2 0 0 1 6 6.5h12a2 2 0 0 1 2 2v1a2.5 2.5 0 0 0 0 5v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1a2.5 2.5 0 0 0 0-5v-1Z"/><path d="M14 6.5v11" stroke-dasharray="2 2.5"/>',
-    postale: '<rect x="3.2" y="5.2" width="17.6" height="13.6" rx="2"/><path d="m3.6 15.5 4.2-4a1.6 1.6 0 0 1 2.2 0l3.4 3.3"/><path d="m14.2 13.4 1.6-1.5a1.6 1.6 0 0 1 2.2 0l2.4 2.3"/><circle cx="9" cy="9.6" r="1.3"/>',
-    lien: '<path d="M10.4 13.6a3.4 3.4 0 0 0 5 .3l2.6-2.6a3.4 3.4 0 0 0-4.8-4.8l-1.5 1.5"/><path d="M13.6 10.4a3.4 3.4 0 0 0-5-.3L6 12.7a3.4 3.4 0 0 0 4.8 4.8l1.5-1.5"/>',
-    agenda: '<rect x="3.4" y="5.4" width="17.2" height="15.2" rx="2"/><path d="M3.4 10.2h17.2M8.4 3.4v4M15.6 3.4v4"/><path d="M8 14h3v3H8z"/>'
-  };
-  const svg = d => `<svg class="pact-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  /* ⚠️ CE BLOC AVAIT SON PROPRE JEU D'ICÔNES, écrit avant que ICO_D n'existe —
+     et il s'appelait `ICO`, donc il MASQUAIT la fonction globale du même nom
+     dans toute cette portée. Deux défauts en un : quatre tracés en double à
+     tenir d'accord, et un piège pour quiconque appellerait ICO() ici.
+     Les quatre (billet, image, lien, calendrier) sont déjà dans ICO_D. */
+  const svg = (nom) => ICO(nom, 22, 'pact-i');
 
   return `<div class="pass">
     <div class="pass-top">
@@ -1819,10 +1825,10 @@ function passHTML(){
 
     <div class="pass-tear">
       <div class="pass-acts">
-        <button class="pact" data-passpng title="Télécharger le ticket avec son QR code">${svg(ICO.ticket)}<span>Ticket</span></button>
-        <button class="pact" data-postcard title="Créer une carte postale à partager">${svg(ICO.postale)}<span>Postale</span></button>
-        <button class="pact" data-sharelink title="Partager un lien qui importe ce voyage">${svg(ICO.lien)}<span>Lien</span></button>
-        <button class="pact" data-ics title="Ajouter le programme à ton agenda">${svg(ICO.agenda)}<span>Agenda</span></button>
+        <button class="pact" data-passpng title="Télécharger le ticket avec son QR code">${svg('billet')}<span>Ticket</span></button>
+        <button class="pact" data-postcard title="Créer une carte postale à partager">${svg('image')}<span>Postale</span></button>
+        <button class="pact" data-sharelink title="Partager un lien qui importe ce voyage">${svg('lien')}<span>Lien</span></button>
+        <button class="pact" data-ics title="Ajouter le programme à ton agenda">${svg('calendrier')}<span>Agenda</span></button>
       </div>
     </div>
     <p class="pass-note">Ticket souvenir — ne permet pas d'embarquer. Le QR sert uniquement à importer ce voyage dans Acolyte.</p>
@@ -1857,6 +1863,11 @@ function gotoStep(n, sub){
   if(n === 3 && !state.trip){ toast('Choisis d’abord un des 3 voyages 😉'); return; }
   state.step = n; save();
   $$('.step').forEach(s => s.classList.toggle('active', +s.dataset.step === n));
+  /* La barre de progression : une seule variable CSS, écrite ici — donc elle
+     ne peut pas se désynchroniser de l'étape réelle. 0 / 50 / 100 %, parce que
+     le rail relie trois points : à l'étape 1 rien n'est parcouru, à l'étape 3
+     tout l'est. */
+  { const b = $('#steps'); if(b) b.style.setProperty('--avance', ((n - 1) / 2 * 100) + '%'); }
   /* la colonne de gauche porte le même parcours : elle doit rester d'accord
      avec le fil horizontal, sinon on lit deux états contradictoires */
   renderRail();
@@ -2798,7 +2809,10 @@ function renderHotels(rows){
   const zone = $('#zoneHotels'); if(!zone) return;
   const t = state.trip || {}, d = stayDates();
   const A = state.prefs?.adults || 2, K = state.prefs?.kids || 0;
-  const ICO = { hôtel:'🏨', hotel:'🏨', appartement:'🏠', appart:'🏠', auberge:'🎒', villa:'🏡', motel:'🏨', 'chambre d’hôtes':'🛏️' };
+  /* ⚠️ RENOMMÉ : s'appelait ICO et MASQUAIT la fonction globale ICO() dans
+     toute cette portée — un appel d'icône ici aurait levé « ICO is not a
+     function ». Les émojis deviennent des clés du jeu commun. */
+  const ICO_LOG = { hôtel:'hotel', hotel:'hotel', appartement:'hotel', appart:'hotel', auberge:'valise', villa:'hotel', motel:'hotel', 'chambre d’hôtes':'hotel' };
   const enc = encodeURIComponent;
   zone.innerHTML = rows.map((h, i) => {
     const type = String(h.type || '').toLowerCase();
@@ -2812,7 +2826,7 @@ function renderHotels(rows){
     return `<div class="hotel-card${i === 0 ? ' best' : ''}">
       ${i === 0 ? `<span class="hc-badge">⭐ Meilleur choix</span>` : ''}
       <div class="hc-top">
-        <span class="hc-ico">${ICO[type] || '🏨'}</span>
+        <span class="hc-ico">${ICO(ICO_LOG[type] || 'hotel', 20)}</span>
         <div class="hc-id">
           <h4>${esc(h.nom)}</h4>
           <div class="hc-meta">📍 ${esc(h.quartier || t.nom || '—')}${h.note ? ' · ' + hotelStars(h.note) : ''}</div>
@@ -2871,11 +2885,12 @@ function carbonHTML(mode){
   const mine = kg(m);
   const best = ['train','voiture','avion'].filter(x => x !== m).map(x => ({ x, v: kg(x) })).sort((a,b) => a.v - b.v)[0];
   const gain = best && best.v < mine ? Math.round((1 - best.v / mine) * 100) : 0;
-  const ICO = { avion:'✈️', train:'🚆', voiture:'🚗' };
+  /* ⚠️ Renommé pour la même raison : il masquait ICO(). */
+  const ICO_MODE = { avion:'avion', train:'train', voiture:'voiture' };
   return `<div class="divider"></div>
     <div class="info-card carbon-card">
-      <div class="ic-head"><span>🌍</span><h4>Impact sur le climat</h4></div>
-      <p class="carbon-big">${ICO[m] || '🌍'} <strong>${mine} kg de CO₂</strong> <span>aller-retour, par personne</span></p>
+      <div class="ic-head"><span>${ICO('monde',18)}</span><h4>Impact sur le climat</h4></div>
+      <p class="carbon-big">${ICO(ICO_MODE[m] || 'monde', 18)} <strong>${mine} kg de CO₂</strong> <span>aller-retour, par personne</span></p>
       <p class="ic-note">Calculé sur le trajet réel d'environ ${Math.round(dist)} km.</p>
       <p style="margin:8px 0 0">${gain
         ? `🌱 En ${esc(best.x)}, ce serait environ <strong>${best.v} kg</strong>, soit <strong>${gain} % de moins</strong>.`
@@ -2932,7 +2947,9 @@ function jjMarche(km){
   const EN = isEN();
   if(min <= 1) return EN ? 'right here' : 'à deux pas';
   const kmTxt = reel.toLocaleString(LOC(), { minimumFractionDigits:1, maximumFractionDigits:1 });
-  return `${M.ico} ≈ ${min} min · ${reel < 1 ? Math.round(reel * 1000) + ' m' : kmTxt + ' km'}`;
+  /* Retour en TEXTE BRUT (il est inséré via textContent ailleurs) : pas
+     d'icône ici, et surtout plus d'espace en tête. */
+  return `≈ ${min} min · ${reel < 1 ? Math.round(reel * 1000) + ' m' : kmTxt + ' km'}`;
 }
 /* La prochaine étape du programme horaire, si le voyageur en a un pour ce
    jour-là. On compare des minutes depuis minuit : les heures arrivent sous des
@@ -4694,14 +4711,17 @@ function tlTrajetHTML(etapes, i){
   const seuil = SET?.surPlace === 'pied' ? 45 : 30;
   let txt, cls = '';
   if(min <= seuil){
-    txt = `${M.ico} ${min} min · ${dist}`;
+    txt = `${min} min · ${dist}`;
   }else{
     /* ⚠️ Au-delà du seuil, on le SIGNALE : c'est le symptôme d'une journée mal
        regroupée, et c'est précisément ce qu'on veut rendre visible. */
     cls = ' tl-loin';
-    txt = `${M.ico} ${min} min · ${dist} — ${EN ? 'that is far for one day' : 'c’est loin pour une même journée'}`;
+    txt = `${min} min · ${dist} — ${EN ? 'that is far for one day' : 'c’est loin pour une même journée'}`;
   }
-  return `<div class="tl-trajet${cls}">${esc(txt)}</div>`;
+  /* ⚠️ L'icône est posée HORS de esc() : le texte reste échappé (il vient de
+     données), et le SVG n'est pas transformé en entités. Les mélanger dans une
+     même chaîne échappée est exactement ce qui affichait « &lt;svg… ». */
+  return `<div class="tl-trajet${cls}">${ICO(M.ico, 15)} ${esc(txt)}</div>`;
 }
 
 function timelineHTML(d, jour){
@@ -7342,10 +7362,15 @@ const SET_DEF = {
    Le détour : les rues ne sont pas droites. À pied on coupe (1,35), en voiture
    on suit les sens uniques (1,5). */
 const SUR_PLACE = {
-  pied:       { ico:'', nom:'À pied',            en:'On foot',        kmh:4.8,  detour:1.35 },
-  velo:       { ico:'', nom:'À vélo',            en:'By bike',        kmh:14,   detour:1.30 },
-  transports: { ico:'', nom:'Transports en commun', en:'Public transport', kmh:18, detour:1.25 },
-  voiture:    { ico:'', nom:'En voiture',        en:'By car',         kmh:22,   detour:1.50 }
+  /* ⚠️ `ico` porte désormais une CLÉ du jeu d'icônes, plus un émoji. Je l'avais
+     vidé en retirant les émojis — mais trois endroits l'affichent encore, et
+     ils sortaient donc « ≈ 12 min · 1,2 km » avec une espace en tête et aucun
+     pictogramme. Une clé vaut mieux qu'une chaîne vide : elle se rend en SVG
+     là où c'est possible, et s'ignore proprement là où le texte est échappé. */
+  pied:       { ico:'pied',     nom:'À pied',                en:'On foot',          kmh:4.8, detour:1.35 },
+  velo:       { ico:'velo',     nom:'À vélo',                en:'By bike',          kmh:14,  detour:1.30 },
+  transports: { ico:'metro',    nom:'Transports en commun',  en:'Public transport', kmh:18,  detour:1.25 },
+  voiture:    { ico:'voiture',  nom:'En voiture',            en:'By car',           kmh:22,  detour:1.50 }
 };
 const surPlaceActuel = () => SUR_PLACE[SET?.surPlace] || SUR_PLACE.pied;
 let SET = { ...SET_DEF };
@@ -12715,9 +12740,9 @@ let _iaAvant = null;                   /* instantané du programme, pour annuler
 
 /* Ce qu'Acolyte annonce avoir compris, avant d'agir. */
 const IA_INTENTS = {
-  question: { mot: 'Je réponds à ta question',        ico: '💬' },
-  creer:    { mot: 'Je prépare un nouveau voyage',    ico: '🧭' },
-  modifier: { mot: 'Je modifie ton programme',        ico: '✏️' }
+  question: { mot: 'Je réponds à ta question',     ico: 'discussion' },
+  creer:    { mot: 'Je prépare un nouveau voyage', ico: 'boussole'   },
+  modifier: { mot: 'Je modifie ton programme',     ico: 'crayon'     }
 };
 
 /* ------------------------------------------------------------
@@ -12821,7 +12846,7 @@ function iaAnnonce(intent){
   if(!el) return;
   const i = IA_INTENTS[intent];
   if(!i){ el.hidden = true; return; }
-  el.textContent = i.ico + '  ' + i.mot;
+  el.innerHTML = ICO(i.ico, 16) + '<span>' + esc(i.mot) + '</span>';
   el.hidden = false;
 }
 
@@ -12850,25 +12875,46 @@ function iaAjoute(qui, texte, rate){
    avec ses propositions.
 ------------------------------------------------------------ */
 function iaAjouteCartes(d){
+  const T = (v, n) => String(v || '').slice(0, n);
+  /* ⚠️ ON GARDE BEAUCOUP PLUS QUE LE NOM ET LE BUDGET. Le prompt produit déjà
+     les points forts, le pourquoi du transport, sa durée, son prix, le quartier
+     ET la raison de ce quartier — je n'en affichais qu'un tiers, et les
+     propositions ressemblaient à des vignettes d'agence. Tout ce qui suit était
+     DÉJÀ calculé et payé : on cessait simplement de le montrer. */
   const dest = (d && d.destinations || []).slice(0, 3).map(x => ({
-    nom: String(x.nom || '').slice(0, 80),
-    pays: String(x.pays || '').slice(0, 60),
-    resume: String(x.resume || '').slice(0, 300),
-    budget: String(x.budget_estime || '').slice(0, 60),
-    duree: String(x.duree_ideale || '').slice(0, 40),
-    meteo: String(x.meteo_periode || '').slice(0, 60),
-    transport: String(x.transport_conseille || '').slice(0, 20),
-    quartier: String(x.logement_quartier || '').slice(0, 60)
+    nom: T(x.nom, 80),
+    pays: T(x.pays, 60),
+    resume: T(x.resume, 320),
+    budget: T(x.budget_estime, 60),
+    duree: T(x.duree_ideale, 40),
+    meteo: T(x.meteo_periode, 60),
+    forts: (Array.isArray(x.points_forts) ? x.points_forts : []).slice(0, 4).map(f => T(f, 60)),
+    trMode: T(x.transport_conseille, 20),
+    trPourquoi: T(x.transport_pourquoi, 120),
+    trPrix: T(x.transport_prix, 50),
+    trDuree: T(x.transport_duree, 60),
+    quartier: T(x.logement_quartier, 60),
+    logPourquoi: T(x.logement_pourquoi, 120),
+    logPrix: T(x.logement_prix, 50),
+    logType: T(x.logement_type, 30),
+    langue: T(x.langue, 40),
+    monnaie: T(x.monnaie, 40)
   }));
   if(!dest.length){
     iaAjoute('aco', "Je n'ai pas réussi à sortir de proposition. Reformule en donnant un lieu ou une période.", true);
     return;
   }
+  /* Le champ « analyse » du prompt, c'est le RAISONNEMENT d'Acolyte : pourquoi
+     ces destinations-là, quelles contraintes il a retenues, quels pièges il a
+     écartés. Il était produit à chaque recherche et jeté. C'est pourtant la
+     seule chose qui explique le voyage au lieu de le décrire. */
+  const analyse = T(d && d.analyse, 700);
+  const intro = dest.length > 1
+    ? `J'ai retenu ${dest.length} pistes volontairement différentes.`
+    : `Voilà la formule que je te conseille.`;
   iaLog().push({
     qui: 'aco',
-    t: dest.length > 1
-      ? `Voilà ${dest.length} pistes vraiment différentes. Dis-moi ce qui t'attire, ou ajoute-en une à tes voyages.`
-      : `Voilà ce que je te propose. Dis-moi ce que tu en penses, ou ajoute-le à tes voyages.`,
+    t: analyse ? intro + '\n\n' + analyse : intro,
     cartes: dest,
     ts: Date.now()
   });
@@ -12925,23 +12971,42 @@ function iaRender(){
     /* Les propositions occupent toute la largeur du fil : ce sont des objets à
        comparer, pas une réplique dans une bulle. */
     const cartes = Array.isArray(m.cartes) && m.cartes.length
-      ? '<div class="ia-cartes">' + m.cartes.map((c, j) => `
+      ? '<div class="ia-cartes">' + m.cartes.map((c, j) => {
+          const mode = { avion:'avion', train:'train', voiture:'voiture' }[c.trMode] || 'avion';
+          /* Une ligne = un sujet, avec son icône et son POURQUOI. C'est le
+             « pourquoi » qui explique le voyage : sans lui, on liste des faits. */
+          const ligne = (ico, titre, detail, pourquoi) => detail || pourquoi ? `
+            <div class="iac-l">
+              <span class="iac-li">${ICO(ico, 17)}</span>
+              <span class="iac-lt">
+                <b>${esc(titre)}${detail ? ' · ' + esc(detail) : ''}</b>
+                ${pourquoi ? `<em>${esc(pourquoi)}</em>` : ''}
+              </span>
+            </div>` : '';
+          return `
           <div class="ia-carte">
             <div class="iac-t">
               <b>${esc(c.nom)}</b>
               ${c.pays ? `<em>${esc(c.pays)}</em>` : ''}
             </div>
             ${c.resume ? `<p class="iac-r">${esc(c.resume)}</p>` : ''}
+            ${c.forts && c.forts.length ? `<ul class="iac-forts">${
+              c.forts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+            <div class="iac-lignes">
+              ${ligne(mode, 'Y aller', [c.trPrix, c.trDuree].filter(Boolean).join(' · '), c.trPourquoi)}
+              ${ligne('hotel', c.quartier || 'Logement',
+                      [c.logType, c.logPrix].filter(Boolean).join(' · '), c.logPourquoi)}
+            </div>
             <div class="iac-f">
               ${c.budget ? `<span>${esc(c.budget)}</span>` : ''}
               ${c.duree ? `<span>${esc(c.duree)}</span>` : ''}
               ${c.meteo ? `<span>${esc(c.meteo)}</span>` : ''}
-              ${c.quartier ? `<span>${esc(c.quartier)}</span>` : ''}
+              ${c.monnaie ? `<span>${esc(c.monnaie)}</span>` : ''}
             </div>
             <button class="btn sm iac-go" data-iaadd="${i}:${j}" type="button">
-              ${ICO('plus')} Ajouter à mes voyages
+              ${ICO('plus', 16)}<span>Ajouter à mes voyages</span>
             </button>
-          </div>`).join('') + '</div>'
+          </div>`; }).join('') + '</div>'
       : '';
     return '<div class="ia-msg ' + (moi ? 'moi' : 'aco') + (m.rate ? ' rate' : '')
       + (cartes ? ' large' : '') + '" data-i="' + i + '">'
@@ -12957,7 +13022,14 @@ function iaRender(){
   if(typeof _cat !== 'undefined' && _cat === 'ia' && typeof renderRail === 'function') renderRail();
 }
 
-function iaEtat(msg){ const e = $('#iaEtat'); if(e) e.textContent = msg || ''; }
+/* La ligne d'état. `pense` ajoute les trois points animés : ils disent que le
+   travail continue, ce qu'un texte figé ne dit pas pendant quarante secondes. */
+function iaEtat(msg, pense){
+  const e = $('#iaEtat');
+  if(!e) return;
+  if(!msg){ e.textContent = ''; return; }
+  e.innerHTML = esc(msg) + (pense ? '<span class="ia-pense" aria-hidden="true"><i></i><i></i><i></i></span>' : '');
+}
 
 /* « Effacer » n'a de sens que s'il y a quelque chose à effacer. Actif sur une
    conversation vide, c'est une commande qui ne fait rien — et une commande qui
@@ -13209,8 +13281,8 @@ async function iaCreer(demande, deja){
     'Presque prêt…'
   ];
   let k = 0;
-  iaEtat(etapes[0]);
-  const t = setInterval(() => { k++; iaEtat(etapes[Math.min(k, etapes.length - 1)]); }, 6000);
+  iaEtat(etapes[0], true);
+  const t = setInterval(() => { k++; iaEtat(etapes[Math.min(k, etapes.length - 1)], true); }, 6000);
   try{ await proposeTrips('', false, '', 'chat'); }
   finally{ clearInterval(t); }
 }
@@ -13303,7 +13375,7 @@ async function iaEnvoie(){
   iaAjoute('moi', texte);
   _iaOccupe = true;
   const hote = $('#catIA'); if(hote) hote.classList.add('ia-occupe');
-  iaEtat('Acolyte lit ta demande…');
+  iaEtat('Acolyte lit ta demande', true);
   try{
     /* 1. QU'EST-CE QU'ON ME DEMANDE ? — un appel court et bon marché (120
        jetons), avant tout le reste. Il coûte moins qu'une réponse mal ciblée. */
@@ -13311,8 +13383,8 @@ async function iaEnvoie(){
     iaAnnonce(intent);
     /* 2. On le DIT avant d'agir. Une intention mal lue doit se voir dans le fil,
        pas seulement dans ses conséquences. */
-    iaEtat(IA_INTENTS[intent].ico + '  ' + IA_INTENTS[intent].mot
-      + (complexe ? ' — je prends le temps de réfléchir…' : '…'));
+    iaEtat(IA_INTENTS[intent].mot
+      + (complexe ? ' — je prends le temps de réfléchir' : ''), true);
     if(intent === 'question'){
       /* ⚠️ LE MODÈLE SUIT LA DIFFICULTÉ, il n'est plus le même pour tout.
          Tout partait sur « light » (Groq, petit modèle) avec 700 jetons : bien
@@ -13468,3 +13540,125 @@ iaMonte();
 window.addEventListener('resize', () => {
   if(_cat === 'ia' && typeof iaHauteur === 'function') iaHauteur();
 });
+
+/* ============================================================
+   MICRO-INTERACTIONS DU QUESTIONNAIRE
+   ------------------------------------------------------------
+   Une sélection qui ne répond pas laisse douter qu'elle a été prise — surtout
+   sur un formulaire long, où l'on coche quatorze choses de suite sans jamais
+   savoir si le geste a porté. Un signal de 200 ms suffit : il confirme sans
+   faire attendre.
+   ⚠️ Un seul écouteur délégué, en capture : les champs sont dans le HTML mais
+   les puces sont reconstruites à chaque rendu des préférences. Poser un
+   écouteur sur chacune les perdrait au premier redessin.
+============================================================ */
+function marqueChangement(el){
+  if(!el || (typeof motionOff === 'function' && motionOff())) return;
+  el.classList.remove('vient-de-changer');
+  /* force un reflow : sans lui, retirer puis remettre la classe dans le même
+     tour ne relance PAS l'animation — le navigateur ne voit aucun changement */
+  void el.offsetWidth;
+  el.classList.add('vient-de-changer');
+  setTimeout(() => el.classList.remove('vient-de-changer'), 700);
+}
+document.addEventListener('change', e => {
+  const el = e.target;
+  if(el && el.closest && el.closest('#catTrip .field')) marqueChangement(el);
+}, true);
+document.addEventListener('click', e => {
+  const c = e.target.closest && e.target.closest('.chip');
+  if(c) marqueChangement(c);
+}, true);
+
+/* ============================================================
+   LE JOURNAL DANS LE QUESTIONNAIRE
+   ------------------------------------------------------------
+   Une trentaine d'articles de fond sont écrits, et personne ne les voit avant
+   d'avoir terminé son voyage. Choisir une ambiance fait remonter celui qui
+   correspond : le contenu sert enfin à donner envie, au moment exact où
+   l'envie se forme.
+   ⚠️ AUCUN APPEL RÉSEAU AJOUTÉ. On lit _blogIdx, l'index déjà chargé pour
+   repérer les lieux qui ont un article. S'il n'est pas encore là, on ne
+   propose rien — on ne bloque pas le questionnaire pour un ornement.
+============================================================ */
+const VIBE_SUJETS = {
+  'plage & détente':      ['baie', 'salar', 'barrière', 'corail', 'plage'],
+  'ville & culture':      ['istanbul', 'kyoto', 'rome', 'venise', 'buenos', 'copenhague', 'marrakech'],
+  'nature & aventure':    ['fjord', 'canyon', 'fuji', 'aurores', 'chutes', 'cappadoce'],
+  'fête & vie nocturne':  ['buenos', 'istanbul', 'marrakech'],
+  'romantique':           ['venise', 'taj', 'pise', 'neuschwanstein'],
+  'bien-être & repos':    ['fjord', 'baie', 'aurores', 'kyoto']
+};
+function vibeSuggestion(){
+  const box = $('#vibeBlog');
+  if(!box) return;
+  const vibe = $('#fVibe') && $('#fVibe').value;
+  const idx = (typeof _blogIdx !== 'undefined' && Array.isArray(_blogIdx)) ? _blogIdx : null;
+  const cles = VIBE_SUJETS[vibe];
+  if(!vibe || !cles || !idx || !idx.length){ box.hidden = true; box.innerHTML = ''; return; }
+  /* On cherche un article dont le SUJET contient l'un des mots-clés. La forme
+     réduite (sans accents ni casse) est la même que celle du reste du site. */
+  const norm = s => (typeof normPlace === 'function') ? normPlace(s) : String(s || '').toLowerCase();
+  const a = idx.find(x => x && cles.some(k => norm(x.sujet).includes(k)));
+  if(!a){ box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML = `<button type="button" class="vb-carte" data-vbslug="${esc(a.slug)}">
+      <span class="vb-i">${ICO('document', 20)}</span>
+      <span class="vb-t"><b>${esc(a.titre)}</b><em>Un article du Journal, pour te donner envie</em></span>
+      <span class="vb-fl">${ICO('lien', 16)}</span>
+    </button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-vbslug]');
+  if(!b) return;
+  if(typeof openArticle === 'function') openArticle(b.dataset.vbslug);
+});
+{
+  const v = $('#fVibe');
+  if(v) v.addEventListener('change', vibeSuggestion);
+  /* L'index arrive de façon asynchrone : on retente une fois qu'il est là,
+     plutôt que de laisser la suggestion muette pour toujours. */
+  if(typeof blogIndex === 'function'){
+    setTimeout(() => { try{ blogIndex().then(vibeSuggestion).catch(() => {}); }catch(e){} }, 1200);
+  }
+}
+
+/* ============================================================
+   BUDGET INVERSÉ — « voilà ce que j'ai, trouve-moi quelque chose »
+   ------------------------------------------------------------
+   Le questionnaire demande une TRANCHE de budget (« moyen, 500-1200 € »).
+   C'est le bon réglage quand on est souple, et le mauvais quand on ne l'est
+   pas : quelqu'un qui a exactement 800 € et pas un euro de plus n'a pas de
+   tranche, il a un plafond.
+   Ce mode renverse la contrainte : le montant devient une LIMITE DURE, et
+   c'est la durée, le transport et le logement qui s'ajustent pour rentrer
+   dedans. Techniquement, il n'ajoute aucun appel : il change ce qu'on demande
+   au modèle dans le champ libre — donc il profite des données réelles, de la
+   relecture croisée et de tous les garde-fous existants.
+============================================================ */
+function budgetInverseTexte(){
+  const on = $('#fBudgetStrict') && $('#fBudgetStrict').checked;
+  const v = parseInt(($('#fBudgetMax') && $('#fBudgetMax').value) || '', 10);
+  if(!on || !Number.isFinite(v) || v <= 0) return '';
+  return ` BUDGET INVERSÉ — CONTRAINTE DURE : le voyageur dispose de ${v} € PAR PERSONNE, tout compris `
+    + `(transport aller-retour + logement + nourriture + activités). Ce montant est un PLAFOND ABSOLU, `
+    + `pas une fourchette : ne propose RIEN qui le dépasse, même de peu. `
+    + `Ajuste en priorité, dans cet ordre : la DURÉE (raccourcis plutôt que de dégrader), le TRANSPORT `
+    + `(un train de nuit ou un vol moins direct valent mieux qu'un dépassement), puis le LOGEMENT. `
+    + `Pour chaque proposition, DÉTAILLE la répartition dans "budget_estime" (ex : « 780 € = 140 vol + 360 logement `
+    + `+ 180 repas + 100 activités ») et dis dans "resume" ce que tu as sacrifié pour tenir le plafond. `
+    + `S'il est intenable pour la destination demandée, propose une destination plus proche PLUTÔT que de mentir sur les prix.`;
+}
+/* Le champ n'apparaît que si la case est cochée : un champ qui ne sert à rien
+   dans un questionnaire déjà long est un motif d'abandon — même règle que
+   pour l'âge des enfants et les pays imposés. */
+{
+  const c = $('#fBudgetStrict'), b = $('#fBudgetMaxBox'), t = $('#fBudget');
+  if(c && b) c.addEventListener('change', () => {
+    b.hidden = !c.checked;
+    /* La tranche perd son sens quand un plafond dur est posé : on la grise
+       plutôt que de la laisser dire le contraire du champ d'à côté. */
+    if(t){ t.disabled = c.checked; t.closest('.field') && t.closest('.field').classList.toggle('q-inactif', c.checked); }
+    if(c.checked && $('#fBudgetMax')) $('#fBudgetMax').focus();
+  });
+}
