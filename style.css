@@ -4680,7 +4680,12 @@ body{ min-height:100dvh }
 /* ⚠️ La règle de base pose un `transform` au focus sur tout champ : ici il
    ferait sauter le texte à l'intérieur de la barre, qui elle ne bouge pas. */
 .ia-saisie textarea:focus{background:none;transform:none;box-shadow:none}
-.ia-saisie .btn{flex:none;height:44px;padding:0 24px;border-radius:999px;white-space:nowrap}
+/* Bouton d'envoi CARRÉ : il ne porte plus qu'une icône, un bouton large avec
+   un pictogramme perdu au milieu ne veut rien dire. */
+.ia-saisie .btn{
+  flex:none;width:44px;height:44px;padding:0;border-radius:50%;
+  display:grid;place-items:center;
+}
 .ia-etat{font-size:.78rem;font-weight:600;color:var(--txt-2);margin:10px 0 0;min-height:1.2em;flex:none}
 
 /* Pendant un appel : on empêche le double envoi ET on le montre. */

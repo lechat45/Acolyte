@@ -3042,12 +3042,12 @@ const _comDrafts = {};                          /* commentaires en cours de frap
 /* Tout le contenu du voyage vit dans ces onglets, sous la carte « Ton
    voyage » qui ne garde que le résumé (trajet + conseil). */
 const PLAN_TABS = [
-  { id:'programme', ico:'📆', nom:'Programme' },
-  { id:'logement',  ico:'🏨', nom:'Logement'  },
-  { id:'transport', ico:'🚆', nom:'Transport' },
-  { id:'papiers',   ico:'🛂', nom:'Papiers'   },
-  { id:'events',    ico:'🎉', nom:'Événements'},
-  { id:'budget',    ico:'💶', nom:'Budget' }
+  { id:'programme', ico:'calendrier', nom:'Programme' },
+  { id:'logement',  ico:'hotel',      nom:'Logement'  },
+  { id:'transport', ico:'train',      nom:'Transport' },
+  { id:'papiers',   ico:'passeport',  nom:'Papiers'   },
+  { id:'events',    ico:'etincelle',  nom:'Événements'},
+  { id:'budget',    ico:'document',   nom:'Budget' }
 ];
 
 /* ============================================================
@@ -3508,11 +3508,11 @@ function renderSections(d){
   if(!zone) return;
   zone.innerHTML = `
     <div class="card sections-card">
-      <h2 class="sections-title">Ton voyage 🧳</h2>
+      <h2 class="sections-title">Ton voyage</h2>
       <div class="plan-tabs-wrap">
         <div class="plan-tabs" role="tablist" aria-label="Détails du voyage">
           ${PLAN_TABS.map(t => `<button class="plan-tab${t.id === _planTab ? ' on' : ''}" data-plantab="${t.id}" role="tab" aria-selected="${t.id === _planTab}">
-            <span>${t.ico}</span>${esc(t.nom)}</button>`).join('')}
+            ${ICO(t.ico,18)}${esc(t.nom)}</button>`).join('')}
         </div>
       </div>
       <div class="plan-panel">${(panels[_planTab] || panTransport)(d)}</div>
@@ -7334,10 +7334,10 @@ const SET_DEF = {
    Le détour : les rues ne sont pas droites. À pied on coupe (1,35), en voiture
    on suit les sens uniques (1,5). */
 const SUR_PLACE = {
-  pied:       { ico:'🚶', nom:'À pied',            en:'On foot',        kmh:4.8,  detour:1.35 },
-  velo:       { ico:'🚲', nom:'À vélo',            en:'By bike',        kmh:14,   detour:1.30 },
-  transports: { ico:'🚇', nom:'Transports en commun', en:'Public transport', kmh:18, detour:1.25 },
-  voiture:    { ico:'🚗', nom:'En voiture',        en:'By car',         kmh:22,   detour:1.50 }
+  pied:       { ico:'', nom:'À pied',            en:'On foot',        kmh:4.8,  detour:1.35 },
+  velo:       { ico:'', nom:'À vélo',            en:'By bike',        kmh:14,   detour:1.30 },
+  transports: { ico:'', nom:'Transports en commun', en:'Public transport', kmh:18, detour:1.25 },
+  voiture:    { ico:'', nom:'En voiture',        en:'By car',         kmh:22,   detour:1.50 }
 };
 const surPlaceActuel = () => SUR_PLACE[SET?.surPlace] || SUR_PLACE.pied;
 let SET = { ...SET_DEF };
@@ -7391,17 +7391,17 @@ function prefsBlock(){
 
 /* --- Rendu du panneau Préférences --- */
 const OPT = {
-  stStyle:  { key:'style',  multi:true,  items:[['detente','🏖️ Détente'],['culture','🏛️ Culture'],['aventure','🥾 Aventure'],['fete','🎉 Fête'],['nature','🌿 Nature'],['gastro','🍽️ Gastronomie'],['famille','👨‍👩‍👧 Famille'],['romantique','💘 Romantique']] },
-  stRythme: { key:'rythme', items:[['doux','🐢 Doux'],['equilibre','⚖️ Équilibré'],['intense','⚡ Intense']] },
+  stStyle:  { key:'style',  multi:true,  items:[['detente','Détente'],['culture','Culture'],['aventure','Aventure'],['fete','Fête'],['nature','Nature'],['gastro','Gastronomie'],['famille','Famille'],['romantique','Romantique']] },
+  stRythme: { key:'rythme', items:[['doux','Doux'],['equilibre','Équilibré'],['intense','Intense']] },
   /* Les libellés viennent de SUR_PLACE : une seule source, donc pas de risque
      qu'un choix existe ici sans vitesse associée — ou l'inverse. */
-  stSurPlace: { key:'surPlace', items: Object.entries(SUR_PLACE).map(([k, v]) => [k, v.ico + ' ' + v.nom]) },
-  stFood:   { key:'food',   items:[['aucun','🍽️ Aucune contrainte'],['vege','🥗 Végétarien'],['vegan','🌱 Végan'],['halal','☪️ Halal'],['casher','✡️ Casher'],['sansgluten','🌾 Sans gluten']] },
-  stAcces:  { key:'acces',  items:[['non','✅ Aucun besoin'],['oui','♿ Mobilité réduite']] },
-  stEco:    { key:'eviter', multi:true, items:[['avion','✈️ Éviter l\'avion'],['train','🚆 Éviter le train'],['voiture','🚗 Éviter la voiture']] },
-  stTheme:  { key:'theme',  items:[['auto','🖥️ Système'],['light','☀️ Clair'],['dark','🌙 Sombre']] },
-  stIA:     { key:null,     toggles:[['verif','🔍 Double vérification du plan'],['reels','📡 Données réelles (météo, trains, fériés)']] },
-  stUI:     { key:null,     toggles:[['motion','✨ Animations']] }
+  stSurPlace: { key:'surPlace', items: Object.entries(SUR_PLACE).map(([k, v]) => [k, v.nom]) },
+  stFood:   { key:'food',   items:[['aucun','Aucune contrainte'],['vege','Végétarien'],['vegan','Végan'],['halal','Halal'],['casher','Casher'],['sansgluten','Sans gluten']] },
+  stAcces:  { key:'acces',  items:[['non','Aucun besoin'],['oui','Mobilité réduite']] },
+  stEco:    { key:'eviter', multi:true, items:[['avion','Éviter l\'avion'],['train','Éviter le train'],['voiture','Éviter la voiture']] },
+  stTheme:  { key:'theme',  items:[['auto','Système'],['light','Clair'],['dark','Sombre']] },
+  stIA:     { key:null,     toggles:[['verif','Double vérification du plan'],['reels','Données réelles (météo, trains, fériés)']] },
+  stUI:     { key:null,     toggles:[['motion','Animations']] }
 };
 /* La fabrique de puces, sortie de renderSettings pour que l'écran de questions
    de la première visite s'en serve AUSSI. Un seul dessin, un seul jeu
@@ -8205,13 +8205,15 @@ function ppBadges(){
   const t = state.trip, c = state.cache || {};
   const jours = Object.keys(c.days || {}).length;
   const pays = new Set(h.map(x => x && x.pays).filter(Boolean)).size;
+  /* Les badges portent des ICÔNES, comme le reste : six émojis en couleur sur
+     une grille grise attiraient l'œil plus que le voyage lui-même. */
   return [
-    { i:'🧳', nom:'Premier départ',   d:'Préparer un voyage',            ok: n >= 1 },
-    { i:'🗺️', nom:'Cartographe',      d:'Détailler une journée',          ok: jours >= 1 },
-    { i:'📅', nom:'Organisé',         d:'Détailler 3 journées',           ok: jours >= 3 },
-    { i:'🌏', nom:'Deux pays',        d:'Préparer 2 pays différents',     ok: pays >= 2 },
-    { i:'⭐', nom:'Habitué',          d:'Préparer 5 voyages',             ok: n >= 5 },
-    { i:'📴', nom:'Hors-ligne',       d:'Installer Acolyte sur l’appareil', ok: pwaInstalle() }
+    { i:'valise',     nom:'Premier départ', d:'Préparer un voyage',              ok: n >= 1 },
+    { i:'carte',      nom:'Cartographe',    d:'Détailler une journée',            ok: jours >= 1 },
+    { i:'calendrier', nom:'Organisé',       d:'Détailler 3 journées',             ok: jours >= 3 },
+    { i:'monde',      nom:'Deux pays',      d:'Préparer 2 pays différents',       ok: pays >= 2 },
+    { i:'etincelle',  nom:'Habitué',        d:'Préparer 5 voyages',               ok: n >= 5 },
+    { i:'telephone',  nom:'Hors-ligne',     d:'Installer Acolyte sur l’appareil', ok: pwaInstalle() }
   ];
 }
 
@@ -8235,7 +8237,7 @@ function renderProfile(){
   /* connecté = vérifié : le serveur refuse la connexion tant que l'adresse
      n'est pas confirmée, il n'y a donc plus d'état intermédiaire à afficher */
   meta.textContent = u
-    ? `${u.email} · ${authToken() ? '☁️ synchronisé' : '📴 hors ligne'}`
+    ? `${u.email} · ${authToken() ? 'synchronisé' : 'hors ligne'}`
       + (u.created ? ` · membre depuis le ${new Date(u.created).toLocaleDateString(LOC())}` : '')
     : 'Visite libre — crée un compte pour générer tes voyages';
 
@@ -8257,7 +8259,7 @@ function renderProfile(){
     const t = state.trip;
     zv.innerHTML = t
       ? `<div class="pp-voyage">
-           <div class="pp-voyage-i" aria-hidden="true">🧳</div>
+           <div class="pp-voyage-i" aria-hidden="true">${ICO("valise",26)}</div>
            <div class="pp-voyage-t">
              <h3>${esc(t.nom || '?')}${t.pays ? ' · ' + esc(t.pays) : ''}</h3>
              <p>${esc(state.prefs && state.prefs.from ? 'Départ de ' + state.prefs.from : 'Voyage en préparation')}${
@@ -8265,19 +8267,19 @@ function renderProfile(){
            </div>
          </div>
          <div class="pp-raccourcis">
-           <button class="btn sm ghost" data-ppgo="trip">🧭 Ouvrir le voyage</button>
-           <button class="btn sm ghost" data-ppgo="map">🗺️ Voir la carte</button>
-           <button class="btn sm ghost" data-ppgo="ia">✨ Demander à l’assistant</button>
+           <button class="btn sm ghost" data-ppgo="trip">Ouvrir le voyage</button>
+           <button class="btn sm ghost" data-ppgo="map">Voir la carte</button>
+           <button class="btn sm ghost" data-ppgo="ia">Demander à l’assistant</button>
          </div>`
       : `<div class="pp-voyage">
-           <div class="pp-voyage-i" aria-hidden="true">✈️</div>
+           <div class="pp-voyage-i" aria-hidden="true">${ICO("avion",26)}</div>
            <div class="pp-voyage-t">
              <h3>Aucun voyage en cours</h3>
              <p>Décris une envie, Acolyte s’occupe du reste.</p>
            </div>
          </div>
          <div class="pp-raccourcis">
-           <button class="btn sm" data-ppgo="trip">✨ Commencer un voyage</button>
+           <button class="btn sm" data-ppgo="trip">Commencer un voyage</button>
          </div>`;
   }
 
@@ -8285,7 +8287,7 @@ function renderProfile(){
   const zb = $('#pfBadges');
   if(zb) zb.innerHTML = ppBadges().map(b =>
     `<div class="pp-badge${b.ok ? '' : ' off'}">
-       <span class="pb-i" aria-hidden="true">${b.i}</span>
+       <span class="pb-i" aria-hidden="true">${ICO(b.i, 22)}</span>
        <span class="pb-t"><b>${esc(b.nom)}</b><em>${esc(b.ok ? 'Débloqué' : b.d)}</em></span>
      </div>`).join('');
 }
@@ -8349,6 +8351,22 @@ function ppEnregistre(){
   toast('✔ Passeport mis à jour');
 }
 
+/* ⚠️ Les icônes du profil sont posées ICI, une fois, à partir de ICO_D.
+   `data-ico` marque l'emplacement dans index.html : le HTML dit OÙ, le JS dit
+   QUOI. Écrire les tracés SVG dans le HTML en aurait fait un second jeu
+   d'icônes à tenir d'accord avec le premier. */
+const PF_ICO_ONGLETS = { passeport:'passeport', ia:'boussole', look:'image', outils:'document' };
+function pfIcones(){
+  $$('.pf-tab').forEach(b => {
+    const k = PF_ICO_ONGLETS[b.dataset.pftab];
+    if(k && !b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', ICO(k, 17));
+  });
+  $$('#catProfile [data-ico]').forEach(e => {
+    const k = e.dataset.ico;
+    if(k && !e.querySelector('svg')) e.insertAdjacentHTML('afterbegin', ICO(k, e.classList.contains('emo') ? 20 : 17));
+  });
+}
+
 /* ---- Les quatre onglets ---- */
 const PF_PANNEAUX = { passeport:'#pfPanPasseport', ia:'#pfPanIa', look:'#pfPanLook', outils:'#pfPanOutils' };
 function pfOnglet(id){
@@ -8380,9 +8398,11 @@ document.addEventListener('scroll', e => {
 window.addEventListener('resize', () => { try{ pfTabsOmbre(); }catch(e){} });
 
 {
-  const e = $('#pfEdit');   if(e) e.onclick = ppOuvreEdition;
+  const e = $('#pfEdit');   if(e){ e.onclick = ppOuvreEdition; e.innerHTML = ICO('crayon', 16) + '<span>Modifier</span>'; }
   const a = $('#pfAvatar'); if(a) a.onclick = ppOuvreEdition;
   const s = $('#edSave');   if(s) s.onclick = ppEnregistre;
+  const d = $('#pfDelete'); if(d) d.innerHTML = ICO('poubelle', 16) + '<span>Supprimer définitivement mon compte</span>';
+  pfIcones();
 }
 const _e25 = $('#pfExport'); if(_e25) _e25.onclick = () => $('#btnExport').click();
 
@@ -9244,14 +9264,14 @@ const PC_PALETTES = {
 };
 /* MODÈLES : chacun réorganise complètement les informations et la mise en page */
 const PC_TEMPLATES = [
-  { id:'classique', nom:'📐 Classique' },
-  { id:'magazine',  nom:'📰 Magazine' },
-  { id:'dos',       nom:'✉️ Dos de carte' },
-  { id:'pellicule', nom:'🎞️ Pellicule' },
-  { id:'mosaique',  nom:'🧩 Mosaïque' },
-  { id:'passeport', nom:'🛂 Passeport' },
+  { id:'classique', nom:'Classique' },
+  { id:'magazine',  nom:'Magazine' },
+  { id:'dos',       nom:'Dos de carte' },
+  { id:'pellicule', nom:'Pellicule' },
+  { id:'mosaique',  nom:'Mosaïque' },
+  { id:'passeport', nom:'Passeport' },
   { id:'minimal',   nom:'✦ Minimal' },
-  { id:'vertical',  nom:'📱 Portrait', w:700, h:1000 }   /* format vertical */
+  { id:'vertical',  nom:'Portrait', w:700, h:1000 }   /* format vertical */
 ];
 
 /* Infos du voyage, préparées une fois pour tous les modèles */
@@ -12869,7 +12889,7 @@ function iaRender(){
   iaClearMaj();
   if(!L.length){
     fil.innerHTML = '<div class="ia-vide">'
-      + '<span class="ia-vide-ico" aria-hidden="true">✨</span>'
+      + ICO('etincelle',30,'ia-vide-ico')
       + "Pose une question sur ton voyage, décris-en un nouveau, ou demande une modification. "
       + 'En français, comme à quelqu’un.</div>';
     return;
@@ -13347,7 +13367,12 @@ function iaMonte(){
      tenir. Les écrire en dur dans index.html en aurait fait deux. */
   { const b = $('#iaInfo'); if(b) b.innerHTML = ICO('ampoule', 17); }
   { const b = $('#iaClear'); if(b) b.innerHTML = ICO('poubelle', 17); }
-  { const b = $('#iaGo'); if(b) b.innerHTML = ICO('envoyer', 18) + '<span>Envoyer</span>'; }
+  /* Le bouton d'envoi n'est plus qu'une icône : le mot « Envoyer » à côté d'un
+     avion en papier disait deux fois la même chose, et il forçait la barre à
+     s'élargir. Le libellé survit en aria-label et en title — un lecteur d'écran
+     l'annonce toujours. */
+  { const b = $('#iaGo'); if(b){ b.innerHTML = ICO('envoyer', 20);
+      b.setAttribute('aria-label','Envoyer'); b.title = 'Envoyer'; } }
   window.__acolyteIA = { build: IA_BUILD, envoie: () => iaEnvoie() };
   const go = $('#iaGo'); if(go) go.onclick = iaEnvoie;
   const info = $('#iaInfo'); if(info) info.onclick = iaBetaOuvre;
@@ -13380,7 +13405,7 @@ function iaMonte(){
   if(saisie && !$('#iaUndo')){
     const u = document.createElement('button');
     u.id = 'iaUndo'; u.type = 'button'; u.className = 'btn ghost sm'; u.hidden = true;
-    u.textContent = '↩ Annuler la modification';
+    u.innerHTML = ICO('retour',16) + '<span>Annuler la modification</span>';
     u.onclick = iaAnnule;
     saisie.parentNode.insertBefore(u, saisie.nextSibling);
   }
