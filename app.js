@@ -1376,7 +1376,7 @@ CONTEXTE VOYAGEUR :
 - Durée : ${p.days || '?'} · Période : ${p.when || 'flexible'}
 - Budget/pers : ${p.budget || '?'} · Voyageurs : ${p.adults||2} adulte(s)${p.kids ? ' + ' + p.kids + ' enfant(s)' : ''}
 - Destination souhaitée : ${p.dest || 'libre, à proposer'}${p.vibe ? `\n- Ambiance recherchée : ${p.vibe}` : ''}${p.withWho ? `\n- Voyage ${p.withWho}` : ''}${p.stay ? `\n- Style d'hébergement préféré : ${p.stay}` : ''}${p.transport ? `\n- MOYEN DE TRANSPORT IMPOSÉ par le voyageur : ${p.transport}. Construis le trajet avec ce mode, même s'il n'est pas le plus rapide. S'il est réellement impossible (mer à traverser, distance absurde), dis-le franchement et explique pourquoi avant de proposer autre chose.` : ''}
-- Limites & conditions : ${p.free || 'aucune'}${alimCtx(p)}${localCtx(p)}${itinCtx(p)}
+- Limites & conditions : ${p.free || 'aucune'}${alimCtx(p)}${localCtx(p)}${goutsCtx()}${itinCtx(p)}
 ${prefsBlock()}
 RÈGLES DE QUALITÉ (toujours valables) :
 - Uniquement des lieux, quartiers, établissements et transports RÉELS et vérifiables — au moindre doute, préfère l'option la plus connue plutôt que d'inventer.
@@ -1422,6 +1422,7 @@ function readPrefs(extra){
        réelles, relecture croisée, garde-fous — sans un seul appel de plus. */
     free:  ($('#fFree').value.trim().slice(0,600)
             + (typeof budgetInverseTexte === 'function' ? budgetInverseTexte() : '')
+            + (typeof pondTexte === 'function' ? pondTexte() : '')
             + (extra ? ' | Affinage : ' + String(extra).slice(0,600) : '')).slice(0, 1600)
   };
 }
@@ -4853,6 +4854,8 @@ document.addEventListener('click', e => {
     const i = +del.dataset.tldel;
     const nom = String(et[i]?.titre || '').slice(0, 60);
     if(!confirm(isEN() ? `Remove “${nom}” from this day?` : `Retirer « ${nom} » de cette journée ?`)) return;
+    /* Ce qu'on retire en dit plus que ce qu'on garde : voir goutsCtx(). */
+    try{ goutsNote(nom, et[i]?.type); }catch(e){}
     et.splice(i, 1);
     _tlEdit = null; save(); tlRender(jour);
     return;
@@ -12187,6 +12190,7 @@ function asstApplique(ops){
     try{
       if(op.action === 'supprimer'){
         faites.push({ op, quoi: etapes[i]?.titre || '' });
+        try{ goutsNote(etapes[i]?.titre, etapes[i]?.type); }catch(e){}
         etapes.splice(i, 1);
       }else if(op.action === 'ajouter'){
         const e = {
@@ -14570,3 +14574,308 @@ function pbDemande(jour){
   });
   try{ appliqueAmbiance(); }catch(e){}
 }
+
+/* ============================================================
+   AUTOUR DE MOI — l'assistant une fois sur place
+   ------------------------------------------------------------
+   Tout le site prépare le voyage. Celui-ci sert PENDANT : on est dans une rue,
+   il est 13 h, on cherche à manger, et ouvrir un questionnaire n'a aucun sens.
+   Les trois briques existaient déjà et ne s'étaient jamais rencontrées :
+   la géolocalisation (utilisée pour la carte), osmFood() (les tables réelles du
+   quartier, avec leurs coordonnées et même les régimes servis), et
+   asstApplique() (l'ajout validé d'une étape dans une journée).
+   ⚠️ AUCUN APPEL D'IA ICI, ET C'EST VOLONTAIRE. Une liste de commerces autour
+   d'un point est un fait, pas une opinion : la demander à un modèle, c'est
+   payer un aller-retour pour obtenir moins fiable que la donnée brute. Le
+   modèle sert à arbitrer et à raconter, pas à savoir où est la pharmacie.
+   ⚠️ « OUVERT MAINTENANT » N'EST PAS PROMIS. OpenStreetMap porte bien un champ
+   opening_hours, mais il est absent sur une grande partie des commerces et sa
+   grammaire admet des formes qu'on ne peut pas interpréter sans se tromper.
+   On affiche donc l'horaire quand il existe, tel quel, sans jamais conclure à
+   la place du voyageur : annoncer « ouvert » à tort envoie marcher pour rien.
+============================================================ */
+const AUTOUR_CATS = [
+  { id:'manger',   nom:'Manger',    ico:'valise',      q:'[amenity~"^(restaurant|cafe|fast_food|bar|bistro)$"][name]' },
+  { id:'courses',  nom:'Courses',   ico:'valise',      q:'[shop~"^(supermarket|convenience|bakery|greengrocer)$"][name]' },
+  { id:'sante',    nom:'Santé',     ico:'aide',        q:'[amenity~"^(pharmacy|hospital|clinic|doctors)$"][name]' },
+  { id:'argent',   nom:'Argent',    ico:'billet',      q:'[amenity~"^(atm|bank|bureau_de_change)$"]' },
+  { id:'voir',     nom:'À voir',    ico:'epingle',     q:'[tourism~"^(attraction|museum|artwork|viewpoint)$"][name]' },
+  { id:'transport',nom:'Transport', ico:'metro',       q:'[public_transport=station][name]' }
+];
+var _auPos = null, _auCat = 'manger', _auRayon = 800, _auRows = [];
+
+/* Même forme qu'osmFood, mais pour n'importe quelle catégorie. On garde son
+   double serveur : l'instance publique renvoie 429 dès qu'on enchaîne. */
+async function osmAutour(lat, lon, filtre, rayon){
+  const q = `[out:json][timeout:20];nwr(around:${rayon},${lat},${lon})${filtre};out center 60;`;
+  let d = null;
+  for(const url of OVERPASS_URLS){
+    try{
+      const r = await fetchT(url, { method:'POST',
+        headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+        body:'data=' + encodeURIComponent(q) }, netTimeout(12000));
+      if(r.status === 429 || r.status >= 500) continue;
+      if(!r.ok) return [];
+      d = await r.json(); break;
+    }catch(e){}
+  }
+  if(!d) return [];
+  const ref = { latitude: lat, longitude: lon };
+  return (d.elements || []).map(e => {
+    const t = e.tags || {};
+    const la = e.lat ?? e.center?.lat, lo = e.lon ?? e.center?.lon;
+    if(la == null || lo == null) return null;
+    return {
+      nom: String(t.name || t.operator || t.brand || 'Sans nom').slice(0, 70),
+      genre: String(t.amenity || t.shop || t.tourism || t.public_transport || '').replace(/_/g, ' '),
+      cuisine: t.cuisine ? String(t.cuisine).split(/[;,]/)[0].replace(/_/g, ' ').slice(0, 24) : '',
+      horaires: t.opening_hours ? String(t.opening_hours).slice(0, 60) : '',
+      vege: t['diet:vegetarian'] === 'yes' || t['diet:vegan'] === 'yes',
+      lat: +(+la).toFixed(5), lon: +(+lo).toFixed(5),
+      km: +havKm(ref, { latitude: la, longitude: lo }).toFixed(2)
+    };
+  }).filter(Boolean).sort((a, b) => a.km - b.km).slice(0, 30);
+}
+
+function auPosition(){
+  return new Promise((ok, non) => {
+    if(!navigator.geolocation) return non(new Error('PAS_DE_GEO'));
+    navigator.geolocation.getCurrentPosition(
+      p => ok({ lat: p.coords.latitude, lon: p.coords.longitude }),
+      e => non(e),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  });
+}
+
+function auRendu(){
+  const z = document.getElementById('auListe');
+  if(!z) return;
+  if(!_auRows.length){
+    z.innerHTML = `<p class="hint">Rien de répertorié dans ce rayon. Élargis la distance, ou change de catégorie —
+      OpenStreetMap est riche en ville, plus clairsemé ailleurs.</p>`;
+    return;
+  }
+  const p = state.prefs || {};
+  z.innerHTML = _auRows.map((r, i) => {
+    const m = Math.round(r.km * 1000);
+    const dist = m < 1000 ? m + ' m' : r.km.toFixed(1) + ' km';
+    /* ~12 min par km à pied, arrondi à la minute : de quoi décider, pas de quoi
+       promettre. On ne prétend pas connaître les feux rouges. */
+    const min = Math.max(1, Math.round(r.km * 12));
+    return `<div class="au-item">
+      <div class="au-txt">
+        <b>${esc(r.nom)}</b>
+        <em>${esc([r.genre, r.cuisine].filter(Boolean).join(' · '))}${r.vege && (p.regime || '').match(/vég/i) ? ' · végé confirmé' : ''}</em>
+        ${r.horaires ? `<span class="au-h">${ICO('calendrier', 12)} ${esc(r.horaires)}</span>` : ''}
+      </div>
+      <div class="au-cote">
+        <span class="au-km">${dist}</span>
+        <span class="au-min">${min} min à pied</span>
+        <button type="button" class="btn sm ghost" data-auadd="${i}">Ajouter</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function auCherche(){
+  const z = document.getElementById('auListe');
+  const cat = AUTOUR_CATS.find(c => c.id === _auCat) || AUTOUR_CATS[0];
+  if(z) z.innerHTML = loaderHTML('Je regarde autour de toi…');
+  try{
+    if(!_auPos) _auPos = await auPosition();
+    _auRows = await osmAutour(_auPos.lat, _auPos.lon, cat.q, _auRayon);
+    auRendu();
+  }catch(e){
+    if(z) z.innerHTML = errHTML(e && e.message === 'PAS_DE_GEO'
+      ? 'Cet appareil ne sait pas se localiser.'
+      : 'Localisation refusée ou indisponible. Autorise l’accès à ta position pour utiliser cet outil.');
+  }
+}
+
+function ouvreAutour(){
+  let ov = document.getElementById('ovAutour');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.className = 'overlay'; ov.id = 'ovAutour';
+    ov.innerHTML = `<div class="modal">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h2 style="margin:0">Autour de moi</h2>
+        <button class="close-btn" data-close="ovAutour" aria-label="Fermer">✕</button>
+      </div>
+      <p class="hint" style="margin:0 0 12px">Données OpenStreetMap, relevées autour de ta position réelle. Aucune IA ici : ce sont des faits, pas des suggestions.</p>
+      <div class="au-cats" id="auCats"></div>
+      <div class="au-rayon">
+        <label for="auRayon">Rayon</label>
+        <input type="range" id="auRayon" min="300" max="3000" step="100" value="${_auRayon}">
+        <b id="auRayonV">${_auRayon} m</b>
+      </div>
+      <div class="au-liste" id="auListe"></div>
+    </div>`;
+    document.body.appendChild(ov);
+    document.getElementById('auCats').innerHTML = AUTOUR_CATS.map(c =>
+      `<button type="button" class="chip${c.id === _auCat ? ' on' : ''}" data-aucat="${c.id}">${esc(c.nom)}</button>`).join('');
+    const sl = document.getElementById('auRayon');
+    sl.addEventListener('input', () => { document.getElementById('auRayonV').textContent = sl.value + ' m'; });
+    /* On ne relance la requête qu'au RELÂCHEMENT : à chaque cran, ce serait
+       vingt-sept appels à Overpass pour un seul geste. */
+    sl.addEventListener('change', () => { _auRayon = +sl.value; auCherche(); });
+    ov.addEventListener('click', e => {
+      const c = e.target.closest('[data-aucat]');
+      if(c){
+        _auCat = c.dataset.aucat;
+        ov.querySelectorAll('[data-aucat]').forEach(x => x.classList.toggle('on', x === c));
+        auCherche(); return;
+      }
+      const a = e.target.closest('[data-auadd]');
+      if(a){ auAjoute(+a.dataset.auadd); return; }
+      if(e.target.closest('[data-close]') || e.target === ov) ov.classList.remove('show');
+    });
+  }
+  ov.classList.add('show');
+  auCherche();
+}
+document.addEventListener('click', e => {
+  if(e.target.closest && e.target.closest('#btnAutour')) ouvreAutour();
+});
+
+/* L'ajout passe par asstApplique : c'est le SEUL chemin d'écriture validé du
+   programme. Écrire dans state.cache.days à la main contournerait la
+   validation, la remise en ordre des index et la sauvegarde. */
+function auAjoute(i){
+  const r = _auRows[i];
+  if(!r) return;
+  const jours = Object.keys((state.cache && state.cache.days) || {});
+  if(!jours.length){ toast('Détaille d’abord une journée pour pouvoir y ajouter quelque chose'); return; }
+  /* Le jour d'aujourd'hui si le séjour a commencé, le premier détaillé sinon. */
+  let jour = jours[0];
+  try{
+    const d = stayDates();
+    if(d){
+      const n = Math.floor((new Date() - new Date(d.in + 'T00:00:00')) / 864e5) + 1;
+      if(jours.includes(String(n))) jour = String(n);
+    }
+  }catch(e){}
+  const h = new Date();
+  const heure = String(Math.min(23, h.getHours())).padStart(2, '0') + ':' + String(h.getMinutes() < 30 ? '00' : '30').padStart(2, '0');
+  const res = asstApplique([{
+    action: 'ajouter', jour: Number(jour), apres: 999,
+    heure, titre: r.nom,
+    description: `Trouvé à ${Math.round(r.km * 1000)} m de toi${r.genre ? ' · ' + r.genre : ''}${r.horaires ? ' · ' + r.horaires : ''}`,
+    lieu: r.nom,
+    type: _auCat === 'manger' ? 'repas' : _auCat === 'voir' ? 'visite' : 'pause'
+  }]);
+  if(res && res.refusees && res.refusees.length){ toast('Ajout refusé : ' + (res.refusees[0].err || '')); return; }
+  toast(`✔ « ${r.nom.slice(0, 28)} » ajouté au jour ${jour}`);
+  document.getElementById('ovAutour')?.classList.remove('show');
+}
+
+/* ============================================================
+   CURSEURS DE PONDÉRATION
+   ------------------------------------------------------------
+   Le questionnaire pose des questions fermées : une ambiance, un budget, un
+   style. Ce que ces cases ne savent pas dire, c'est le DOSAGE — « plutôt
+   nature, mais pas au point de dormir sous la tente ». Trois curseurs le
+   disent en un geste.
+   ⚠️ On n'envoie PAS le chiffre au modèle. « nature : 72/100 » ne veut rien
+   dire pour lui et il en fera ce qu'il veut. On traduit chaque position en une
+   phrase franche, et seules les positions VRAIMENT marquées parlent : un
+   curseur laissé au milieu ne doit rien ajouter au prompt, sinon les trois
+   consignes tièdes noieraient les vraies contraintes du voyageur.
+============================================================ */
+const PONDS = [
+  { id:'pNature', g:'Ville', d:'Nature',
+    bas:'Le voyageur veut de la VILLE : rues, musées, cafés, vie urbaine. Ne construis pas un séjour autour de randonnées ou de paysages.',
+    haut:'Le voyageur veut de la NATURE : paysages, marche, grand air, eau. Réduis au strict minimum les visites urbaines et les musées.' },
+  { id:'pRythme', g:'Lent', d:'Intense',
+    bas:'RYTHME LENT imposé : deux choses par jour au maximum, de longues pauses, rien avant 10 h. Un séjour où l’on s’assoit.',
+    haut:'RYTHME INTENSE assumé : journées pleines, départs tôt, on enchaîne. Le voyageur préfère être fatigué que d’avoir raté quelque chose.' },
+  { id:'pConfort', g:'Économe', d:'Confort',
+    bas:'PRIORITÉ AU PRIX : sur chaque arbitrage, choisis le moins cher qui reste correct. Auberges, transports lents, cuisine de rue.',
+    haut:'PRIORITÉ AU CONFORT : sur chaque arbitrage, choisis ce qui fatigue le moins — trajets directs, logement central, pas de fausse économie qui coûte deux heures.' }
+];
+
+function pondTexte(){
+  const out = [];
+  for(const p of PONDS){
+    const el = document.getElementById(p.id);
+    if(!el) continue;
+    const v = +el.value;
+    /* Zone morte volontaire entre 35 et 65 : au milieu, on n'a pas d'avis, et
+       une consigne sans avis est du bruit qui dilue les autres. */
+    if(v <= 35) out.push(p.bas);
+    else if(v >= 65) out.push(p.haut);
+  }
+  return out.length ? ' DOSAGE DEMANDÉ — ' + out.join(' ') : '';
+}
+
+/* ============================================================
+   MÉMOIRE DES GOÛTS
+   ------------------------------------------------------------
+   La demande parlait d'« ajuster les poids neuronaux » : ce n'est pas
+   possible ici, et ça ne le serait pas davantage sur un serveur — on
+   n'entraîne pas un modèle avec trois suppressions. Mais l'INTENTION est
+   juste et se tient parfaitement sans réseau de neurones : ce que le voyageur
+   retire de ses journées en dit long, et il n'y a aucune raison de le lui
+   reproposer indéfiniment.
+   On compte donc les retraits par genre d'étape, et à partir de trois du même
+   genre, on le dit au modèle. Rien n'est deviné : le seuil est franc, la
+   mémoire est lisible, et elle s'oublie (on ne garde que les vingt derniers).
+============================================================ */
+const LS_GOUTS = 'acolite_gouts';
+function goutsLire(){
+  try{ const o = JSON.parse(localStorage.getItem(LS_GOUTS) || '{}'); return (o && typeof o === 'object') ? o : {}; }
+  catch(e){ return {}; }
+}
+function goutsNote(titre, type){
+  const g = goutsLire();
+  g.retraits = Array.isArray(g.retraits) ? g.retraits : [];
+  g.retraits.push({ t: String(titre || '').slice(0, 60), y: String(type || 'visite'), q: Date.now() });
+  g.retraits = g.retraits.slice(-20);
+  try{ localStorage.setItem(LS_GOUTS, JSON.stringify(g)); }catch(e){}
+}
+/* Les mots qui reviennent dans ce qu'on retire — plus parlant que le seul
+   « type », qui vaut « visite » pour un musée comme pour une cathédrale. */
+const GOUT_SUJETS = {
+  'musée':      /mus[ée]e|galerie|pinacoth/i,
+  'église':     /[ée]glise|cath[ée]drale|basilique|chapelle|monast/i,
+  'monument':   /monument|m[ée]morial|statue|palais|ch[âa]teau/i,
+  'shopping':   /shopping|boutique|march[ée] aux|centre commercial/i,
+  'randonnée':  /rando|marche|sentier|ascension|trek/i,
+  'plage':      /plage|baignade|piscine/i
+};
+function goutsCtx(){
+  const g = goutsLire();
+  const L = Array.isArray(g.retraits) ? g.retraits : [];
+  if(L.length < 3) return '';
+  const compte = {};
+  for(const r of L){
+    for(const [nom, re] of Object.entries(GOUT_SUJETS)) if(re.test(r.t)) compte[nom] = (compte[nom] || 0) + 1;
+  }
+  const boudes = Object.entries(compte).filter(([, n]) => n >= 3).map(([nom]) => nom);
+  if(!boudes.length) return '';
+  return `\n- APPRIS DES VOYAGES PRÉCÉDENTS : ce voyageur retire systématiquement de son programme ce qui relève de : ${boudes.join(', ')}. `
+    + `N'en propose pas, ou une seule fois s'il est impossible de faire autrement dans cette ville — et dis alors pourquoi. `
+    + `Ce n'est pas une interdiction absolue : c'est une préférence observée, à respecter sauf raison forte.`;
+}
+
+/* Le retour visuel des curseurs : sans lui, on ne sait pas si un réglage
+   « compte » ou s'il est dans la zone morte. */
+function pondLu(){
+  const z = document.getElementById('pondLu');
+  if(!z) return;
+  const dits = [];
+  for(const p of PONDS){
+    const el = document.getElementById(p.id);
+    if(!el) continue;
+    const v = +el.value;
+    if(v <= 35) dits.push(p.g);
+    else if(v >= 65) dits.push(p.d);
+  }
+  if(!dits.length){ z.hidden = true; z.textContent = ''; return; }
+  z.hidden = false;
+  z.innerHTML = 'Acolyte retiendra : ' + dits.map(x => `<b>${esc(x)}</b>`).join(' · ');
+}
+document.addEventListener('input', e => {
+  if(e.target && e.target.closest && e.target.closest('.pond')) pondLu();
+});

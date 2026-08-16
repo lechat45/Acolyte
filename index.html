@@ -473,6 +473,25 @@
                  placeholder="ex : arachides (allergie), artichaut, coriandre">
           <p class="hint">Allergies et aversions. Précise « allergie » quand c'en est une.</p>
         </div>
+        <!-- Le DOSAGE, que les listes déroulantes ne savent pas dire. Laissé au
+             milieu, un curseur n'ajoute rien au prompt : voir pondTexte(). -->
+        <div class="field wide pond-bloc">
+          <label>Le dosage</label>
+          <p class="hint" style="margin:0 0 10px">Laisse au centre ce sur quoi tu n'as pas d'avis — Acolyte n'en tiendra alors aucun compte.</p>
+          <div class="pond" data-pond="pNature">
+            <span>Ville</span><input type="range" id="pNature" min="0" max="100" step="5" value="50"
+              aria-label="Dosage entre ville et nature"><span>Nature</span>
+          </div>
+          <div class="pond" data-pond="pRythme">
+            <span>Lent</span><input type="range" id="pRythme" min="0" max="100" step="5" value="50"
+              aria-label="Dosage du rythme"><span>Intense</span>
+          </div>
+          <div class="pond" data-pond="pConfort">
+            <span>Économe</span><input type="range" id="pConfort" min="0" max="100" step="5" value="50"
+              aria-label="Dosage entre économie et confort"><span>Confort</span>
+          </div>
+          <p class="pond-lu" id="pondLu" hidden></p>
+        </div>
         <div class="field wide">
           <label class="opt-check" for="fLocal">
             <input type="checkbox" id="fLocal">
@@ -666,6 +685,14 @@
     <p class="ia-intent" id="iaIntent" role="status" aria-live="polite" hidden></p>
 
     <div class="ia-fil" id="iaFil" role="log" aria-live="polite" aria-label="Conversation avec l'assistant"></div>
+
+    <!-- « Autour de moi » sort de la discussion : il ne demande rien à l'IA, il
+         interroge la position réelle et OpenStreetMap. Le mettre dans le fil
+         l'aurait fait remonter et disparaître au premier message. -->
+    <div class="ia-terrain">
+      <button class="btn ghost sm" id="btnAutour" type="button">Autour de moi</button>
+      <span class="hint">Sur place : ce qui est ouvert près de toi, et l'ajout direct au programme du jour.</span>
+    </div>
 
     <div class="ia-saisie">
       <!-- aria-label plutôt qu'un <label> masqué : il n'existe pas de classe
