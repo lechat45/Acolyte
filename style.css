@@ -5505,3 +5505,41 @@ body.dg-actif .tl-item{ touch-action:none }
   .au-cote{ flex-direction:row;align-items:center;justify-content:space-between;gap:10px }
   .au-cote .btn{ margin-top:0 }
 }
+
+/* ============================================================
+   PROFIL — palier, urgence, mémoire
+============================================================ */
+.pp-prochain{
+  display:block;margin-top:3px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.74rem;color:var(--txt-2);
+}
+.pf-urg-v{
+  margin:0;padding:11px 13px;
+  background:var(--bg);border:1px solid var(--stroke);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.92rem;font-weight:650;color:var(--txt);
+  overflow-wrap:anywhere;
+}
+.pf-urg h3{ display:flex;align-items:center;gap:8px }
+/* Le contact perso dans la fiche d'urgence : visuellement distinct des numéros
+   officiels, pour qu'on ne confonde pas « les secours » et « mes proches ». */
+.urg-mien{ margin-top:10px }
+.urg-perso{ border-style:dashed !important }
+.urg-sansnum{ cursor:default }
+.mem-actif{
+  display:flex;align-items:center;gap:9px;margin:0 0 14px;padding:11px 13px;
+  background:var(--primary);color:var(--primary-ink);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.85rem;
+}
+.mem-actif svg{ flex:0 0 auto }
+.mem-lbl{
+  margin:0 0 8px;font-family:'Inter',system-ui,sans-serif;
+  font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--txt-2);
+}
+.mem-liste{ list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:5px }
+.mem-liste li{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:9px 12px;background:var(--bg);border:1px solid var(--stroke);border-radius:10px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.82rem;
+}
+.mem-liste li b{ color:var(--txt);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
+.mem-liste li span{ color:var(--txt-2);font-size:.74rem;flex:0 0 auto }

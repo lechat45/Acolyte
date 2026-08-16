@@ -2492,12 +2492,22 @@ async function realData(){
     }catch(e){} })();
     /* taux de change réel (Frankfurter, BCE) */
     const _fxP = (async () => { try{
-      const code = ((t.monnaie||'').toUpperCase().match(/\b(?!EUR)[A-Z]{3}\b/)||[])[0];
-      if(code){
-        const rf = await fetch(`https://api.frankfurter.dev/v1/latest?base=EUR&symbols=${code}`);
+      /* La monnaie DU VOYAGEUR sert de base, plus l'euro par défaut. Le champ
+         existait dans le passeport et n'était relu que pour re-remplir son
+         propre formulaire : quelqu'un qui compte en francs suisses voyait tout
+         converti depuis une monnaie qui n'est pas la sienne.
+         ⚠️ La base est passée dans une URL : on n'accepte que trois lettres,
+         sinon une saisie inattendue partirait telle quelle dans la requête. */
+      const pp = (typeof ppLire === 'function' ? ppLire() : {}) || {};
+      const base = /^[A-Z]{3}$/.test(String(pp.devise || '').toUpperCase())
+                 ? String(pp.devise).toUpperCase() : 'EUR';
+      const sym = base === 'EUR' ? '€' : base;
+      const code = ((t.monnaie||'').toUpperCase().match(/\b[A-Z]{3}\b/)||[])[0];
+      if(code && code !== base){
+        const rf = await fetch(`https://api.frankfurter.dev/v1/latest?base=${base}&symbols=${code}`);
         if(rf.ok){
           const df = await rf.json();
-          if(df.rates?.[code]) R.fx = `1 € = ${df.rates[code].toFixed(2)} ${code} (taux réel du jour, BCE)`;
+          if(df.rates?.[code]) R.fx = `1 ${sym} = ${df.rates[code].toFixed(2)} ${code} (taux réel du jour, BCE)`;
         }
       }
     }catch(e){} })();
@@ -3253,7 +3263,8 @@ function urgenceHTML(cc, t){
       : 'Nous n’avons pas de numéros vérifiés pour ce pays. Le 112 fonctionne dans beaucoup d’endroits, mais VÉRIFIE sur la fiche officielle ci-dessus avant de partir — ne te fie pas à cette ligne.'}</p>` : ''}
   <p class="hint" style="margin:8px 0 0">🇫🇷 ${EN
     ? 'French citizens: the nearest consulate is listed on the official page above. Save its number in your phone before leaving.'
-    : 'Le consulat de France le plus proche figure sur la fiche officielle ci-dessus. Enregistre son numéro dans ton téléphone avant de partir.'}</p>`;
+    : 'Le consulat de France le plus proche figure sur la fiche officielle ci-dessus. Enregistre son numéro dans ton téléphone avant de partir.'}</p>
+  ${typeof urgencePersoHTML === 'function' ? urgencePersoHTML() : ''}`;
 }
 
 function panPapiers(d){
@@ -6348,6 +6359,15 @@ function enterApp(){
    (date au format AAAA-MM-JJ) et incrémente CACHE dans sw.js.
 ============================================================ */
 const CHANGELOG = [
+  { v:'7.7', date:'2026-08-16', titre:'Ton passeport, et un cran de sécurité', items:[
+    '🆘 Ton contact d’urgence s’affiche enfin — dans ton passeport et sous les numéros de secours du pays. Il était demandé puis jamais montré',
+    '💱 Ta monnaie sert vraiment : les taux de change partent d’elle, plus de l’euro imposé',
+    '🏅 Cinq badges de terrain qui ne se débloquent qu’en voyageant pour de bon — pas depuis ton canapé',
+    '📈 Ton niveau dit ce qu’il reste avant le suivant, et le passeport compte tes pays et tes jours',
+    '🧠 « Ce qu’Acolyte a appris de toi » : ce qu’il a retenu de tes goûts s’affiche en clair, avec un bouton pour tout oublier',
+    '🔒 Les deux bibliothèques chargées depuis l’extérieur sont désormais scellées par empreinte : un fichier modifié en route est refusé au lieu d’être exécuté',
+    '🛡️ Le site ne peut plus parler qu’à son propre serveur, et non à n’importe quel voisin de son hébergeur'
+  ]},
   { v:'7.6', date:'2026-08-16', titre:'Acolyte te suit sur place', items:[
     '📍 « Autour de moi » : où manger, se soigner, retirer de l’argent près de toi — relevé sur la carte réelle, pas inventé, et ajouté au programme du jour en un bouton',
     '🎚️ Trois curseurs de dosage avant la recherche : Ville ou Nature, Lent ou Intense, Économe ou Confort. Laissés au centre, ils ne disent rien — c’est voulu',
@@ -8882,12 +8902,36 @@ function importPayload(str){
 
 /* --- Chargeurs de libs QR (cdnjs, à la demande, jamais bloquant) --- */
 const _lib = {};
+/* ⚠️ EMPREINTE OBLIGATOIRE (SRI). Ces deux fichiers viennent de serveurs qu'on
+   ne contrôle pas et s'exécutent avec TOUS les droits de la page — dont l'accès
+   au jeton de session dans localStorage. La CSP les autorise par leur domaine,
+   ce qui ne dit rien de leur CONTENU : si cdnjs servait un jour un fichier
+   modifié, il tournerait ici sans que rien ne le signale.
+   L'empreinte règle exactement ça : le navigateur calcule le hachage du fichier
+   reçu et refuse de l'exécuter s'il ne correspond pas. Les deux versions sont
+   figées (qrcodejs 1.0.0, jsqr 1.4.0), leur contenu ne peut donc pas changer
+   légitimement.
+   ⚠️ crossOrigin='anonymous' est INDISPENSABLE : sans requête CORS, le
+   navigateur ne peut pas lire le corps pour le vérifier, et il bloque le script
+   au lieu de l'accepter. Si tu changes une adresse, recalcule l'empreinte —
+   sinon la fonctionnalité cesse simplement de marcher.
+     openssl dgst -sha384 -binary fichier.js | openssl base64 -A          */
+const LIB_SRI = {
+  qrgen:  'sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU',
+  qrread: 'sha384-hStSInNIZ8ljtOVrmrgf7zdHMapaLBWoSnPTtF0nzsybp4+LuhDz6sHuEVpWIX8o'
+};
 function loadLib(name, src, test){
   if(_lib[name]) return _lib[name];
   _lib[name] = new Promise((res, rej) => {
     if(test()) return res();
     const sc = document.createElement('script');
     const to = setTimeout(() => { _lib[name] = null; rej(new Error(name)); }, 8000);
+    if(LIB_SRI[name]){
+      sc.integrity = LIB_SRI[name];
+      sc.crossOrigin = 'anonymous';
+    }
+    /* L'adresse de la page ne part pas chez le CDN avec la requête. */
+    sc.referrerPolicy = 'no-referrer';
     sc.src = src;
     sc.onload = () => { clearTimeout(to); test() ? res() : rej(new Error(name)); };
     sc.onerror = () => { clearTimeout(to); _lib[name] = null; rej(new Error(name)); };
@@ -14910,3 +14954,269 @@ function pondLu(){
 document.addEventListener('input', e => {
   if(e.target && e.target.closest && e.target.closest('.pond')) pondLu();
 });
+
+/* ============================================================
+   LE PROFIL — ce qui était collecté et jamais rendu
+   ------------------------------------------------------------
+   Deux champs du passeport étaient écrits puis perdus : `urgence` et `devise`.
+   Tous deux n'étaient relus QUE pour re-remplir leur propre formulaire — donc
+   demandés au voyageur, stockés, et invisibles partout ailleurs.
+   Le contact d'urgence est le plus grave : on demande qui prévenir en cas de
+   problème, et l'information reste introuvable au moment exact où elle sert.
+   Un champ qu'on ne rend jamais vaut moins que pas de champ du tout : il fait
+   croire que quelque chose est en place.
+============================================================ */
+
+/* La ligne de contact personnel, greffée sous les numéros du pays. Elle ne
+   REMPLACE pas les numéros officiels — elle vient après, parce qu'en urgence
+   on appelle les secours d'abord et ses proches ensuite.
+   ⚠️ `tel:` n'accepte pas n'importe quoi. On ne fabrique un lien d'appel que si
+   la fiche contient vraiment un numéro ; sinon on affiche le texte tel quel,
+   sans lien mort. Et le href est construit à partir des chiffres seuls : une
+   saisie libre comme « Maman 06 12 34 56 78 » donnerait un href cassé. */
+function urgencePersoHTML(){
+  const pp = (typeof ppLire === 'function' ? ppLire() : {}) || {};
+  const brut = String(pp.urgence || '').trim();
+  if(!brut) return '';
+  const EN = typeof isEN === 'function' && isEN();
+  const num = (brut.match(/\+?[\d][\d\s.()-]{6,}/) || [''])[0].replace(/[^\d+]/g, '');
+  const corps = num
+    ? `<a class="urg-n urg-perso" href="tel:${esc(num)}">
+         <span class="urg-ico">${ICO('telephone', 18)}</span>
+         <span><b>${esc(brut)}</b><i>${EN ? 'your emergency contact' : 'ton contact d’urgence'}</i></span></a>`
+    : `<div class="urg-n urg-perso urg-sansnum">
+         <span class="urg-ico">${ICO('telephone', 18)}</span>
+         <span><b>${esc(brut)}</b><i>${EN ? 'your emergency contact' : 'ton contact d’urgence'}</i></span></div>`;
+  return `<div class="urg urg-mien">${corps}</div>
+    <p class="hint" style="margin:6px 0 0">${EN ? 'Saved on this device only. Edit it in your passport.' : 'Enregistré sur cet appareil seulement. Modifiable dans ton passeport.'}</p>`;
+}
+
+/* ============================================================
+   NIVEAU — avec le palier suivant
+   ------------------------------------------------------------
+   ppNiveau() rendait « Baroudeur » sans jamais dire qu'il manquait trois
+   voyages pour la suite. Un niveau sans palier visible est une étiquette
+   morte : elle décrit, elle n'appelle à rien.
+============================================================ */
+const PP_PALIERS = [
+  { n: 0,  nom:'Nouveau venu' }, { n: 1,  nom:'Explorateur' },
+  { n: 2,  nom:'Baroudeur' },    { n: 5,  nom:'Grand voyageur' },
+  { n: 10, nom:'Globe-trotteur' }
+];
+function ppProchain(n){
+  const suiv = PP_PALIERS.find(p => p.n > n);
+  if(!suiv) return null;
+  const prec = [...PP_PALIERS].reverse().find(p => p.n <= n) || PP_PALIERS[0];
+  const total = Math.max(1, suiv.n - prec.n);
+  return { nom: suiv.nom, reste: suiv.n - n, pct: Math.round((n - prec.n) / total * 100) };
+}
+
+/* ============================================================
+   LES CHIFFRES DU PASSEPORT
+   ------------------------------------------------------------
+   L'onglet « Mon passeport » était le plus vide des quatre, alors que c'est
+   celui de l'identité et celui qui s'ouvre par défaut. getHistory() portait
+   déjà de quoi le remplir sans un seul appel réseau.
+============================================================ */
+function ppChiffres(){
+  const h = (typeof getHistory === 'function' ? getHistory() : []) || [];
+  const pays = new Set();
+  let jours = 0;
+  for(const x of h){
+    if(x && x.pays) String(x.pays).split(/[,;]/).forEach(p => { const v = p.trim(); if(v) pays.add(v); });
+    /* La durée est saisie en toutes lettres : « 5 jours », « 1 semaine »,
+       « week-end ». Compter le premier nombre venu donnait 1 pour une semaine
+       et 0 pour un week-end — un total faux affiché comme un fait. */
+    jours += dureeEnJours(x && x.prefs && x.prefs.days);
+  }
+  const c = state.cache || {};
+  return {
+    voyages: h.length,
+    pays: pays.size,
+    jours,
+    detaillees: Object.keys(c.days || {}).length,
+    depenses: Array.isArray(state.spends) ? state.spends.length : 0
+  };
+}
+
+/* ============================================================
+   BADGES — récompenser le voyage, pas seulement sa préparation
+   ------------------------------------------------------------
+   Les six badges d'origine comptaient des voyages PRÉPARÉS, des journées
+   DÉTAILLÉES, des pays PRÉPARÉS. Aucun ne se débloquait parce qu'on y était
+   allé. Les signaux existent pourtant maintenant : la liste « avant de partir »
+   cochée, des dépenses saisies sur place, une étape ajoutée depuis « Autour de
+   moi » — ces trois-là ne peuvent pas être obtenus depuis son canapé.
+============================================================ */
+function ppBadgesTerrain(){
+  const c = state.cache || {};
+  const maison = Object.keys(state.maison || {}).length;
+  const spends = Array.isArray(state.spends) ? state.spends : [];
+  /* Une étape dont la description porte la marque d'« Autour de moi » : elle
+     n'a pu être ajoutée qu'en étant physiquement sur place. */
+  let surPlace = 0;
+  for(const j of Object.values(c.days || {})){
+    for(const e of (j && j.etapes) || []) if(/de toi/.test(String(e && e.description || ''))) surPlace++;
+  }
+  const chk = Object.keys(state.checklist || {}).length;
+  return [
+    { i:'cle',        nom:'Porte fermée',   d:'Cocher toute la liste « Avant de partir »', ok: maison >= 10 },
+    { i:'valise',     nom:'Sac bouclé',     d:'Cocher 10 lignes de la valise',             ok: chk >= 10 },
+    { i:'billet',     nom:'Sur le terrain', d:'Noter une dépense pendant le voyage',       ok: spends.length >= 1 },
+    { i:'boussole',   nom:'À l’instinct',   d:'Ajouter un lieu trouvé « Autour de moi »',  ok: surPlace >= 1 },
+    { i:'discussion', nom:'Bien accompagné',d:'Échanger 10 messages avec l’assistant',     ok: (state.chatLog || []).length >= 10 }
+  ];
+}
+
+/* ============================================================
+   CE QU'ACOLYTE A APPRIS DE TOI
+   ------------------------------------------------------------
+   La mémoire des goûts observe ce que tu retires de tes journées et en tient
+   compte dans les prompts suivants. Elle était invisible.
+   ⚠️ Une application qui accumule des préférences en silence doit les MONTRER
+   et permettre de les EFFACER. Ce n'est pas un ornement : c'est la condition
+   pour que l'observation reste acceptable. On affiche donc ce qui est retenu,
+   en toutes lettres, avec le bouton pour tout oublier.
+============================================================ */
+function ppMemoireHTML(){
+  const g = (typeof goutsLire === 'function' ? goutsLire() : {}) || {};
+  const L = Array.isArray(g.retraits) ? g.retraits : [];
+  if(!L.length){
+    return `<p class="hint" style="margin:0">Acolyte n'a encore rien retenu. Quand tu retires des activités de tes journées, il finit par comprendre ce qui ne t'intéresse pas — et cesse d'en proposer.</p>`;
+  }
+  const compte = {};
+  for(const r of L){
+    for(const [nom, re] of Object.entries(GOUT_SUJETS)) if(re.test(r.t)) compte[nom] = (compte[nom] || 0) + 1;
+  }
+  const retenus = Object.entries(compte).filter(([, n]) => n >= 3).map(([nom]) => nom);
+  const recents = L.slice(-6).reverse();
+  return `
+    ${retenus.length
+      ? `<div class="mem-actif">${ICO('etincelle', 15)}
+           <span>Acolyte évite désormais : <b>${esc(retenus.join(', '))}</b></span></div>`
+      : `<p class="hint" style="margin:0 0 10px">Rien n'est encore retenu : il faut trois retraits du même genre pour qu'Acolyte en tienne compte.</p>`}
+    <p class="mem-lbl">Tes derniers retraits</p>
+    <ul class="mem-liste">${recents.map(r =>
+      `<li><b>${esc(r.t || '—')}</b><span>${r.q ? new Date(r.q).toLocaleDateString(LOC()) : ''}</span></li>`).join('')}</ul>
+    <button type="button" class="btn sm ghost" id="pfOublie">Tout oublier</button>`;
+}
+document.addEventListener('click', e => {
+  if(!e.target.closest || !e.target.closest('#pfOublie')) return;
+  try{ localStorage.removeItem(LS_GOUTS); }catch(err){}
+  toast('Acolyte a tout oublié');
+  if(typeof renderProfile === 'function') renderProfile();
+});
+
+/* On complète renderProfile plutôt que de le réécrire : il câble une vingtaine
+   d'identifiants, et le rouvrir entier pour ajouter trois encarts serait le
+   meilleur moyen d'en débrancher un au passage. */
+function profilPlus(){
+  const h = (typeof getHistory === 'function' ? getHistory() : []) || [];
+  const ch = ppChiffres();
+
+  /* --- le palier suivant, sous le niveau --- */
+  const niv = document.getElementById('pfNiveau');
+  if(niv && niv.parentElement){
+    let p = document.getElementById('pfProchain');
+    const suiv = ppProchain(h.length);
+    if(!p && suiv){
+      p = document.createElement('span');
+      p.id = 'pfProchain'; p.className = 'pp-prochain';
+      niv.insertAdjacentElement('afterend', p);
+    }
+    if(p) {
+      if(suiv){ p.hidden = false; p.textContent = `encore ${suiv.reste} voyage${suiv.reste > 1 ? 's' : ''} avant « ${suiv.nom} »`; }
+      else { p.hidden = true; }
+    }
+  }
+
+  /* --- les chiffres enrichis --- */
+  const box = document.getElementById('pfStats');
+  if(box){
+    const pp = (typeof ppLire === 'function' ? ppLire() : {}) || {};
+    const stats = [
+      ['Voyages préparés',  String(ch.voyages)],
+      ['Pays différents',   String(ch.pays)],
+      ['Jours planifiés',   ch.jours ? String(ch.jours) : '—'],
+      ['Journées détaillées', String(ch.detaillees)],
+      ['Ville de départ',   pp.home || (state.prefs && state.prefs.from) || '—'],
+      ['Monnaie',           pp.devise || 'EUR'],
+      ['Hors-ligne',        (typeof pwaInstalle === 'function' && pwaInstalle()) ? '✔ installé' : 'navigateur']
+    ];
+    box.innerHTML = stats.map(([k, v]) =>
+      `<div class="pp-stat"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join('');
+  }
+
+  /* --- contact d'urgence, dans le passeport aussi --- */
+  const pp = (typeof ppLire === 'function' ? ppLire() : {}) || {};
+  const zv = document.getElementById('pfVoyageActif');
+  if(zv && zv.parentElement){
+    let u = document.getElementById('pfUrgence');
+    if(!u){
+      u = document.createElement('div');
+      u.id = 'pfUrgence'; u.className = 'card pf-urg';
+      zv.insertAdjacentElement('afterend', u);
+    }
+    u.innerHTML = pp.urgence
+      ? `<h3 style="margin:0 0 4px">${ICO('telephone', 17)} En cas de problème</h3>
+         <p class="hint" style="margin:0 0 10px">Rappelé aussi dans l'onglet Papiers de ton voyage, sous les numéros d'urgence du pays.</p>
+         <p class="pf-urg-v">${esc(pp.urgence)}</p>`
+      : `<h3 style="margin:0 0 4px">${ICO('telephone', 17)} En cas de problème</h3>
+         <p class="hint" style="margin:0 0 10px">Tu n'as pas indiqué qui prévenir. Cette information reste sur ton appareil et n'est envoyée nulle part.</p>
+         <button type="button" class="btn sm ghost" data-ppedit="1">L'ajouter</button>`;
+  }
+
+  /* --- badges de terrain, à la suite des badges de préparation --- */
+  const bz = document.getElementById('pfBadges');
+  if(bz && typeof ppBadges === 'function'){
+    const tous = [].concat(ppBadges(), ppBadgesTerrain());
+    /* Même gabarit que renderProfile : la classe est `off` quand c'est
+       VERROUILLÉ, et le libellé bascule sur « Débloqué ». Inventer un autre
+       balisage ici aurait donné deux styles de badges côte à côte. */
+    bz.innerHTML = tous.map(b => `
+      <div class="pp-badge${b.ok ? '' : ' off'}">
+        <span class="pb-i" aria-hidden="true">${ICO(b.i, 22)}</span>
+        <span class="pb-t"><b>${esc(b.nom)}</b><em>${esc(b.ok ? 'Débloqué' : b.d)}</em></span>
+      </div>`).join('');
+  }
+
+  /* --- ce qu'Acolyte a appris --- */
+  const pan = document.getElementById('pfPanPasseport');
+  if(pan){
+    let m = document.getElementById('pfMemoire');
+    if(!m){
+      m = document.createElement('div');
+      m.id = 'pfMemoire'; m.className = 'card';
+      pan.appendChild(m);
+    }
+    m.innerHTML = `<h3 style="margin:0 0 4px">${ICO('ampoule', 17)} Ce qu'Acolyte a appris de toi</h3>
+      <p class="hint" style="margin:0 0 12px">Observé sur cet appareil, jamais envoyé. Tu peux tout effacer d'un bouton.</p>
+      ${ppMemoireHTML()}`;
+  }
+}
+document.addEventListener('click', e => {
+  if(e.target.closest && e.target.closest('[data-ppedit]') && typeof ppOuvreEdition === 'function') ppOuvreEdition();
+});
+
+{
+  const orig = window.renderProfile;
+  if(typeof orig === 'function'){
+    window.renderProfile = function(){
+      const r = orig.apply(this, arguments);
+      try{ profilPlus(); }catch(e){}
+      return r;
+    };
+  }
+}
+
+/* Traduit une durée écrite à la main en nombre de jours. Rend 0 quand on ne
+   sait pas : mieux vaut un total un peu bas qu'un chiffre inventé. */
+function dureeEnJours(d){
+  const s = String(d || '').toLowerCase();
+  if(!s) return 0;
+  if(/week-?end|weekend/.test(s)) return 2;
+  const n = parseInt((s.match(/\d+/) || [0])[0], 10) || 0;
+  if(/semaine|week/.test(s)) return n > 0 && n < 60 ? n * 7 : 7;
+  if(/mois|month/.test(s))   return n > 0 && n < 13 ? n * 30 : 30;
+  return n > 0 && n < 400 ? n : 0;
+}
