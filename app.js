@@ -95,6 +95,7 @@ let state = {
   mode: 'plane',
   cache: {},          // réponses IA
   checklist: {},      // valise cochée
+  maison: {},         // « avant de partir » cochée
   spends: [],         // dépenses réelles
   chatLog: [],        // concierge
   notes: '',          // carnet
@@ -306,6 +307,11 @@ function safeState(raw){
     mode:         ['plane', 'train', 'car'].includes(s.mode) ? s.mode : 'plane',
     cache:        safeCache(s.cache),
     checklist:    s.checklist && typeof s.checklist === 'object' ? safeJSON(s.checklist) : {},
+    /* ⚠️ Sans cette ligne, la liste « avant de partir » serait effacée à chaque
+       rechargement : safeState est une LISTE BLANCHE, ce qui n'y figure pas
+       n'existe pas. C'est exactement le piège que le contrat d'état est là
+       pour rendre visible. */
+    maison:       s.maison && typeof s.maison === 'object' ? safeJSON(s.maison) : {},
     spends:       Array.isArray(s.spends) ? s.spends.slice(0, 300).map(x => safeJSON(x)) : [],
     chatLog:      Array.isArray(s.chatLog) ? s.chatLog.slice(0, 100).map(x => safeJSON(x)) : [],
     notes:        _sTxt(s.notes, 20000),
@@ -810,7 +816,10 @@ var ICO_D = {
   discussion:'<path d="M20.4 12.4a7.6 7.6 0 0 1-8.2 7.6l-5.4 1.4 1.4-4.2a7.6 7.6 0 1 1 12.2-4.8Z"/><path d="M9 11.6h.01M12 11.6h.01M15 11.6h.01"/>',
   telephone:'<rect x="6.6" y="2.6" width="10.8" height="18.8" rx="2.4"/><path d="M10.6 18.6h2.8"/>',
   fermer:   '<path d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"/>',
-  retour:   '<path d="M9.6 5.4 3.6 11.4l6 6"/><path d="M3.6 11.4h11a5.8 5.8 0 0 1 0 11.6h-1"/>'
+  retour:   '<path d="M9.6 5.4 3.6 11.4l6 6"/><path d="M3.6 11.4h11a5.8 5.8 0 0 1 0 11.6h-1"/>',
+  /* — attente jouable & kiosque — */
+  manette:  '<path d="M7.4 7.6h9.2a5 5 0 0 1 4.9 4l.8 4.3a2.7 2.7 0 0 1-5 1.9l-1.2-1.9H7.9l-1.2 1.9a2.7 2.7 0 0 1-5-1.9l.8-4.3a5 5 0 0 1 4.9-4Z"/><path d="M7.2 11.2v2.6M5.9 12.5h2.6"/><path d="M15.9 11.9h.01M17.8 13.6h.01"/>',
+  coche:    '<path d="m4.8 12.4 4.7 4.7L19.2 7.4"/>'
 };
 /* Rend une icône. `taille` en px, `cls` pour les cas où il faut la viser en CSS. */
 function ICO(nom, taille, cls){
@@ -1367,7 +1376,7 @@ CONTEXTE VOYAGEUR :
 - Durée : ${p.days || '?'} · Période : ${p.when || 'flexible'}
 - Budget/pers : ${p.budget || '?'} · Voyageurs : ${p.adults||2} adulte(s)${p.kids ? ' + ' + p.kids + ' enfant(s)' : ''}
 - Destination souhaitée : ${p.dest || 'libre, à proposer'}${p.vibe ? `\n- Ambiance recherchée : ${p.vibe}` : ''}${p.withWho ? `\n- Voyage ${p.withWho}` : ''}${p.stay ? `\n- Style d'hébergement préféré : ${p.stay}` : ''}${p.transport ? `\n- MOYEN DE TRANSPORT IMPOSÉ par le voyageur : ${p.transport}. Construis le trajet avec ce mode, même s'il n'est pas le plus rapide. S'il est réellement impossible (mer à traverser, distance absurde), dis-le franchement et explique pourquoi avant de proposer autre chose.` : ''}
-- Limites & conditions : ${p.free || 'aucune'}${itinCtx(p)}
+- Limites & conditions : ${p.free || 'aucune'}${alimCtx(p)}${localCtx(p)}${itinCtx(p)}
 ${prefsBlock()}
 RÈGLES DE QUALITÉ (toujours valables) :
 - Uniquement des lieux, quartiers, établissements et transports RÉELS et vérifiables — au moindre doute, préfère l'option la plus connue plutôt que d'inventer.
@@ -1402,6 +1411,11 @@ function readPrefs(extra){
     itin:  $('#fMulti')?.checked ? 'pays' : '',
     /* pays imposés — n'a de sens que si la case est cochée */
     pays:  $('#fMulti')?.checked ? _paysChoisis.slice(0, PAYS_MAX) : [],
+    /* À table. `evite` est bridé à 160 caractères et part tel quel dans le
+       prompt : c'est du texte libre du voyageur, comme `free` juste dessous. */
+    regime: $('#fRegime')?.value || '',
+    evite:  ($('#fEvite')?.value || '').trim().slice(0, 160),
+    local:  !!$('#fLocal')?.checked,
     /* ⚠️ Le budget inversé s'ajoute ICI, dans « free », et pas ailleurs : c'est
        le champ que ctx() transmet mot pour mot au modèle sous « Limites &
        conditions ». Il profite donc de tout ce qui existe déjà — données
@@ -1699,7 +1713,7 @@ function reopenTrip(i){
   if(!x.trip){ const f = $('#fDest'); if(f) f.value = x.nom; gotoStep(1); toast('Destination pré-remplie 👍'); return; }
   state.trip = x.trip;
   if(x.prefs) state.prefs = x.prefs;
-  state.cache = {}; state.checklist = {}; state.spends = []; state.chatLog = []; state.notes = ''; state.resas = [];
+  state.cache = {}; state.checklist = {}; state.maison = {}; state.spends = []; state.chatLog = []; state.notes = ''; state.resas = [];
   state._geo = null; state.planAnswers = []; state._qsDone = false; _onSiteDone = false;
   _pcPhotos = null;   /* sinon la carte postale garderait les photos du voyage précédent */
   state.board = { votes:{}, comments:{} };
@@ -1716,7 +1730,7 @@ document.addEventListener('click', e => {
 function chooseTrip(i){
   state.trip = state.destinations[i];
   pushHistory(state.trip);
-  state.cache = {}; state.checklist = {}; state.spends = []; state.chatLog = []; state.notes = ''; state.resas = [];
+  state.cache = {}; state.checklist = {}; state.maison = {}; state.spends = []; state.chatLog = []; state.notes = ''; state.resas = [];
   state._geo = null; state.planAnswers = []; state._qsDone = false; _onSiteDone = false;
   _pcPhotos = null;   /* photos de carte postale liées au voyage précédent */
   state.board = { votes:{}, comments:{} };   /* votes/commentaires liés à l'ancien voyage */
@@ -2565,7 +2579,14 @@ async function loadPlan(force = false){
      pour s'intercaler ici. Un monument ne ferme pas comme un restaurant, le
      risque d'invention est faible — une consigne de NOMMAGE suffit, et c'est
      elle qui permet ensuite de retrouver chaque lieu sur la carte. */
-  const sightCtx = `\nNOMMAGE DES LIEUX — important : écris chaque lieu du programme sous son nom d'usage en français, celui qui sert de titre à son article Wikipédia (ex : « Colisée », « Fontaine de Trevi », « Musées du Vatican »). Pas de description à la place du nom, pas de nom inventé.\n`;
+  /* ⚠️ La consigne de nommage n'est pas cosmétique : c'est elle qui rend les
+     lieux VÉRIFIABLES. verifiePlanAffiche() cherche ensuite chaque nom dans le
+     géocodeur — une description à la place d'un nom (« un joli café près du
+     port ») est introuvable par construction, et un lieu introuvable ne peut
+     être ni contrôlé, ni placé sur la carte, ni cherché par le voyageur. */
+  const sightCtx = `\nNOMMAGE DES LIEUX — important : écris chaque lieu du programme sous son nom d'usage en français, celui qui sert de titre à son article Wikipédia (ex : « Colisée », « Fontaine de Trevi », « Musées du Vatican »). Pas de description à la place du nom, pas de nom inventé.
+Respire un grand coup et résous ce problème étape par étape.
+AVANT d'inscrire un lieu au programme, vérifie-le en trois temps : (1) situe-le — sais-tu dire dans quel quartier ou à quelle adresse il se trouve, et ses coordonnées approximatives ? (2) confronte — ces coordonnées tombent-elles bien dans ${t.nom} ou sa périphérie immédiate, et non dans une autre ville qui porte un nom voisin ? (3) tranche — si tu ne peux pas faire les deux premiers points avec certitude, N'INSCRIS PAS CE LIEU et prends-en un autre dont tu es sûr. Une journée avec quatre lieux réels vaut infiniment mieux qu'une journée avec six lieux dont un inventé.\n`;
   /* Le transport et le logement ont DÉJÀ été trouvés à l'étape 2 : on les garde et on approfondit */
   const dejaTrouve = (t.transport_conseille || t.logement_quartier)
     ? `\nCHOIX DÉJÀ VALIDÉS À L'ÉTAPE 2 (le voyageur les a acceptés en choisissant ce voyage — GARDE-LES, sauf si les données réelles les contredisent) :
@@ -3072,7 +3093,10 @@ const PLAN_TABS = [
   { id:'transport', ico:'train',      nom:'Transport' },
   { id:'papiers',   ico:'passeport',  nom:'Papiers'   },
   { id:'events',    ico:'etincelle',  nom:'Événements'},
-  { id:'budget',    ico:'document',   nom:'Budget' }
+  { id:'budget',    ico:'document',   nom:'Budget' },
+  /* « Maison » ferme la boucle : tout le reste prépare l'arrivée, celui-ci
+     prépare le départ. C'est le seul onglet qui ne coûte aucun appel d'IA. */
+  { id:'maison',    ico:'cle',        nom:'Avant de partir' }
 ];
 
 /* ============================================================
@@ -3528,7 +3552,7 @@ function renderPlan(d){
    programme (sinon on perdrait les journées dépliées et les commentaires
    en cours de frappe). */
 function renderSections(d){
-  const panels = { programme: panProgramme, transport: panTransport, logement: panLogement, papiers: panPapiers, events: panEvents, budget: panBudget };
+  const panels = { programme: panProgramme, transport: panTransport, logement: panLogement, papiers: panPapiers, events: panEvents, budget: panBudget, maison: panMaison };
   const zone = $('#zoneSections');
   if(!zone) return;
   zone.innerHTML = `
@@ -3683,7 +3707,9 @@ async function planB(jour){
   if(!d?.programme) return;
   const jr = d.programme.find(x => +x.jour === +jour);
   if(!jr) return;
-  const raison = prompt(`Pourquoi refaire le jour ${jour} ?\n(ex : il pleut, on est fatigués, trop cher, déjà vu…)`, 'il pleut');
+  /* prompt() remplacé par une vraie boîte du site : voir pbDemande(). Le
+     contrat est identique — une chaîne, ou null si le voyageur renonce. */
+  const raison = await pbDemande(jour);
   if(raison === null) return;
   toast('🔄 Nouvelle version du jour ' + jour + '…');
   try{
@@ -4939,7 +4965,7 @@ async function loadFood(){
 ${fb ? 'Budget souhaité : ' + fb + '.' : ''}
 ${ft ? 'Envie : ' + ft + '.' : ''}
 OBJECTIF : des adresses où l'on mange BIEN sans payer le prix touristique.
-RÈGLES :
+${alimDur()}RÈGLES :
 - Écarte les terrasses des rues très touristiques et les abords immédiats des monuments.
 - Privilégie les endroits où mangent les habitants : cuisine locale, salle modeste, menu du midi.
 - Donne une fourchette de prix CHIFFRÉE et réaliste (ex : « 12–18 € le plat »), jamais « pas cher ».
@@ -8800,7 +8826,7 @@ function importPayload(str){
   state.trip = trip;
   state.prefs = { ...(state.prefs||{}), ...(prefs||{}) };
   state.destinations = [trip];
-  state.cache = {}; state.checklist = {}; state.spends = []; state.notes = ''; state.resas = [];
+  state.cache = {}; state.checklist = {}; state.maison = {}; state.spends = []; state.notes = ''; state.resas = [];
   state.planAnswers = []; state._qsDone = false; state.modeManual = false;
   _pcPhotos = null;   /* photos de carte postale liées au voyage précédent */
   state.board = { votes:{}, comments:{} };   /* votes/commentaires liés à l'ancien voyage */
@@ -13661,4 +13687,873 @@ function budgetInverseTexte(){
     if(t){ t.disabled = c.checked; t.closest('.field') && t.closest('.field').classList.toggle('q-inactif', c.checked); }
     if(c.checked && $('#fBudgetMax')) $('#fBudgetMax').focus();
   });
+}
+
+
+/* ============================================================
+   L'ATTENTE JOUABLE — les mini-jeux comme écran de chargement
+   ------------------------------------------------------------
+   Quatre jeux dorment dans l'arcade, derrière un bouton qu'on ne pousse que
+   si l'on s'ennuie DÉJÀ. Or il existe un moment, exactement un, où le voyageur
+   s'ennuie et regarde l'écran sans rien pouvoir faire : la génération, qui
+   tient jusqu'à deux minutes sur un gros séjour.
+   ⚠️ DEUX RÈGLES, et ce sont elles qui dessinent tout le reste :
+   1. NE RIEN PROPOSER TOUT DE SUITE. Une réponse en six secondes avec un
+      « joue en attendant » qui traverse l'écran, c'est du bruit. On ne montre
+      rien avant 6 s — au-delà, l'attente est réelle, la proposition aussi.
+   2. NE JAMAIS ARRACHER LA PARTIE. Si le voyage arrive pendant le jeu, on
+      l'annonce dans un bandeau et on laisse finir. Couper une partie pour
+      afficher un résultat qui, lui, attendra très bien, reprendrait d'une
+      main ce qu'on venait de donner de l'autre.
+============================================================ */
+var _attOn = false, _attT = 0, _attPret = false;
+const ATT_JEUX = ['ovGame', 'ovGeo', 'ovPong', 'ovPack'];
+
+/* Le jeu en cours, s'il y en a un. On ne compte PAS #ovArcade : le sélecteur
+   n'est pas une partie, on peut le refermer sans rien interrompre. */
+function attJeuOuvert(){
+  for(const id of ATT_JEUX){
+    const el = document.getElementById(id);
+    if(el && el.classList.contains('show')) return el;
+  }
+  return null;
+}
+
+function attPilule(){
+  let p = document.getElementById('attPilule');
+  if(p) return p;
+  p = document.createElement('div');
+  p.id = 'attPilule';
+  p.className = 'att-pilule';
+  /* Deux formulations, une par largeur : sur un téléphone de 375 px la phrase
+     longue chasserait le bouton hors de l'écran, et la masquer complètement
+     laisserait une pastille « Jouer » qui tombe du ciel sans raison. */
+  p.innerHTML = `<span class="att-txt"><span class="att-long">Ça va prendre un moment. Un jeu&nbsp;?</span><span class="att-court">Un jeu en attendant&nbsp;?</span></span>
+    <button type="button" class="att-go">${ICO('manette', 16)}<span>Jouer</span></button>
+    <button type="button" class="att-non" aria-label="Non merci">${ICO('fermer', 15)}</button>`;
+  document.body.appendChild(p);
+  p.querySelector('.att-go').addEventListener('click', () => {
+    p.classList.remove('on');
+    if(typeof openArcade === 'function') openArcade();
+  });
+  p.querySelector('.att-non').addEventListener('click', () => {
+    p.classList.remove('on');
+    /* Un refus vaut pour la session : reproposer à chaque génération, ce
+       serait n'avoir pas écouté. */
+    try{ sessionStorage.setItem('acolite_pas_de_jeu', '1'); }catch(e){}
+  });
+  return p;
+}
+
+function attMontre(){
+  if(!_attOn) return;
+  try{ if(sessionStorage.getItem('acolite_pas_de_jeu') === '1') return; }catch(e){}
+  if(attJeuOuvert()) return;                 /* il joue déjà : rien à proposer */
+  attPilule().classList.add('on');
+}
+
+function attenteDebut(){
+  if(_attOn) return;
+  _attOn = true; _attPret = false;
+  clearTimeout(_attT);
+  _attT = setTimeout(attMontre, 6000);
+}
+
+function attenteFin(){
+  if(!_attOn) return;
+  _attOn = false;
+  clearTimeout(_attT);
+  const p = document.getElementById('attPilule');
+  if(p) p.classList.remove('on');
+  const jeu = attJeuOuvert();
+  if(jeu) attBandeau(jeu);
+}
+
+/* Le résultat est arrivé pendant la partie. On l'annonce SANS fermer : le
+   bandeau se pose dans la fenêtre du jeu, et c'est le voyageur qui décide.
+   ⚠️ On clique le VRAI bouton de fermeture plutôt que de retirer la classe
+   nous-mêmes : chaque jeu accroche sa boucle d'animation et son nettoyage à ce
+   bouton. Court-circuiter, ce serait laisser une boucle tourner dans le vide. */
+function attBandeau(jeu){
+  if(_attPret) return;
+  _attPret = true;
+  let b = jeu.querySelector('.att-pret');
+  if(!b){
+    b = document.createElement('div');
+    b.className = 'att-pret';
+    b.innerHTML = `<span>${ICO('coche', 16)} C'est prêt — quand tu veux, pas avant.</span>
+      <button type="button" class="att-voir">Voir</button>`;
+    (jeu.querySelector('.modal') || jeu).appendChild(b);
+    b.querySelector('.att-voir').addEventListener('click', () => {
+      b.remove(); _attPret = false;
+      const x = jeu.querySelector('.close-btn[data-close]');
+      if(x) x.click(); else jeu.classList.remove('show');
+    });
+  }
+  b.classList.add('on');
+}
+
+/* On enveloppe plutôt que de modifier l'intérieur de ces fonctions : elles
+   font déjà quinze choses, et l'attente n'est pas leur affaire.
+   ⚠️ Les trois attrapent leurs erreurs elles-mêmes (try/catch/finally) — poser
+   un gestionnaire de rejet ici ne masque donc AUCUNE erreur qui remonterait
+   autrement jusqu'à la console. */
+['proposeTrips', 'loadPlan', 'loadDayDetail'].forEach(nom => {
+  const orig = window[nom];
+  if(typeof orig !== 'function') return;
+  window[nom] = function(){
+    const r = orig.apply(this, arguments);
+    if(r && typeof r.then === 'function'){
+      attenteDebut();
+      r.then(attenteFin, attenteFin);
+    }
+    return r;
+  };
+});
+
+/* ============================================================
+   MODE KIOSQUE — l'écran qui compte les jours
+   ------------------------------------------------------------
+   Il existait déjà un compte à rebours dans le code : startCountdown(), écrit,
+   complet… et INJOIGNABLE. Son seul appelant est loadTools(), que personne
+   n'appelle, et ses trois zones (#zoneCount, #zoneMeteo, #zoneTime) n'existent
+   nulle part dans le HTML. Il n'a donc jamais pu s'afficher une seule fois.
+   Plutôt que d'écrire un second compte à rebours à côté du premier, celui-ci
+   reprend son calcul et lui donne enfin un écran — mais un écran fait pour être
+   REGARDÉ DE LOIN : chiffre énorme, contraste maximal, aucune commande.
+   ⚠️ On ne touche PAS à "orientation":"portrait" du manifeste : ce réglage vaut
+   pour toute l'application, et l'imposer en paysage pour un seul écran
+   casserait le questionnaire. C'est le CSS du kiosque qui s'adapte.
+============================================================ */
+var _kioT = 0, _kioLock = null, _kioPhrase = 0;
+
+/* Les mêmes bornes que startCountdown, isolées pour être testables seules. */
+function kioCompte(){
+  const dep = state.prefs && state.prefs.depart;
+  if(!dep) return null;
+  const cible = new Date(dep + 'T00:00:00');
+  if(isNaN(cible.getTime())) return null;
+  const diff = cible - new Date();
+  return {
+    cible, diff,
+    parti: diff <= 0,
+    jours:  Math.max(0, Math.floor(diff / 864e5)),
+    heures: Math.max(0, Math.floor(diff % 864e5 / 36e5)),
+    min:    Math.max(0, Math.floor(diff % 36e5 / 6e4))
+  };
+}
+
+/* Ce qui défile en bas. Pas des slogans : des choses vraies tirées du voyage,
+   pour qu'un coup d'œil en passant apprenne quelque chose. */
+function kioPhrases(){
+  const t = state.trip || {}, p = state.prefs || {}, out = [];
+  const c = kioCompte();
+  if(c && !c.parti){
+    out.push('Départ le ' + c.cible.toLocaleDateString(LOC(), { weekday:'long', day:'numeric', month:'long' }));
+    if(c.jours > 0) out.push(`soit ${c.jours} jour${c.jours > 1 ? 's' : ''}, ${c.heures} h et ${c.min} min`);
+  }
+  if(t.pays) out.push(String(t.pays));
+  if(p.days) out.push(String(p.days) + ' sur place');
+  const plan = state.cache && state.cache.plan;
+  const j1 = plan && Array.isArray(plan.programme) && plan.programme[0];
+  if(j1 && j1.titre) out.push('Jour 1 · ' + String(j1.titre));
+  if(t.budget_estime) out.push('Budget estimé · ' + String(t.budget_estime));
+  return out.length ? out : ['Ton voyage t’attend'];
+}
+
+function kioRend(){
+  const box = document.getElementById('kioCorps');
+  if(!box) return;
+  const t = state.trip || {};
+  const c = kioCompte();
+  const nom = t.nom ? String(t.nom) : 'ton prochain voyage';
+  let haut;
+  if(!c){
+    haut = '<div class="kio-n kio-vide">—</div><div class="kio-u">aucune date de départ</div>';
+  }else if(c.parti){
+    haut = '<div class="kio-n kio-go">Bon voyage</div><div class="kio-u">c’est maintenant</div>';
+  }else if(c.jours === 0){
+    haut = `<div class="kio-n">${c.heures}<small>h</small>${String(c.min).padStart(2, '0')}</div>
+            <div class="kio-u">avant le départ</div>`;
+  }else{
+    haut = `<div class="kio-n">${c.jours}</div>
+            <div class="kio-u">jour${c.jours > 1 ? 's' : ''} avant ${esc(nom)}</div>`;
+  }
+  const ph = kioPhrases();
+  box.innerHTML = haut
+    + `<div class="kio-dest">${esc(nom)}${t.drapeau ? ' ' + esc(t.drapeau) : ''}</div>`
+    + `<div class="kio-bas">${esc(ph[_kioPhrase % ph.length])}</div>`;
+}
+
+function kioTick(){ _kioPhrase++; kioRend(); }
+
+async function kioLock(on){
+  /* Un écran mural qui s'éteint au bout d'une minute ne sert à rien. L'API
+     n'existe pas partout (ni hors HTTPS) : son absence n'est pas une erreur,
+     on continue sans. */
+  try{
+    if(on){
+      if('wakeLock' in navigator && !_kioLock) _kioLock = await navigator.wakeLock.request('screen');
+    }else if(_kioLock){
+      await _kioLock.release(); _kioLock = null;
+    }
+  }catch(e){ _kioLock = null; }
+}
+
+function kioVisible(){
+  const ov = document.getElementById('ovKiosque');
+  if(document.visibilityState === 'visible' && ov && ov.classList.contains('on')) kioLock(true);
+}
+
+function ouvreKiosque(){
+  let ov = document.getElementById('ovKiosque');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'ovKiosque';
+    ov.className = 'kiosque';
+    ov.innerHTML = '<div class="kio-corps" id="kioCorps"></div>'
+      + `<button type="button" class="kio-x" aria-label="Quitter le mode kiosque">${ICO('fermer', 20)}</button>`;
+    document.body.appendChild(ov);
+    ov.querySelector('.kio-x').addEventListener('click', fermeKiosque);
+  }
+  _kioPhrase = 0;
+  kioRend();
+  ov.classList.add('on');
+  document.documentElement.classList.add('kio-actif');
+  clearInterval(_kioT);
+  _kioT = setInterval(kioTick, 5000);
+  kioLock(true);
+  /* Le navigateur relâche le verrou dès que l'onglet passe en arrière-plan et
+     ne le rend PAS tout seul au retour : il faut le redemander. */
+  document.addEventListener('visibilitychange', kioVisible);
+}
+
+function fermeKiosque(){
+  const ov = document.getElementById('ovKiosque');
+  if(ov) ov.classList.remove('on');
+  document.documentElement.classList.remove('kio-actif');
+  clearInterval(_kioT); _kioT = 0;
+  kioLock(false);
+  document.removeEventListener('visibilitychange', kioVisible);
+}
+
+document.addEventListener('keydown', e => {
+  const ov = document.getElementById('ovKiosque');
+  if(e.key === 'Escape' && ov && ov.classList.contains('on')) fermeKiosque();
+});
+document.addEventListener('click', e => {
+  if(e.target.closest && e.target.closest('[data-kiosque]')) ouvreKiosque();
+});
+
+/* Entrée directe : c'est ce qui en fait un vrai mode kiosque. On installe
+   l'application, on lance le raccourci « Compte à rebours », et l'écran mural
+   s'affiche sans passer par l'accueil.
+   ⚠️ On attend que l'état soit chargé, sinon le kiosque s'ouvre sur un voyage
+   vide et affiche « — » alors que la date existe bel et bien. */
+function kiosqueDemande(){
+  try{ return new URL(location.href).searchParams.has('kiosque'); }
+  catch(e){ return false; }
+}
+if(kiosqueDemande()) setTimeout(() => { try{ ouvreKiosque(); }catch(e){} }, 900);
+
+
+/* ============================================================
+   À TABLE — régime, allergies, aversions
+   ------------------------------------------------------------
+   Le questionnaire savait déjà dire « plutôt street-food » ou « gastro ». Il ne
+   savait pas dire « je suis allergique à l'arachide ». La différence n'est pas
+   de degré : une envie ratée déçoit, une allergie ratée envoie à l'hôpital.
+   D'où deux champs et non un — un menu déroulant pour le régime, du texte libre
+   pour ce qui n'entre dans aucune case.
+   ⚠️ La contrainte est posée DEUX FOIS, et c'est voulu : une fois dans ctx(),
+   donc dans tous les prompts (voyages, journées, activités) ; une fois en tête
+   des RÈGLES du prompt restaurants, là où elle décide vraiment. Un modèle perd
+   les consignes du milieu d'un long prompt — sur une allergie, on préfère se
+   répéter que se fier à sa mémoire.
+============================================================ */
+function alimCtx(p){
+  p = p || state.prefs || {};
+  const bits = [];
+  if(p.regime) bits.push('régime ' + p.regime);
+  if(p.evite)  bits.push('NE PEUT PAS MANGER : ' + p.evite);
+  if(!bits.length) return '';
+  return `\n- À TABLE (contrainte, pas préférence) : ${bits.join(' · ')}. `
+    + `Chaque restaurant, chaque repas et chaque marché que tu proposes doit offrir une option qui respecte ça — `
+    + `pas « on trouvera bien », une option identifiée. Si un lieu incontournable ne le permet pas, dis-le franchement.`;
+}
+/* Le bloc dur, en tête des règles du prompt restaurants. */
+function alimDur(){
+  const p = state.prefs || {};
+  if(!p.regime && !p.evite) return '';
+  let s = 'CONTRAINTE ALIMENTAIRE ABSOLUE — elle prime sur le budget, sur le quartier et sur ta propre idée de la bonne adresse :\n';
+  if(p.regime) s += `- Régime : ${p.regime}. Chaque adresse doit avoir un VRAI plat ${p.regime} à la carte — pas une salade d'accompagnement, pas « ils peuvent adapter ». Dis dans le « pourquoi » LEQUEL.\n`;
+  if(p.evite)  s += `- À ÉVITER ABSOLUMENT : ${p.evite}. Écarte toute adresse dont la cuisine tourne autour de ça. Si le mot « allergie » apparaît, considère que la moindre trace est exclue : préfère une adresse où la cuisine est simple et les ingrédients lisibles.\n`;
+  s += '- Si tu n\'es pas certain qu\'une adresse convienne, NE LA PROPOSE PAS. Une adresse en moins vaut mieux qu\'un repas gâché.\n';
+  return s;
+}
+
+/* ============================================================
+   COMME UN HABITANT
+   ------------------------------------------------------------
+   Le prompt restaurants écartait déjà les terrasses à touristes. Ce mode étend
+   la même exigence à TOUT le voyage — quartier, activités, journées — au lieu
+   de la laisser à la seule page « Manger ».
+============================================================ */
+function localCtx(p){
+  p = p || state.prefs || {};
+  if(!p.local) return '';
+  return `\n- MODE « COMME UN HABITANT » : le voyageur ne veut PAS l'itinéraire des cars de tourisme. `
+    + `Écarte les lieux dont l'intérêt principal est d'être connus, les files d'attente, les rues commerçantes à souvenirs `
+    + `et les restaurants à menu traduit en six langues. Propose ce que ferait quelqu'un qui habite là : cafés de quartier, `
+    + `marchés du matin, parcs et bains publics, salles de concert, boutiques spécialisées, quartiers résidentiels qui valent la marche. `
+    + `Tu peux garder UN incontournable si le voyage n'aurait pas de sens sans lui — mais donne alors l'heure ou l'angle `
+    + `qui permet de l'aborder sans la foule, et dis-le. Pour chaque proposition, une raison CONCRÈTE de local, pas un adjectif.`;
+}
+
+/* ============================================================
+   VÉRIFICATION DES LIEUX — le garde-fou contre les lieux inventés
+   ------------------------------------------------------------
+   C'est la faiblesse structurelle d'un voyage écrit par un modèle : un nom de
+   musée plausible, dans la bonne ville, avec la bonne ambiance… et qui n'existe
+   pas. Le prompt dit déjà « uniquement des lieux réels » ; ça réduit, ça
+   n'élimine pas. On ne peut pas le savoir en relisant le texte — il faut aller
+   voir dehors.
+   Chaque lieu du programme est donc cherché dans le géocodeur Open-Meteo (le
+   même que la météo, gratuit, sans clé) et confronté à la position de la
+   destination. Trois issues : trouvé à proximité, trouvé mais LOIN (le modèle a
+   pris un homonyme dans un autre pays), introuvable.
+   ⚠️ ON INTERROGE WIKIPÉDIA, PAS LE GÉOCODEUR. Ma première version passait par
+   geoPlace() (Open-Meteo) : c'est un géocodeur de VILLES. Il ne connaît ni la
+   Fontaine de Trevi, ni les Musées du Vatican — il aurait donc signalé comme
+   « introuvable » à peu près chaque monument d'un programme correct. Un contrôle
+   qui crie au loup finit ignoré, et celui-là aurait hurlé en continu.
+   wikiCoords() est fait pour ça : il rend les coordonnées de lieux nommés, et
+   accepte cinquante titres en UNE requête. Le prompt du plan demande d'ailleurs
+   déjà d'écrire chaque lieu sous son titre d'article Wikipédia — la vérification
+   et la consigne de nommage sont les deux moitiés du même dispositif.
+   ⚠️ CE CONTRÔLE NE SUPPRIME RIEN ET NE CORRIGE RIEN, et il se tait sur ce
+   qu'il ignore. Un lieu sans article Wikipédia n'est PAS suspect : une bonne
+   adresse de quartier n'en a jamais eu. On ne signale donc qu'un seul cas, celui
+   où l'on a une preuve — le lieu existe, mais ses coordonnées tombent à des
+   centaines de kilomètres de la destination : le modèle a pris un homonyme.
+   Absence de preuve n'est pas preuve d'absence.
+============================================================ */
+const LIEU_LOIN_KM = 150;      /* au-delà, ce n'est plus une excursion à la journée */
+var _lieuxVus = {};
+
+function distKm(a1, o1, a2, o2){
+  const R = 6371, r = x => x * Math.PI / 180;
+  const da = r(a2 - a1), dO = r(o2 - o1);
+  const h = Math.sin(da/2)**2 + Math.cos(r(a1)) * Math.cos(r(a2)) * Math.sin(dO/2)**2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+async function verifieLieux(noms){
+  const g = await geocode();
+  if(!g) return null;                       /* sans point d'ancrage, on se tait */
+  const ville = (state.trip && state.trip.nom) || '';
+  /* Comme wikiCoords lui-même : on demande « Lieu » ET « Lieu (Ville) », parce
+     qu'un nom ambigu tombe sinon sur la page d'homonymie — ou sur l'homonyme
+     parisien, ce qui produirait justement un faux « très loin ». */
+  const titres = [];
+  for(const n of noms){ titres.push(n); if(ville && !String(n).includes('(')) titres.push(`${n} (${ville})`); }
+  let carte = null;
+  try{ carte = await wikiCoords(titres.slice(0, 50)); }catch(e){}
+  if(!carte) return null;
+
+  const res = [];
+  for(const nom of noms){
+    const c = carte.get(nom) || carte.get(`${nom} (${ville})`);
+    if(!c){ res.push({ nom, etat: 'muet' }); continue; }   /* pas d'article : on ne dit rien */
+    const d = distKm(+g.latitude, +g.longitude, c[0], c[1]);
+    res.push({ nom, etat: d <= LIEU_LOIN_KM ? 'ok' : 'loin', km: Math.round(d) });
+  }
+  return res;
+}
+
+/* Le rendu : muet quand on n'a rien à dire, précis quand on a une preuve. */
+function lieuxBilanHTML(res){
+  if(!res || !res.length) return '';
+  const loin  = res.filter(x => x.etat === 'loin');
+  const situes = res.filter(x => x.etat === 'ok').length;
+  if(!loin.length){
+    /* Rien d'anormal. On ne le dit que si on a vraiment pu vérifier quelque
+       chose — annoncer « 0 lieu vérifié » n'informe personne. */
+    if(situes < 2) return '';
+    return `<div class="lx-bilan lx-ok">${ICO('coche', 15)} <span>${situes} lieux du programme retrouvés à leur place sur la carte.</span></div>`;
+  }
+  const l = loin.slice(0, 6).map(x =>
+    `<li><b>${esc(x.nom)}</b> — situé à ${x.km} km de ${esc((state.trip && state.trip.nom) || 'la destination')}</li>`).join('');
+  return `<div class="lx-bilan lx-doute">
+      <div class="lx-tete">${ICO('bouclier', 15)} <b>${loin.length} lieu${loin.length > 1 ? 'x' : ''} à vérifier</b></div>
+      <ul>${l}</ul>
+      <p class="hint">Ces noms existent, mais Wikipédia les situe très loin d'ici — souvent le signe d'un homonyme.
+      Rien n'a été supprimé : vérifie avant de rayer, il peut s'agir d'une excursion volontaire.</p>
+    </div>`;
+}
+
+/* Lancé APRÈS le rendu, jamais pendant : la vérification prend plusieurs
+   secondes et le voyageur doit voir son voyage tout de suite.
+   Le bilan est gardé en mémoire : changer d'onglet reconstruit le panneau, et
+   on ne va pas re-interroger le géocodeur à chaque aller-retour. */
+var _lxBilan = null, _lxEnCours = false;
+
+function lxPose(){
+  if(!_lxBilan || _planTab !== 'programme') return;
+  const pan = document.querySelector('.plan-panel');
+  if(!pan || pan.querySelector('.lx-bilan')) return;
+  pan.insertAdjacentHTML('beforeend', _lxBilan);
+}
+
+async function verifiePlanAffiche(){
+  if(_lxEnCours) return;
+  if(_lxBilan){ lxPose(); return; }
+  const plan = state.cache && state.cache.plan;
+  if(!plan || !Array.isArray(plan.programme) || _planTab !== 'programme') return;
+  const noms = [...new Set(plan.programme.flatMap(j => Array.isArray(j.lieux) ? j.lieux : []))].slice(0, 18);
+  if(noms.length < 2) return;
+  _lxEnCours = true;
+  try{
+    const res = await verifieLieux(noms);
+    if(res) _lxBilan = lieuxBilanHTML(res);
+  }catch(e){}
+  _lxEnCours = false;
+  lxPose();
+}
+
+/* On enveloppe le rendu des sections plutôt que d'y toucher : il est appelé à
+   chaque changement d'onglet, ce qui est exactement quand il faut reposer le
+   bilan. Le voyage change → on repart de zéro. */
+{
+  const orig = window.renderSections;
+  if(typeof orig === 'function'){
+    window.renderSections = function(d){
+      const r = orig.apply(this, arguments);
+      setTimeout(() => { try{ verifiePlanAffiche(); }catch(e){} }, 60);
+      return r;
+    };
+  }
+  /* Changer de voyage invalide le bilan : les lieux de Rome n'ont rien à dire
+     sur ceux de Lisbonne. Les deux portes d'entrée sont chooseTrip (nouveau
+     voyage) et reopenTrip (voyage repris dans l'historique). */
+  ['chooseTrip', 'reopenTrip'].forEach(n => {
+    const o = window[n];
+    if(typeof o !== 'function') return;
+    window[n] = function(){ _lxBilan = null; _lieuxVus = {}; return o.apply(this, arguments); };
+  });
+}
+
+
+/* ============================================================
+   AVANT DE PARTIR — la maison qu'on laisse derrière
+   ------------------------------------------------------------
+   Tout le reste de l'application prépare l'ARRIVÉE. Cet onglet prépare le
+   départ : couper l'eau, vider le frigo, confier le chat. Ce sont les oublis
+   les plus chers du voyage — un dégât des eaux coûte plus qu'un vol raté — et
+   ils ne demandent aucune intelligence artificielle, juste une liste qui se
+   souvient d'elle-même.
+   ⚠️ La liste s'ADAPTE mais ne s'invente pas : les lignes « animaux » n'appa-
+   raissent que si le voyageur a dit en avoir, et les lignes « longue absence »
+   qu'au-delà de cinq nuits. Une liste générique de quarante points ne se coche
+   pas, elle se ferme.
+============================================================ */
+const MAISON_BASE = [
+  { id:'fenetres', t:'Fermer fenêtres et volets',            d:'Y compris la salle de bain et la cave.' },
+  { id:'eau',      t:'Couper l’arrivée d’eau',                d:'Le robinet général. C’est le dégât le plus cher d’une absence.' },
+  { id:'gaz',      t:'Couper le gaz',                         d:'Si tu en as.' },
+  { id:'frigo',    t:'Vider le frais du frigo',               d:'Ce qui périme avant le retour part maintenant.' },
+  { id:'poubelle', t:'Sortir les poubelles',                  d:'Surtout l’organique.' },
+  { id:'veille',   t:'Débrancher les appareils en veille',    d:'Box, TV, chargeurs, cafetière.' },
+  { id:'chauffe',  t:'Chauffage ou clim en mode absence',     d:'Hors-gel l’hiver, éteint l’été.' },
+  { id:'cles',     t:'Laisser un double des clés',            d:'À quelqu’un de joignable, pas sous le paillasson.' },
+  { id:'charge',   t:'Charger ce qui doit l’être',            d:'Téléphone, batterie externe, écouteurs, liseuse.' },
+  { id:'photos',   t:'Photographier ses papiers',             d:'Passeport, carte d’identité, carte Vitale, permis.' }
+];
+const MAISON_LONG = [
+  { id:'courrier', t:'Faire suivre ou garder le courrier',    d:'Une boîte qui déborde annonce une maison vide.' },
+  { id:'plantes',  t:'Arroser, ou confier les plantes',       d:'Un bain avant de partir tient environ une semaine.' },
+  { id:'banque',   t:'Prévenir la banque du voyage',          d:'Évite le blocage de la carte au premier paiement à l’étranger.' },
+  { id:'presence', t:'Simuler une présence',                  d:'Une lampe sur minuterie, les rideaux entrouverts.' }
+];
+const MAISON_ANIMAUX = [
+  { id:'anGarde',  t:'Organiser la garde',                    d:'Pension, famille, voisin — et confirmer la veille.' },
+  { id:'anStock',  t:'Prévoir croquettes et litière',         d:'Compte large : le retour peut glisser d’un jour.' },
+  { id:'anVeto',   t:'Laisser les infos vétérinaire',         d:'Nom, numéro, traitements en cours, carnet de santé.' },
+  { id:'anIdent',  t:'Vérifier puce et médaille',             d:'Coordonnées à jour sur le fichier d’identification.' }
+];
+const MAISON_ENFANTS = [
+  { id:'enSante',  t:'Carnet de santé et ordonnances',        d:'Copie photo, et les boîtes dans le bagage à main.' },
+  { id:'enAutor',  t:'Autorisation de sortie du territoire',  d:'Si un enfant voyage sans ses deux parents.' }
+];
+
+/* La liste réellement affichée, selon le voyage. */
+function maisonListe(){
+  const p = state.prefs || {};
+  const pp = (typeof ppLire === 'function' ? ppLire() : {}) || {};
+  const d = (typeof stayDates === 'function' && stayDates()) || null;
+  const nuits = d ? Math.max(1, Math.round((new Date(d.out) - new Date(d.in)) / 864e5)) : null;
+  let L = MAISON_BASE.slice();
+  if(!nuits || nuits > 5) L = L.concat(MAISON_LONG);
+  if(pp.animaux) L = L.concat(MAISON_ANIMAUX);
+  if(+p.kids > 0) L = L.concat(MAISON_ENFANTS);
+  return L;
+}
+
+function maisonCoche(){
+  state.maison = (state.maison && typeof state.maison === 'object') ? state.maison : {};
+  return state.maison;
+}
+
+function panMaison(){
+  const L = maisonListe(), c = maisonCoche();
+  const faits = L.filter(x => c[x.id]).length;
+  const pct = L.length ? Math.round(faits / L.length * 100) : 0;
+  const pp = (typeof ppLire === 'function' ? ppLire() : {}) || {};
+  return `<p class="pan-intro">La maison que tu laisses derrière. Rien ici ne part sur internet&nbsp;: c'est une liste, elle reste sur ton appareil.</p>
+    <div class="mz-jauge" role="img" aria-label="${faits} sur ${L.length} faits">
+      <div class="mz-barre"><span style="width:${pct}%"></span></div>
+      <b>${faits}/${L.length}</b>
+    </div>
+    ${!pp.animaux ? `<label class="mz-opt"><input type="checkbox" id="mzAnimaux"><span>J'ai un animal à la maison — ajoute ce qu'il faut prévoir</span></label>` : ''}
+    <ul class="mz-liste">
+      ${L.map(x => `<li class="mz-li${c[x.id] ? ' fait' : ''}">
+        <label>
+          <input type="checkbox" data-mz="${esc(x.id)}"${c[x.id] ? ' checked' : ''}>
+          <span class="mz-txt"><b>${esc(x.t)}</b><em>${esc(x.d)}</em></span>
+        </label>
+      </li>`).join('')}
+    </ul>
+    ${faits === L.length && L.length ? `<div class="mz-fini">${ICO('coche', 16)} Tout est fait. Tu peux fermer la porte.</div>` : ''}`;
+}
+
+document.addEventListener('change', e => {
+  const b = e.target.closest('[data-mz]');
+  if(b){
+    const c = maisonCoche();
+    if(b.checked) c[b.dataset.mz] = 1; else delete c[b.dataset.mz];
+    save();
+    /* On ne re-rend que la jauge et la ligne : re-rendre tout le panneau
+       ferait sauter le focus au premier élément à chaque case cochée. */
+    const li = b.closest('.mz-li'); if(li) li.classList.toggle('fait', b.checked);
+    const L = maisonListe(), faits = L.filter(x => c[x.id]).length;
+    const j = document.querySelector('.mz-jauge');
+    if(j){
+      j.querySelector('.mz-barre span').style.width = (L.length ? Math.round(faits/L.length*100) : 0) + '%';
+      j.querySelector('b').textContent = faits + '/' + L.length;
+      j.setAttribute('aria-label', faits + ' sur ' + L.length + ' faits');
+    }
+    return;
+  }
+  if(e.target.id === 'mzAnimaux'){
+    /* L'information vit dans le passeport, pas dans la liste : elle resservira
+       au prochain voyage, et le chat n'aura pas disparu entre-temps. */
+    if(typeof ppEcrire === 'function'){ const pp = ppLire() || {}; pp.animaux = e.target.checked ? 1 : 0; ppEcrire(pp); }
+    if(typeof renderSections === 'function' && state.cache && state.cache.plan) renderSections(state.cache.plan);
+  }
+});
+
+/* ============================================================
+   GLISSER-DÉPOSER DES ÉTAPES
+   ------------------------------------------------------------
+   Les flèches ▲▼ marchaient, mais déplacer une activité de la 6ᵉ à la 2ᵉ place
+   demandait quatre clics et autant de re-rendus.
+   ⚠️ POINTER EVENTS ET NON HTML5 DRAG. L'API drag-and-drop native ne fonctionne
+   pas au doigt sur mobile — or c'est là qu'on réorganise sa journée, dans le
+   train, la veille. Les Pointer Events couvrent souris et tactile d'un seul
+   code.
+   ⚠️ APPUI LONG DE 260 ms AVANT DE PRENDRE LA MAIN. Sans ce délai, tout geste
+   de défilement commencé sur une carte l'arracherait de la liste : la page
+   deviendrait impossible à faire défiler au doigt.
+============================================================ */
+var _dg = null;
+
+function tlDeplace(jour, de, vers){
+  const et = tlEtapes(jour);
+  if(!et || de === vers || !et[de] || vers < 0 || vers >= et.length) return;
+  /* Même invariant que tlSwap : les HEURES appartiennent à la position, pas à
+     l'activité. On sort les créneaux, on déplace le contenu, on les remet dans
+     l'ordre — sinon la journée cesse d'être chronologique. */
+  const heures = et.map(x => x.heure);
+  const [x] = et.splice(de, 1);
+  et.splice(vers, 0, x);
+  et.forEach((e, i) => { e.heure = heures[i]; });
+  save();
+  tlRender(jour);
+  try{ buildProjectMap(); }catch(e){}
+}
+
+function dgFin(annule){
+  if(!_dg) return;
+  clearTimeout(_dg.tempo);
+  const g = _dg; _dg = null;
+  document.body.classList.remove('dg-actif');
+  if(g.el){ g.el.classList.remove('dg-pris'); g.el.style.transform = ''; }
+  document.querySelectorAll('.dg-cible').forEach(n => n.classList.remove('dg-cible'));
+  if(!annule && g.actif && g.vers != null && g.vers !== g.de) tlDeplace(g.jour, g.de, g.vers);
+}
+
+document.addEventListener('pointerdown', e => {
+  if(e.button != null && e.button !== 0) return;
+  const it = e.target.closest && e.target.closest('.tl-item');
+  if(!it || it.classList.contains('tl-editing')) return;
+  /* On ne vole pas le geste aux commandes : boutons, liens, champs. */
+  if(e.target.closest('button, a, input, textarea, select, .tl-loc')) return;
+  const box = it.closest('[data-daybox]');
+  if(!box) return;
+  const freres = [...box.querySelectorAll('.tl-item')];
+  if(freres.length < 2) return;
+  _dg = { el: it, box, jour: box.dataset.daybox, de: freres.indexOf(it), vers: null,
+          y0: e.clientY, actif: false, tempo: 0 };
+  _dg.tempo = setTimeout(() => {
+    if(!_dg) return;
+    _dg.actif = true;
+    _dg.el.classList.add('dg-pris');
+    document.body.classList.add('dg-actif');
+    if(navigator.vibrate) { try{ navigator.vibrate(12); }catch(e){} }
+  }, 260);
+}, { passive: true });
+
+document.addEventListener('pointermove', e => {
+  if(!_dg) return;
+  const dy = e.clientY - _dg.y0;
+  if(!_dg.actif){
+    /* Bougé avant la fin de l'appui long → c'est un défilement, on lâche. */
+    if(Math.abs(dy) > 9) dgFin(true);
+    return;
+  }
+  e.preventDefault();
+  _dg.el.style.transform = `translateY(${dy}px)`;
+  const freres = [..._dg.box.querySelectorAll('.tl-item')];
+  let vers = _dg.de;
+  for(let i = 0; i < freres.length; i++){
+    if(freres[i] === _dg.el) continue;
+    const r = freres[i].getBoundingClientRect();
+    if(e.clientY > r.top && e.clientY < r.bottom){ vers = i; break; }
+  }
+  if(vers !== _dg.vers){
+    _dg.vers = vers;
+    freres.forEach(n => n.classList.remove('dg-cible'));
+    if(vers !== _dg.de && freres[vers]) freres[vers].classList.add('dg-cible');
+  }
+}, { passive: false });
+
+document.addEventListener('pointerup',     () => dgFin(false));
+document.addEventListener('pointercancel', () => dgFin(true));
+
+/* ============================================================
+   LA TEINTE DE LA DESTINATION
+   ------------------------------------------------------------
+   Le site garde son jaune — c'est sa marque, on n'y touche pas. Ce qui change,
+   c'est le FOND : une chaleur de sable pour une destination balnéaire, un gris
+   bleuté pour la montagne en hiver. L'écart est volontairement minuscule
+   (quelques pourcents de teinte) : au-delà, on ne décore plus, on repeint le
+   site en fonction de l'humeur du modèle.
+   ⚠️ AUCUNE COULEUR DE TEXTE N'EST TOUCHÉE. Tous les contrastes du site sont
+   calculés contre --bg et --secondary ; si la teinte déplaçait aussi les
+   encres, chaque destination redemanderait un audit d'accessibilité complet.
+   On ne déplace que la teinte des deux fonds, à luminosité quasi constante.
+============================================================ */
+const AMBIANCES = {
+  mer:      { h: 32,  s: 14, mots: ['plage','mer','île','ile','côte','cote','baie','littoral','lagune','riviera','archipel','atoll'] },
+  montagne: { h: 210, s: 10, mots: ['montagne','alpes','ski','sommet','pic','massif','glacier','fjord','andes','himalaya','pyrénées','pyrenees'] },
+  foret:    { h: 140, s:  9, mots: ['forêt','foret','jungle','parc national','amazon','réserve','reserve','safari','savane'] },
+  desert:   { h: 26,  s: 16, mots: ['désert','desert','sahara','dune','oasis','canyon','atacama','wadi'] },
+  nord:     { h: 220, s:  8, mots: ['islande','norvège','norvege','laponie','groenland','finlande','suède','suede','aurores','arctique'] },
+  ville:    { h: 0,   s:  0, mots: [] }
+};
+
+function ambiancePour(){
+  const t = state.trip || {};
+  const p = state.prefs || {};
+  const foin = [t.nom, t.pays, t.resume, p.vibe].filter(Boolean).join(' ').toLowerCase();
+  if(!foin) return null;
+  for(const [nom, a] of Object.entries(AMBIANCES)){
+    if(a.mots.some(m => foin.includes(m))) return { nom, ...a };
+  }
+  return null;
+}
+
+function appliqueAmbiance(){
+  const r = document.documentElement;
+  const a = ambiancePour();
+  if(!a || !a.s){ r.style.removeProperty('--teinte-h'); r.style.removeProperty('--teinte-s'); r.removeAttribute('data-ambiance'); return; }
+  r.style.setProperty('--teinte-h', a.h);
+  r.style.setProperty('--teinte-s', a.s + '%');
+  r.setAttribute('data-ambiance', a.nom);
+}
+
+
+/* ============================================================
+   « OÙ EST-CE ? » SUR SON PROPRE VOYAGE
+   ------------------------------------------------------------
+   Le jeu propose des monuments du monde entier. Or le voyageur a déjà un
+   programme, avec des lieux qu'il va vraiment voir et dont il ne sait pas
+   encore à quoi ils ressemblent. Jouer dessus, c'est réviser son voyage sans
+   s'en rendre compte.
+   Les deux briques existaient déjà : wikiCoords() pour la position, et
+   fetchWikiThumb() pour la photo (avec son filtre anti-blasons). Il ne
+   manquait que de les brancher l'une sur l'autre.
+   ⚠️ ON NE REMPLACE PAS LA LISTE MONDIALE, ON LA COMPLÈTE. Un voyage donne
+   rarement cinq lieux illustrés : s'il en manque, les monuments du monde
+   comblent. Et sans voyage en cours, le jeu doit rester exactement ce qu'il
+   était — un jeu, pas une fonctionnalité qui refuse de démarrer.
+============================================================ */
+var _geoVoyage = null;          /* null = pas encore cherché, [] = rien trouvé */
+
+async function geoLieuxDuVoyage(){
+  if(_geoVoyage) return _geoVoyage;
+  const plan = state.cache && state.cache.plan;
+  if(!plan || !Array.isArray(plan.programme)) return (_geoVoyage = []);
+  const ville = (state.trip && state.trip.nom) || '';
+  const noms = [...new Set(plan.programme.flatMap(j => Array.isArray(j.lieux) ? j.lieux : []))].slice(0, 12);
+  if(noms.length < 2) return (_geoVoyage = []);
+  let carte = null;
+  try{
+    const titres = [];
+    for(const n of noms){ titres.push(n); if(ville && !String(n).includes('(')) titres.push(`${n} (${ville})`); }
+    carte = await wikiCoords(titres.slice(0, 50));
+  }catch(e){}
+  if(!carte) return (_geoVoyage = []);
+
+  const out = [];
+  for(const nom of noms){
+    const c = carte.get(nom) || carte.get(`${nom} (${ville})`);
+    if(!c) continue;
+    /* La photo est indispensable : c'est TOUT le jeu. Un lieu sans image est
+       écarté plutôt que montré comme un carré vide. */
+    const img = await fetchWikiThumb(nom);
+    if(!img) continue;
+    out.push({ fr: nom, en: nom, lat: c[0], lon: c[1], img, mien: true });
+    if(out.length >= 5) break;
+  }
+  _geoVoyage = out;
+  return out;
+}
+
+/* On enveloppe l'ouverture du jeu : la recherche est asynchrone et ne doit pas
+   retarder l'affichage. Le jeu démarre sur les monuments du monde, et la
+   partie SUIVANTE profite des lieux du voyage — plutôt que de faire patienter
+   devant un écran vide pour un jeu qu'on lance justement pour ne pas attendre. */
+{
+  const orig = window.openGeo;
+  if(typeof orig === 'function'){
+    window.openGeo = function(){
+      const r = orig.apply(this, arguments);
+      geoLieuxDuVoyage().then(l => {
+        if(!l.length) return;
+        const badge = document.getElementById('geoHint');
+        if(badge && !badge.dataset.mien){
+          badge.dataset.mien = '1';
+          badge.insertAdjacentHTML('afterend',
+            `<p class="geo-mien">${ICO('epingle', 14)} ${l.length} lieu${l.length > 1 ? 'x' : ''} de ton voyage à ${esc((state.trip && state.trip.nom) || '')} entrent dans la partie suivante.</p>`);
+        }
+      }).catch(() => {});
+      return r;
+    };
+  }
+  /* Le tirage : les lieux du voyage d'abord, le monde pour compléter. */
+  const origP = window.geoNouvellePartie;
+  if(typeof origP === 'function'){
+    window.geoNouvellePartie = function(){
+      const mien = (_geoVoyage || []).slice();
+      if(!mien.length) return origP.apply(this, arguments);
+      const reste = geoMelange(GEO_LIEUX).filter(x => !mien.some(m => m.fr === x.fr));
+      _geo = { manche: 0, score: 0,
+               lieux: geoMelange(mien).concat(reste).slice(0, GEO_MANCHES), pose: null };
+      const ov = document.getElementById('geoOver'); if(ov) ov.hidden = true;
+      geoManche();
+    };
+  }
+}
+
+/* ============================================================
+   PLAN B — la fenêtre native remplacée
+   ------------------------------------------------------------
+   planB() faisait exactement ce qu'il fallait, mais demandait la raison avec
+   prompt() : une boîte grise du système, hors du site, impossible à styler, que
+   Safari iOS affiche au sommet de l'écran et que certains navigateurs bloquent
+   purement et simplement. C'est aussi la seule saisie de l'application où l'on
+   ne pouvait rien suggérer — alors que les raisons de refaire une journée sont
+   presque toujours les quatre mêmes.
+============================================================ */
+const PB_RAISONS = [
+  { t:'Il pleut',        v:'il pleut, il me faut des activités d’intérieur' },
+  { t:'On est fatigués', v:'on est fatigués, il faut un rythme beaucoup plus doux' },
+  { t:'Trop cher',       v:'c’est trop cher, propose surtout des choses gratuites' },
+  { t:'Déjà vu',         v:'on connaît déjà ces lieux, propose autre chose' },
+  { t:'C’est fermé',     v:'le lieu principal est fermé ce jour-là' },
+  { t:'Trop de marche',  v:'trop de marche, regroupe tout dans un même quartier' }
+];
+var _pbJour = null, _pbSuite = null;
+
+function pbDemande(jour){
+  return new Promise(resolve => {
+    _pbJour = jour; _pbSuite = resolve;
+    let ov = document.getElementById('ovPlanB');
+    if(!ov){
+      ov = document.createElement('div');
+      ov.className = 'overlay'; ov.id = 'ovPlanB';
+      ov.innerHTML = `<div class="modal">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+          <h2 style="margin:0" id="pbTitre">Refaire la journée</h2>
+          <button class="close-btn" data-close="ovPlanB" aria-label="Fermer">✕</button>
+        </div>
+        <p class="hint" style="margin:0 0 12px">Dis pourquoi : Acolyte garde le reste du séjour et ne repropose pas les lieux des autres journées.</p>
+        <div class="pb-chips" id="pbChips"></div>
+        <div class="field"><label for="pbTexte">Ou explique-le toi-même</label>
+          <textarea id="pbTexte" maxlength="160" rows="2" placeholder="ex : on a un train à 18h, il faut finir tôt"></textarea>
+        </div>
+        <div class="row" style="gap:8px;margin-top:12px">
+          <button class="btn" id="pbGo">Refaire cette journée</button>
+          <button class="btn ghost" data-close="ovPlanB">Annuler</button>
+        </div>
+      </div>`;
+      document.body.appendChild(ov);
+      document.getElementById('pbChips').innerHTML =
+        PB_RAISONS.map(r => `<button type="button" class="chip" data-pb="${esc(r.v)}">${esc(r.t)}</button>`).join('');
+      ov.addEventListener('click', e => {
+        const c = e.target.closest('[data-pb]');
+        if(c){
+          document.getElementById('pbTexte').value = c.dataset.pb;
+          ov.querySelectorAll('[data-pb]').forEach(x => x.classList.toggle('on', x === c));
+          return;
+        }
+        if(e.target.closest('#pbGo')){
+          const v = (document.getElementById('pbTexte').value || '').trim();
+          if(!v){ toast('Dis en deux mots ce qui ne va pas'); return; }
+          ov.classList.remove('show');
+          const f = _pbSuite; _pbSuite = null;
+          if(f) f(v.slice(0, 160));
+          return;
+        }
+        /* Fermeture (croix, Annuler, clic sur le fond) → on rend null, et
+           planB() s'arrête exactement comme avec prompt() annulé. */
+        if(e.target.closest('[data-close]') || e.target === ov){
+          ov.classList.remove('show');
+          const f = _pbSuite; _pbSuite = null;
+          if(f) f(null);
+        }
+      });
+    }
+    document.getElementById('pbTitre').textContent = 'Refaire le jour ' + jour;
+    document.getElementById('pbTexte').value = '';
+    ov.querySelectorAll('[data-pb]').forEach(x => x.classList.remove('on'));
+    ov.classList.add('show');
+    setTimeout(() => { try{ document.getElementById('pbTexte').focus(); }catch(e){} }, 60);
+  });
+}
+
+/* La teinte se pose au rendu du voyage : c'est là que la destination est
+   connue, et le seul endroit où elle change. */
+{
+  ['renderPlan', 'chooseTrip', 'reopenTrip'].forEach(n => {
+    const o = window[n];
+    if(typeof o !== 'function') return;
+    window[n] = function(){
+      const r = o.apply(this, arguments);
+      try{ appliqueAmbiance(); }catch(e){}
+      return r;
+    };
+  });
+  try{ appliqueAmbiance(); }catch(e){}
 }

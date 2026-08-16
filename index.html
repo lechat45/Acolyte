@@ -450,6 +450,38 @@
             <p class="hint" id="paysHint">Laisse vide et Acolyte choisit les pays pour toi.</p>
           </div>
         </div>
+        <!-- À TABLE. Un régime n'est pas une préférence à mettre au fond d'une
+             liste : pour une allergie, une recommandation ratée gâche un repas
+             au mieux, envoie à l'hôpital au pire. D'où le champ libre à côté du
+             menu déroulant — « sans arachide » n'est pas un régime, c'est une
+             contrainte, et elle doit pouvoir s'écrire. -->
+        <div class="field"><label for="fRegime">À table</label>
+          <select id="fRegime">
+            <option value="" selected>Je mange de tout</option>
+            <option value="végétarien">Végétarien</option>
+            <option value="végétalien / vegan">Végétalien / vegan</option>
+            <option value="sans gluten">Sans gluten</option>
+            <option value="sans lactose">Sans lactose</option>
+            <option value="halal">Halal</option>
+            <option value="casher">Casher</option>
+            <option value="sans porc">Sans porc</option>
+            <option value="pescétarien">Pescétarien</option>
+          </select>
+        </div>
+        <div class="field"><label for="fEvite">Ce que tu ne peux pas manger</label>
+          <input id="fEvite" maxlength="160" autocomplete="off"
+                 placeholder="ex : arachides (allergie), artichaut, coriandre">
+          <p class="hint">Allergies et aversions. Précise « allergie » quand c'en est une.</p>
+        </div>
+        <div class="field wide">
+          <label class="opt-check" for="fLocal">
+            <input type="checkbox" id="fLocal">
+            <span>
+              <b>Comme un habitant</b>
+              <em>Acolyte écarte les pièges à touristes et ne propose que des endroits où vont vraiment les gens du coin.</em>
+            </span>
+          </label>
+        </div>
       </div>
       <div class="field" style="margin-top:14px"><label for="fFree">Tes limites & conditions</label>
         <textarea id="fFree" placeholder="Ex : max 3h de trajet, pas d'auberge, je pars avec un bébé, je veux la plage, budget serré sur le logement…"></textarea>
@@ -840,6 +872,12 @@
       <div class="item act">
         <div class="head"><div class="emo" data-ico="calendrier"></div><h4>Mettre mon voyage dans mon agenda</h4></div>
         <div class="side"><button class="btn sm ghost" id="pfIcs">Télécharger</button></div>
+      </div>
+      <!-- Mode kiosque : l'écran mural. Il vit ici plutôt que dans le voyage
+           parce qu'on l'allume une fois, pour la semaine, pas à chaque visite. -->
+      <div class="item act">
+        <div class="head"><div class="emo" data-ico="calendrier"></div><h4>Compte à rebours plein écran</h4></div>
+        <div class="side"><button class="btn sm ghost" data-kiosque="1">Afficher</button></div>
       </div>
       <!-- Transférer un voyage à quelqu'un. ⚠️ Le fichier ne contient QUE le
            voyage : ni adresse email, ni dépenses, ni notes personnelles. -->

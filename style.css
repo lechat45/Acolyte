@@ -5155,3 +5155,280 @@ body{ min-height:100dvh }
 }
 .q-inactif{opacity:.55}
 .q-inactif label{color:var(--txt-2)}
+
+/* ============================================================
+   L'ATTENTE JOUABLE
+   ------------------------------------------------------------
+   La pilule flotte au-dessus de la barre d'onglets sur téléphone : posée
+   dessous, elle passerait DERRIÈRE (la nav est en z-index 38) ; posée dessus
+   sans marge, elle cacherait deux boutons.
+============================================================ */
+.att-pilule{
+  position:fixed;left:50%;bottom:20px;transform:translate(-50%,120%);
+  z-index:37;                                   /* sous la nav, au-dessus du reste */
+  display:flex;align-items:center;gap:10px;
+  padding:8px 8px 8px 16px;
+  background:var(--secondary);
+  border:1px solid var(--stroke);
+  border-radius:999px;
+  box-shadow:0 10px 30px rgba(0,0,0,.28);
+  opacity:0;pointer-events:none;
+  transition:transform .34s cubic-bezier(.2,.9,.3,1.2), opacity .24s ease;
+  max-width:calc(100vw - 24px);
+}
+.att-pilule.on{ transform:translate(-50%,0);opacity:1;pointer-events:auto }
+.att-txt{
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:.86rem;color:var(--txt);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.att-court{ display:none }
+.att-pilule .att-go{
+  display:inline-flex;align-items:center;gap:7px;
+  min-height:44px;padding:0 18px;                /* 44px : cible tactile AAA */
+  background:var(--primary);color:var(--primary-ink);
+  border:0;border-radius:999px;cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;font-size:.85rem;font-weight:700;
+  transition:transform .16s ease;
+}
+.att-pilule .att-go:hover{ transform:translateY(-1px) }
+.att-pilule .att-go:active{ transform:scale(.96) }
+.att-pilule .att-non{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;flex:0 0 44px;
+  background:transparent;color:var(--txt-2);
+  border:0;border-radius:50%;cursor:pointer;
+}
+.att-pilule .att-non:hover{ background:var(--bg);color:var(--txt) }
+
+/* Le bandeau « c'est prêt » DANS le jeu : il informe, il n'interrompt pas. */
+.att-pret{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:12px;padding:10px 10px 10px 14px;
+  background:var(--primary);color:var(--primary-ink);
+  border-radius:14px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.85rem;font-weight:600;
+  animation:attPop .3s cubic-bezier(.2,.9,.3,1.2);
+}
+.att-pret span{ display:inline-flex;align-items:center;gap:8px }
+.att-pret .att-voir{
+  min-height:34px;padding:0 15px;flex:0 0 auto;
+  background:var(--primary-ink);color:var(--primary);
+  border:0;border-radius:999px;cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;font-size:.82rem;font-weight:700;
+}
+@keyframes attPop{ from{ opacity:0;transform:translateY(8px) } to{ opacity:1;transform:none } }
+
+@media(max-width:640px){
+  /* Au-dessus de la barre d'onglets, encoche comprise. */
+  .att-pilule{ bottom:calc(78px + env(safe-area-inset-bottom, 0px)) }
+  .att-txt{ font-size:.8rem }
+}
+@media(max-width:520px){
+  /* La phrase raccourcit AVANT de disparaître : « Jouer » seul, surgissant au
+     milieu de l'écran, ne dirait pas de quoi il s'agit. */
+  .att-long{ display:none }
+  .att-court{ display:inline }
+  .att-pilule{ padding-left:14px;gap:8px }
+}
+@media(max-width:330px){
+  /* Là, il n'y a vraiment plus la place : le bouton prime sur l'explication. */
+  .att-txt{ display:none }
+  .att-pilule{ padding-left:8px }
+}
+@media(prefers-reduced-motion:reduce){
+  .att-pilule{ transition:opacity .2s ease }
+  .att-pilule.on{ transform:translate(-50%,0) }
+  .att-pret{ animation:none }
+}
+
+/* ============================================================
+   MODE KIOSQUE — l'écran mural
+   ------------------------------------------------------------
+   ⚠️ Cet écran garde son fond sombre DANS LES DEUX THÈMES, et c'est
+   volontaire : il est fait pour être posé sur un meuble et regardé de loin,
+   souvent le soir. Le jaune de la marque sur le clair donne 1,1:1 — illisible
+   à deux mètres ; sur le sombre il donne 15:1. Un écran mural en thème clair
+   serait aussi une lampe allumée dans le salon toute la nuit.
+   Les tailles sont en vmin : le même écran tient debout ou couché sans média
+   query, ce qui compte pour un mode qu'on retourne exprès.
+============================================================ */
+html.kio-actif, html.kio-actif body{ overflow:hidden }
+.kiosque{
+  position:fixed;inset:0;z-index:120;
+  display:none;align-items:center;justify-content:center;
+  background:#121212;
+  padding:max(24px, env(safe-area-inset-top, 0px)) 24px max(24px, env(safe-area-inset-bottom, 0px));
+}
+.kiosque.on{ display:flex;animation:kioFade .5s ease }
+@keyframes kioFade{ from{ opacity:0 } to{ opacity:1 } }
+.kio-corps{ text-align:center;max-width:min(92vw, 900px) }
+.kio-n{
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;
+  font-weight:900;font-size:clamp(5rem, 34vmin, 17rem);line-height:.86;
+  letter-spacing:-.05em;color:#FFE600;
+  font-variant-numeric:tabular-nums;                 /* le chiffre ne danse pas */
+}
+.kio-n small{ font-size:.42em;letter-spacing:-.02em;opacity:.75 }
+.kio-n.kio-go{ font-size:clamp(2.6rem, 13vmin, 7rem);letter-spacing:-.035em }
+.kio-n.kio-vide{ color:#5A5A52 }
+.kio-u{
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:clamp(.95rem, 3.1vmin, 1.6rem);font-weight:600;
+  color:#F2F1EC;margin-top:min(3vmin, 20px);
+  text-wrap:balance;
+}
+.kio-dest{
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;
+  font-weight:900;font-size:clamp(1.3rem, 5.4vmin, 3rem);
+  letter-spacing:-.03em;color:#F2F1EC;
+  margin-top:min(4vmin, 26px);
+  padding-top:min(4vmin, 26px);
+  border-top:1px solid rgba(255,255,255,.13);
+}
+.kio-bas{
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:clamp(.8rem, 2.4vmin, 1.15rem);
+  color:#A5A49D;margin-top:min(2.6vmin, 16px);
+  min-height:1.4em;                                  /* la ligne ne saute pas en changeant */
+  animation:kioLigne .5s ease;
+}
+@keyframes kioLigne{ from{ opacity:0 } to{ opacity:1 } }
+.kio-x{
+  position:absolute;top:max(14px, env(safe-area-inset-top, 0px));right:14px;
+  width:44px;height:44px;                            /* 44px : cible tactile AAA */
+  display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.07);color:#A5A49D;
+  border:1px solid rgba(255,255,255,.13);border-radius:50%;
+  cursor:pointer;transition:opacity .3s ease;
+}
+.kio-x:hover{ background:rgba(255,255,255,.14);color:#F2F1EC }
+/* La croix s'efface quand rien ne bouge : c'est un écran, pas une interface.
+   Elle revient au moindre survol ou toucher n'importe où sur le kiosque. */
+.kiosque.on .kio-x{ opacity:.25 }
+.kiosque.on:hover .kio-x, .kiosque.on .kio-x:focus-visible{ opacity:1 }
+@media(prefers-reduced-motion:reduce){
+  .kiosque.on, .kio-bas{ animation:none }
+}
+
+/* ============================================================
+   BILAN DES LIEUX VÉRIFIÉS
+============================================================ */
+.lx-bilan{
+  margin-top:16px;padding:12px 14px;border-radius:14px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.84rem;
+  border:1px solid var(--stroke);
+}
+.lx-ok{ display:flex;align-items:center;gap:9px;color:var(--txt-2);background:var(--bg) }
+.lx-ok svg{ color:var(--primary-txt);flex:0 0 auto }
+.lx-doute{ background:var(--bg) }
+.lx-tete{ display:flex;align-items:center;gap:8px;color:var(--txt);margin-bottom:8px }
+.lx-doute ul{ margin:0 0 8px;padding-left:18px;color:var(--txt-2) }
+.lx-doute li{ margin:3px 0 }
+.lx-doute li b{ color:var(--txt) }
+.lx-doute .hint{ margin:0 }
+
+/* ============================================================
+   AVANT DE PARTIR
+============================================================ */
+.mz-jauge{ display:flex;align-items:center;gap:12px;margin:4px 0 14px }
+.mz-barre{
+  flex:1;height:8px;border-radius:99px;overflow:hidden;
+  background:var(--bg);border:1px solid var(--stroke);
+}
+.mz-barre span{
+  display:block;height:100%;width:0;border-radius:99px;
+  background:var(--primary);transition:width .35s cubic-bezier(.2,.9,.3,1);
+}
+.mz-jauge b{
+  font-family:'Inter',system-ui,sans-serif;font-size:.82rem;
+  color:var(--txt-2);font-variant-numeric:tabular-nums;flex:0 0 auto;
+}
+.mz-opt{
+  display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:10px 12px;
+  background:var(--bg);border:1px dashed var(--stroke);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.83rem;color:var(--txt-2);cursor:pointer;
+}
+.mz-opt input{ width:18px;height:18px;flex:0 0 auto;accent-color:var(--primary) }
+.mz-liste{ list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px }
+.mz-li label{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 12px;min-height:44px;                 /* 44px : cible tactile AAA */
+  background:var(--secondary);border:1px solid var(--stroke);border-radius:12px;
+  cursor:pointer;transition:border-color .18s ease, background .18s ease;
+}
+.mz-li label:hover{ border-color:var(--txt-2) }
+.mz-li input{ width:19px;height:19px;margin-top:1px;flex:0 0 auto;accent-color:var(--primary);cursor:pointer }
+.mz-txt{ display:flex;flex-direction:column;gap:2px;min-width:0 }
+.mz-txt b{ font-family:'Inter',system-ui,sans-serif;font-size:.88rem;font-weight:650;color:var(--txt) }
+.mz-txt em{ font-family:'Inter',system-ui,sans-serif;font-size:.78rem;font-style:normal;color:var(--txt-2);line-height:1.45 }
+/* Fait : on efface sans supprimer — la ligne reste lisible et décochable. */
+.mz-li.fait label{ background:var(--bg) }
+.mz-li.fait .mz-txt b{ color:var(--txt-2);text-decoration:line-through;text-decoration-thickness:1px }
+.mz-li.fait .mz-txt em{ opacity:.6 }
+.mz-fini{
+  display:flex;align-items:center;gap:9px;margin-top:14px;padding:12px 14px;
+  background:var(--primary);color:var(--primary-ink);border-radius:14px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.86rem;font-weight:650;
+}
+
+/* ============================================================
+   GLISSER-DÉPOSER DES ÉTAPES
+============================================================ */
+.tl-item{ touch-action:pan-y }                       /* le défilement reste possible */
+body.dg-actif{ user-select:none;-webkit-user-select:none }
+body.dg-actif .tl-item{ touch-action:none }
+.tl-item.dg-pris{
+  position:relative;z-index:6;
+  box-shadow:0 14px 34px rgba(0,0,0,.3);
+  border-radius:12px;background:var(--secondary);
+  opacity:.96;cursor:grabbing;
+}
+.tl-item.dg-cible{
+  outline:2px dashed var(--primary);outline-offset:3px;border-radius:12px;
+}
+@media(prefers-reduced-motion:reduce){
+  .tl-item.dg-pris{ box-shadow:0 0 0 2px var(--primary) }
+}
+
+/* ============================================================
+   « OÙ EST-CE ? » — le rappel des lieux du voyage
+============================================================ */
+.geo-mien{
+  display:flex;align-items:center;gap:8px;margin:6px 0 0;
+  font-family:'Inter',system-ui,sans-serif;font-size:.78rem;color:var(--txt-2);
+}
+.geo-mien svg{ color:var(--primary-txt);flex:0 0 auto }
+
+/* ============================================================
+   PLAN B — les raisons proposées
+============================================================ */
+.pb-chips{ display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px }
+#ovPlanB .modal{ max-width:480px }
+#ovPlanB textarea{ min-height:64px }
+
+/* ============================================================
+   LA TEINTE DE LA DESTINATION
+   ------------------------------------------------------------
+   ⚠️ SEULS LES DEUX FONDS BOUGENT. Les encres (--txt, --txt-2, --primary-txt)
+   ne sont jamais touchées : tous les rapports de contraste du site sont
+   calculés contre --bg et --secondary, et déplacer les deux côtés à la fois
+   obligerait à refaire l'audit d'accessibilité pour chaque destination.
+   La saturation reste sous 16 % et la luminosité est celle du thème : à l'œil
+   c'est une nuance, jamais une couleur. En l'absence de --teinte-s, ces règles
+   ne s'appliquent pas du tout — le site garde ses gris d'origine.
+============================================================ */
+/* ⚠️ LE :not() N'EST PAS DÉCORATIF. Ce fichier se termine ici, donc une règle
+   `:root[data-ambiance]` (0,2,0) l'emporterait sur `:root[data-theme="light"]`
+   (0,2,0) déclarée plus haut — à spécificité égale, la dernière gagne. Sans ce
+   :not(), choisir une destination balnéaire repeindrait le thème CLAIR en
+   sombre. C'est le même piège que les sept conflits déjà corrigés dans ce
+   fichier. */
+:root[data-ambiance]:not([data-theme="light"]){
+  --bg:        hsl(var(--teinte-h) var(--teinte-s) 7.5%);
+  --secondary: hsl(var(--teinte-h) calc(var(--teinte-s) * .8) 11.5%);
+}
+:root[data-theme="light"][data-ambiance]{
+  --bg:        hsl(var(--teinte-h) calc(var(--teinte-s) * .55) 96%);
+  --secondary: hsl(var(--teinte-h) calc(var(--teinte-s) * .3) 100%);
+}
