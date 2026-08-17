@@ -829,7 +829,10 @@ var ICO_D = {
   loupe:    '<circle cx="10.8" cy="10.8" r="6.6"/><path d="m15.6 15.6 4.6 4.6"/>',
   graphique:'<path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 17V11M12.4 17V7M16.8 17v-4"/>',
   sac:      '<path d="M6 8.6h12l1 11.2H5Z"/><path d="M9 8.6V6.4a3 3 0 0 1 6 0v2.2"/>',
-  horloge:  '<circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.2 2"/>'
+  horloge:  '<circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.2 2"/>',
+  refaire:  '<path d="M20.4 12a8.4 8.4 0 1 1-2.5-6"/><path d="M20.4 4.2V10h-5.8"/>',
+  personnes:'<circle cx="9" cy="8.2" r="3.4"/><path d="M2.8 19.4a6.2 6.2 0 0 1 12.4 0"/><path d="M16.2 5.2a3.4 3.4 0 0 1 0 6"/><path d="M17.6 13.6a6.2 6.2 0 0 1 3.6 5.8"/>',
+  nuit:     '<path d="M20.4 14.4A8.6 8.6 0 0 1 9.6 3.6a8.6 8.6 0 1 0 10.8 10.8Z"/>'
 };
 /* Rend une icône. `taille` en px, `cls` pour les cas où il faut la viser en CSS. */
 function ICO(nom, taille, cls){
@@ -2763,8 +2766,8 @@ function renderEvents(data){
         <p class="hint" style="margin:2px 0 0">${esc(e.note || '')}</p>
       </div>
       <div class="side">${deja
-        ? `<span class="tag ok" style="font-size:.62rem">✔ au programme</span>`
-        : `<button class="btn sm ghost" data-addev="${i}" title="Ajouter cette visite au programme">➕ Ajouter</button>`}</div>
+        ? `<span class="tag ok" style="font-size:.62rem">${ICO('coche',12)} au programme</span>`
+        : `<button class="btn sm ghost" data-addev="${i}" title="Ajouter cette visite au programme">${ICO('plus',13)} Ajouter</button>`}</div>
     </div>`;
   }).join('');
   state.cache._evList = ev; save();
@@ -3073,11 +3076,11 @@ function todayHTML(){
         <span class="jj-h">${esc(suiv.heure || '')}</span>
         <span class="jj-t">${esc(suiv.titre || '')}</span>
       </div>
-      ${distance ? `<p class="jj-dist">🚶 ${esc(distance)}</p>` : ''}
+      ${distance ? `<p class="jj-dist">${ICO('pied',13)} ${esc(distance)}</p>` : ''}
     ` : jr ? `
       <p class="jj-lbl">${EN ? 'Today' : 'Aujourd’hui'}</p>
       <h4 class="jj-suiv-t">${esc(jr.resume || '')}</h4>
-      ${(jr.lieux || []).length ? `<p class="jj-lieux">📍 ${jr.lieux.map(l => esc(l) + blogLienHTML(l)).join(' · ')}</p>` : ''}
+      ${(jr.lieux || []).length ? `<p class="jj-lieux">${ICO('epingle',13)} ${jr.lieux.map(l => esc(l) + blogLienHTML(l)).join(' · ')}</p>` : ''}
     ` : `<p class="jj-libre">${EN ? 'Free day — enjoy!' : 'Journée libre — profite bien !'}</p>`}
 
     ${bu ? `<div class="jj-budget">
@@ -3087,9 +3090,9 @@ function todayHTML(){
     </div>` : ''}
 
     <div class="jj-acts">
-      ${jr ? `<button class="btn sm" data-daydetail="${esc(String(idx))}">🕘 ${
+      ${jr ? `<button class="btn sm" data-daydetail="${esc(String(idx))}">${ICO('horloge',14)} ${
         EN ? 'My day, hour by hour' : 'Ma journée heure par heure'}</button>` : ''}
-      <button class="btn sm ghost" id="jjCarte">🗺️ ${EN ? 'Show on the map' : 'Voir sur la carte'}</button>
+      <button class="btn sm ghost" id="jjCarte">${ICO('carte',14)} ${EN ? 'Show on the map' : 'Voir sur la carte'}</button>
     </div>
   </div>`;
 }
@@ -3342,7 +3345,7 @@ function panPapiers(d){
 function panProgramme(d){
   const jours = d.programme || [];
   /* le conseil clé, remonté ici depuis l'ancienne carte « Ton voyage » */
-  const tip = d.conseil_cle ? `<div class="key-tip"><span class="kt-emo">💡</span><p>${esc(d.conseil_cle)}</p></div>` : '';
+  const tip = d.conseil_cle ? `<div class="key-tip"><span class="kt-emo">${ICO('ampoule',18)}</span><p>${esc(d.conseil_cle)}</p></div>` : '';
   if(!jours.length) return tip + `<p class="hint">Aucune journée planifiée pour l'instant.</p>`;
   return meteoHTML() + tip
     + `<p class="pan-intro">Ton programme jour par jour. Une journée ne te va pas ? <strong>Vois-la heure par heure</strong>, ou demande à Acolyte de la <strong>refaire</strong>.</p>`
@@ -3352,13 +3355,13 @@ function panProgramme(d){
           <span class="day-num">${isEN()?'D':'J'}${esc(String(jr.jour))}</span>
           <div class="day-txt">
             <h4>${esc(jr.resume || '')}</h4>
-            ${jr.base ? `<span class="day-base">📍 ${esc(jr.base)}</span>` : ''}
+            ${jr.base ? `<span class="day-base">${ICO('epingle',13)} ${esc(jr.base)}</span>` : ''}
             ${(jr.lieux||[]).length ? `<p>${jr.lieux.map(l => esc(l) + blogLienHTML(l)).join(' · ')}</p>` : ''}
           </div>
         </div>
         <div class="day-acts">
-          <button class="day-act" data-daydetail="${esc(String(jr.jour))}">🕘 Voir heure par heure</button>
-          <button class="day-act" data-planb="${esc(String(jr.jour))}">🔄 Refaire ce jour</button>
+          <button class="day-act" data-daydetail="${esc(String(jr.jour))}">${ICO('horloge',14)} Voir heure par heure</button>
+          <button class="day-act" data-planb="${esc(String(jr.jour))}">${ICO('refaire',14)} Refaire ce jour</button>
         </div>
         ${safeDataImg(state.cache.maps?.[jr.jour]) ? `<img class="daymap" src="${safeDataImg(state.cache.maps[jr.jour])}" alt="Carte du jour ${esc(String(jr.jour))}">` : ''}
         ${collabBarHTML(jr.jour)}
@@ -3375,7 +3378,7 @@ function panProgramme(d){
 /* ---- Onglet Transport ---- */
 function panTransport(d){
   const tr = d.transport || {};
-  const icons = { avion:'✈️', train:'🚆', voiture:'🚗' };
+  const icons = { avion:'avion', train:'train', voiture:'voiture' };
   const labels = { avion:'en avion', train:'en train', voiture:'en voiture' };
   const mode = ['avion','train','voiture'].includes(tr.mode) ? tr.mode : 'avion';
   const dts = stayDates();
@@ -3525,8 +3528,8 @@ function panBudget(d){
         <span class="bt-lbl">par personne</span>
       </div>
       <div class="budget-chips">
-        ${A > 1 && btNum ? `<span class="budget-chip">👥 ${btNum * A} € au total (${A} pers.)</span>` : ''}
-        ${parPersJour ? `<span class="budget-chip">📅 ≈ ${parPersJour} € / jour</span>` : ''}
+        ${A > 1 && btNum ? `<span class="budget-chip">${ICO('personnes',13)} ${btNum * A} € au total (${A} pers.)</span>` : ''}
+        ${parPersJour ? `<span class="budget-chip">${ICO('calendrier',13)} ≈ ${parPersJour} € / jour</span>` : ''}
       </div>
     </div>
     ${budgetReelHTML(btNum, nuits)}
@@ -3539,9 +3542,9 @@ function panBudget(d){
         ${avecMontants ? `<span class="br-bar"><i style="width:${p.amount ? Math.round(p.amount / maxMontant * 100) : 0}%"></i></span>` : ''}
       </div>`).join('')}
     </div>` : (bd.repartition ? `<div class="info-card"><p>${esc(bd.repartition)}</p></div>` : '')}
-    <p class="hint" style="margin:12px 0 0">💡 Estimation indicative — les prix réels du transport s'affichent dans l'onglet Transport.</p>
+    <p class="hint" style="margin:12px 0 0">${ICO('ampoule',14)} Estimation indicative — les prix réels du transport s'affichent dans l'onglet Transport.</p>
     ${(d.a_reserver||[]).length ? `<div class="info-card" style="margin-top:14px">
-      <div class="ic-head"><span>🎟️</span><h4>À réserver tôt</h4></div>
+      <div class="ic-head"><span>${ICO('billet',17)}</span><h4>À réserver tôt</h4></div>
       ${d.a_reserver.map(r=>`<p class="ic-todo">${esc(r)}</p>`).join('')}</div>` : ''}
     ${suiviDepensesHTML()}`;
 }
@@ -3595,7 +3598,7 @@ document.addEventListener('keydown', e => {
    (la carte « Ton voyage » a été retirée). #realPrice y est rempli par
    autoRealPrices dès que l'onglet Transport s'affiche. */
 function tripRouteHTML(d){
-  const icons = { avion:'✈️', train:'🚆', voiture:'🚗' };
+  const icons = { avion:'avion', train:'train', voiture:'voiture' };
   const tr = d.transport || {}, bd = d.budget || {};
   const dts = stayDates();
   const nuits = dts ? Math.max(1, Math.round((new Date(dts.out) - new Date(dts.in)) / 86400000)) : null;
@@ -3604,19 +3607,19 @@ function tripRouteHTML(d){
   return `
     <div class="trip-route">
       <div class="tr-top">
-        <span class="tr-mode">${icons[tr.mode]||'✈️'}</span>
+        <span class="tr-mode">${ICO(icons[tr.mode] || 'avion', 22)}</span>
         <div class="tr-journey">
           <span class="tr-pt">${esc(dep)}</span>
           <span class="tr-arrow" aria-hidden="true">→</span>
           <span class="tr-pt">${esc(arr)}</span>
         </div>
-        ${d._checked ? `<span class="tr-check" title="Plan relu par une 2ᵉ IA">✔</span>` : ''}
+        ${d._checked ? `<span class="tr-check" title="Plan relu par une 2ᵉ IA">${ICO('coche',13)}</span>` : ''}
       </div>
       <div class="tr-facts">
-        <span class="tr-fact">${icons[tr.mode]||'✈️'} ${esc(String(tr.mode||'—').toUpperCase())}</span>
-        ${tr.prix_estime ? `<span class="tr-fact">💶 ${esc(tr.prix_estime)}</span>` : ''}
-        ${nuits ? `<span class="tr-fact">🌙 ${nuits} nuit${nuits>1?'s':''}</span>` : ''}
-        ${bd.total ? `<span class="tr-fact">👛 ${esc(String(bd.total))} €/pers</span>` : ''}
+        <span class="tr-fact">${ICO(icons[tr.mode] || 'avion', 13)} ${esc(String(tr.mode||'—').toUpperCase())}</span>
+        ${tr.prix_estime ? `<span class="tr-fact">${ICO('money',13)} ${esc(tr.prix_estime)}</span>` : ''}
+        ${nuits ? `<span class="tr-fact">${ICO('nuit',13)} ${nuits} nuit${nuits>1?'s':''}</span>` : ''}
+        ${bd.total ? `<span class="tr-fact">${ICO('money',13)} ${esc(String(bd.total))} €/pers</span>` : ''}
       </div>
       <div class="tr-real" id="realPrice"></div>
     </div>`;
@@ -6920,7 +6923,7 @@ function amiOuvre(d){
            <span>${esc(j.resume || '')}${(j.lieux || []).length
              ? '<br><i>' + esc((j.lieux || []).join(' · ')) + '</i>' : ''}</span></div>`).join('')}</div>` : ''}
 
-    ${pl.conseil_cle ? `<div class="key-tip" style="margin-top:16px"><span class="kt-emo">💡</span>
+    ${pl.conseil_cle ? `<div class="key-tip" style="margin-top:16px"><span class="kt-emo">${ICO('ampoule',18)}</span>
       <p>${esc(pl.conseil_cle)}</p></div>` : ''}
 
     <div class="art-pied">
