@@ -5687,3 +5687,33 @@ body.dg-actif .tl-item{ touch-action:none }
 .phrase .fr{ font-size:.84rem;color:var(--txt-2) }
 .phrase .loc{ font-size:1rem;font-weight:650;color:var(--txt);margin:2px 0 }
 .phrase .pron{ font-size:.8rem;color:var(--primary-txt) }
+
+/* ============================================================
+   MÉTÉO — le bloc rebranché
+============================================================ */
+.wx-bloc{
+  display:flex;align-items:center;gap:14px;margin:0 0 16px;padding:12px 14px;
+  background:var(--bg);border:1px solid var(--stroke);border-radius:14px;
+}
+.wx-bloc canvas{ width:56px;height:56px;flex:0 0 56px }
+.wx-txt{ display:flex;flex-direction:column;gap:2px;min-width:0 }
+.wx-txt b{ font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:900;color:var(--txt);letter-spacing:-.02em }
+.wx-txt span{ font-family:'Inter',system-ui,sans-serif;font-size:.78rem;color:var(--txt-2) }
+
+/* ============================================================
+   RÉSERVATIONS — le formulaire rebranché
+============================================================ */
+.res-form{ display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px;align-items:center }
+.res-form select,.res-form input{
+  min-height:44px;padding:0 12px;                    /* 44px : cible tactile AAA */
+  background:var(--bg);color:var(--txt);
+  border:1px solid var(--stroke);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;font-size:16px;   /* 16px : iOS ne zoome pas */
+}
+.res-form select:focus,.res-form input:focus{ outline:2px solid var(--primary);outline-offset:1px }
+.res-form .btn{ min-height:44px }
+@media(max-width:640px){
+  .res-form{ grid-template-columns:1fr 1fr }
+  .res-form select{ grid-column:1 / -1 }
+  .res-form .btn{ grid-column:1 / -1 }
+}

@@ -3334,7 +3334,7 @@ function panProgramme(d){
   /* le conseil clé, remonté ici depuis l'ancienne carte « Ton voyage » */
   const tip = d.conseil_cle ? `<div class="key-tip"><span class="kt-emo">💡</span><p>${esc(d.conseil_cle)}</p></div>` : '';
   if(!jours.length) return tip + `<p class="hint">Aucune journée planifiée pour l'instant.</p>`;
-  return tip
+  return meteoHTML() + tip
     + `<p class="pan-intro">Ton programme jour par jour. Une journée ne te va pas ? <strong>Vois-la heure par heure</strong>, ou demande à Acolyte de la <strong>refaire</strong>.</p>`
     + jours.map(jr => `
       <div class="day-block">
@@ -3403,7 +3403,7 @@ function panLogement(d){
         : (lg.prix_nuit ? `<p class="pan-price">💶 ${esc(lg.prix_nuit)} / nuit</p>` : '')}
     </div>
     <h5 class="pan-sub">Où dormir concrètement</h5>
-    <div id="zoneHotels"></div>`;
+    <div id="zoneHotels"></div>` + ouLogerHTML();
 }
 
 /* ---- Onglet Événements : plus de bouton, la recherche se fait toute seule
@@ -3970,7 +3970,13 @@ document.addEventListener('click', e => {
 /* --- Accordéons + boutons "changer de destination" (CSP stricte : aucun onclick inline) --- */
 document.addEventListener('click', e => {
   const acc = e.target.closest('[data-acc]');
-  if(acc){ acc.parentElement.classList.toggle('open'); return; }
+  if(acc){
+    acc.parentElement.classList.toggle('open');
+    /* Le suivi des réservations se peuple à l'ouverture : inutile de le rendre
+       tant que l'accordéon est replié. */
+    try{ if(acc.parentElement.id === 'accResa') renderResas(); }catch(err){}
+    return;
+  }
   if(e.target.closest('[data-changedest]')) changeDest();
 });
 
@@ -4619,6 +4625,7 @@ Donne exactement 3 quartiers.`;
 }
 
 function renderStay(d){
+  if(!$('#zoneStay')) return;            /* panneau non affiché */
   const t = state.trip;
   const booking = q => `https://www.booking.com/searchresults.fr.html?ss=${encodeURIComponent(q)}`;
   const airbnb  = q => `https://www.airbnb.fr/s/${encodeURIComponent(q)}/homes`;
@@ -5086,6 +5093,7 @@ Exactement 5 adresses VARIÉES (gammes et cuisines différentes).`;
 }
 _retryFns.food = () => { delete state.cache.food; save(); loadFood(); };
 function renderFood(d){
+  if(!$('#zoneFood')) return;            /* panneau non affiché */
   const t = state.trip;
   const rows = d.restos || [];
   if(!rows.length){
@@ -5137,6 +5145,7 @@ Réponds UNIQUEMENT en JSON :
   }catch(e){ if(e.message!=='NO_KEY') zone.innerHTML = errHTML('Chargement impossible.'); }
 }
 function renderShop(d, via){
+  if(!$('#zoneShop')) return;            /* panneau non affiché */
   const lvl = {discount:'💸 Discount', standard:'🛒 Standard', premium:'✨ Premium'};
   $('#zoneShop').innerHTML = `
     <h3 style="margin-bottom:10px">Supermarchés ${badge(via)}</h3>
@@ -5177,6 +5186,7 @@ Réponds UNIQUEMENT en JSON :
   }catch(e){ if(e.message!=='NO_KEY') zone.innerHTML = errHTML('Chargement impossible.'); }
 }
 function renderSpec(d, via){
+  if(!$('#zoneSpec')) return;            /* panneau non affiché */
   $('#zoneSpec').innerHTML = `
     <div style="margin-bottom:10px">${badge(via)}</div>
     ${(d.specialites||[]).map(s=>`
@@ -5281,6 +5291,7 @@ Réponds UNIQUEMENT en JSON :
   }catch(e){ if(e.message!=='NO_KEY') zone.innerHTML = errHTML('Chargement impossible.'); }
 }
 function renderTalk(d, via){
+  if(!$('#zoneTalk')) return;            /* panneau non affiché */
   $('#talkBadge').style.display = via==='groq' ? '' : 'none';
   $('#zoneTalk').innerHTML = `<h3 style="margin-bottom:12px">Langue : ${esc(d.langue||'')}</h3>` +
     (d.phrases||[]).map(p=>`
@@ -5348,6 +5359,7 @@ const _e10 = $('#btnSpend'); if(_e10) _e10.onclick = () => {
   renderSpends();
 };
 function renderSpends(){
+  if(!$('#zoneSpends')) return;          /* panneau non affiché */
   const zone = $('#zoneSpends');
   if(!zone) return;
   const total = state.spends.reduce((a, s) => a + s.amount, 0);
@@ -5900,6 +5912,7 @@ const _e13 = $('#btnRes'); if(_e13) _e13.onclick = () => {
   toast('Réservation ajoutée 📎');
 };
 function renderResas(){
+  if(!$('#zoneRes')) return;             /* accordéon replié */
   const zone = $('#zoneRes');
   if(!state.resas.length){ zone.innerHTML = `<p class="hint">Aucune réservation enregistrée. Garde tes numéros de résa à portée de main.</p>`; return; }
   zone.innerHTML = state.resas.map((r,i)=>`
@@ -14379,6 +14392,10 @@ async function verifiePlanAffiche(){
       try{ if(_planTab === 'budget') renderSpends(); }catch(e){}
       try{ if(_planTab === 'maison' && state.cache && state.cache.bag) renderBag(state.cache.bag, state.cache.bagVia); }catch(e){}
       try{ if(_planTab === 'programme') initNote(); }catch(e){}
+      try{ if(_planTab === 'programme') startWx(); }catch(e){}
+      try{ if(_planTab === 'logement' && state.cache && state.cache.stay) renderStay(state.cache.stay); }catch(e){}
+      try{ if(_planTab === 'manger' && state.cache && state.cache.spec) renderSpec(state.cache.spec, state.cache.specVia); }catch(e){}
+      try{ if(_planTab === 'manger' && state.cache && state.cache.shop) renderShop(state.cache.shop, state.cache.shopVia); }catch(e){}
       try{ if(_planTab === 'papiers' && state.cache && state.cache.talk) renderTalk(state.cache.talk, state.cache.talkVia); }catch(e){}
       try{ if(_planTab === 'manger' && state.cache && state.cache.food) renderFood(state.cache.food); }catch(e){}
       setTimeout(() => { try{ verifiePlanAffiche(); }catch(e){} }, 60);
@@ -15453,7 +15470,8 @@ function panManger(){
       </div>
       <button type="button" class="btn sm" id="btnFoodGo">${dejaLa ? 'Chercher à nouveau' : 'Trouver où manger'}</button>
     </div>
-    <div id="zoneFood">${dejaLa ? '' : '<p class="hint" style="margin:0">Choisis un budget et une envie, puis lance la recherche.</p>'}</div>`;
+    <div id="zoneFood">${dejaLa ? '' : '<p class="hint" style="margin:0">Choisis un budget et une envie, puis lance la recherche.</p>'}</div>`
+    + specialitesHTML() + coursesHTML();
 }
 /* Écouteur délégué : le bouton n'existe qu'après le rendu du panneau, celui
    posé au chargement du script ne s'accrochait à rien. */
@@ -15499,4 +15517,111 @@ document.addEventListener('click', e => {
   if(state.cache) delete state.cache.talk;
   save();
   loadTalk();
+});
+
+/* ============================================================
+   LA MÉTÉO — rebranchée
+   ------------------------------------------------------------
+   startWx() dessine une petite météo animée sur un canvas de 56 px. Elle est
+   appelée depuis renderPlan() — donc à CHAQUE affichage de voyage, chez tout
+   le monde — et sortait aussitôt sur `if(!cv) return;` parce que #wxCv
+   n'existait dans aucun fichier. Du code vivant appelant du code mort : le cas
+   le plus trompeur, puisque rien ne le signale.
+   Les chiffres (mNums : mini, maxi, probabilité de pluie) étaient relevés pour
+   de vrai par realData(), envoyés au modèle dans le prompt… et jamais montrés
+   au voyageur. Ils le sont maintenant.
+============================================================ */
+function meteoHTML(){
+  const m = state.cache && state.cache._real && state.cache._real.mNums;
+  if(!m) return '';
+  const pluie = Math.round(m.rain);
+  const mot = pluie > 55 ? 'pluie probable' : pluie > 25 ? 'averses possibles' : 'temps sec attendu';
+  return `<div class="wx-bloc">
+      <canvas id="wxCv" width="56" height="56" aria-hidden="true"></canvas>
+      <div class="wx-txt">
+        <b>${Math.round(m.min)}° à ${Math.round(m.max)}°</b>
+        <span>${esc(mot)} · ${pluie} % de pluie · relevé réel</span>
+      </div>
+    </div>`;
+}
+
+/* ============================================================
+   OÙ LOGER — rebranché
+   ------------------------------------------------------------
+   panLogement affiche ce que l'IA a PROPOSÉ à l'étape 2 : un type, un
+   quartier, un prix. loadStay() fait autre chose — il compare plusieurs
+   quartiers pour le profil du voyageur et s'appuie sur les hébergements
+   RÉELS relevés par Overpass. Ce n'est pas un doublon, c'est l'étage du
+   dessous, et il visait #zoneStay qui n'existait nulle part.
+============================================================ */
+function ouLogerHTML(){
+  const dejaLa = state.cache && state.cache.stay;
+  return `
+    <h3 style="margin:26px 0 6px;padding-top:20px;border-top:1px solid var(--stroke)">Comparer les quartiers</h3>
+    <p class="hint" style="margin:0 0 12px">Au-delà de la proposition ci-dessus : où dormir vraiment, selon ce qui compte pour toi.</p>
+    <div class="mg-form">
+      <div class="field"><label for="stayType">Type</label>
+        <select id="stayType">
+          <option value="">Peu importe</option>
+          <option value="hôtel">Hôtel</option>
+          <option value="appartement">Appartement</option>
+          <option value="auberge">Auberge</option>
+          <option value="maison d'hôtes">Maison d'hôtes</option>
+        </select>
+      </div>
+      <div class="field"><label for="stayPrio">Ce qui compte</label>
+        <select id="stayPrio">
+          <option value="">Équilibré</option>
+          <option value="le prix avant tout">Le prix</option>
+          <option value="être au calme">Le calme</option>
+          <option value="être au centre">Être au centre</option>
+          <option value="proche des transports">Les transports</option>
+        </select>
+      </div>
+      <button type="button" class="btn sm" id="btnStayGo">${dejaLa ? 'Chercher à nouveau' : 'Comparer'}</button>
+    </div>
+    <div id="zoneStay">${dejaLa ? '' : '<p class="hint" style="margin:0">Choisis un type et une priorité, puis lance la comparaison.</p>'}</div>`;
+}
+document.addEventListener('click', e => {
+  if(!e.target.closest || !e.target.closest('#btnStayGo')) return;
+  if(state.cache) delete state.cache.stay;
+  save();
+  loadStay();
+});
+
+/* ============================================================
+   SPÉCIALITÉS ET COURSES — rebranchées dans « Manger »
+   ------------------------------------------------------------
+   loadSpec() est une enquête gourmande (plats locaux, où les goûter, prix) et
+   loadShop() repère les supermarchés et le coût du quotidien. Toutes deux
+   visaient des zones absentes. Leur place est ici : on ne mange pas qu'au
+   restaurant, et savoir ce qu'on doit goûter fait partie du voyage.
+============================================================ */
+function specialitesHTML(){
+  const dejaLa = state.cache && state.cache.spec;
+  return `
+    <h3 style="margin:26px 0 6px;padding-top:20px;border-top:1px solid var(--stroke)">Ce qu'il faut goûter</h3>
+    <div class="ph-tete">
+      <p class="hint" style="margin:0">Les spécialités du coin, où les trouver et à quel prix.</p>
+      <button type="button" class="btn sm ghost" id="btnSpecGo">${dejaLa ? 'Refaire' : 'Découvrir'}</button>
+    </div>
+    <span id="specBadge" class="via-badge" style="display:none">rapide</span>
+    <div id="zoneSpec"></div>`;
+}
+function coursesHTML(){
+  const dejaLa = state.cache && state.cache.shop;
+  return `
+    <h3 style="margin:26px 0 6px;padding-top:20px;border-top:1px solid var(--stroke)">Faire ses courses</h3>
+    <div class="ph-tete">
+      <p class="hint" style="margin:0">Où acheter de quoi manger sans passer par le restaurant, et ce que ça coûte.</p>
+      <button type="button" class="btn sm ghost" id="btnShopGo">${dejaLa ? 'Refaire' : 'Repérer'}</button>
+    </div>
+    <span id="shopBadge" class="via-badge" style="display:none">rapide</span>
+    <div id="zoneShop"></div>`;
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('#btnSpecGo, #btnShopGo');
+  if(!t) return;
+  if(t.id === 'btnSpecGo'){ if(state.cache) delete state.cache.spec; save(); loadSpec(); }
+  else { if(state.cache) delete state.cache.shop; save(); loadShop(); }
 });

@@ -549,6 +549,27 @@
           <button class="btn ghost sm" id="btnMaps">Cartes hors-ligne</button>
         </div>
         <p class="hint" style="margin:8px 0 0">Avant le décollage : télécharge le carnet PDF et prépare les <strong>cartes de chaque journée</strong> — tout reste consultable <strong>sans connexion</strong>.</p>
+
+        <!-- Le suivi des réservations. renderResas() et son écouteur de
+             suppression existaient depuis toujours ; #zoneRes et ce
+             formulaire n'ont jamais été écrits, donc rien ne pouvait être
+             enregistré. Le balisage est ici, en HTML statique, pour que
+             l'écouteur posé au chargement d'app.js trouve bien #btnRes. -->
+        <h3 style="margin:24px 0 6px;padding-top:20px;border-top:1px solid var(--stroke)">Tes numéros de réservation</h3>
+        <p class="hint" style="margin:0 0 12px">Gardés sur ton appareil, consultables hors connexion. Rien n'est envoyé.</p>
+        <div class="res-form">
+          <select id="resType" aria-label="Type de réservation">
+            <option value="✈️ Vol">✈️ Vol</option>
+            <option value="🏨 Hôtel">🏨 Hôtel</option>
+            <option value="🚆 Train">🚆 Train</option>
+            <option value="🚗 Location">🚗 Location</option>
+            <option value="🎟️ Activité">🎟️ Activité</option>
+          </select>
+          <input id="resRef" maxlength="40" placeholder="Référence" autocomplete="off">
+          <input id="resLink" maxlength="200" placeholder="Lien (facultatif)" autocomplete="off">
+          <button type="button" class="btn sm" id="btnRes">Ajouter</button>
+        </div>
+        <div id="zoneRes"></div>
       </div>
     </div>
 
