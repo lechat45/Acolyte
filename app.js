@@ -4068,19 +4068,19 @@ function buildResa(){
   const ta  = `https://www.tripadvisor.fr/Search?q=${enc(t.nom||'')}`;
   const B = (href, label, solid) => `<a class="btn sm${solid ? '' : ' ghost'}" href="${esc(href)}" target="_blank" rel="noopener">${label}</a>`;
   $('#zoneResa').innerHTML = `
-    <h3 style="margin:6px 0 8px">✈️ Billets de transport</h3>
+    <h3 style="margin:6px 0 8px">${ICO('avion',17)} Billets de transport</h3>
     <div class="row">${B(gf,'Google Flights',1)}${B(sky,'Skyscanner')}${B(rya,'Ryanair')}</div>
-    <div class="row" style="margin-top:8px">${B(sncf,'🚆 SNCF Connect',1)}${B(trl,'Trainline')}${B(omio,'Omio')}</div>
-    <div class="row" style="margin-top:8px">${B(car,'🚗 Itinéraire voiture (Maps)')}</div>
+    <div class="row" style="margin-top:8px">${B(sncf,'SNCF Connect',1)}${B(trl,'Trainline')}${B(omio,'Omio')}</div>
+    <div class="row" style="margin-top:8px">${B(car,'Itinéraire voiture (Maps)')}</div>
     <div class="divider"></div>
-    <h3 style="margin:0 0 8px">🏨 Logement — prix réels</h3>
+    <h3 style="margin:0 0 8px">${ICO('hotel',17)} Logement — prix réels</h3>
     <div id="zoneHotels"></div>
-    <h3 style="margin:14px 0 8px">🔎 Comparer tous les logements</h3>
+    <h3 style="margin:14px 0 8px">${ICO('loupe',17)} Comparer tous les logements</h3>
     <div class="row">${B(L.cozy,'Cozycozy — comparateur',1)}${B(L.hometogo,'HomeToGo — comparateur',1)}</div>
     <div class="row" style="margin-top:8px">${B(L.booking,'Booking')}${B(L.airbnb,'Airbnb')}${B(L.abritel,'Abritel')}</div>
     <p class="hint">Recherches pré-remplies : ${esc(state.cache.plan?.logement?.quartier || t.nom || '')}${d ? ', du ' + esc(d.in) + ' au ' + esc(d.out) : ''}, ${p.adults||2} adulte(s)${p.kids ? ' + ' + p.kids + ' enfant(s)' : ''}.</p>
     <div class="divider"></div>
-    <h3 style="margin:0 0 8px">🎡 Activités & visites</h3>
+    <h3 style="margin:0 0 8px">${ICO('etincelle',17)} Activités & visites</h3>
     <div class="row">${B(gyg,'GetYourGuide',1)}${B(cvt,'Civitatis')}${B(ta,'Tripadvisor')}</div>`;
 }
 
@@ -4353,10 +4353,10 @@ async function autoRealPrices(mode){
      ils s'affichent même en connexion dégradée. */
   if(mode === 'voiture'){
     const c = carPriceAuto();
-    if(c) html = `<span class="rp-ok">🚗 <strong>≈ ${c.perPax} €/pers</strong> A/R · ${c.km} km · carburant + péages</span>`;
+    if(c) html = `<span class="rp-ok">${ICO('voiture',13)} <strong>≈ ${c.perPax} €/pers</strong> A/R · ${c.km} km · carburant + péages</span>`;
   }else if(mode === 'train'){
     const tr = state.cache._real?.train;
-    if(tr) html = `<span class="rp-ok">🚄 <strong>${esc(tr)}</strong></span>`;
+    if(tr) html = `<span class="rp-ok">${ICO('train',13)} <strong>${esc(tr)}</strong></span>`;
   }else{
     /* l'avion exige un appel réseau → on s'abstient si la connexion rame, et on rejoue plus tard */
     if(netSlow()){
@@ -4366,7 +4366,7 @@ async function autoRealPrices(mode){
     }
     slot.innerHTML = `<span class="rp-load">recherche du prix réel…</span>`;
     const f = await planePriceAuto();
-    if(f) html = `<span class="rp-ok">✈️ <strong>dès ${f.prix} € A/R</strong> · ${esc(f.from)}→${esc(f.to)}${f.aller ? ` · ${esc(f.aller)}` : ''} <em>(Ryanair, aujourd'hui)</em></span>`;
+    if(f) html = `<span class="rp-ok">${ICO('avion',13)} <strong>dès ${f.prix} € A/R</strong> · ${esc(f.from)}→${esc(f.to)}${f.aller ? ` · ${esc(f.aller)}` : ''} <em>(Ryanair, aujourd'hui)</em></span>`;
   }
   if(!html){ slot.innerHTML = `<span class="rp-idle">prix du jour à vérifier sur les liens de réservation</span>`; return; }
   state.cache[ck] = html; save();
@@ -4412,19 +4412,19 @@ async function ryRoundTrip(){
       zone.innerHTML = errHTML(`Aucun vol Ryanair ${from} → ${to} sur cette période. Ligne non desservie ou dates complètes — essaie le calendrier du mois, ou change d'aéroport (Paris = BVA).`);
       return;
     }
-    zone.innerHTML = `<h3 style="margin-bottom:10px">Meilleurs allers-retours trouvés 🔥</h3>` + fares.map((f,i)=>{
+    zone.innerHTML = `<h3 style="margin-bottom:10px">Meilleurs allers-retours trouvés</h3>` + fares.map((f,i)=>{
       const o = f.outbound, b = f.inbound;
       const dOut = o.departureDate.slice(0,10), dIn = b.departureDate.slice(0,10);
       const book = `https://www.ryanair.com/fr/fr/trip/flights/select?adults=${state.prefs?.adults||1}&teens=0&children=0&infants=0&isReturn=true&dateOut=${dOut}&dateIn=${dIn}&originIata=${from}&destinationIata=${to}&tpAdults=${state.prefs?.adults||1}&tpStartDate=${dOut}&tpEndDate=${dIn}&tpOriginIata=${from}&tpDestinationIata=${to}`;
       return `<div class="item">
-        <div class="emo">${i===0?'🏆':'✈️'}</div>
+        <div class="emo">${ICO(i===0?'trophee':'avion',20)}</div>
         <div style="flex:1">
           <h4>${esc(frDate(o.departureDate))} → ${esc(frDate(b.departureDate))}</h4>
           <p>Aller ${esc(frTime(o.departureDate))} (${esc(o.price?.value?.toFixed(2))} €) · Retour ${esc(frTime(b.departureDate))} (${esc(b.price?.value?.toFixed(2))} €)<br>
           ${esc(o.departureAirport?.name||from)} ⇄ ${esc(o.arrivalAirport?.name||to)}</p>
-          <a class="tl-loc" href="${esc(book)}" target="_blank" rel="noopener" style="margin-top:8px">🎫 Réserver sur Ryanair</a>
+          <a class="tl-loc" href="${esc(book)}" target="_blank" rel="noopener" style="margin-top:8px">${ICO('billet',13)} Réserver sur Ryanair</a>
         </div>
-        <div class="side"><span class="tag money" style="font-size:.85rem">💶 ${esc(f.summary?.price?.value?.toFixed(2))} € A/R</span></div>
+        <div class="side"><span class="tag money" style="font-size:.85rem">${ICO('money',12)} ${esc(f.summary?.price?.value?.toFixed(2))} € A/R</span></div>
       </div>`;
     }).join('') + `<p class="hint">Prix réels au moment de la recherche, hors bagages/options. ${fares[0].summary?.price?.value ? 'Le moins cher : <strong>'+fares[0].summary.price.value.toFixed(2)+' € A/R</strong>.' : ''}</p>`;
     if(fares[0]?.summary?.price?.value){
@@ -4518,20 +4518,20 @@ async function tpSearch(){
       zone.innerHTML = errHTML(`Aucun prix en cache pour ${from} → ${to}. L'API Aviasales sert les prix des recherches récentes des utilisateurs : essaie des codes VILLE (PAR, LON, ROM…) ou une grande ligne.`);
       return;
     }
-    zone.innerHTML = `<h3 style="margin-bottom:10px">🌍 Toutes compagnies — ${esc(from)} ⇄ ${esc(to)}${broad ? ' <span class="tag" style="margin-left:6px">mois entier</span>' : ''}</h3>` +
+    zone.innerHTML = `<h3 style="margin-bottom:10px">${ICO('monde',17)} Toutes compagnies — ${esc(from)} ⇄ ${esc(to)}${broad ? ' <span class="tag" style="margin-left:6px">mois entier</span>' : ''}</h3>` +
       rows.map((f,i)=>{
         const dep = f.departure_at, ret2 = f.return_at;
         const dd = dep ? dep.slice(8,10)+dep.slice(5,7) : '', rr = ret2 ? ret2.slice(8,10)+ret2.slice(5,7) : '';
         const link = f.link ? 'https://www.aviasales.com' + f.link : `https://www.aviasales.com/search/${from}${dd}${to}${rr}1`;
         const stops = (f.transfers||0) + (f.return_transfers||0);
         return `<div class="item">
-          <div class="emo" style="display:flex;align-items:center">${i===0?'🏆':`<img src="https://pics.avs.io/60/30/${esc(f.airline)}.png" alt="${esc(f.airline)}" style="height:20px;border-radius:4px" onerror="this.replaceWith('✈️')">`}</div>
+          <div class="emo" style="display:flex;align-items:center">${i===0?ICO('trophee',20):`<img src="https://pics.avs.io/60/30/${esc(f.airline)}.png" alt="${esc(f.airline)}" style="height:20px;border-radius:4px" onerror="this.replaceWith('✈️')">`}</div>
           <div style="flex:1">
             <h4>${esc(airlineName(f.airline))} <span class="tag" style="margin-left:6px">${stops===0?'direct':stops+' escale'+(stops>1?'s':'')}</span></h4>
             <p>Aller ${esc(frDate(dep))} à ${esc(frTime(dep))}${ret2 ? ` · Retour ${esc(frDate(ret2))}` : ''} · vol ${esc(f.airline)}${esc(String(f.flight_number||''))}</p>
-            <a class="tl-loc" href="${esc(link)}" target="_blank" rel="noopener" style="margin-top:8px">🎫 Voir sur Aviasales</a>
+            <a class="tl-loc" href="${esc(link)}" target="_blank" rel="noopener" style="margin-top:8px">${ICO('billet',13)} Voir sur Aviasales</a>
           </div>
-          <div class="side"><span class="tag money" style="font-size:.85rem">💶 ${esc(String(f.price))} € A/R</span></div>
+          <div class="side"><span class="tag money" style="font-size:.85rem">${ICO('money',12)} ${esc(String(f.price))} € A/R</span></div>
         </div>`;
       }).join('') +
       `<p class="hint">Prix issus du cache Aviasales (recherches réelles des dernières 48h, toutes compagnies confondues) — clique sur "Voir" pour le tarif à la seconde.</p>`;
@@ -4569,7 +4569,7 @@ async function dbSearch(){
     const d = await r.json();
     const js = d.journeys || [];
     if(!js.length){ zone.innerHTML = errHTML('Aucun trajet trouvé dans le réseau DB pour cette liaison — passe par Trainline.'); return; }
-    zone.innerHTML = `<h3 style="margin-bottom:10px">🚄 ${esc(a.name)} → ${esc(b.name)}</h3>` + js.map(j=>{
+    zone.innerHTML = `<h3 style="margin-bottom:10px">${ICO('train',17)} ${esc(a.name)} → ${esc(b.name)}</h3>` + js.map(j=>{
       const legs = (j.legs||[]).filter(l=>!l.walking);
       if(!legs.length) return '';
       const dep0 = legs[0], arrN = legs[legs.length-1];
@@ -4585,11 +4585,11 @@ async function dbSearch(){
           <h4>${esc(frTime(dep0.departure||dep0.plannedDeparture))} → ${esc(frTime(arrN.arrival||arrN.plannedArrival))}
             <span class="tag cyan" style="margin-left:6px">⏱ ${dur}</span>
             <span class="tag" style="margin-left:4px">${changes===0?'direct':changes+' corresp.'}</span>
-            ${delay>0?`<span class="tag money" style="margin-left:4px">⚠️ +${delay} min</span>`:''}
+            ${delay>0?`<span class="tag money" style="margin-left:4px">${ICO('alerte',12)} +${delay} min</span>`:''}
           </h4>
           <p>${esc(lines)} · le ${esc(frDate(dep0.departure||dep0.plannedDeparture))}${dep0.departurePlatform?` · voie ${esc(dep0.departurePlatform)}`:''}</p>
         </div>
-        ${price?`<div class="side"><span class="tag money">💶 ${esc(price)}</span></div>`:''}
+        ${price?`<div class="side"><span class="tag money">${ICO('money',12)} ${esc(price)}</span></div>`:''}
       </div>`;
     }).join('') + `<p class="hint">Horaires temps réel (retards inclus) via le réseau Deutsche Bahn. Les prix ne sont affichés que sur les liaisons vendues par DB.</p>`;
   }catch(e){
