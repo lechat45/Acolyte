@@ -966,19 +966,29 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   right:1px;border-radius:0 var(--r-lg) var(--r-lg) 0;
   background:linear-gradient(to left, var(--bg), transparent);
 }
-.plan-tabs-wrap.a-gauche::before{opacity:1}
-.plan-tabs-wrap.a-droite::after{opacity:1}
+/* Neutralisées : la grille ne défile plus, ces dégradés masqueraient un bord
+   qui n'a plus rien à cacher. planTabsOmbre() peut continuer de poser les
+   classes, elles ne font simplement plus rien. */
+.plan-tabs-wrap.a-gauche::before{opacity:0}
+.plan-tabs-wrap.a-droite::after{opacity:0}
 @media (prefers-reduced-motion:reduce){
   .plan-tabs-wrap::before,.plan-tabs-wrap::after{transition:none}
 }
 
+/* ⚠️ GRILLE QUI SE REPLIE, PLUS UNE BARRE QUI DÉFILE. Mesuré à sept onglets
+   sur un écran de 375 px : 550 px de contenu pour 311 px visibles, soit 43 %
+   hors champ — Budget et Maison n'étaient atteignables qu'en devinant qu'il
+   fallait faire glisser. Un dégradé sur le bord signalait le débordement, mais
+   signaler qu'on cache quelque chose ne vaut pas le montrer.
+   auto-fit + minmax : trois colonnes sur téléphone, sept d'affilée sur un
+   écran large, sans média query et sans nombre d'onglets écrit en dur — le
+   jour où un huitième arrive, la grille se réarrange toute seule. */
 .plan-tabs{
-  display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;
+  display:grid;grid-template-columns:repeat(auto-fit, minmax(118px, 1fr));gap:5px;
   padding:6px;margin:0;background:var(--bg);
   border:1px solid var(--stroke);border-radius:var(--r-lg);
   box-shadow:var(--shadow);
 }
-.plan-tabs::-webkit-scrollbar{display:none}
 
 /* ---- Événements : le titre et sa date sont DEUX blocs ----
    Le badge vivait dans le <h4>, en flux inline avec le nom : sur un nom long il
@@ -1004,7 +1014,12 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
    raison de l'avoir. */
 .ev-quand{flex:none;font-size:.66rem}
 .plan-tab{
-  position:relative;flex:1;min-width:max-content;white-space:nowrap;cursor:pointer;
+  /* ⚠️ min-width:max-content RETIRÉ. Il servait à empêcher la troncature quand
+     la rangée était un flex qui défilait ; dans une grille il force au
+     contraire la colonne au-delà de sa part et fait ressortir le texte de sa
+     case. C'est la largeur MINIMALE de la grille (minmax ci-dessus) qui garantit
+     désormais que le mot tient, sans jamais le couper. */
+  position:relative;min-width:0;white-space:nowrap;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:7px;
   padding:11px 14px;border:2px solid transparent;border-radius:var(--r-md);background:transparent;
   font:700 .8rem 'Fraunces',Georgia,serif;color:var(--txt-2);
@@ -1031,7 +1046,10 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
    qu'on fait glisser — surtout que .plan-tabs a DÉJÀ overflow-x:auto et son
    ascenseur masqué, donc le défilement était prévu depuis le début. */
 @media(max-width:460px){
-  .plan-tabs{gap:3px;padding:4px}
+  /* 88 px : trois colonnes tiennent dans 311 px (3x88 + 2x3 = 270), quatre non
+     (361). auto-fit choisit donc trois, et les sept onglets s'étalent sur trois
+     rangées — tous visibles, aucun à deviner. */
+  .plan-tabs{gap:3px;padding:4px;grid-template-columns:repeat(auto-fit, minmax(88px, 1fr))}
   /* ⚠️ La FAMILLE change avec la taille. La police est déclarée dans la règle
      de base (.plan-tab, 12,8 px) ; ici on descend à 9,9 px, et Fraunces — une
      serif d'affichage — s'y referme. La taille et la police sont posées à deux
@@ -5543,3 +5561,34 @@ body.dg-actif .tl-item{ touch-action:none }
 }
 .mem-liste li b{ color:var(--txt);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
 .mem-liste li span{ color:var(--txt-2);font-size:.74rem;flex:0 0 auto }
+
+/* ============================================================
+   « GÉRER CE VOYAGE » — trois groupes au lieu d'une grille plate
+   ------------------------------------------------------------
+   Six boutons de même classe, dont un qui efface tout : rien ne distinguait
+   « Exporter » de « Nouveau voyage ». Le regroupement nomme l'intention, et le
+   geste irréversible est isolé derrière un trait.
+============================================================ */
+.ger-grp{ padding:0 0 16px }
+.ger-grp + .ger-grp{ border-top:1px solid var(--stroke);padding-top:16px }
+.ger-lbl{
+  margin:0 0 10px;
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--txt-2);
+}
+.ger-danger{ padding-bottom:0 }
+.ger-danger .ger-lbl{ color:var(--danger) }
+/* ⚠️ `.btn.btn-danger` et non `.btn-danger` seul : les règles de `.btn` posent
+   déjà couleur et bordure, et à spécificité (0,1,0) contre (0,1,0) c'est la
+   dernière déclarée qui gagnerait — donc l'ordre du fichier, pas l'intention.
+   C'est le piège de spécificité déjà rencontré sept fois ici. */
+.btn.btn-danger{
+  color:var(--danger);
+  border-color:color-mix(in srgb, var(--danger) 45%, transparent);
+}
+.btn.btn-danger:hover{
+  background:var(--danger);
+  color:var(--on-accent);
+  border-color:var(--danger);
+}

@@ -555,18 +555,37 @@
     <!-- 4 · Gestion du voyage (replié : actions rares) -->
     <div class="acc" id="accManage">
       <div class="acc-head" data-acc>GÉRER CE VOYAGE <span class="arr">›</span></div>
+      <!-- ⚠️ SIX BOUTONS RIGOUREUSEMENT IDENTIQUES, c'était le problème : « ↺
+           Nouveau voyage », qui efface tout, avait exactement l'allure
+           d'« Exporter (.md) », qui ne fait qu'écrire un fichier. Trois groupes
+           nommés remplacent la grille indifférenciée, et le geste irréversible
+           est seul, en bas, derrière un trait et dans un rouge qui le désigne.
+           Aucun identifiant ne change : les six sont câblés dans app.js. -->
       <div class="acc-body">
-        <div class="btn-duo">
-          <button class="btn ghost sm" id="btnPlanRedo2">Tout réorganiser</button>
-          <button class="btn ghost sm" data-changedest>Changer de destination</button>
+        <div class="ger-grp">
+          <p class="ger-lbl">Refaire</p>
+          <div class="btn-duo">
+            <button class="btn ghost sm" id="btnPlanRedo2">Tout réorganiser</button>
+            <button class="btn ghost sm" data-changedest>Changer de destination</button>
+          </div>
+          <p class="hint" style="margin:8px 0 0">Le voyage est regénéré. Tes notes, dépenses et cases cochées restent.</p>
         </div>
-        <div class="btn-duo" style="margin-top:10px">
-          <button class="btn ghost sm" id="btnBackup">Sauvegarder (fichier)</button>
-          <button class="btn ghost sm" id="btnRestore">Importer</button>
+
+        <div class="ger-grp">
+          <p class="ger-lbl">Emporter une copie</p>
+          <div class="btn-duo">
+            <button class="btn ghost sm" id="btnBackup">Sauvegarder (fichier)</button>
+            <button class="btn ghost sm" id="btnExport">Exporter (.md)</button>
+          </div>
+          <div class="btn-duo" style="margin-top:10px">
+            <button class="btn ghost sm" id="btnRestore">Importer une sauvegarde</button>
+          </div>
         </div>
-        <div class="btn-duo" style="margin-top:10px">
-          <button class="btn ghost sm" id="btnExport">Exporter (.md)</button>
-          <button class="btn ghost sm" id="btnReset">↺ Nouveau voyage</button>
+
+        <div class="ger-grp ger-danger">
+          <p class="ger-lbl">Recommencer de zéro</p>
+          <p class="hint" style="margin:0 0 10px">Efface ce voyage de l'appareil : programme, notes, dépenses, cases cochées. Sauvegarde-le d'abord si tu veux le retrouver.</p>
+          <button class="btn ghost sm btn-danger" id="btnReset">↺ Nouveau voyage</button>
         </div>
         <input type="file" id="restoreFile" accept="application/json,.json" hidden aria-label="Choisir un fichier de sauvegarde à restaurer">
       </div>

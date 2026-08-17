@@ -3107,16 +3107,20 @@ const _openDays = new Set();                    /* journées dépliées : surviv
 const _comDrafts = {};                          /* commentaires en cours de frappe, par journée */
 /* Tout le contenu du voyage vit dans ces onglets, sous la carte « Ton
    voyage » qui ne garde que le résumé (trajet + conseil). */
+/* ⚠️ L'ORDRE SUIT LE VOYAGE, PAS L'HISTORIQUE DU CODE. Les quatre premiers
+   sont ceux qu'on ouvre une fois parti — le programme du jour, où l'on dort,
+   comment on circule, ce qu'on dépense. Les trois derniers servent AVANT :
+   les événements qu'on repère, les formalités, la maison qu'on ferme.
+   ⚠️ Et « Avant de partir » est devenu « Maison » : le libellé long à lui seul
+   poussait deux onglets hors de l'écran. Le nom complet reste en title. */
 const PLAN_TABS = [
   { id:'programme', ico:'calendrier', nom:'Programme' },
   { id:'logement',  ico:'hotel',      nom:'Logement'  },
   { id:'transport', ico:'train',      nom:'Transport' },
-  { id:'papiers',   ico:'passeport',  nom:'Papiers'   },
+  { id:'budget',    ico:'document',   nom:'Budget'    },
   { id:'events',    ico:'etincelle',  nom:'Événements'},
-  { id:'budget',    ico:'document',   nom:'Budget' },
-  /* « Maison » ferme la boucle : tout le reste prépare l'arrivée, celui-ci
-     prépare le départ. C'est le seul onglet qui ne coûte aucun appel d'IA. */
-  { id:'maison',    ico:'cle',        nom:'Avant de partir' }
+  { id:'papiers',   ico:'passeport',  nom:'Papiers'   },
+  { id:'maison',    ico:'cle',        nom:'Maison', titre:'Avant de partir — la maison que tu laisses' }
 ];
 
 /* ============================================================
@@ -3581,7 +3585,7 @@ function renderSections(d){
       <h2 class="sections-title">Ton voyage</h2>
       <div class="plan-tabs-wrap">
         <div class="plan-tabs" role="tablist" aria-label="Détails du voyage">
-          ${PLAN_TABS.map(t => `<button class="plan-tab${t.id === _planTab ? ' on' : ''}" data-plantab="${t.id}" role="tab" aria-selected="${t.id === _planTab}">
+          ${PLAN_TABS.map(t => `<button class="plan-tab${t.id === _planTab ? ' on' : ''}" data-plantab="${t.id}" role="tab" aria-selected="${t.id === _planTab}"${t.titre ? ` title="${esc(t.titre)}"` : ''}>
             ${ICO(t.ico,18)}${esc(t.nom)}</button>`).join('')}
         </div>
       </div>
@@ -6359,6 +6363,12 @@ function enterApp(){
    (date au format AAAA-MM-JJ) et incrémente CACHE dans sw.js.
 ============================================================ */
 const CHANGELOG = [
+  { v:'7.8', date:'2026-08-17', titre:'L’onglet Voyage remis en ordre', items:[
+    '🗂️ Les sept onglets du voyage tiennent enfin tous à l’écran : ils se rangent sur trois rangées au lieu de défiler. Budget et Maison n’étaient tout simplement pas visibles',
+    '🧭 Ils sont rangés dans l’ordre du voyage : ce qui sert sur place d’abord, ce qui sert avant de partir ensuite',
+    '✨ Le renvoi vers l’assistant passe sous ton voyage — tu vois ton billet et ton programme en arrivant, pas un lien vers un autre onglet',
+    '⚠️ Dans « Gérer ce voyage », les six boutons identiques deviennent trois groupes nommés, et « Nouveau voyage » — qui efface tout — est isolé en rouge, avec ce qu’il supprime écrit noir sur blanc'
+  ]},
   { v:'7.7', date:'2026-08-16', titre:'Ton passeport, et un cran de sécurité', items:[
     '🆘 Ton contact d’urgence s’affiche enfin — dans ton passeport et sous les numéros de secours du pays. Il était demandé puis jamais montré',
     '💱 Ta monnaie sert vraiment : les taux de change partent d’elle, plus de l’euro imposé',
@@ -12446,7 +12456,17 @@ function asstMonte(){
     </button>
     <p class="asst-etat" id="asstEtat" role="status" aria-live="polite"></p>
     <button class="asst-undo" id="asstUndo" type="button">${EN ? '↩ Undo' : '↩ Annuler'}</button>`;
-  hote.insertBefore(bar, hote.firstChild);
+  /* ⚠️ APRÈS LE VOYAGE, PLUS AVANT. Le commentaire ci-dessus disait déjà le
+     problème — « on ne voyait plus son propre voyage en arrivant dessus » —
+     mais la barre avait seulement été RÉTRÉCIE, pas déplacée : elle occupait
+     encore 132 px au-dessus du billet. Or c'est un renvoi vers un autre
+     onglet ; ça n'a pas à passer avant ce qu'on vient voir.
+     Elle se pose donc juste après le contenu du voyage, avec les autres
+     actions (Réserver, Gérer) auxquelles elle appartient. Le repli sur
+     appendChild couvre le cas où #zoneSections n'existerait pas encore. */
+  const apres = $('#zoneSections');
+  if(apres && apres.parentNode === hote) hote.insertBefore(bar, apres.nextSibling);
+  else hote.appendChild(bar);
   $('#asstUndo').onclick = asstAnnule;
   const vers = $('#asstVers');
   if(vers) vers.onclick = () => { if(typeof switchCat === 'function') switchCat('ia'); };
