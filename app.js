@@ -3388,7 +3388,11 @@ function panTransport(d){
       <div class="ic-head"><span>ℹ️</span><h4>Bon à savoir</h4></div><p>${esc(tr.details)}</p></div>` : ''}
     ${d.sur_place ? `<div class="info-card">
       <div class="ic-head"><span>🚇</span><h4>Une fois sur place</h4></div><p>${esc(d.sur_place)}</p></div>` : ''}
-    ${carbonHTML(mode)}`;
+    ${carbonHTML(mode)}` + `
+    <div class="sim-appel">
+      <div><b>Comparer pour de vrai</b><em>Vrais prix et vrais horaires, avion, train ou voiture.</em></div>
+      <button type="button" class="btn sm" id="btnOpenSimPan">Ouvrir la simulation</button>
+    </div>`;
 }
 
 /* ---- Onglet Logement ---- */
@@ -4074,11 +4078,6 @@ const _e1 = $('#btnOpenResa'); if(_e1) _e1.onclick = () => {
   $('#ovResa').classList.add('show');
   loadHotels();
 };
-const _e2 = $('#btnOpenSim'); if(_e2) _e2.onclick = () => {
-  if(!state.trip){ toast('Choisis d’abord un voyage 😉'); return; }
-  $('#ovSim').classList.add('show');
-  loadTransport();
-};
 document.addEventListener('click', e => {
   /* la barrière de confidentialité obligatoire ne se ferme NI par la croix
      (absente) NI par un clic sur le fond : il faut accepter */
@@ -4593,7 +4592,6 @@ document.addEventListener('click', e => {
 /* ============================================================
    ÉTAPE 3 — DORMIR  (Gemini · heavy)
 ============================================================ */
-const _e6 = $('#btnStayGo'); if(_e6) _e6.onclick = () => { delete state.cache.stay; save(); loadStay(); };
 
 async function loadStay(){
   const zone = $('#zoneStay');
@@ -4703,26 +4701,6 @@ $$('.subtab').forEach(el => el.onclick = () => {
 /* ============================================================
    ITINÉRAIRE (Gemini · heavy)
 ============================================================ */
-function itiPrompt(day){
-  const t = state.trip;
-  const pace = $('#itiPace').value, wish = $('#itiWish').value.trim();
-  const start = $('#itiStart').value, end = $('#itiEnd').value, move = $('#itiMove').value;
-  return `Tu es Acolyte, guide local expert de ${t.nom} (${t.pays}). ${ctx()}
-Construis le programme du JOUR ${day} du séjour.
-- Rythme : ${pace} · Journée de ${start} à ${end} · Déplacements : ${move}
-${wish ? '- Envie particulière : '+wish : ''}
-Programme RÉALISTE : horaires cohérents, temps de trajet inclus, pauses repas.
-TARIFS : donne le prix d'entrée réel de chaque visite payante. Si tu n'es pas sûr, donne une FOURCHETTE. N'invente jamais un tarif précis — « environ 15 € » vaut mieux que « 14,50 € » faux.
-Si jour > 1, varie par rapport aux grands classiques du jour 1.
-Réponds UNIQUEMENT en JSON :
-{
- "titre_journee":"thème du jour",
- "etapes":[
-   {"heure":"09:00","titre":"...","description":"1-2 phrases concrètes avec un vrai conseil","lieu":"nom précis du lieu pour Google Maps ou null","type":"visite|repas|pause|trajet","prix":"tarif d'entrée RÉEL par adulte, ex : « 18 € » ou « 12-16 € ». Écris « gratuit » quand ça l'est vraiment, et une chaîne VIDE pour un repas, une pause ou un trajet — on ne devine pas l'addition d'un restaurant."}
- ]
-}
-Entre 6 et 9 étapes.`;
-}
 
 /* ============================================================
    JOURNÉE HEURE PAR HEURE — modifiable et réorganisable
@@ -4996,19 +4974,6 @@ document.addEventListener('input', e => {
   _tlDraft[tlDraftKey(box.dataset.daybox, form.dataset.tlform, inp.dataset.tlinp)] = inp.value;
 });
 
-const _e7 = $('#btnIti'); if(_e7) _e7.onclick = async () => {
-  const zone = $('#zoneIti');
-  const day = $('#itiDay').value;
-  zone.innerHTML = loaderHTML('Construction de ton programme…');
-  $('#btnIti').disabled = true;
-  try{
-    const d = await gemini(itiPrompt(day));
-    zone.innerHTML = `<h3 style="margin-bottom:14px">✨ Jour ${esc(day)} — ${esc(d.titre_journee)}</h3>` + timelineHTML(d);
-  }catch(e){
-    if(e.message!=='NO_KEY') zone.innerHTML = errHTML('Génération impossible, réessaie.');
-  }
-  $('#btnIti').disabled = false;
-};
 
 /* --- tout le séjour d'un coup --- */
 function daysFromPrefs(){
@@ -5065,7 +5030,6 @@ function renderFullPlan(d){
 /* ============================================================
    RESTOS (Gemini · heavy — connaissance locale précise)
 ============================================================ */
-const _e9 = $('#btnFoodGo'); if(_e9) _e9.onclick = () => { delete state.cache.food; save(); loadFood(); };
 
 async function loadFood(){
   const zone = $('#zoneFood');
@@ -5332,15 +5296,6 @@ const BUD_COLORS = ['#00F0FF','#A855F7','#FFE600','#FF6B00','#22C55E','#EF4444']
 
 
 /* --- dépenses réelles --- */
-const _e10 = $('#btnSpend'); if(_e10) _e10.onclick = () => {
-  const label = $('#spLabel').value.trim() || 'Dépense';
-  const amount = parseFloat($('#spAmount').value);
-  if(isNaN(amount) || amount <= 0){ toast('Entre un montant valide 💶'); return; }
-  state.spends.push({ label, amount, ts: Date.now() });
-  save();
-  $('#spLabel').value = ''; $('#spAmount').value = '';
-  renderSpends();
-};
 function renderSpends(){
   if(!$('#zoneSpends')) return;          /* panneau non affiché */
   const zone = $('#zoneSpends');
@@ -5721,21 +5676,6 @@ window.convCur = (rate, from) => {
 };
 
 // --- Traducteur express (light → Groq) ---
-const _e12 = $('#btnTr'); if(_e12) _e12.onclick = async () => {
-  const q = $('#trInp').value.trim();
-  if(!q) return;
-  const t = state.trip;
-  $('#zoneTr').innerHTML = loaderHTML('Traduction…');
-  const prompt = `Traduis cette phrase française vers ${t.langue || 'la langue locale de ' + t.pays}.
-Phrase : "${q}"
-Réponds UNIQUEMENT en JSON : {"local":"la traduction","pron":"prononciation phonétique à la française"}`;
-  try{
-    const {data, via} = await ai('light', prompt);
-    $('#trBadge').style.display = via==='groq' ? '' : 'none';
-    $('#zoneTr').innerHTML = `<div class="phrase"><div class="fr">${esc(q)}</div><div class="loc">${esc(data.local)}</div><div class="pron">🔊 ${esc(data.pron)}</div></div>`;
-  }catch(e){ if(e.message!=='NO_KEY') $('#zoneTr').innerHTML = errHTML('Traduction impossible.'); }
-};
-const _trI = $('#trInp'); if(_trI) _trI.addEventListener('keydown', e => { if(e.key==='Enter') $('#btnTr')?.click(); });
 
 // --- Compte à rebours ---
 let countT;
@@ -15367,7 +15307,8 @@ function phrasesHTML(){
       <button type="button" class="btn sm ghost" id="btnTalkGo">${dejaLa ? 'Refaire' : 'Obtenir les phrases'}</button>
     </div>
     <span id="talkBadge" class="via-badge" style="display:none">rapide</span>
-    <div id="zoneTalk"></div>`;
+    <div id="zoneTalk"></div>`
+    + traducteurHTML();
 }
 document.addEventListener('click', e => {
   if(!e.target.closest || !e.target.closest('#btnTalkGo')) return;
@@ -15518,3 +15459,43 @@ function sejourCompletHTML(){
     </div>
     <div id="zoneItiAll"></div>`;
 }
+
+/* ============================================================
+   SIMULATEUR ET TRADUCTEUR — rebranchés
+   ------------------------------------------------------------
+   #ovSim est un calque COMPLET dans index.html — vrais prix, vrais horaires,
+   bascule avion/train/voiture — et le bouton qui l'ouvrait n'existait plus.
+   Un écran entier, écrit et stylé, sans porte d'entrée.
+   Le traducteur (#btnTr) est vivant lui aussi : il traduit une phrase libre
+   vers la langue locale avec la prononciation. Sa place est sous le guide de
+   phrases, dans « Papiers » — l'un donne douze phrases toutes faites, l'autre
+   répond à celle qui manque.
+============================================================ */
+function traducteurHTML(){
+  return `
+    <h3 style="margin:22px 0 6px">Traduire une phrase</h3>
+    <p class="hint" style="margin:0 0 10px">Celle qui te manque, sur le moment.</p>
+    <div class="tr-form">
+      <input id="trInp" maxlength="120" placeholder="Où est la gare ?" autocomplete="off">
+      <button type="button" class="btn sm" id="btnTr">Traduire</button>
+    </div>
+    <span id="trBadge" class="via-badge" style="display:none">rapide</span>
+    <div id="zoneTr"></div>`;
+}
+/* ⚠️ Délégués : ces deux blocs sont reconstruits à chaque rendu du panneau.
+   Les écouteurs d'origine, posés au chargement, ne trouvaient rien — c'est
+   précisément pourquoi ces fonctionnalités semblaient absentes. */
+document.addEventListener('click', e => {
+  if(!e.target.closest) return;
+  if(e.target.closest('#btnOpenSimPan')){
+    if(!state.trip){ toast('Choisis d’abord un voyage 😉'); return; }
+    const ov = document.getElementById('ovSim');
+    if(ov){ ov.classList.add('show'); try{ loadTransport(); }catch(err){} }
+  }
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && e.target && e.target.id === 'trInp'){
+    e.preventDefault();
+    document.getElementById('btnTr')?.click();
+  }
+});

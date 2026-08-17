@@ -5717,3 +5717,24 @@ body.dg-actif .tl-item{ touch-action:none }
   .res-form select{ grid-column:1 / -1 }
   .res-form .btn{ grid-column:1 / -1 }
 }
+
+/* ============================================================
+   TRADUCTEUR ET APPEL À LA SIMULATION — rebranchés
+============================================================ */
+.tr-form{ display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-bottom:12px }
+.tr-form input{
+  min-height:44px;padding:0 12px;                    /* 44px : cible tactile AAA */
+  background:var(--bg);color:var(--txt);
+  border:1px solid var(--stroke);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;font-size:16px;   /* 16px : iOS ne zoome pas */
+}
+.tr-form input:focus{ outline:2px solid var(--primary);outline-offset:1px }
+.tr-form .btn{ min-height:44px }
+.sim-appel{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  margin-top:18px;padding:14px;
+  background:var(--bg);border:1px solid var(--stroke);border-radius:14px;
+}
+.sim-appel b{ display:block;font-family:'Inter',system-ui,sans-serif;font-size:.92rem;color:var(--txt) }
+.sim-appel em{ font-family:'Inter',system-ui,sans-serif;font-size:.78rem;font-style:normal;color:var(--txt-2) }
+.sim-appel .btn{ flex:0 0 auto;min-height:44px }
