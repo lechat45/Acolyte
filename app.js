@@ -5639,17 +5639,6 @@ async function geocode(){
 // --- Météo 7 jours (Open-Meteo, données réelles gratuites) ---
 
 // --- Heure locale + devises ---
-function guessCurrency(name){
-  const m = {'euro':'EUR','livre':'GBP','dollar':'USD','yen':'JPY','franc suisse':'CHF','couronne':'SEK','zloty':'PLN','forint':'HUF','dirham':'MAD','roupie':'INR','baht':'THB','peso':'MXN','real':'BRL','rand':'ZAR','lira':'TRY','won':'KRW','yuan':'CNY','rouble':'RUB','dinar':'TND'};
-  const l = (name||'').toLowerCase();
-  for(const k in m) if(l.includes(k)) return m[k];
-  return 'USD';
-}
-window.convCur = (rate, from) => {
-  const e = $('#curEur'), l = $('#curLoc');
-  if(from==='eur'){ l.value = e.value ? (parseFloat(e.value)*rate).toFixed(2) : ''; }
-  else { e.value = l.value ? (parseFloat(l.value)/rate).toFixed(2) : ''; }
-};
 
 // --- Traducteur express (light → Groq) ---
 
@@ -7245,7 +7234,9 @@ document.addEventListener('click', e => {
     seoAccueil();
   }
   else if(genre === 'sec'){
-    const cible = val === 'prefs' ? $('#accPrefs') || $('#stStyle') : $('#accActions') || $('#pfExport');
+    /* #accPrefs et #accActions étaient les anciens accordéons du profil,
+       remplacés par les onglets. On vise directement ce qui existe. */
+    const cible = val === 'prefs' ? $('#stStyle') : $('#pfExport');
     /* si la section est dans un accordéon replié, on l'ouvre avant de viser */
     const acc = cible?.closest('.acc');
     if(acc && !acc.classList.contains('open')) acc.classList.add('open');

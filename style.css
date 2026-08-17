@@ -184,7 +184,6 @@ body{
 @keyframes bootFail{to{opacity:0;visibility:hidden;pointer-events:none}}
 @keyframes bootPop{from{transform:scale(.5) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
 @keyframes bootUp{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
-:root[data-theme="dark"] #boot{}
 @media (prefers-reduced-motion:reduce){ .boot-mark,.boot-word,.boot-sub,.boot-bar,.boot-step{animation:none} }
 
 /* ===== Layout ===== */
@@ -284,7 +283,7 @@ header{
 .logo-mark .mascot{width:100%;height:100%;display:block;animation:none}
 
 /* ===== Steps nav ===== */
-.steps{display:flex;gap:10px;margin-bottom:24px;overflow-x:auto;padding:4px 4px 8px;scrollbar-width:none}
+.steps{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;}
 .steps::-webkit-scrollbar{display:none}
 .step{
   flex:1;min-width:125px;padding:12px 14px;border-radius:var(--r-md);cursor:pointer;
@@ -1321,7 +1320,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .item .emo{font-size:1.8rem;flex-shrink:0}
 .item h4{font-size:1.05rem;font-weight:800;margin-bottom:4px;font-family:'Fraunces',Georgia,'Times New Roman',serif;text-transform:uppercase}
 .item p{font-size:.9rem;color:var(--txt-2);line-height:1.5}
-.item .side{margin-left:auto;text-align:right;flex-shrink:0}
+.item .side{margin-left:auto;text-align:right;}
 
 /* ===== Checklist valise ===== */
 .check{
@@ -2760,21 +2759,7 @@ header{position:relative;z-index:5}
      téléphone, c'est-à-dire exactement le rectangle qu'on vient de retirer. */
   .map-acts{justify-content:flex-start}
 }
-
-/* ============================================================
-   BLOG
-   ------------------------------------------------------------
-   L'onglet était réservé à l'ordinateur ; il est désormais présent sur
-   téléphone aussi. La barre du bas passe donc de 3 à 4 colonnes — voir
-   `.catnav` (grid-template-columns), qui doit rester d'accord avec le nombre
-   réel de boutons, sinon le quatrième déborde ou se replie.
-   La classe `.cat-pc` et ses règles ont été retirées : plus rien ne les
-   utilisait, et les laisser aurait masqué l'onglet à la prochaine reprise.
-============================================================ */
-
-.blog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
-.blog-head h2{margin:0}
-.blog-head .sub{margin:6px 0 0}
+.blog-head h2{}
 
 /* ---- La liste : des fiches larges, l'image à gauche ---- */
 .blog-list{display:grid;gap:14px}
@@ -2800,8 +2785,7 @@ header{position:relative;z-index:5}
   font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.05rem;
   line-height:1.25;color:var(--txt);
 }
-.bc-sous{font-size:.86rem;line-height:1.5;color:var(--txt-2)}
-.bc-meta{font-size:.72rem;font-weight:700;color:var(--txt-2);margin-top:auto} /* opacity retirée : contraste */
+.bc-sous{font-size:.86rem;line-height:1.5;color:var(--txt-2)} /* opacity retirée : contraste */
 @media (max-width:700px){
   .blog-card{grid-template-columns:1fr}
   .bc-img{min-height:150px;max-height:180px}
@@ -3647,7 +3631,7 @@ header{position:relative;z-index:5}
 .btn svg.ico{width:1.15em;height:1.15em;margin-right:2px}
 /* Dans la barre du bas, l'icône est au-dessus du libellé et un peu plus grande */
 .catnav button svg.ico{width:1.45em;height:1.45em}
-@media (min-width:900px){ .catnav button svg.ico{width:1.5em;height:1.5em} }
+@media (min-width:900px){ .catnav button svg.ico{} }
 /* L'onglet actif épaissit légèrement son tracé : c'est le même signal que le
    gras sur du texte, et ça se lit avant même la couleur. */
 .catnav button.on svg.ico{stroke-width:2.1}
@@ -4464,9 +4448,8 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   padding:0;flex:none;
   background:var(--primary-ink);color:var(--primary);
   border:0;border-radius:var(--r-md);box-shadow:var(--shadow);
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.82rem;
-  cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;
-}
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;
+  cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;}
 .ph-discord:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow-lg)}
 .ph-discord:active{transform:translateY(1px);box-shadow:var(--shadow)}
 .ph-discord .dc-logo{width:24px;height:24px;flex:none;display:block}
@@ -4732,7 +4715,7 @@ body{ min-height:100dvh }
 }
 /* Le bandeau jaune en tête : la tranche d'un passeport. Purement décoratif,
    donc aria-hidden côté HTML. */
-.pp-band{height:8px;background:var(--primary)}
+.pp-band{background:var(--primary);}
 .pp-main{display:flex;align-items:flex-start;gap:16px;padding:18px;flex-wrap:wrap}
 
 /* L'avatar est un BOUTON : on clique dessus pour en changer. Un rond qui a
@@ -4759,10 +4742,8 @@ body{ min-height:100dvh }
    l'étiquette « bêta » de l'assistant. */
 .pp-niveau{
   flex:none;font-family:'Inter',sans-serif;font-weight:700;font-size:.62rem;
-  text-transform:uppercase;letter-spacing:.1em;
-  color:var(--primary-txt);border:1px solid var(--primary-txt);
-  border-radius:999px;padding:3px 10px;white-space:nowrap;
-}
+  text-transform:uppercase;letter-spacing:.1em;border:1px solid var(--primary-txt);
+  border-radius:999px;padding:3px 10px;white-space:nowrap;}
 .pp-bio{margin:8px 0 0;font-size:.86rem;line-height:1.45;color:var(--txt);font-style:italic}
 .pp-bio:empty{display:none}
 .pp-meta{margin:6px 0 0;font-size:.78rem;line-height:1.45;color:var(--txt-2);overflow-wrap:anywhere}
@@ -4784,9 +4765,8 @@ body{ min-height:100dvh }
 }
 .pp-stat .v{
   display:block;margin-top:3px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;
-  font-size:1rem;color:var(--txt);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
+  font-size:1rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 /* ---- Les onglets du profil ----
    Même langage que la rangée « Ton voyage », indice de défilement compris :
