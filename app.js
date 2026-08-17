@@ -854,7 +854,13 @@ var ICO_D = {
   cadre:    '<rect x="3.4" y="4.4" width="17.2" height="15.2" rx="2"/><circle cx="8.8" cy="9.6" r="1.6"/><path d="m3.4 16.6 4.8-4.4 4 3.4 3.4-2.8 4 3.6"/>',
   maison:   '<path d="M3.6 10.4 12 3.6l8.4 6.8v9a1.4 1.4 0 0 1-1.4 1.4H5a1.4 1.4 0 0 1-1.4-1.4Z"/><path d="M9.4 20.8v-6.6h5.2v6.6"/>',
   pouce:    '<path d="M7.4 20.6V10.2l4.2-6.8a2.2 2.2 0 0 1 2 3.2l-1 3.4h5.2a2.2 2.2 0 0 1 2.1 2.8l-1.6 6a2.2 2.2 0 0 1-2.1 1.8Z"/><path d="M7.4 10.2H3.6v10.4h3.8"/>',
-  poucebas: '<path d="M7.4 3.4v10.4l4.2 6.8a2.2 2.2 0 0 0 2-3.2l-1-3.4h5.2a2.2 2.2 0 0 0 2.1-2.8l-1.6-6a2.2 2.2 0 0 0-2.1-1.8Z"/><path d="M7.4 13.8H3.6V3.4h3.8"/>'
+  poucebas: '<path d="M7.4 3.4v10.4l4.2 6.8a2.2 2.2 0 0 0 2-3.2l-1-3.4h5.2a2.2 2.2 0 0 0 2.1-2.8l-1.6-6a2.2 2.2 0 0 0-2.1-1.8Z"/><path d="M7.4 13.8H3.6V3.4h3.8"/>',
+  feuille:  '<path d="M4.4 19.6C3 15 5 8.4 10 5.8c3.4-1.8 7.2-1.4 9.6-1.4.4 3 .4 7.4-1.6 10.6-2.4 3.8-8 5.4-13.6 4.6Z"/><path d="M4.4 19.6C6.6 15 10 11.6 14.4 9.4"/>',
+  baisse:   '<path d="M3.4 6.6 10 13.2l3.6-3.6 7 7"/><path d="M20.6 11.4v5.2h-5.2"/>',
+  hausse:   '<path d="M3.4 17.4 10 10.8l3.6 3.6 7-7"/><path d="M20.6 12.6V7.4h-5.2"/>',
+  son:      '<path d="M4.4 9.4h3.2L12 5.6v12.8L7.6 14.6H4.4Z"/><path d="M15.4 9.6a3.4 3.4 0 0 1 0 4.8M18 7a7 7 0 0 1 0 10"/>',
+  cadenas:  '<rect x="4.4" y="10.4" width="15.2" height="10.2" rx="2.4"/><path d="M7.8 10.4V7.6a4.2 4.2 0 0 1 8.4 0v2.8"/>',
+  reseau:   '<path d="M4.4 20.6v-4.8M9.6 20.6v-8.4M14.8 20.6V7.4M20 20.6V3.4"/>'
 };
 /* Rend une icône. `taille` en px, `cls` pour les cas où il faut la viser en CSS. */
 function ICO(nom, taille, cls){
@@ -1274,7 +1280,7 @@ async function submitAndShowLeaderboard(score){
   }
   const r = await srvFetch('/game/top');
   if(!r.ok || !Array.isArray(r.data?.top)){
-    lb.innerHTML = `<p class="hint" style="margin:0">${authToken() ? 'Classement indisponible pour le moment.' : '🔒 Connecte-toi pour enregistrer ton score et voir le classement.'}</p>`;
+    lb.innerHTML = `<p class="hint" style="margin:0">${authToken() ? 'Classement indisponible pour le moment.' : ICO('cadenas',13) + ' Connecte-toi pour enregistrer ton score et voir le classement.'}</p>`;
     return;
   }
   const top = r.data.top;
@@ -1324,10 +1330,10 @@ function reportMailLink(what){
 }
 function errHTML(msg, retryId){
   return `<div class="err">
-    <p class="err-msg">😕 ${esc(msg || 'Un petit souci technique. Réessaie dans un instant.')}</p>
+    <p class="err-msg">${ICO('alerte',16)} ${esc(msg || 'Un petit souci technique. Réessaie dans un instant.')}</p>
     <div class="err-acts">
       ${retryId ? `<button class="btn sm ghost err-retry" data-retry="${esc(retryId)}">↻ Réessayer</button>` : ''}
-      <a class="btn sm ghost" href="${reportMailLink(retryId || '')}">✉️ Signaler le problème</a>
+      <a class="btn sm ghost" href="${reportMailLink(retryId || '')}">${ICO('envoyer',14)} Signaler le problème</a>
     </div>
   </div>`;
 }
@@ -2970,7 +2976,7 @@ function carbonHTML(mode){
       <p class="carbon-big">${ICO(ICO_MODE[m] || 'monde', 18)} <strong>${mine} kg de CO₂</strong> <span>aller-retour, par personne</span></p>
       <p class="ic-note">Calculé sur le trajet réel d'environ ${Math.round(dist)} km.</p>
       <p style="margin:8px 0 0">${gain
-        ? `🌱 En ${esc(best.x)}, ce serait environ <strong>${best.v} kg</strong>, soit <strong>${gain} % de moins</strong>.`
+        ? `${ICO('feuille',14)} En ${esc(best.x)}, ce serait environ <strong>${best.v} kg</strong>, soit <strong>${gain} % de moins</strong>.`
         : `🌱 C'est déjà l'option la plus sobre pour ce trajet — bravo !`}</p>
     </div>`;
 }
@@ -3295,14 +3301,14 @@ function urgenceHTML(cc, t){
   <div class="urg">
     ${unique
       ? `<a class="urg-n urg-uni" href="tel:${esc(u.police)}">
-           <span class="urg-ico">🆘</span>
+           <span class="urg-ico">${ICO('aide',18)}</span>
            <span><b>${esc(u.police)}</b><i>${EN ? 'all emergencies' : 'toutes urgences'}</i></span></a>`
       : nums.map(x => `<a class="urg-n" href="tel:${esc(x.n)}">
            <span class="urg-ico">${x.ico}</span>
            <span><b>${esc(x.n)}</b><i>${esc(x.lbl)}</i></span></a>`).join('')}
   </div>
   ${u.note ? `<p class="hint" style="margin:8px 0 0">ℹ️ ${esc(u.note)}</p>` : ''}
-  ${!u.sur ? `<p class="hint urg-doute" style="margin:8px 0 0">⚠️ ${EN
+  ${!u.sur ? `<p class="hint urg-doute" style="margin:8px 0 0">${ICO('alerte',14)} ${EN
       ? 'We do not have verified numbers for this country. 112 works in many places, but CHECK on the official page above before you leave — do not rely on this line.'
       : 'Nous n’avons pas de numéros vérifiés pour ce pays. Le 112 fonctionne dans beaucoup d’endroits, mais VÉRIFIE sur la fiche officielle ci-dessus avant de partir — ne te fie pas à cette ligne.'}</p>` : ''}
   <p class="hint" style="margin:8px 0 0">🇫🇷 ${EN
@@ -3327,7 +3333,7 @@ function panPapiers(d){
     ? 'What you need to get in, and what daily life actually costs there.'
     : 'Ce qu’il faut pour entrer, et ce que la vie sur place coûte vraiment.'}</p>
 
-  <div class="key-tip"><span class="kt-emo">⚠️</span><p>${EN
+  <div class="key-tip"><span class="kt-emo">${ICO('alerte',18)}</span><p>${EN
     ? 'Entry rules change, and this section is written automatically — it can be wrong or out of date. Before you book, check the official page below. It is the only source that commits anyone.'
     : 'Les règles d’entrée changent, et cette partie est rédigée automatiquement : elle peut être fausse ou périmée. Avant de réserver, vérifie sur la fiche officielle ci-dessous — c’est la seule source qui engage.'}</p></div>
 
@@ -3414,7 +3420,7 @@ function panTransport(d){
       <div class="tc-body">
         <h4>Tu voyages ${labels[mode]}</h4>
         <div class="tc-facts">
-          ${tr.prix_estime ? `<span class="tc-fact">💶 ${esc(tr.prix_estime)}</span>` : ''}
+          ${tr.prix_estime ? `<span class="tc-fact">${ICO('money',13)} ${esc(tr.prix_estime)}</span>` : ''}
           ${tr.duree ? `<span class="tc-fact">⏱ ${esc(tr.duree)}</span>` : ''}
         </div>
         <p class="tc-why">${esc(tr.pourquoi || 'Le meilleur compromis prix / temps / confort pour ce trajet.')}</p>
@@ -3423,7 +3429,7 @@ function panTransport(d){
     ${tr.details ? `<div class="info-card">
       <div class="ic-head"><span>ℹ️</span><h4>Bon à savoir</h4></div><p>${esc(tr.details)}</p></div>` : ''}
     ${d.sur_place ? `<div class="info-card">
-      <div class="ic-head"><span>🚇</span><h4>Une fois sur place</h4></div><p>${esc(d.sur_place)}</p></div>` : ''}
+      <div class="ic-head"><span>${ICO('metro',17)}</span><h4>Une fois sur place</h4></div><p>${esc(d.sur_place)}</p></div>` : ''}
     ${carbonHTML(mode)}` + `
     <div class="sim-appel">
       <div><b>Comparer pour de vrai</b><em>Vrais prix et vrais horaires, avion, train ou voiture.</em></div>
@@ -3440,7 +3446,7 @@ function panLogement(d){
       <p>${esc(lg.pourquoi || '—')}</p>
       ${(lg.etapes||[]).length
         ? `<div class="etapes">${lg.etapes.map(e=>`<div class="etape"><b>${esc(e.ville||'')}</b><span>${esc(e.quartier||'')} · ${esc(String(e.nuits??'?'))} nuit(s)${e.prix_nuit ? ' · ' + esc(e.prix_nuit) : ''}</span></div>`).join('')}</div>`
-        : (lg.prix_nuit ? `<p class="pan-price">💶 ${esc(lg.prix_nuit)} / nuit</p>` : '')}
+        : (lg.prix_nuit ? `<p class="pan-price">${ICO('money',13)} ${esc(lg.prix_nuit)} / nuit</p>` : '')}
     </div>
     <h5 class="pan-sub">Où dormir concrètement</h5>
     <div id="zoneHotels"></div>` + ouLogerHTML();
@@ -3782,11 +3788,11 @@ function trackPrice(prix, source){
   if(diff <= -5){
     bar.style.display = 'block';
     bar.className = 'item';
-    bar.innerHTML = `<div class="emo">📉</div><p style="flex:1;font-weight:800">Bonne nouvelle : le vol a <strong>baissé de ${Math.abs(Math.round(diff))} €</strong> depuis ta dernière recherche (${ref} € → ${prix} €). C'est peut-être le moment de réserver.</p>`;
+    bar.innerHTML = `<div class="emo">${ICO('baisse',20)}</div><p style="flex:1;font-weight:800">Bonne nouvelle : le vol a <strong>baissé de ${Math.abs(Math.round(diff))} €</strong> depuis ta dernière recherche (${ref} € → ${prix} €). C'est peut-être le moment de réserver.</p>`;
   } else if(diff >= 15){
     bar.style.display = 'block';
     bar.className = 'item';
-    bar.innerHTML = `<div class="emo">📈</div><p style="flex:1;font-weight:800">Le vol a <strong>augmenté de ${Math.round(diff)} €</strong> depuis ta dernière recherche (${ref} € → ${prix} €). Les prix montent à l'approche du départ — ne tarde pas trop.</p>`;
+    bar.innerHTML = `<div class="emo">${ICO('hausse',20)}</div><p style="flex:1;font-weight:800">Le vol a <strong>augmenté de ${Math.round(diff)} €</strong> depuis ta dernière recherche (${ref} € → ${prix} €). Les prix montent à l'approche du départ — ne tarde pas trop.</p>`;
   } else {
     bar.style.display = 'none';
   }
@@ -4454,7 +4460,7 @@ async function ryCalendar(){
     const days = (d.outbound?.fares||[]).filter(f=>!f.unavailable && f.price);
     if(!days.length){ zone.innerHTML = errHTML(`Aucun vol ${from} → ${to} ce mois-ci (ligne non desservie ?).`); return; }
     const min = Math.min(...days.map(f=>f.price.value));
-    zone.innerHTML = `<h3 style="margin-bottom:10px">📅 Aller simple ${esc(from)} → ${esc(to)} — ${new Date(month).toLocaleDateString(LOC(),{month:'long',year:'numeric'})}</h3>
+    zone.innerHTML = `<h3 style="margin-bottom:10px">${ICO('calendrier',17)} Aller simple ${esc(from)} → ${esc(to)} — ${new Date(month).toLocaleDateString(LOC(),{month:'long',year:'numeric'})}</h3>
       <div style="display:flex;flex-wrap:wrap;gap:7px">` +
       days.map(f=>{
         const best = f.price.value === min;
@@ -4464,7 +4470,7 @@ async function ryCalendar(){
           ${f.soldOut?'<div style="font-size:.6rem;color:var(--danger)">complet</div>':''}
         </div>`;
       }).join('') +
-      `</div><p class="hint">💚 = jour le moins cher du mois (${min.toFixed(2)} €, aller simple). Astuce : décale ton départ de 1-2 jours et économise gros.</p>`;
+      `</div><p class="hint">${ICO('coche',13)} = jour le moins cher du mois (${min.toFixed(2)} €, aller simple). Astuce : décale ton départ de 1-2 jours et économise gros.</p>`;
   }catch(e){
     zone.innerHTML = errHTML('Calendrier indisponible — API Ryanair injoignable.');
   }
@@ -5038,7 +5044,7 @@ Réponds UNIQUEMENT en JSON :
 
 function renderFullPlan(d){
   if(!$('#zoneItiAll')) return;            /* panneau non affiché */
-  $('#zoneItiAll').innerHTML = `<div class="divider"></div><h3 style="margin-bottom:12px">📆 Ton séjour complet</h3>` +
+  $('#zoneItiAll').innerHTML = `<div class="divider"></div><h3 style="margin-bottom:12px">${ICO('calendrier',17)} Ton séjour complet</h3>` +
     (d.jours||[]).map((j,i)=>`
       <div class="acc ${i===0?'open':''}">
         <div class="acc-head" data-acc>
@@ -5126,7 +5132,7 @@ function renderFood(d){
       </div>
     </div>`).join('')
     + `<p class="hint" style="margin-top:12px">${d._verifies
-        ? '✅ Adresses <strong>relevées sur OpenStreetMap</strong> : elles existent bel et bien. Acolyte a choisi parmi elles.'
+        ? ICO('coche',13) + ' Adresses <strong>relevées sur OpenStreetMap</strong> : elles existent bel et bien. Acolyte a choisi parmi elles.'
         : 'Sélection d\'Acolyte — vérifie les horaires avant de t\'y rendre.'} Les avis se consultent en un clic.</p>`;
 }
 
@@ -5244,7 +5250,7 @@ function renderBag(d, via){
   if(badge) badge.style.display = via === 'groq' ? '' : 'none';
   let html = '';
   (d.categories||[]).forEach((c,ci)=>{
-    html += `<h3 style="margin:${ci?14:0}px 0 9px">${esc(c.emoji||'📦')} ${esc(c.nom)}</h3>`;
+    html += `<h3 style="margin:${ci?14:0}px 0 9px">${ICO('sac',16)} ${esc(c.nom)}</h3>`;
     (c.items||[]).forEach((it,ii)=>{
       const k = ci + '_' + ii;
       html += `<div class="check ${state.checklist[k]?'done':''}" data-ck="${k}">
@@ -5306,7 +5312,7 @@ function renderTalk(d, via){
       <div class="phrase">
         <div class="fr">${esc(p.fr)}</div>
         <div class="loc">${esc(p.local)}</div>
-        <div class="pron">🔊 ${esc(p.pron)}</div>
+        <div class="pron">${ICO('son',13)} ${esc(p.pron)}</div>
       </div>`).join('');
 }
 
@@ -5350,7 +5356,7 @@ function renderSpends(){
         ${derive > 0
           ? `⚠️ Tu dépenses plus vite que prévu : ${Math.round(derive)} € au-dessus du rythme (tu devrais être à ~${attendu} € à ce stade). Lève le pied ou ajuste ton budget.`
           : `✅ Tu es en dessous du rythme prévu : ${Math.abs(Math.round(derive))} € d'avance (attendu ~${attendu} € à ce stade). Tu peux te faire plaisir.`}</p>` : ''}
-      ${pct > 100 ? `<p class="hint" style="margin-top:6px;font-weight:800;color:var(--accent-orange)">🚨 Budget dépassé de ${Math.round(total - est)} €.</p>` : ''}`;
+      ${pct > 100 ? `<p class="hint" style="margin-top:6px;font-weight:800;color:var(--accent-orange)">${ICO('alerte',14)} Budget dépassé de ${Math.round(total - est)} €.</p>` : ''}`;
   }
   if(!state.spends.length){
     zone.innerHTML = bar + `<p class="hint">Aucune dépense enregistrée. Ajoute-les au fil du séjour : Acolyte compare en direct avec le budget prévu par l'IA et te prévient si tu dérives.</p>`;
@@ -5579,7 +5585,7 @@ function buildDossierHTML(){
     h += `<section><h2>Programme jour par jour</h2>`;
     pl.programme.forEach(j => {
       h += `<div class="dj"><h3>Jour ${esc2(String(j.jour))} — ${esc2(j.resume || '')}${j.base ? ` <small>(${esc2(j.base)})</small>` : ''}</h3>`;
-      if((j.lieux || []).length) h += `<p class="lieux">📍 ${j.lieux.map(esc2).join(' · ')}</p>`;
+      if((j.lieux || []).length) h += `<p class="lieux">${ICO('epingle',12)} ${j.lieux.map(esc2).join(' · ')}</p>`;
       if(safeDataImg(state.cache.maps?.[j.jour])) h += `<img class="djmap" src="${safeDataImg(state.cache.maps[j.jour])}" alt="Carte jour ${esc2(String(j.jour))}">`;
       const det = days[j.jour];
       if(det?.etapes?.length){
@@ -5587,7 +5593,7 @@ function buildDossierHTML(){
           `<li><strong>${esc2(e.heure || '')}</strong> ${esc2(e.titre || '')}${e.lieu ? ` <em>(${esc2(e.lieu)})</em>` : ''} — ${esc2(e.description || '')}</li>`).join('') + `</ul>`;
       }
       const coms = state.board?.comments?.[String(j.jour)] || [];
-      if(coms.length) h += `<p class="lieux">💬 ${coms.map(c => `<strong>${esc2(c.who)}</strong> : ${esc2(c.txt)}`).join(' · ')}</p>`;
+      if(coms.length) h += `<p class="lieux">${ICO('discussion',12)} ${coms.map(c => `<strong>${esc2(c.who)}</strong> : ${esc2(c.txt)}`).join(' · ')}</p>`;
       h += `</div>`;
     });
     h += `</section>`;
@@ -6959,7 +6965,7 @@ function amiOuvre(d){
       <p>${esc(pl.conseil_cle)}</p></div>` : ''}
 
     <div class="art-pied">
-      <button class="btn" id="amiPrendre">✈️ ${EN ? 'Make this trip mine' : 'Reprendre ce voyage'}</button>
+      <button class="btn" id="amiPrendre">${ICO('avion',15)} ${EN ? 'Make this trip mine' : 'Reprendre ce voyage'}</button>
       <button class="btn ghost" data-close="ovAmi">${EN ? 'Just looking' : 'Je regardais seulement'}</button>
     </div>
     <p class="hint" style="margin:12px 0 0">${EN
@@ -9863,7 +9869,7 @@ function installBodyHTML(){
     return `<p>${EN
       ? 'Acolyte becomes a real app: its own icon, full screen, no address bar, and it opens without a connection.'
       : 'Acolyte devient une vraie application : son icône, plein écran, sans barre d’adresse, et elle s’ouvre sans connexion.'}</p>
-      <button class="btn" id="instGo" style="width:100%;justify-content:center;margin-top:14px">📲 ${
+      <button class="btn" id="instGo" style="width:100%;justify-content:center;margin-top:14px">${ICO('telephone',15)} ${
         EN ? 'Install now' : 'Installer maintenant'}</button>
       ${garde}`;
   }
@@ -11483,7 +11489,7 @@ async function openArticle(slug){
         <p class="hint" style="margin:0 0 14px">${isEN()
           ? 'Acolyte has not covered this one yet — its journal fills up on its own, come back soon. Meanwhile, here is what is already there.'
           : 'Acolyte n’a pas encore traité celui-là — son journal se remplit tout seul, repasse bientôt. En attendant, voici ce qui existe déjà.'}</p>
-        <button class="btn" id="blogVersListe" style="width:100%;justify-content:center">📰 ${
+        <button class="btn" id="blogVersListe" style="width:100%;justify-content:center">${ICO('document',15)} ${
           isEN() ? 'Browse the journal' : 'Parcourir le journal'}</button>
       </div>`;
     const b = $('#blogVersListe');
@@ -11556,7 +11562,7 @@ function artPiedHTML(a, slug){
   const partageNatif = typeof navigator.share === 'function';
   return `
     <div class="art-pied">
-      ${sujet ? `<button class="btn" id="artVoyage">✈️ ${EN
+      ${sujet ? `<button class="btn" id="artVoyage">${ICO('avion',15)} ${EN
         ? `Plan a trip to ${esc(sujet)}` : `Partir à ${esc(sujet)}`}</button>` : ''}
       <button class="btn ghost" id="artPartage">${partageNatif
         ? (EN ? '↗ Share' : '↗ Partager')
@@ -12360,7 +12366,7 @@ function asstMonte(){
      « Vérifier les horaires » — une fonction distincte, pas un doublon. */
   bar.innerHTML = `
     <button class="asst-vers" id="asstVers" type="button">
-      <span class="asst-vers-ico" aria-hidden="true">✨</span>
+      <span class="asst-vers-ico" aria-hidden="true">${ICO('etincelle',18)}</span>
       <span class="asst-vers-t"><b>${EN ? 'Ask the assistant' : 'Demander à l’assistant'}</b>
       <em>${EN ? 'Change your trip, or just ask a question' : 'Modifie ton voyage, ou pose simplement une question'}</em></span>
       <span class="asst-vers-fl" aria-hidden="true">→</span>
@@ -12683,16 +12689,16 @@ function simHTML(cc){
         op:'Opérateurs', ou:'Où l’acheter', prix:'Prix indicatif', esim:'eSIM',
         oui:'disponible', non:'indisponible',
         pied:'Tableau écrit, pas de l’IA. Les prix sont des ordres de grandeur et vieillissent — vérifie à l’arrivée.' };
-  if(s.ue) return '\n  <h3 class="pan-h3" style="margin-top:22px">📶 ' + T.t + '</h3>\n'
+  if(s.ue) return '\n  <h3 class="pan-h3" style="margin-top:22px">' + ICO('reseau',17) + ' ' + T.t + '</h3>\n'
     + '  <p class="hint" style="margin:0">' + T.ue + '</p>';
   const l = (k, v) => v
     ? '<div class="af"><span class="af-k">' + k + '</span><span class="af-v">' + esc(v) + '</span></div>'
     : '';
-  return '\n  <h3 class="pan-h3" style="margin-top:22px">📶 ' + T.t + '</h3>\n'
+  return '\n  <h3 class="pan-h3" style="margin-top:22px">' + ICO('reseau',17) + ' ' + T.t + '</h3>\n'
     + '  <div class="art-faits">'
     + l(T.op, s.op) + l(T.ou, s.ou) + l(T.prix, s.prix) + l(T.esim, s.esim ? T.oui : T.non)
     + '</div>\n'
-    + (s.note ? '  <p class="hint" style="margin-top:8px">⚠️ ' + esc(s.note) + '</p>\n' : '')
+    + (s.note ? '  <p class="hint" style="margin-top:8px">' + ICO('alerte',13) + ' ' + esc(s.note) + '</p>\n' : '')
     + '  <p class="hint" style="margin-top:6px">' + T.pied + '</p>';
 }
 
@@ -12716,7 +12722,7 @@ function securiteHTML(pays){
   if(!nom) return '';
   const EN = isEN();
   const u = 'https://www.diplomatie.gouv.fr/fr/conseils-aux-voyageurs/conseils-par-pays-destination/';
-  return '\n  <h3 class="pan-h3" style="margin-top:22px">🛡️ ' + (EN ? 'Safety' : 'Sécurité') + '</h3>\n'
+  return '\n  <h3 class="pan-h3" style="margin-top:22px">' + ICO('bouclier',17) + ' ' + (EN ? 'Safety' : 'Sécurité') + '</h3>\n'
     + '  <p class="hint" style="margin:0">'
     + (EN
         ? 'Acolyte does not assess risk itself. The French foreign ministry publishes an up-to-date advisory for every country: '
