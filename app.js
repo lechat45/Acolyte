@@ -832,7 +832,13 @@ var ICO_D = {
   horloge:  '<circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.2 2"/>',
   refaire:  '<path d="M20.4 12a8.4 8.4 0 1 1-2.5-6"/><path d="M20.4 4.2V10h-5.8"/>',
   personnes:'<circle cx="9" cy="8.2" r="3.4"/><path d="M2.8 19.4a6.2 6.2 0 0 1 12.4 0"/><path d="M16.2 5.2a3.4 3.4 0 0 1 0 6"/><path d="M17.6 13.6a6.2 6.2 0 0 1 3.6 5.8"/>',
-  nuit:     '<path d="M20.4 14.4A8.6 8.6 0 0 1 9.6 3.6a8.6 8.6 0 1 0 10.8 10.8Z"/>'
+  nuit:     '<path d="M20.4 14.4A8.6 8.6 0 0 1 9.6 3.6a8.6 8.6 0 1 0 10.8 10.8Z"/>',
+  /* — simulateur de transport — */
+  decollage:'<path d="M3.4 20.6h17.2"/><path d="M5.2 15.8 3.8 11.4l2-.5 2.1 2.3 4-1.1-3.4-6 2.4-.7 5.2 5.6 3.6-1a1.8 1.8 0 0 1 .9 3.5Z"/>',
+  atterrissage:'<path d="M3.4 20.6h17.2"/><path d="M20.2 16.2 4.4 12.4l.3-6.4 2 .5 1.4 4.4 4.2 1-.4-7 2.4.6 2.5 7.2 3.6 1a1.8 1.8 0 0 1-.2 2.5Z"/>',
+  route:    '<path d="M8.2 3.4 5.4 20.6M15.8 3.4l2.8 17.2"/><path d="M12 4.6v2.6M12 10.6v2.8M12 16.8v2.6"/>',
+  feu:      '<rect x="8" y="2.8" width="8" height="18.4" rx="3.2"/><circle cx="12" cy="7.4" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="16.6" r="1.5"/>',
+  regle:    '<path d="M3.2 8.4h17.6v7.2H3.2Z"/><path d="M7 8.4v2.6M10.4 8.4v3.6M13.8 8.4v2.6M17.2 8.4v3.6"/>'
 };
 /* Rend une icône. `taille` en px, `cls` pour les cas où il faut la viser en CSS. */
 function ICO(nom, taille, cls){
@@ -4193,13 +4199,13 @@ function renderTransport(d){
     const sky = `https://www.skyscanner.fr/transport/vols/${encodeURIComponent(from.toLowerCase())}/${encodeURIComponent(to.toLowerCase())}/`;
     zone.innerHTML = `
       <div class="grid" style="margin-bottom:14px">
-        <div class="item"><div class="emo">🛫</div><div><h4>Départ</h4><p>${esc(d.aeroport_depart)}</p></div></div>
-        <div class="item"><div class="emo">🛬</div><div><h4>Arrivée</h4><p>${esc(d.aeroport_arrivee)}</p></div></div>
+        <div class="item"><div class="emo">${ICO('decollage',20)}</div><div><h4>Départ</h4><p>${esc(d.aeroport_depart)}</p></div></div>
+        <div class="item"><div class="emo">${ICO('atterrissage',20)}</div><div><h4>Arrivée</h4><p>${esc(d.aeroport_arrivee)}</p></div></div>
         <div class="item"><div class="emo">⏱</div><div><h4>Durée</h4><p>${esc(d.duree_vol)}</p></div></div>
-        <div class="item"><div class="emo">💶</div><div><h4>Prix estimé A/R</h4><p>${esc(d.prix_estime)}</p></div></div>
+        <div class="item"><div class="emo">${ICO('money',20)}</div><div><h4>Prix estimé A/R</h4><p>${esc(d.prix_estime)}</p></div></div>
       </div>
       <div class="divider"></div>
-      <h3 style="margin-bottom:10px">Chercher les billets 🎫</h3>
+      <h3 style="margin-bottom:10px">Chercher les billets ${ICO('billet',17)}</h3>
       <div class="row">
         <a class="btn" href="${esc(gf)}" target="_blank" rel="noopener">Google Flights</a>
         <a class="btn ghost" href="${esc(ky)}" target="_blank" rel="noopener">Kayak</a>
@@ -4207,7 +4213,7 @@ function renderTransport(d){
       </div>
       <p class="hint">Les liens ouvrent la recherche pré-remplie — compare les prix sur les trois.</p>
       <div class="divider"></div>
-      <h3 style="margin-bottom:6px">💸 Prix réels en direct <span class="tag cyan" style="margin-left:6px">API Ryanair · sans clé</span> <span class="tag" style="margin-left:4px">🌍 Aviasales · token gratuit</span></h3>
+      <h3 style="margin-bottom:6px">${ICO('money',17)} Prix réels en direct <span class="tag cyan" style="margin-left:6px">API Ryanair · sans clé</span> <span class="tag" style="margin-left:4px">${ICO('monde',12)} Aviasales · token gratuit</span></h3>
       <p class="hint" style="margin:0 0 12px">Deux moteurs : <strong>Ryanair</strong> (sans clé, low-cost only — Paris = BVA) et <strong>Toutes compagnies</strong> via Aviasales (Air France, easyJet, Transavia, Vueling… — token gratuit à coller dans ⚙). Codes ville acceptés côté Aviasales : PAR, LON, ROM…</p>
       <div class="grid tight" style="margin-bottom:12px">
         <div class="field"><label>Départ (IATA)</label><input id="ryFrom" maxlength="3" style="text-transform:uppercase" value="${esc(from)}"></div>
@@ -4221,9 +4227,9 @@ function renderTransport(d){
         </div>
       </div>
       <div class="row">
-        <button class="btn sm" id="btnRyRT">🔍 A/R Ryanair</button>
-        <button class="btn sm ghost" id="btnRyCal">📅 Calendrier Ryanair</button>
-        <button class="btn sm violet" id="btnTpAll">🌍 Toutes compagnies</button>
+        <button class="btn sm" id="btnRyRT">${ICO('loupe',14)} A/R Ryanair</button>
+        <button class="btn sm ghost" id="btnRyCal">${ICO('calendrier',14)} Calendrier Ryanair</button>
+        <button class="btn sm violet" id="btnTpAll">${ICO('monde',14)} Toutes compagnies</button>
       </div>
       <div id="zoneRy" style="margin-top:14px"></div>`;
   } else if(state.mode === 'car'){
@@ -4233,42 +4239,46 @@ function renderTransport(d){
     const open  = `https://www.google.com/maps/dir/${saddr}/${daddr}`;
     zone.innerHTML = `
       <div class="grid" style="margin-bottom:14px">
-        <div class="item"><div class="emo">📏</div><div><h4>Distance</h4><p>${esc(d.distance)}</p></div></div>
+        <div class="item"><div class="emo">${ICO('regle',20)}</div><div><h4>Distance</h4><p>${esc(d.distance)}</p></div></div>
         <div class="item"><div class="emo">⏱</div><div><h4>Durée</h4><p>${esc(d.duree)}</p></div></div>
-        <div class="item"><div class="emo">💶</div><div><h4>Coût estimé</h4><p>${esc(d.cout_estime)}</p></div></div>
-        <div class="item"><div class="emo">🛣</div><div><h4>Itinéraire</h4><p>${esc(d.itineraire_resume)}</p></div></div>
+        <div class="item"><div class="emo">${ICO('money',20)}</div><div><h4>Coût estimé</h4><p>${esc(d.cout_estime)}</p></div></div>
+        <div class="item"><div class="emo">${ICO('route',20)}</div><div><h4>Itinéraire</h4><p>${esc(d.itineraire_resume)}</p></div></div>
       </div>
       <div class="map-box" style="margin-bottom:16px"><iframe src="${esc(embed)}" loading="lazy"></iframe></div>
-      <div class="row" style="margin-bottom:16px"><a class="btn" href="${esc(open)}" target="_blank" rel="noopener">🗺️ Ouvrir dans Google Maps</a></div>
+      <div class="row" style="margin-bottom:16px"><a class="btn" href="${esc(open)}" target="_blank" rel="noopener">${ICO('carte',15)} Ouvrir dans Google Maps</a></div>
 `;
   } else {
     const trl = `https://www.thetrainline.com/fr`;
     const sncf = `https://www.sncf-connect.com/`;
     const omio = `https://www.omio.fr/`;
-    const fais = {oui:'✅ Faisable', 'non':'❌ Peu adapté', 'compliqué':'⚠️ Compliqué mais possible'};
+    /* Le verdict portait son sens dans un emoji. Il le porte maintenant dans
+       une icone + une classe, donc lisible aussi pour un lecteur d'ecran. */
+    const fais = { oui:  ICO('coche',14) + ' Faisable',
+                   non:  ICO('fermer',14) + ' Peu adapté',
+                   'compliqué': ICO('alerte',14) + ' Compliqué mais possible' };
     zone.innerHTML = `
       <div class="grid" style="margin-bottom:14px">
-        <div class="item"><div class="emo">🚦</div><div><h4>Verdict</h4><p>${esc(fais[d.faisable]||d.faisable)}</p></div></div>
+        <div class="item"><div class="emo">${ICO('feu',20)}</div><div><h4>Verdict</h4><p>${fais[d.faisable] || esc(d.faisable)}</p></div></div>
         <div class="item"><div class="emo">⏱</div><div><h4>Durée</h4><p>${esc(d.duree)}</p></div></div>
-        <div class="item"><div class="emo">💶</div><div><h4>Prix estimé A/R</h4><p>${esc(d.prix_estime)}</p></div></div>
-        <div class="item"><div class="emo">🚆</div><div><h4>Trajet</h4><p>${esc(d.trajet)}</p></div></div>
+        <div class="item"><div class="emo">${ICO('money',20)}</div><div><h4>Prix estimé A/R</h4><p>${esc(d.prix_estime)}</p></div></div>
+        <div class="item"><div class="emo">${ICO('train',20)}</div><div><h4>Trajet</h4><p>${esc(d.trajet)}</p></div></div>
       </div>
       <div class="divider"></div>
-      <h3 style="margin-bottom:10px">Chercher les billets 🎫</h3>
+      <h3 style="margin-bottom:10px">Chercher les billets ${ICO('billet',17)}</h3>
       <div class="row">
         <a class="btn" href="${trl}" target="_blank" rel="noopener">Trainline</a>
         <a class="btn ghost" href="${sncf}" target="_blank" rel="noopener">SNCF Connect</a>
         <a class="btn ghost" href="${omio}" target="_blank" rel="noopener">Omio</a>
       </div>
       <div class="divider"></div>
-      <h3 style="margin-bottom:6px">🚄 Horaires réels en direct <span class="tag cyan" style="margin-left:6px">API Deutsche Bahn · gratuite sans clé</span></h3>
+      <h3 style="margin-bottom:6px">${ICO('train',17)} Horaires réels en direct <span class="tag cyan" style="margin-left:6px">API Deutsche Bahn · gratuite sans clé</span></h3>
       <p class="hint" style="margin:0 0 12px">Vrais horaires (et parfois prix) interrogés en live via le réseau DB : Allemagne + liaisons internationales (France, Benelux, Suisse, Autriche, Italie du nord, Danemark…). Si rien ne sort, la liaison n'est pas dans le réseau DB — utilise Trainline.</p>
       <div class="grid tight" style="margin-bottom:12px">
         <div class="field"><label>Gare / ville de départ</label><input id="dbFrom" value="${esc(p.from||'')}"></div>
         <div class="field"><label>Gare / ville d'arrivée</label><input id="dbTo" value="${esc(t.nom)}"></div>
         <div class="field"><label>Départ le</label><input id="dbWhen" type="datetime-local" value="${esc(ryDefaultDate())}T09:00"></div>
       </div>
-      <button class="btn sm" id="btnDb">🔍 Chercher les trains</button>
+      <button class="btn sm" id="btnDb">${ICO('loupe',14)} Chercher les trains</button>
       <div id="zoneDb" style="margin-top:14px"></div>`;
   }
 }
@@ -4553,7 +4563,7 @@ async function dbSearch(){
       const price = j.price?.amount ? `${j.price.amount.toFixed(2)} ${j.price.currency==='EUR'?'€':j.price.currency}` : null;
       const delay = dep0.departureDelay ? Math.round(dep0.departureDelay/60) : 0;
       return `<div class="item">
-        <div class="emo">🚆</div>
+        <div class="emo">${ICO('train',20)}</div>
         <div style="flex:1">
           <h4>${esc(frTime(dep0.departure||dep0.plannedDeparture))} → ${esc(frTime(arrN.arrival||arrN.plannedArrival))}
             <span class="tag cyan" style="margin-left:6px">⏱ ${dur}</span>
