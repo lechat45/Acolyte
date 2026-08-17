@@ -5739,3 +5739,40 @@ body.dg-actif .tl-item{ touch-action:none }
 .key-tip .kt-emo:has(svg), .ic-head > span:has(svg){
   display:inline-flex;align-items:center;justify-content:center;
 }
+
+/* ============================================================
+   LONGUEUR DE LIGNE ET PLANCHER DE LISIBILITÉ
+   ------------------------------------------------------------
+   Mesuré sur un écran de 1280 px : les textes explicatifs des panneaux
+   atteignaient 139 à 143 caractères par ligne. Au-delà d'environ 90, l'œil
+   perd sa ligne en revenant à gauche — c'est la raison pour laquelle un
+   journal met son texte en colonnes plutôt qu'en pleine largeur.
+   ⚠️ On borne en `ch`, pas en pixels : l'unité suit la police et la taille,
+   donc la limite reste juste si l'un ou l'autre change. Et seulement les
+   BLOCS DE PROSE — jamais les titres, les valeurs ou les étiquettes, dont la
+   brièveté fait qu'ils ne dépassent jamais.
+   Sur téléphone la question ne se pose pas : la largeur y est déjà le facteur
+   limitant, la règle est donc sans effet.
+============================================================ */
+.plan-panel .hint,
+.plan-panel .pan-intro,
+/* Les paragraphes SANS classe : dans ces panneaux, ce sont par convention des
+   blocs de prose (l'avertissement des formalites, par exemple). Ceux qui
+   portent une classe sont des valeurs ou des etiquettes, jamais du texte long. */
+.plan-panel p:not([class]),
+.pf-panel .hint,
+.acc-body .hint,
+.acc-body .sub{ max-width:72ch }
+
+/* ---- Plancher de taille : rien sous 11 px ----
+   Quatre étiquettes tombaient entre 10,24 et 10,88 px : la base du jour, le
+   compteur collaboratif et les clés de la fiche pratique (« Visa », « Prise
+   électrique »). Ce sont des mots courts, mais une étiquette qu'on doit
+   approcher pour lire ne remplit pas son office.
+   ⚠️ Ces règles sont posées ICI, en fin de fichier, donc APRÈS les
+   déclarations d'origine : à spécificité égale, c'est la dernière qui gagne.
+   C'est le mécanisme voulu, et il est écrit pour qu'on ne le prenne pas plus
+   tard pour un doublon accidentel. */
+.day-base{ font-size:.72rem }        /* 10,56 → 11,52 px */
+.collab-hint{ font-size:.72rem }     /* 10,88 → 11,52 px */
+.af-k{ font-size:.72rem }            /* 10,24 → 11,52 px */
