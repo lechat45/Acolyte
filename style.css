@@ -5718,3 +5718,24 @@ body.dg-actif .tl-item{ touch-action:none }
 .sim-appel b{ display:block;font-family:'Inter',system-ui,sans-serif;font-size:.92rem;color:var(--txt) }
 .sim-appel em{ font-family:'Inter',system-ui,sans-serif;font-size:.78rem;font-style:normal;color:var(--txt-2) }
 .sim-appel .btn{ flex:0 0 auto;min-height:44px }
+
+/* ============================================================
+   LES ICÔNES DANS .emo
+   ------------------------------------------------------------
+   .emo était fait pour un EMOJI : un glyphe de texte, dimensionné par
+   font-size (1,8 rem) et posé sur la ligne de base. Vingt-trois de ces blocs
+   contiennent désormais un SVG, qui ne se comporte pas pareil — mesuré à 7 px
+   de décalage vertical dans une ligne de 35 px, soit un quart de sa hauteur.
+   On en fait donc une boîte qui centre son contenu, sans toucher au cas où
+   .emo porte encore un caractère.
+============================================================ */
+.item .emo:has(svg){
+  display:flex;align-items:center;justify-content:center;
+  width:1.8rem;                              /* la place que prenait le glyphe */
+  color:var(--txt-2);
+}
+.item .emo > svg{ display:block;flex:0 0 auto }
+/* Le conseil clé et les en-têtes d'encart : même correction, même raison. */
+.key-tip .kt-emo:has(svg), .ic-head > span:has(svg){
+  display:inline-flex;align-items:center;justify-content:center;
+}
