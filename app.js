@@ -3716,30 +3716,6 @@ document.addEventListener('keydown', e => {
 
 addEventListener('resize', () => { if($('#zonePlan')?.querySelector('.plan-stat')) fitStats(); });
 
-document.addEventListener('click', e => {
-  if(e.target.id === 'btnJournal'){
-    const txt = $('#jrText').value.trim();
-    if(!txt && !_jrPhotos.length){ toast('Écris quelque chose ou ajoute une photo 😉'); return; }
-    const j = getJournal();
-    const k = _jrKey();
-    j[k] = j[k] || [];
-    j[k].push({ jour: +$('#jrDay').value || 1, texte: txt.slice(0, 1200), photos: _jrPhotos, ts: Date.now() });
-    if(saveJournal(j)){
-      renderJournal();
-      toast('📓 Souvenir enregistré');
-    }
-    return;
-  }
-  const del = e.target.closest('[data-jr]');
-  if(del){
-    if(!confirm('Supprimer ce souvenir ?')) return;
-    const j = getJournal(), k = _jrKey();
-    const sorted = (j[k]||[]).slice().sort((a,b) => a.jour - b.jour || a.ts - b.ts);
-    const victim = sorted[+del.dataset.jr];
-    j[k] = (j[k]||[]).filter(x => x.ts !== victim.ts);
-    saveJournal(j); renderJournal();
-  }
-});
 
 
 /* ============================================================
@@ -5686,11 +5662,20 @@ let countT;
 let noteT;
 function initNote(){
   const a = $('#noteArea');
+  if(!a) return;                          /* panneau non affiché */
   a.value = state.notes || '';
   a.oninput = () => {
     state.notes = a.value;
     clearTimeout(noteT);
-    noteT = setTimeout(()=>{ save(); $('#noteSaved').textContent = 'Enregistré ✓ ' + new Date().toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'}); }, 500);
+    /* ⚠️ 500 ms plus tard, le panneau a pu être reconstruit par un changement
+       d'onglet : #noteSaved n'existe alors plus, et l'écrire levait une
+       TypeError non capturée. La sauvegarde, elle, doit avoir lieu quoi qu'il
+       arrive — c'est le texte du voyageur. */
+    noteT = setTimeout(() => {
+      save();
+      const m = $('#noteSaved');
+      if(m) m.textContent = 'Enregistré ✓ ' + new Date().toLocaleTimeString(LOC(), { hour:'2-digit', minute:'2-digit' });
+    }, 500);
   };
 }
 const _e13 = $('#btnRes'); if(_e13) _e13.onclick = () => {
@@ -15497,5 +15482,34 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Enter' && e.target && e.target.id === 'trInp'){
     e.preventDefault();
     document.getElementById('btnTr')?.click();
+  }
+});
+
+/* ⚠️ CE GESTIONNAIRE MANQUAIT. En retirant l'écouteur d'origine de #btnTr —
+   posé au chargement, donc inerte — j'ai annoncé l'avoir remplacé par un
+   délégué. J'avais délégué la touche Entrée et le bouton du simulateur, pas
+   le bouton « Traduire » lui-même : le champ s'affichait et ne répondait pas.
+   Trouvé par le test fonctionnel, pas par la relecture. */
+document.addEventListener('click', async e => {
+  if(!e.target.closest || !e.target.closest('#btnTr')) return;
+  const champ = document.getElementById('trInp');
+  const zone  = document.getElementById('zoneTr');
+  const q = (champ && champ.value.trim()) || '';
+  if(!q || !zone) return;
+  const t = state.trip;
+  if(!t){ toast('Choisis d’abord un voyage 😉'); return; }
+  zone.innerHTML = loaderHTML('Traduction…');
+  const prompt = `Traduis cette phrase française vers ${t.langue || 'la langue locale de ' + t.pays}.
+Phrase : "${q}"
+Réponds UNIQUEMENT en JSON : {"local":"la traduction","pron":"prononciation phonétique à la française"}`;
+  try{
+    const { data, via } = await ai('light', prompt);
+    const badge = document.getElementById('trBadge');
+    if(badge) badge.style.display = via === 'groq' ? '' : 'none';
+    zone.innerHTML = `<div class="phrase"><div class="fr">${esc(q)}</div>`
+      + `<div class="loc">${esc(data && data.local || '')}</div>`
+      + `<div class="pron">🔊 ${esc(data && data.pron || '')}</div></div>`;
+  }catch(err){
+    if(err.message !== 'NO_KEY') zone.innerHTML = errHTML('Traduction impossible.');
   }
 });
