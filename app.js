@@ -3359,7 +3359,7 @@ function panProgramme(d){
             ouvert ? timelineHTML(state.cache.days[jr.jour], jr.jour) : ''}</div>`;
         })()}
       </div>`).join('')
-    + carnetHTML();
+    + sejourCompletHTML() + carnetHTML();
 }
 
 /* ---- Onglet Transport ---- */
@@ -4660,19 +4660,37 @@ function renderStay(d){
    ÉTAPE 4 — SUR PLACE
 ============================================================ */
 
-function setMap(q){
-  $('#mapFrame').src = `https://maps.google.com/maps?q=${encodeURIComponent(q)}&hl=fr&z=14&output=embed`;
+/* ⚠️ CE CHEMIN ÉTAIT CASSÉ EN PRODUCTION. setMap() écrivait dans un
+   `<iframe id="mapFrame">` retiré lors du passage à la carte maison — donc
+   `$('#mapFrame').src = …` levait une TypeError, et la ligne suivante en levait
+   une seconde sur scrollIntoView. Or [data-loc], c'est le « 📍 Carte » de
+   CHAQUE étape de chaque journée, plus les restaurants et les spécialités :
+   un des contrôles les plus cliqués du site.
+   On route maintenant vers la carte du projet, qui existe et connaît déjà les
+   lieux du voyage. Si le lieu n'y figure pas encore, on bascule quand même sur
+   l'onglet Carte : mieux vaut y arriver et chercher que rester sur une erreur. */
+function ouvreLieuSurCarte(nom){
+  const bouton = document.querySelector('.catnav [data-cat="map"]');
+  if(bouton) bouton.click();
+  const map = (typeof mapEngine === 'function') ? mapEngine() : null;
+  if(!map) return false;
+  /* On cherche le lieu parmi les repères déjà posés par buildProjectMap. */
+  const cible = String(nom || '').toLowerCase().trim();
+  const marques = Array.isArray(window._projMarks) ? window._projMarks : [];
+  const i = marques.findIndex(m => String(m && (m.nom || m.titre) || '').toLowerCase().includes(cible));
+  if(i >= 0 && marques[i].lat != null){
+    map.panTo(marques[i].lat, marques[i].lon, 15);
+    try{ map.openMark(i); }catch(e){}
+    return true;
+  }
+  return false;
 }
-window.setMap = setMap;
-
-/* Délégation : tout élément avec data-loc met à jour la carte */
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-loc]');
   if(!el) return;
-  const q = el.dataset.loc + (state.trip ? ', ' + state.trip.nom : '');
-  setMap(q);
-  toast('📍 ' + el.dataset.loc);
-  $('#mapFrame').scrollIntoView({behavior:'smooth', block:'center'});
+  const nom = el.dataset.loc;
+  const trouve = ouvreLieuSurCarte(nom);
+  toast(trouve ? '📍 ' + nom : '📍 ' + nom + ' — cherche-le sur la carte');
 });
 
 /* --- sous-onglets --- */
@@ -5001,7 +5019,11 @@ function daysFromPrefs(){
   return 7;
 }
 
-const _e8 = $('#btnItiAll'); if(_e8) _e8.onclick = async () => {
+/* ⚠️ Délégué : le bouton est fabriqué par sejourCompletHTML() à chaque rendu
+   du panneau Programme. Un écouteur posé au chargement ne trouverait rien —
+   c'est exactement ce qui rendait ce générateur inerte. */
+document.addEventListener('click', async e => {
+  if(!e.target.closest || !e.target.closest('#btnItiAll')) return;
   const zone = $('#zoneItiAll');
   const t = state.trip;
   const n = Math.min(daysFromPrefs(), 10);
@@ -5026,9 +5048,10 @@ Réponds UNIQUEMENT en JSON :
     if(e.message!=='NO_KEY') zone.innerHTML = errHTML('Trop gros pour cette fois — réessaie ou génère jour par jour.');
   }
   $('#btnItiAll').disabled = false;
-};
+});
 
 function renderFullPlan(d){
+  if(!$('#zoneItiAll')) return;            /* panneau non affiché */
   $('#zoneItiAll').innerHTML = `<div class="divider"></div><h3 style="margin-bottom:12px">📆 Ton séjour complet</h3>` +
     (d.jours||[]).map((j,i)=>`
       <div class="acc ${i===0?'open':''}">
@@ -5307,46 +5330,6 @@ function renderTalk(d, via){
 ============================================================ */
 const BUD_COLORS = ['#00F0FF','#A855F7','#FFE600','#FF6B00','#22C55E','#EF4444'];
 
-async function loadBudget(){
-  const zone = $('#zoneBud');
-  if(state.cache.bud){ renderBudget(state.cache.bud); return; }
-  zone.innerHTML = loaderHTML('Calcul du budget…');
-  const t = state.trip;
-  const prompt = `Tu es Acolyte, expert budget voyage. ${ctx()}
-Estime le budget TOTAL réaliste par personne pour ce séjour à ${t.nom} (${t.pays}), en euros.
-Réponds UNIQUEMENT en JSON :
-{
- "total_estime":nombre entier en euros,
- "postes":[
-   {"nom":"Transport aller-retour","montant":nombre,"detail":"1 phrase"},
-   {"nom":"Logement","montant":nombre,"detail":"1 phrase"},
-   {"nom":"Repas","montant":nombre,"detail":"1 phrase"},
-   {"nom":"Activités & visites","montant":nombre,"detail":"1 phrase"},
-   {"nom":"Transports sur place","montant":nombre,"detail":"1 phrase"},
-   {"nom":"Extra & imprévus","montant":nombre,"detail":"1 phrase"}
- ],
- "astuces":["3 astuces concrètes pour réduire ce budget de 20-30%"]
-}`;
-  try{
-    const d = await gemini(prompt);
-    state.cache.bud = d; save();
-    renderBudget(d);
-  }catch(e){ if(e.message!=='NO_KEY') zone.innerHTML = errHTML('Calcul impossible pour le moment.'); }
-}
-function renderBudget(d){
-  const total = d.total_estime || (d.postes||[]).reduce((a,p)=>a+(+p.montant||0),0);
-  const sum = (d.postes||[]).reduce((a,p)=>a+(+p.montant||0),0) || 1;
-  $('#zoneBud').innerHTML = `
-    <div class="row" style="justify-content:space-between">
-      <div><div class="hint" style="margin:0">ESTIMATION TOTALE / PERSONNE</div>
-      <div class="spend-total">${total} €</div></div>
-    </div>
-    <div class="bud-bar">${(d.postes||[]).map((p,i)=>`<i style="width:${((+p.montant||0)/sum*100).toFixed(1)}%;background:${BUD_COLORS[i%BUD_COLORS.length]}"></i>`).join('')}</div>
-    <div class="legend">${(d.postes||[]).map((p,i)=>`<span><span class="sw" style="background:${BUD_COLORS[i%BUD_COLORS.length]}"></span>${esc(p.nom)} <b>${esc(p.montant)}€</b></span>`).join('')}</div>
-    ${(d.postes||[]).map((p,i)=>`<div class="item"><div class="emo" style="font-size:1.1rem;color:${BUD_COLORS[i%BUD_COLORS.length]}">■</div><div style="flex:1"><h4>${esc(p.nom)}</h4><p>${esc(p.detail)}</p></div><div class="side"><span class="tag money">${esc(p.montant)} €</span></div></div>`).join('')}
-    <h3 style="margin:14px 0 8px">Réduire la note 📉</h3>
-    ${(d.astuces||[]).map(a=>`<div class="item"><div class="emo">💡</div><p style="margin-top:4px">${esc(a)}</p></div>`).join('')}`;
-}
 
 /* --- dépenses réelles --- */
 const _e10 = $('#btnSpend'); if(_e10) _e10.onclick = () => {
@@ -5703,57 +5686,11 @@ const _eRf = $('#restoreFile'); if(_eRf) _eRf.onchange = (e) => { const f = e.ta
 /* ============================================================
    ACTIVITÉS & EXPÉRIENCES (Gemini · heavy)
 ============================================================ */
-async function loadAct(){
-  const zone = $('#zoneAct');
-  const t = state.trip;
-  // liens de résa (toujours dispo)
-  const gyg = `https://www.getyourguide.fr/-l0/?q=${encodeURIComponent(t.nom)}`;
-  const civ = `https://www.civitatis.com/fr/?ns_campaign=acolyte#s=${encodeURIComponent(t.nom)}`;
-  const tam = `https://www.tripadvisor.fr/Search?q=${encodeURIComponent(t.nom + ' activités')}`;
-  $('#actLinks').innerHTML = `
-    <a class="btn" href="${gyg}" target="_blank" rel="noopener">GetYourGuide</a>
-    <a class="btn ghost" href="${civ}" target="_blank" rel="noopener">Civitatis</a>
-    <a class="btn ghost" href="${tam}" target="_blank" rel="noopener">Tripadvisor</a>`;
-  if(state.cache.act){ renderAct(state.cache.act); return; }
-  zone.innerHTML = loaderHTML('Repérage des meilleures activités…');
-  const prompt = `Tu es Acolyte, guide local de ${t.nom} (${t.pays}). ${ctx()}
-Liste les meilleures activités et expériences à vivre sur place, adaptées au profil.
-Réponds UNIQUEMENT en JSON :
-{"activites":[
- {"nom":"nom de l'activité/lieu","emoji":"1 emoji","categorie":"incontournable|nature|culture|sensation|détente|photo|famille","description":"1-2 phrases concrètes","duree":"ex: 2h","prix":"gratuit / fourchette €","reserver":"oui" ou "non","astuce":"1 conseil (meilleur horaire, coupe-file…)"}
-]}
-Exactement 7 activités VARIÉES et vraiment marquantes à ${t.nom}.`;
-  try{
-    const d = await gemini(prompt);
-    state.cache.act = d; save();
-    renderAct(d);
-  }catch(e){ if(e.message!=='NO_KEY') zone.innerHTML = errHTML('Chargement impossible.'); }
-}
-function renderAct(d){
-  const t = state.trip;
-  const catCol = {incontournable:'money', nature:'', culture:'cyan', sensation:'', 'détente':'cyan', photo:'', famille:'cyan'};
-  $('#zoneAct').innerHTML = (d.activites||[]).map(a=>`
-    <div class="item">
-      <div class="emo">${esc(a.emoji||'🎡')}</div>
-      <div style="flex:1">
-        <h4>${esc(a.nom)} <span class="tag ${catCol[a.categorie]||''}" style="margin-left:6px">${esc(a.categorie)}</span></h4>
-        <p>${esc(a.description)}<br><strong>💡 </strong>${esc(a.astuce)}</p>
-        <div class="row" style="margin-top:8px">
-          <span class="tl-loc" data-loc="${esc(a.nom)}">📍 Carte</span>
-          ${a.reserver==='oui' ? `<a class="tl-loc" href="https://www.getyourguide.fr/s/?q=${encodeURIComponent(a.nom + ' ' + t.nom)}" target="_blank" rel="noopener">🎫 Réserver</a>` : ''}
-        </div>
-      </div>
-      <div class="side"><span class="tag money">${esc(a.prix)}</span><p style="font-size:.72rem;margin-top:5px">⏱ ${esc(a.duree)}</p></div>
-    </div>`).join('');
-}
 
 /* ============================================================
    OUTILS — APIs publiques gratuites, données réelles
    Open-Meteo (géo + météo) · Frankfurter (devises) · Groq (traduction)
 ============================================================ */
-async function loadTools(){
-  loadMeteo(); loadTimeAndCurrency(); startCountdown();
-}
 
 // --- Géocodage (Open-Meteo geocoding, sans clé) ---
 async function geocode(){
@@ -5769,84 +5706,13 @@ async function geocode(){
 }
 
 // --- Météo 7 jours (Open-Meteo, données réelles gratuites) ---
-async function loadMeteo(){
-  const zone = $('#zoneMeteo');
-  const g = await geocode();
-  if(!g){ zone.innerHTML = errHTML('Localisation introuvable pour la météo.'); return; }
-  try{
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${g.latitude}&longitude=${g.longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7`);
-    const d = await r.json();
-    const wmo = c => {
-      if(c===0) return ['☀️','Ensoleillé'];
-      if(c<=2) return ['🌤️','Peu nuageux'];
-      if(c===3) return ['☁️','Couvert'];
-      if(c<=48) return ['🌫️','Brouillard'];
-      if(c<=67) return ['🌧️','Pluie'];
-      if(c<=77) return ['🌨️','Neige'];
-      if(c<=82) return ['🌦️','Averses'];
-      if(c<=99) return ['⛈️','Orage'];
-      return ['🌡️','—'];
-    };
-    const days = d.daily.time.map((t,i)=>{
-      const w = wmo(d.daily.weather_code[i]);
-      const dt = new Date(t);
-      const jour = dt.toLocaleDateString(LOC(),{weekday:'short',day:'numeric'});
-      return `<div class="item" style="flex-direction:column;align-items:center;text-align:center;min-width:92px;padding:12px 8px;box-shadow:none">
-        <div style="font-size:.74rem;color:var(--txt-2);text-transform:capitalize">${jour}</div>
-        <div style="font-size:1.6rem;margin:4px 0">${w[0]}</div>
-        <div style="font-size:.72rem;color:var(--txt-2)">${w[1]}</div>
-        <div style="font-family:'Fraunces',Georgia,serif;font-weight:900;margin-top:4px">${Math.round(d.daily.temperature_2m_max[i])}°<span style="color:var(--txt-2);font-weight:400"> / ${Math.round(d.daily.temperature_2m_min[i])}°</span></div>
-        <div style="font-size:.7rem;color:#00F0FF;margin-top:3px;font-weight:800">💧 ${d.daily.precipitation_probability_max[i]??0}%</div>
-      </div>`;
-    }).join('');
-    zone.innerHTML = `<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px">${days}</div>`;
-  }catch(e){ zone.innerHTML = errHTML('Météo indisponible pour le moment.'); }
-}
 
 // --- Heure locale + devises ---
-async function loadTimeAndCurrency(){
-  const g = await geocode();
-  const t = state.trip;
-  // heure locale via le timezone renvoyé par la météo
-  try{
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${g.latitude}&longitude=${g.longitude}&current=temperature_2m&timezone=auto`);
-    const d = await r.json();
-    const tz = d.timezone;
-    const now = new Date();
-    const localStr = now.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit',timeZone:tz});
-    const hereStr  = now.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Paris'});
-    const offH = Math.round((d.utc_offset_seconds - now.getTimezoneOffset()*-60)/3600);
-    const decal = offH===0 ? 'Même fuseau qu\'en France' : `${offH>0?'+':''}${offH}h par rapport à la France`;
-    $('#zoneTime').innerHTML = `<div class="emo">🕐</div><div style="flex:1"><h4>Il est <span class="hl">${localStr}</span> à ${esc(t.nom)}</h4><p>${decal} · Fuseau ${esc(tz)} · (${hereStr} en France)</p></div>`;
-  }catch(e){ $('#zoneTime').innerHTML = `<div class="emo">🕐</div><p style="margin-top:4px">Heure locale indisponible.</p>`; }
-  // devises via Frankfurter (BCE, gratuit sans clé)
-  const cur = (t.monnaie||'').match(/[A-Z]{3}/)?.[0] || guessCurrency(t.monnaie);
-  renderCurrency(cur);
-}
 function guessCurrency(name){
   const m = {'euro':'EUR','livre':'GBP','dollar':'USD','yen':'JPY','franc suisse':'CHF','couronne':'SEK','zloty':'PLN','forint':'HUF','dirham':'MAD','roupie':'INR','baht':'THB','peso':'MXN','real':'BRL','rand':'ZAR','lira':'TRY','won':'KRW','yuan':'CNY','rouble':'RUB','dinar':'TND'};
   const l = (name||'').toLowerCase();
   for(const k in m) if(l.includes(k)) return m[k];
   return 'USD';
-}
-async function renderCurrency(cur){
-  const zone = $('#zoneCur');
-  if(cur === 'EUR'){ zone.innerHTML = `<div class="item"><div class="emo">💶</div><p style="margin-top:4px">La destination est en <strong>zone euro</strong> — aucune conversion nécessaire !</p></div>`; return; }
-  try{
-    const r = await fetch(`https://api.frankfurter.dev/v1/latest?base=EUR&symbols=${cur}`);
-    const d = await r.json();
-    const rate = d.rates?.[cur];
-    if(!rate) throw 0;
-    zone.innerHTML = `
-      <div class="item"><div class="emo">💱</div><div style="flex:1">
-        <h4>1 € = <span class="hl">${rate.toFixed(2)} ${esc(cur)}</span></h4>
-        <p>Taux officiel BCE du jour · 1 ${esc(cur)} = ${(1/rate).toFixed(3)} €</p></div></div>
-      <div class="row" style="margin-top:6px">
-        <input id="curEur" type="number" placeholder="Montant en €" style="flex:1;min-width:120px" oninput="convCur(${rate},'eur')">
-        <span style="align-self:center;color:var(--txt);font-weight:900">⇄</span>
-        <input id="curLoc" type="number" placeholder="Montant en ${esc(cur)}" style="flex:1;min-width:120px" oninput="convCur(${rate},'loc')">
-      </div>`;
-  }catch(e){ zone.innerHTML = errHTML('Taux de change indisponible.'); }
 }
 window.convCur = (rate, from) => {
   const e = $('#curEur'), l = $('#curLoc');
@@ -5873,21 +5739,6 @@ const _trI = $('#trInp'); if(_trI) _trI.addEventListener('keydown', e => { if(e.
 
 // --- Compte à rebours ---
 let countT;
-function startCountdown(){
-  clearInterval(countT);
-  const dep = state.prefs?.depart;
-  const zone = $('#zoneCount');
-  if(!dep){ zone.innerHTML = `<div class="emo">🎉</div><p style="margin-top:4px">Renseigne ta date de départ à l'étape 1 pour lancer le compte à rebours.</p>`; return; }
-  const target = new Date(dep + 'T00:00:00');
-  const tick = () => {
-    if(!state.trip){ clearInterval(countT); return; }   /* voyage changé entre-temps → on arrête */
-    const diff = target - new Date();
-    if(diff <= 0){ zone.innerHTML = `<div class="emo">🏖️</div><p style="margin-top:4px"><strong>C'est parti — bon voyage à ${esc(state.trip.nom)} !</strong></p>`; clearInterval(countT); return; }
-    const j = Math.floor(diff/864e5), h = Math.floor(diff%864e5/36e5), m = Math.floor(diff%36e5/6e4);
-    zone.innerHTML = `<div class="emo">⏳</div><div style="flex:1"><h4>Départ dans <span class="hl">${j} jours ${h}h ${m}min</span></h4><p>Le ${target.toLocaleDateString(LOC(),{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · direction ${esc(state.trip.nom)} ${esc(state.trip.drapeau||'')}</p></div>`;
-  };
-  tick(); countT = setInterval(tick, 30000);
-}
 
 /* ============================================================
    CARNET — notes + réservations (localStorage)
@@ -8052,7 +7903,13 @@ function acoMapCreate(el){
       if(z) M.zoom = Math.max(AM_ZMIN, Math.min(AM_ZMAX, z));
       hidePop(); draw();
     },
-    setMarks(list){ M.marks = list || []; hidePop(); buildMarks(); draw(); },
+    setMarks(list){
+      M.marks = list || [];
+      /* Exposé pour ouvreLieuSurCarte() : les repères vivent dans cette
+         fermeture, et le clic sur « 📍 Carte » a besoin de les retrouver. */
+      window._projMarks = M.marks;
+      hidePop(); buildMarks(); draw();
+    },
     setLine(line, dash){ M.line = line || []; M.dash = dash || []; draw(); },
     openMark(i){ showPop(i); },
     /* cadre la carte sur un ensemble de points, avec une marge en pixels */
@@ -14072,8 +13929,8 @@ function attBandeau(jeu){
 /* ============================================================
    MODE KIOSQUE — l'écran qui compte les jours
    ------------------------------------------------------------
-   Il existait déjà un compte à rebours dans le code : startCountdown(), écrit,
-   complet… et INJOIGNABLE. Son seul appelant est loadTools(), que personne
+   Il existait déjà un compte à rebours dans le code : startCountdown, écrit,
+   complet… et INJOIGNABLE. Son seul appelant etait loadTools, que personne
    n'appelle, et ses trois zones (#zoneCount, #zoneMeteo, #zoneTime) n'existent
    nulle part dans le HTML. Il n'a donc jamais pu s'afficher une seule fois.
    Plutôt que d'écrire un second compte à rebours à côté du premier, celui-ci
@@ -15625,3 +15482,39 @@ document.addEventListener('click', e => {
   if(t.id === 'btnSpecGo'){ if(state.cache) delete state.cache.spec; save(); loadSpec(); }
   else { if(state.cache) delete state.cache.shop; save(); loadShop(); }
 });
+
+/* ============================================================
+   TOUT LE SÉJOUR D'UN COUP — rebranché
+   ------------------------------------------------------------
+   Détailler une journée demande un clic et un appel. Sur huit jours, c'est
+   huit attentes. Ce générateur fait tout en une fois, et sa zone n'existait
+   pas : il n'a jamais servi.
+   ⚠️ Le rythme et les déplacements sont relus par le handler d'origine
+   (#itiPace, #itiMove) au moment du clic : les deux sélecteurs doivent porter
+   ces identifiants exacts, et ne pas être renommés.
+============================================================ */
+function sejourCompletHTML(){
+  const n = (typeof daysFromPrefs === 'function') ? Math.min(daysFromPrefs(), 10) : 0;
+  if(!n) return '';
+  return `
+    <h3 style="margin:26px 0 6px;padding-top:20px;border-top:1px solid var(--stroke)">Tout le séjour d'un coup</h3>
+    <p class="hint" style="margin:0 0 12px">Les ${n} journées détaillées en une seule fois, au lieu d'une par une. Compte environ 30 secondes.</p>
+    <div class="mg-form">
+      <div class="field"><label for="itiPace">Rythme</label>
+        <select id="itiPace">
+          <option value="équilibré (2-3 activités par jour)">Équilibré</option>
+          <option value="doux (peu d'activités, du temps libre)">Doux</option>
+          <option value="intense (programme dense)">Intense</option>
+        </select>
+      </div>
+      <div class="field"><label for="itiMove">Déplacements</label>
+        <select id="itiMove">
+          <option value="à pied et transports en commun">À pied &amp; transports</option>
+          <option value="beaucoup à pied">Surtout à pied</option>
+          <option value="en voiture">En voiture</option>
+        </select>
+      </div>
+      <button type="button" class="btn sm" id="btnItiAll">Tout planifier</button>
+    </div>
+    <div id="zoneItiAll"></div>`;
+}
