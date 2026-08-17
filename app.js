@@ -819,7 +819,17 @@ var ICO_D = {
   retour:   '<path d="M9.6 5.4 3.6 11.4l6 6"/><path d="M3.6 11.4h11a5.8 5.8 0 0 1 0 11.6h-1"/>',
   /* — attente jouable & kiosque — */
   manette:  '<path d="M7.4 7.6h9.2a5 5 0 0 1 4.9 4l.8 4.3a2.7 2.7 0 0 1-5 1.9l-1.2-1.9H7.9l-1.2 1.9a2.7 2.7 0 0 1-5-1.9l.8-4.3a5 5 0 0 1 4.9-4Z"/><path d="M7.2 11.2v2.6M5.9 12.5h2.6"/><path d="M15.9 11.9h.01M17.8 13.6h.01"/>',
-  coche:    '<path d="m4.8 12.4 4.7 4.7L19.2 7.4"/>'
+  coche:    '<path d="m4.8 12.4 4.7 4.7L19.2 7.4"/>',
+  /* — ajoutées pour remplacer les emoji des cartes de destination — */
+  money:    '<circle cx="12" cy="12" r="8.6"/><path d="M15 9.2a3.6 3.6 0 0 0-3-1.6c-2 0-3.4 1.9-3.4 4.4s1.4 4.4 3.4 4.4a3.6 3.6 0 0 0 3-1.6"/><path d="M7.6 11.2h4.6M7.6 13.4h4.6"/>',
+  soleil:   '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7"/>',
+  langue:   '<path d="M3.4 6.2h8.4M7.6 4.2v2M9.6 6.2c0 3.4-2.4 6.2-5.4 7.4M6.2 9.4c.9 2 2.6 3.4 4.8 4.2"/><path d="m12.6 19.8 3.4-8 3.4 8M13.9 17h4.2"/>',
+  trophee:  '<path d="M7.4 4.2h9.2v4.2a4.6 4.6 0 0 1-9.2 0Z"/><path d="M7.4 5.6H5a2 2 0 0 0 2.4 3.6M16.6 5.6H19a2 2 0 0 1-2.4 3.6"/><path d="M12 13v3.4M8.8 19.8h6.4l-.8-3.4H9.6Z"/>',
+  alerte:   '<path d="M12 4.2 21 19.4H3Z"/><path d="M12 10v3.6M12 16.4h.01"/>',
+  loupe:    '<circle cx="10.8" cy="10.8" r="6.6"/><path d="m15.6 15.6 4.6 4.6"/>',
+  graphique:'<path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 17V11M12.4 17V7M16.8 17v-4"/>',
+  sac:      '<path d="M6 8.6h12l1 11.2H5Z"/><path d="M9 8.6V6.4a3 3 0 0 1 6 0v2.2"/>',
+  horloge:  '<circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.2 2"/>'
 };
 /* Rend une icône. `taille` en px, `cls` pour les cas où il faut la viser en CSS. */
 function ICO(nom, taille, cls){
@@ -1244,7 +1254,7 @@ async function submitAndShowLeaderboard(score){
   }
   const top = r.data.top;
   if(!top.length){ lb.innerHTML = `<p class="hint" style="margin:0">Sois le premier au classement !</p>`; return; }
-  lb.innerHTML = `<h4 class="game-lb-title">🏆 Meilleurs défenseurs</h4>`
+  lb.innerHTML = `<h4 class="game-lb-title">${ICO('trophee', 17)} Meilleurs défenseurs</h4>`
     + top.map((s, i) => `<div class="game-lb-row${s.name === me ? ' me' : ''}">
         <span class="game-lb-rank">${i + 1}</span>
         <span class="game-lb-name">${esc(s.name)}</span>
@@ -1568,11 +1578,11 @@ const cleanPrix = s => String(s || '').replace(/\s*(par|\/)\s*nuit/gi, '').trim(
 function renderDestinations(d){
   const zone = $('#zoneResults');
   const n = (d.destinations||[]).length;
-  let html = `<div class="card"><h2>${n > 1 ? 'Compare tes voyages' : 'Ton voyage sur mesure'} 🎒</h2>
+  let html = `<div class="card"><h2>${n > 1 ? 'Compare tes voyages' : 'Ton voyage sur mesure'} ${ICO('sac', 20)}</h2>
   <p class="sub">${n > 1 ? 'Des propositions volontairement différentes. Compare-les point par point et clique sur celle qui te fait vibrer.' : 'Acolyte a concentré ses efforts sur la formule idéale pour ta destination. Clique dessus pour lancer l\'organisation.'}</p>
   <div class="dest-grid">`;
   (d.destinations||[]).forEach((x,i)=>{
-    const tIco = ({avion:'✈️',train:'🚆',voiture:'🚗'})[x.transport_conseille]||'✈️';
+    const tIco = ICO(({avion:'avion',train:'train',voiture:'voiture'})[x.transport_conseille] || 'avion', 15);
     html += `<div class="dest" data-i="${i}">
       <div class="dest-main">
         <div class="flag">${esc(drapeauOuPoint(x.drapeau))}</div>
@@ -1580,14 +1590,14 @@ function renderDestinations(d){
         <p>${esc(x.resume)}</p>
       </div>
       <div class="dest-facts">
-        <div class="fact"><span class="fk">💶 Budget</span><span class="fv">${esc(x.budget_estime)}</span></div>
+        <div class="fact"><span class="fk">${ICO('money', 15)} Budget</span><span class="fv">${esc(x.budget_estime)}</span></div>
         <div class="fact"><span class="fk">${tIco} ${esc(x.transport_conseille||'avion')}</span><span class="fv">${esc(x.transport_prix||'—')}${x.transport_duree ? ` · ${esc(x.transport_duree)}` : ''}</span></div>
-        <div class="fact"><span class="fk">🏨 ${esc(shortType(x.logement_type))}</span><span class="fv">${esc(x.logement_quartier||'—')}${x.logement_prix ? ` · ${esc(cleanPrix(x.logement_prix))}/nuit` : ''}</span></div>
-        <div class="fact"><span class="fk">☀️ Météo</span><span class="fv">${esc(x.meteo_periode)}</span></div>
-        <div class="fact"><span class="fk">⏱ Durée</span><span class="fv">${esc(x.duree_ideale)}</span></div>
-        <div class="fact"><span class="fk">🗣️ Langue</span><span class="fv">${esc(x.langue||'—')}</span></div>
+        <div class="fact"><span class="fk">${ICO('hotel', 15)} ${esc(shortType(x.logement_type))}</span><span class="fv">${esc(x.logement_quartier||'—')}${x.logement_prix ? ` · ${esc(cleanPrix(x.logement_prix))}/nuit` : ''}</span></div>
+        <div class="fact"><span class="fk">${ICO('soleil', 15)} Météo</span><span class="fv">${esc(x.meteo_periode)}</span></div>
+        <div class="fact"><span class="fk">${ICO('horloge', 15)} Durée</span><span class="fv">${esc(x.duree_ideale)}</span></div>
+        <div class="fact"><span class="fk">${ICO('langue', 15)} Langue</span><span class="fv">${esc(x.langue||'—')}</span></div>
       </div>
-      ${(x.transport_pourquoi || x.logement_pourquoi) ? `<p class="hint" style="margin-top:8px">${x.transport_pourquoi ? '✈️ ' + esc(x.transport_pourquoi) : ''}${x.transport_pourquoi && x.logement_pourquoi ? ' · ' : ''}${x.logement_pourquoi ? '🏨 ' + esc(x.logement_pourquoi) : ''}</p>` : ''}
+      ${(x.transport_pourquoi || x.logement_pourquoi) ? `<p class="hint" style="margin-top:8px">${x.transport_pourquoi ? ICO('avion', 14) + ' ' + esc(x.transport_pourquoi) : ''}${x.transport_pourquoi && x.logement_pourquoi ? ' · ' : ''}${x.logement_pourquoi ? ICO('hotel', 14) + ' ' + esc(x.logement_pourquoi) : ''}</p>` : ''}
       <div class="tags" style="margin-top:10px">${(x.points_forts||[]).map(p=>`<span class="tag">${esc(p)}</span>`).join('')}</div>
       <button class="btn sm" style="width:100%;justify-content:center;margin-top:6px">Choisir ce voyage →</button>
     </div>`;
@@ -1607,7 +1617,7 @@ function renderDestinations(d){
       ['⏱ Durée',      D.map(x => esc(x.duree_ideale || '—'))],
       ['🗣️ Langue',    D.map(x => esc(x.langue || '—'))]
     ];
-    html += `<div class="card"><h3 style="margin:0 0 4px">📊 Comparatif</h3>
+    html += `<div class="card"><h3 style="margin:0 0 4px">${ICO('graphique', 17)} Comparatif</h3>
       <p class="sub" style="margin:0 0 10px">Tout est aligné — compare point par point, puis choisis ta colonne.</p>
       <div class="cmp-wrap"><table class="cmp">
         <thead><tr><th></th>${D.map((x, i) => `<th data-i="${i}"><span class="cmp-flag">${esc(drapeauOuPoint(x.drapeau))}</span><br>${esc(x.nom)}</th>`).join('')}</tr></thead>
@@ -1619,7 +1629,7 @@ function renderDestinations(d){
   }
   /* Affinage en langage libre : « pas tout à fait ça… » → relance en tenant compte du feedback */
   html += `<div class="card">
-    <h3 style="margin:0 0 4px">✍️ Pas tout à fait ça ?</h3>
+    <h3 style="margin:0 0 4px">${ICO('crayon', 17)} Pas tout à fait ça ?</h3>
     <p class="sub" style="margin:0 0 10px">Dis à Acolyte ce qui cloche, il repropose en en tenant compte.</p>
     <div class="refine-bar">
       <input id="refineInp" class="refine-inp" type="text" placeholder="ex : plus près de la mer, moins cher, plus animé…" aria-label="Ce qui ne va pas dans les propositions">
