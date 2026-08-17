@@ -838,7 +838,23 @@ var ICO_D = {
   atterrissage:'<path d="M3.4 20.6h17.2"/><path d="M20.2 16.2 4.4 12.4l.3-6.4 2 .5 1.4 4.4 4.2 1-.4-7 2.4.6 2.5 7.2 3.6 1a1.8 1.8 0 0 1-.2 2.5Z"/>',
   route:    '<path d="M8.2 3.4 5.4 20.6M15.8 3.4l2.8 17.2"/><path d="M12 4.6v2.6M12 10.6v2.8M12 16.8v2.6"/>',
   feu:      '<rect x="8" y="2.8" width="8" height="18.4" rx="3.2"/><circle cx="12" cy="7.4" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="16.6" r="1.5"/>',
-  regle:    '<path d="M3.2 8.4h17.6v7.2H3.2Z"/><path d="M7 8.4v2.6M10.4 8.4v3.6M13.8 8.4v2.6M17.2 8.4v3.6"/>'
+  regle:    '<path d="M3.2 8.4h17.6v7.2H3.2Z"/><path d="M7 8.4v2.6M10.4 8.4v3.6M13.8 8.4v2.6M17.2 8.4v3.6"/>',
+  /* — panneaux Manger, Logement, Budget — */
+  cible:    '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1"/>',
+  quartier: '<path d="M3.4 20.6V10l5-3.4 5 3.4v10.6"/><path d="M13.4 20.6V13l3.6-2.4 3.6 2.4v7.6"/><path d="M6.6 13h3.2M6.6 16.6h3.2M16.4 16.6h1.4"/>',
+  assiette: '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.4"/>',
+  panier:   '<path d="M3.2 8.4h17.6l-2 10.4H5.2Z"/><path d="m8.4 8.4 2.2-4.8M15.6 8.4l-2.2-4.8"/><path d="M9.6 12v3M14.4 12v3"/>',
+  poignee:  '<path d="m3.4 12.6 3.4-3.4 3.2 2.6 3-2.4 3.2 2.4 4.4-4"/><path d="M10 11.8 7.6 14.2a1.7 1.7 0 0 0 2.4 2.4l.8-.8.9.9a1.7 1.7 0 0 0 2.4-2.4"/>',
+  cb:       '<rect x="2.8" y="5.4" width="18.4" height="13.2" rx="2.6"/><path d="M2.8 10h18.4"/><path d="M6.4 14.6h3.2"/>',
+  /* — moments d'une journee, evenements, avis — */
+  monument: '<path d="M3.4 20.6h17.2M4.8 20.6V9.4M9.6 20.6V9.4M14.4 20.6V9.4M19.2 20.6V9.4"/><path d="M3 9.4h18L12 3.4Z"/>',
+  cafe:     '<path d="M4.2 7.4h12v6a6 6 0 0 1-12 0Z"/><path d="M16.2 8.6h2a2.6 2.6 0 0 1 0 5.2h-2"/><path d="M4.2 20.6h12"/>',
+  fete:     '<path d="m3.4 20.6 4.4-11 7.2 6.6Z"/><path d="M13.4 8.6a3 3 0 0 1 3-3M17.6 11a2.4 2.4 0 0 1 2.4-2.4M15.4 4.2v.01M20.4 5.4v.01M19.6 15v.01"/>',
+  sport:    '<circle cx="12" cy="12" r="8.6"/><path d="m12 3.4 3 5.4-3 5-3-5Z"/><path d="m4.4 8.6 4.6.2M19.6 8.6 15 8.8M7.6 19.4 9 13.8M16.4 19.4 15 13.8"/>',
+  cadre:    '<rect x="3.4" y="4.4" width="17.2" height="15.2" rx="2"/><circle cx="8.8" cy="9.6" r="1.6"/><path d="m3.4 16.6 4.8-4.4 4 3.4 3.4-2.8 4 3.6"/>',
+  maison:   '<path d="M3.6 10.4 12 3.6l8.4 6.8v9a1.4 1.4 0 0 1-1.4 1.4H5a1.4 1.4 0 0 1-1.4-1.4Z"/><path d="M9.4 20.8v-6.6h5.2v6.6"/>',
+  pouce:    '<path d="M7.4 20.6V10.2l4.2-6.8a2.2 2.2 0 0 1 2 3.2l-1 3.4h5.2a2.2 2.2 0 0 1 2.1 2.8l-1.6 6a2.2 2.2 0 0 1-2.1 1.8Z"/><path d="M7.4 10.2H3.6v10.4h3.8"/>',
+  poucebas: '<path d="M7.4 3.4v10.4l4.2 6.8a2.2 2.2 0 0 0 2-3.2l-1-3.4h5.2a2.2 2.2 0 0 0 2.1-2.8l-1.6-6a2.2 2.2 0 0 0-2.1-1.8Z"/><path d="M7.4 13.8H3.6V3.4h3.8"/>'
 };
 /* Rend une icône. `taille` en px, `cls` pour les cas où il faut la viser en CSS. */
 function ICO(nom, taille, cls){
@@ -2749,13 +2765,14 @@ Réponds UNIQUEMENT en JSON : {"events":[{"nom":"...","quand":"date ou période"
 function renderEvents(data){
   const zone = $('#zoneEvents'); if(!zone) return;
   const ev = (data?.events || []).filter(e => e && e.nom);
-  const ico = { festival:'🎪', 'fête':'🎉', fete:'🎉', marché:'🛍️', marche:'🛍️', sport:'⚽', expo:'🖼️', 'férié':'📛', ferie:'📛' };
+  const ico = { festival:'fete', 'fête':'fete', fete:'fete', marché:'panier', marche:'panier',
+                sport:'sport', expo:'cadre', 'férié':'calendrier', ferie:'calendrier' };
   if(!ev.length){ zone.innerHTML = `<p class="hint" style="margin:0">Rien de notable repéré à ces dates — tu auras la ville pour toi 😉</p>`; return; }
   const prog = state.cache.plan?.programme || [];
   zone.innerHTML = ev.map((e, i) => {
     const deja = prog.some(j => (j.lieux || []).some(l => String(l).toLowerCase() === String(e.nom).toLowerCase()));
     return `<div class="item" style="align-items:flex-start">
-      <div class="emo">${ico[String(e.type||'').toLowerCase()] || '📅'}</div>
+      <div class="emo">${ICO(ico[String(e.type||'').toLowerCase()] || 'calendrier', 20)}</div>
       <!-- ⚠️ LE BADGE DE DATE N'EST PLUS DANS LE <h4>. Il y était en flux
            inline : dès que le nom était un peu long (« Festa del Redentore »),
            la pastille se cassait EN PLEIN MILIEU sur deux lignes, moitié au
@@ -2889,14 +2906,14 @@ function renderHotels(rows){
         <span class="hc-ico">${ICO(ICO_LOG[type] || 'hotel', 20)}</span>
         <div class="hc-id">
           <h4>${esc(h.nom)}</h4>
-          <div class="hc-meta">📍 ${esc(h.quartier || t.nom || '—')}${h.note ? ' · ' + hotelStars(h.note) : ''}</div>
+          <div class="hc-meta">${ICO('epingle',13)} ${esc(h.quartier || t.nom || '—')}${h.note ? ' · ' + hotelStars(h.note) : ''}</div>
         </div>
         <span class="hc-price">${esc(h.prix_nuit || '?')}<small>/nuit</small></span>
       </div>
       ${h.pourquoi ? `<p class="hc-why">${esc(h.pourquoi)}</p>` : ''}
       <div class="hc-acts">
-        <a class="btn sm" href="${esc(book)}" target="_blank" rel="noopener">🎫 Voir &amp; réserver</a>
-        ${estAppart ? `<a class="btn sm ghost" href="${esc(airbnb)}" target="_blank" rel="noopener">🏠 Airbnb</a>` : ''}
+        <a class="btn sm" href="${esc(book)}" target="_blank" rel="noopener">${ICO('billet',14)} Voir &amp; réserver</a>
+        ${estAppart ? `<a class="btn sm ghost" href="${esc(airbnb)}" target="_blank" rel="noopener">${ICO('maison',14)} Airbnb</a>` : ''}
       </div>
     </div>`;
   }).join('') + `<p class="hint" style="margin-top:12px">Établissements réels, choisis pour ton quartier et ton budget. <strong>Le prix exact du jour s'affiche à la réservation</strong> (dates déjà pré-remplies).</p>`;
@@ -3836,9 +3853,9 @@ function collabBarHTML(jour){
   const mine = votes[voterName()];
   const coms = b.comments[j] || [];
   return `<div class="day-collab">
-    <button class="cvote ${mine === 'up' ? 'on' : ''}" data-vote="${esc(j)}:up" title="J'aime cette journée">👍 <b>${up}</b></button>
-    <button class="cvote ${mine === 'down' ? 'on' : ''}" data-vote="${esc(j)}:down" title="Pas fan de cette journée">👎 <b>${down}</b></button>
-    <button class="cvote" data-comtoggle="${esc(j)}" title="Commentaires de l'équipe">💬 <b>${coms.length}</b></button>
+    <button class="cvote ${mine === 'up' ? 'on' : ''}" data-vote="${esc(j)}:up" title="J'aime cette journée">${ICO('pouce',14)} <b>${up}</b></button>
+    <button class="cvote ${mine === 'down' ? 'on' : ''}" data-vote="${esc(j)}:down" title="Pas fan de cette journée">${ICO('poucebas',14)} <b>${down}</b></button>
+    <button class="cvote" data-comtoggle="${esc(j)}" title="Commentaires de l'équipe">${ICO('discussion',14)} <b>${coms.length}</b></button>
     <span class="collab-hint">planifiez à plusieurs</span>
   </div>
   <div class="day-comments" data-combox="${esc(j)}" hidden>
@@ -4628,11 +4645,11 @@ function renderStay(d){
   const airbnb  = q => `https://www.airbnb.fr/s/${encodeURIComponent(q)}/homes`;
   const hostel  = q => `https://www.hostelworld.com/s?q=${encodeURIComponent(q)}`;
   $('#zoneStay').innerHTML = `
-    <div class="item"><div class="emo">🎯</div><p style="margin-top:4px"><strong>Le bon plan pour toi :</strong> ${esc(d.type_conseille)}</p></div>
+    <div class="item"><div class="emo">${ICO('cible',20)}</div><p style="margin-top:4px"><strong>Le bon plan pour toi :</strong> ${esc(d.type_conseille)}</p></div>
     <h3 style="margin:16px 0 10px">Les 3 quartiers où viser</h3>
     ${(d.quartiers||[]).map(q=>`
       <div class="item">
-        <div class="emo">${esc(q.emoji||'🏘️')}</div>
+        <div class="emo">${ICO('quartier',20)}</div>
         <div style="flex:1">
           <h4>${esc(q.nom)} <span class="tag" style="margin-left:6px">${esc(q.ideal_pour||'')}</span></h4>
           <p>${esc(q.pourquoi)}</p>
@@ -4641,13 +4658,13 @@ function renderStay(d){
             <a class="btn sm ghost" href="${airbnb(q.nom + ', ' + t.nom)}" target="_blank" rel="noopener">Airbnb</a>
           </div>
         </div>
-        <div class="side"><span class="tag money">💶 ${esc(q.prix_nuit)}</span></div>
+        <div class="side"><span class="tag money">${ICO('money',13)} ${esc(q.prix_nuit)}</span></div>
       </div>`).join('')}
     <h3 style="margin:16px 0 8px">Conseils réservation</h3>
-    ${(d.conseils||[]).map(c=>`<div class="item"><div class="emo">💡</div><p style="margin-top:4px">${esc(c)}</p></div>`).join('')}
+    ${(d.conseils||[]).map(c=>`<div class="item"><div class="emo">${ICO('ampoule',20)}</div><p style="margin-top:4px">${esc(c)}</p></div>`).join('')}
     <div class="divider"></div>
     <div class="row">
-      <a class="btn" href="${booking(t.nom)}" target="_blank" rel="noopener">🏨 Booking</a>
+      <a class="btn" href="${booking(t.nom)}" target="_blank" rel="noopener">${ICO('hotel',15)} Booking</a>
       <a class="btn ghost" href="${airbnb(t.nom)}" target="_blank" rel="noopener">Airbnb</a>
       <a class="btn ghost" href="${hostel(t.nom)}" target="_blank" rel="noopener">Hostelworld</a>
     </div>`;
@@ -4710,7 +4727,12 @@ $$('.subtab').forEach(el => el.onclick = () => {
    ⚠️ Comme les commentaires (_comDrafts), la saisie en cours DOIT survivre à
    un changement d'onglet : c'est une régression déjà vécue sur ce projet.
 ============================================================ */
-const TL_TYPES = { visite:'🏛️', repas:'🍽️', pause:'☕', trajet:'🚶' };
+/* ⚠️ Cette table stocke des CLES du registre d'icones, plus des glyphes.
+   Elle sert a DEUX endroits qui n'ont pas les memes contraintes : la frise
+   d'une journee, ou l'icone se dessine, et un <option> de formulaire, qui
+   ne peut PAS contenir de SVG — la liste deroulante n'y montre donc que le
+   mot, ce qui suffit puisqu'il est deja explicite. */
+const TL_TYPES = { visite:'monument', repas:'assiette', pause:'cafe', trajet:'pied' };
 let _tlEdit = null;                 /* { jour, i } — moment en cours d'édition */
 const _tlDraft = {};                /* saisie en cours, par « jour:index:champ » */
 const tlDraftKey = (jour, i, champ) => `${jour}:${i}:${champ}`;
@@ -4728,7 +4750,7 @@ function tlFormHTML(jour, i, e){
     ? { h:'Time', t:'What', d:'Details', l:'Place (for the map)', ok:'✅ Save', no:'Cancel', ty:'Kind', p:'Entry price' }
     : { h:'Heure', t:'Quoi', d:'Détails', l:'Lieu (pour la carte)', ok:'✅ Enregistrer', no:'Annuler', ty:'Genre', p:'Prix d’entrée' };
   const opts = Object.keys(TL_TYPES).map(k =>
-    `<option value="${k}"${tlVal(jour, i, 'type', e) === k ? ' selected' : ''}>${TL_TYPES[k]} ${k}</option>`).join('');
+    `<option value="${k}"${tlVal(jour, i, 'type', e) === k ? ' selected' : ''}>${k}</option>`).join('');
   return `<div class="tl-form" data-tlform="${i}">
     <div class="tl-fr">
       <label>${T.h}<input type="time" data-tlinp="heure" value="${esc(tlVal(jour, i, 'heure', e))}"></label>
@@ -4801,7 +4823,7 @@ function tlTotalHTML(etapes){
   }
   if(!n) return '';
   const EN = isEN();
-  return `<p class="tl-total">💶 ${EN ? 'Entries this day' : 'Entrées de la journée'} :
+  return `<p class="tl-total">${ICO('money',13)} ${EN ? 'Entries this day' : 'Entrées de la journée'} :
     <b>${incertain ? '≈ ' : ''}${somme.toLocaleString(LOC())} €</b>
     <span>${EN ? 'per adult · indicative, check before booking'
                 : 'par adulte · à titre indicatif, vérifie avant de réserver'}</span></p>`;
@@ -4849,28 +4871,28 @@ function timelineHTML(d, jour){
   const ed = jour != null;          /* pas de boutons si on n'est pas dans une journée */
   const n = (d.etapes || []).length;
   const T = isEN()
-    ? { up:'Move earlier', dn:'Move later', mod:'Edit', del:'Remove', add:'➕ Add a moment', map:'📍 See on the map', vide:'This day is empty — add a first moment.' }
-    : { up:'Monter', dn:'Descendre', mod:'Modifier', del:'Retirer', add:'➕ Ajouter un moment', map:'📍 Voir sur la carte', vide:'Journée vide — ajoute un premier moment.' };
+    ? { up:'Move earlier', dn:'Move later', mod:'Edit', del:'Remove', add:'Add a moment', map:'See on the map', vide:'This day is empty — add a first moment.' }
+    : { up:'Monter', dn:'Descendre', mod:'Modifier', del:'Retirer', add:'Ajouter un moment', map:'Voir sur la carte', vide:'Journée vide — ajoute un premier moment.' };
   const items = (d.etapes || []).map((e, i) => {
     if(ed && _tlEdit && String(_tlEdit.jour) === String(jour) && _tlEdit.i === i)
       return `<div class="tl-item tl-editing">${tlFormHTML(jour, i, e)}</div>`;
     return `<div class="tl-item">
       ${tlTrajetHTML(d.etapes, i)}
-      <div class="tl-time">${esc(e.heure || '')} ${TL_TYPES[e.type] || '📍'}</div>
+      <div class="tl-time">${esc(e.heure || '')} ${ICO(TL_TYPES[e.type] || 'epingle', 14)}</div>
       <div class="tl-title">${esc(e.titre || '')}${tlPrixHTML(e)}</div>
       <div class="tl-desc">${esc(e.description || '')}</div>
-      ${e.lieu ? `<span class="tl-loc" data-loc="${esc(e.lieu)}">${T.map}</span>` : ''}
+      ${e.lieu ? `<span class="tl-loc" data-loc="${esc(e.lieu)}">${ICO('epingle',13)} ${T.map}</span>` : ''}
       ${ed ? `<div class="tl-acts">
         <button class="tl-act" data-tlup="${i}" title="${T.up}" aria-label="${T.up}"${i === 0 ? ' disabled' : ''}>▲</button>
         <button class="tl-act" data-tldn="${i}" title="${T.dn}" aria-label="${T.dn}"${i === n - 1 ? ' disabled' : ''}>▼</button>
-        <button class="tl-act" data-tlmod="${i}" title="${T.mod}" aria-label="${T.mod}">✏️</button>
-        <button class="tl-act tl-danger" data-tldel="${i}" title="${T.del}" aria-label="${T.del}">🗑️</button>
+        <button class="tl-act" data-tlmod="${i}" title="${T.mod}" aria-label="${T.mod}">${ICO('crayon',14)}</button>
+        <button class="tl-act tl-danger" data-tldel="${i}" title="${T.del}" aria-label="${T.del}">${ICO('poubelle',14)}</button>
       </div>` : ''}
     </div>`;
   }).join('');
   return `<div class="timeline">${items || (ed ? `<p class="hint" style="margin:0 0 10px">${T.vide}</p>` : '')}</div>`
     + tlTotalHTML(d.etapes)
-    + (ed ? `<button class="btn sm ghost tl-add" data-tladd="${esc(String(jour))}">${T.add}</button>` : '');
+    + (ed ? `<button class="btn sm ghost tl-add" data-tladd="${esc(String(jour))}">${ICO('plus',14)} ${T.add}</button>` : '');
 }
 /* Re-rend UNIQUEMENT la journée concernée : re-rendre tout le plan perdrait
    les autres journées dépliées et les commentaires en cours de frappe. */
@@ -5089,17 +5111,17 @@ function renderFood(d){
   $('#zoneFood').innerHTML = rows.map(r=>`
     <div class="resto-card">
       <div class="rc-top">
-        <span class="rc-emo">${esc(r.emoji||'🍽️')}</span>
+        <span class="rc-emo">${ICO('assiette',20)}</span>
         <div class="rc-id">
           <h4>${esc(r.nom)}</h4>
-          <div class="rc-meta">${r.style ? esc(r.style) : ''}${r.quartier ? ` · 📍 ${esc(r.quartier)}` : ''}</div>
+          <div class="rc-meta">${r.style ? esc(r.style) : ''}${r.quartier ? ' · ' + ICO('epingle',12) + ' ' + esc(r.quartier) : ''}</div>
         </div>
         <span class="rc-price">${esc(r.budget || '—')}</span>
       </div>
-      ${r.plat_star ? `<p class="rc-dish">🍴 À commander : <strong>${esc(r.plat_star)}</strong></p>` : ''}
+      ${r.plat_star ? `<p class="rc-dish">${ICO('assiette',13)} À commander : <strong>${esc(r.plat_star)}</strong></p>` : ''}
       ${r.pourquoi ? `<p class="rc-why">${esc(r.pourquoi)}</p>` : ''}
       <div class="rc-acts">
-        <span class="tl-loc" data-loc="${esc(r.nom)}">📍 Voir sur la carte</span>
+        <span class="tl-loc" data-loc="${esc(r.nom)}">${ICO('epingle',13)} Voir sur la carte</span>
         <a class="tl-loc" href="https://www.google.com/maps/search/${encodeURIComponent(r.nom + ' ' + t.nom)}" target="_blank" rel="noopener">↗ Avis &amp; horaires</a>
       </div>
     </div>`).join('')
@@ -5136,18 +5158,18 @@ function renderShop(d, via){
   $('#zoneShop').innerHTML = `
     <h3 style="margin-bottom:10px">Supermarchés ${badge(via)}</h3>
     ${(d.supermarches||[]).map(s=>`
-      <div class="item"><div class="emo">🛒</div>
+      <div class="item"><div class="emo">${ICO('panier',20)}</div>
         <div style="flex:1"><h4>${esc(s.nom)} <span class="tag cyan" style="margin-left:6px">${lvl[s.niveau]||esc(s.niveau)}</span></h4><p>${esc(s.astuce)}</p></div>
-        <div class="side"><span class="tl-loc" data-loc="${esc(s.nom)}">📍</span></div>
+        <div class="side"><span class="tl-loc" data-loc="${esc(s.nom)}" aria-label="Voir sur la carte">${ICO('epingle',14)}</span></div>
       </div>`).join('')}
     <h3 style="margin:14px 0 10px">Marchés locaux</h3>
     ${(d.marches||[]).map(m=>`
-      <div class="item"><div class="emo">🧺</div>
+      <div class="item"><div class="emo">${ICO('panier',20)}</div>
         <div style="flex:1"><h4>${esc(m.nom)}</h4><p>${esc(m.pourquoi)} · <strong>${esc(m.quand)}</strong></p></div>
-        <div class="side"><span class="tl-loc" data-loc="${esc(m.nom)}">📍</span></div>
+        <div class="side"><span class="tl-loc" data-loc="${esc(m.nom)}" aria-label="Voir sur la carte">${ICO('epingle',14)}</span></div>
       </div>`).join('')}
     <h3 style="margin:14px 0 10px">Manger malin</h3>
-    ${(d.budget_conseils||[]).map(c=>`<div class="item"><div class="emo">💡</div><p style="margin-top:4px">${esc(c)}</p></div>`).join('')}`;
+    ${(d.budget_conseils||[]).map(c=>`<div class="item"><div class="emo">${ICO('ampoule',20)}</div><p style="margin-top:4px">${esc(c)}</p></div>`).join('')}`;
 }
 
 /* ============================================================
@@ -5176,12 +5198,12 @@ function renderSpec(d, via){
   $('#zoneSpec').innerHTML = `
     <div style="margin-bottom:10px">${badge(via)}</div>
     ${(d.specialites||[]).map(s=>`
-      <div class="item"><div class="emo">${esc(s.emoji||'🥘')}</div>
+      <div class="item"><div class="emo">${ICO('assiette',20)}</div>
         <div style="flex:1"><h4>${esc(s.nom)}</h4><p>${esc(s.description)}<br><strong>Où :</strong> ${esc(s.ou_gouter)}</p></div>
         <div class="side"><span class="tag money">${esc(s.prix)}</span></div>
       </div>`).join('')}
-    <h3 style="margin:14px 0 10px">Les codes locaux 🤝</h3>
-    ${(d.conseils_locaux||[]).map(c=>`<div class="item"><div class="emo">💡</div><p style="margin-top:4px">${esc(c)}</p></div>`).join('')}`;
+    <h3 style="margin:14px 0 10px">Les codes locaux ${ICO('poignee',17)}</h3>
+    ${(d.conseils_locaux||[]).map(c=>`<div class="item"><div class="emo">${ICO('ampoule',20)}</div><p style="margin-top:4px">${esc(c)}</p></div>`).join('')}`;
 }
 
 /* ============================================================
@@ -5336,12 +5358,12 @@ function renderSpends(){
   }
   zone.innerHTML = bar + state.spends.map((s, i) => `
       <div class="item" style="padding:10px 14px">
-        <div class="emo" style="font-size:1rem">💳</div>
+        <div class="emo">${ICO('cb',18)}</div>
         <div style="flex:1;min-width:0">
           <p style="margin-top:2px">${esc(s.label)}</p>
           <p class="hint" style="margin:0">${new Date(s.ts).toLocaleDateString(LOC(), {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</p>
         </div>
-        <div class="side row"><span class="tag money">${s.amount.toFixed(2)} €</span><span class="spend-del" data-sp="${i}">🗑️</span></div>
+        <div class="side row"><span class="tag money">${s.amount.toFixed(2)} €</span><span class="spend-del" data-sp="${i}" role="button" aria-label="Supprimer">${ICO('poubelle',15)}</span></div>
       </div>`).join('');
 }
 document.addEventListener('click', e => {
@@ -5707,7 +5729,7 @@ function renderResas(){
     <div class="item" style="padding:12px 14px">
       <div class="emo">${esc(r.type.split(' ')[0])}</div>
       <div style="flex:1"><h4>${esc(r.type.replace(/^\S+\s/,''))}</h4><p>${esc(r.ref)}${r.link?` · <a href="${esc(r.link)}" target="_blank" rel="noopener" style="color:var(--accent-orange);font-weight:900">ouvrir ↗</a>`:''}</p></div>
-      <div class="side"><span class="spend-del" data-res="${i}">🗑️</span></div>
+      <div class="side"><span class="spend-del" data-res="${i}" role="button" aria-label="Supprimer">${ICO('poubelle',15)}</span></div>
     </div>`).join('');
 }
 document.addEventListener('click', e => {
