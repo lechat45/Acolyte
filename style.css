@@ -5592,3 +5592,98 @@ body.dg-actif .tl-item{ touch-action:none }
   color:var(--on-accent);
   border-color:var(--danger);
 }
+
+/* ============================================================
+   SUIVI DE DÉPENSES — le formulaire rebranché
+============================================================ */
+.sp-form{ display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:center }
+.sp-form input{
+  min-height:44px;padding:0 12px;                    /* 44px : cible tactile AAA */
+  background:var(--bg);color:var(--txt);
+  border:1px solid var(--stroke);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;font-size:16px;   /* 16px : iOS ne zoome pas en dessous */
+}
+.sp-form input:focus{ outline:2px solid var(--primary);outline-offset:1px }
+.sp-form .btn{ min-height:44px }
+@media(max-width:460px){
+  /* Le montant et le bouton restent côte à côte, le libellé prend la ligne. */
+  .sp-form{ grid-template-columns:1fr auto }
+  .sp-form input:first-child{ grid-column:1 / -1 }
+}
+
+/* ============================================================
+   LA VALISE — rebranchée dans « Avant de partir »
+============================================================ */
+.vl-tete{ display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px }
+.vl-tete .btn{ flex:0 0 auto }
+.vl-jauge{ display:flex;align-items:center;gap:12px;margin:0 0 14px }
+.vl-barre{
+  flex:1;height:8px;border-radius:99px;overflow:hidden;
+  background:var(--bg);border:1px solid var(--stroke);
+}
+.vl-barre span{
+  display:block;height:100%;width:0;border-radius:99px;
+  background:var(--primary);transition:width .35s cubic-bezier(.2,.9,.3,1);
+}
+.vl-jauge b{
+  font-family:'Inter',system-ui,sans-serif;font-size:.82rem;color:var(--txt-2);
+  font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:38px;text-align:right;
+}
+/* Les lignes à cocher : même cible tactile que le reste. */
+#zoneBag .check{
+  display:flex;align-items:center;gap:12px;min-height:44px;
+  padding:9px 12px;margin-bottom:6px;cursor:pointer;
+  background:var(--secondary);border:1px solid var(--stroke);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.86rem;color:var(--txt);
+  transition:border-color .16s ease, background .16s ease;
+}
+#zoneBag .check:hover{ border-color:var(--txt-2) }
+#zoneBag .check .box{
+  width:22px;height:22px;flex:0 0 22px;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--stroke);border-radius:7px;
+  font-size:.8rem;color:var(--primary-ink);
+}
+#zoneBag .check.done{ background:var(--bg) }
+#zoneBag .check.done .box{ background:var(--primary);border-color:var(--primary) }
+#zoneBag .check.done span{ color:var(--txt-2);text-decoration:line-through;text-decoration-thickness:1px }
+#zoneBag h3{ font-size:.95rem;margin-top:16px }
+
+/* ============================================================
+   MANGER — le panneau rebranché
+============================================================ */
+.mg-contrainte{
+  display:flex;align-items:center;gap:9px;margin:0 0 14px;padding:10px 13px;
+  background:var(--primary);color:var(--primary-ink);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.84rem;
+}
+.mg-contrainte svg{ flex:0 0 auto }
+.mg-form{ display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:16px }
+.mg-form .field{ margin:0 }
+.mg-form .btn{ min-height:44px }              /* 44px : cible tactile AAA */
+@media(max-width:520px){
+  .mg-form{ grid-template-columns:1fr 1fr }
+  .mg-form .btn{ grid-column:1 / -1 }
+}
+
+/* ============================================================
+   CARNET ET PHRASES — rebranchés
+============================================================ */
+#noteArea{
+  width:100%;min-height:110px;padding:12px;
+  background:var(--bg);color:var(--txt);
+  border:1px solid var(--stroke);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;font-size:16px;line-height:1.55;
+  resize:vertical;
+}
+#noteArea:focus{ outline:2px solid var(--primary);outline-offset:1px }
+.ph-tete{ display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px }
+.ph-tete .btn{ flex:0 0 auto }
+.phrase{
+  padding:11px 13px;margin-bottom:7px;
+  background:var(--secondary);border:1px solid var(--stroke);border-radius:12px;
+  font-family:'Inter',system-ui,sans-serif;
+}
+.phrase .fr{ font-size:.84rem;color:var(--txt-2) }
+.phrase .loc{ font-size:1rem;font-weight:650;color:var(--txt);margin:2px 0 }
+.phrase .pron{ font-size:.8rem;color:var(--primary-txt) }

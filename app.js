@@ -3120,6 +3120,10 @@ const PLAN_TABS = [
   { id:'budget',    ico:'document',   nom:'Budget'    },
   { id:'events',    ico:'etincelle',  nom:'Événements'},
   { id:'papiers',   ico:'passeport',  nom:'Papiers'   },
+  /* « Manger » rebranché : loadFood() est ancré sur les tables RÉELLES relevées
+     dans OpenStreetMap et porte les contraintes alimentaires. Son écran avait
+     disparu lors d'une refonte, la fonction est restée. */
+  { id:'manger',    ico:'valise',     nom:'Manger', titre:'Où manger, ancré sur les adresses réelles du quartier' },
   { id:'maison',    ico:'cle',        nom:'Maison', titre:'Avant de partir — la maison que tu laisses' }
 ];
 
@@ -3319,7 +3323,8 @@ function panPapiers(d){
   </div>
   <p class="hint" style="margin-top:8px">${EN
     ? 'Typical prices, to gauge a day on the ground — not a quote.'
-    : 'Des prix courants, pour jauger une journée sur place — pas un devis.'}</p>` : ''}`;
+    : 'Des prix courants, pour jauger une journée sur place — pas un devis.'}</p>` : ''}
+  ${phrasesHTML()}`;
 }
 
 /* ---- Panneau 1 : le programme jour par jour ---- */
@@ -3353,7 +3358,8 @@ function panProgramme(d){
           return `<div class="day-detail" data-daybox="${esc(String(jr.jour))}" data-open="${ouvert ? '1' : '0'}">${
             ouvert ? timelineHTML(state.cache.days[jr.jour], jr.jour) : ''}</div>`;
         })()}
-      </div>`).join('');
+      </div>`).join('')
+    + carnetHTML();
 }
 
 /* ---- Onglet Transport ---- */
@@ -3522,8 +3528,54 @@ function panBudget(d){
     <p class="hint" style="margin:12px 0 0">💡 Estimation indicative — les prix réels du transport s'affichent dans l'onglet Transport.</p>
     ${(d.a_reserver||[]).length ? `<div class="info-card" style="margin-top:14px">
       <div class="ic-head"><span>🎟️</span><h4>À réserver tôt</h4></div>
-      ${d.a_reserver.map(r=>`<p class="ic-todo">${esc(r)}</p>`).join('')}</div>` : ''}`;
+      ${d.a_reserver.map(r=>`<p class="ic-todo">${esc(r)}</p>`).join('')}</div>` : ''}
+    ${suiviDepensesHTML()}`;
 }
+
+/* ============================================================
+   LE SUIVI DE DÉPENSES — rebranché
+   ------------------------------------------------------------
+   renderSpends() existait, complet : total, reste, comparaison au budget du
+   plan, suppression ligne à ligne. Et state.spends était même sauvegardé par
+   safeState. Mais #zoneSpends n'existait dans aucun fichier : la fonction
+   sortait sur `if(!zone) return;` et personne ne pouvait saisir une dépense.
+   L'estimation de l'IA était donc affichée sans jamais pouvoir être confrontée
+   à la réalité — ce qui est précisément l'intérêt de la chose.
+   ⚠️ Le formulaire est reconstruit à CHAQUE rendu du panneau. L'écouteur
+   d'origine, posé une fois au chargement sur #btnSpend, ne s'accrochait donc à
+   rien. Il est remplacé par un écouteur délégué, posé sur le document.
+============================================================ */
+function suiviDepensesHTML(){
+  const n = Array.isArray(state.spends) ? state.spends.length : 0;
+  return `
+    <h3 style="margin:22px 0 6px">Ce que tu dépenses vraiment</h3>
+    <p class="hint" style="margin:0 0 12px">Saisi sur place, gardé sur ton appareil. C'est ce qui permet de comparer l'estimation ci-dessus à la réalité.</p>
+    <div class="sp-form">
+      <input id="spLabel" maxlength="40" placeholder="Café, musée, taxi…" autocomplete="off">
+      <input id="spAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00">
+      <button type="button" class="btn sm" id="btnSpend">Ajouter</button>
+    </div>
+    <div id="zoneSpends">${n ? '' : '<p class="hint" style="margin:10px 0 0">Aucune dépense notée pour l’instant.</p>'}</div>`;
+}
+document.addEventListener('click', e => {
+  if(!e.target.closest || !e.target.closest('#btnSpend')) return;
+  const l = document.getElementById('spLabel'), a = document.getElementById('spAmount');
+  const label = (l && l.value.trim()) || 'Dépense';
+  const montant = parseFloat(a && a.value);
+  if(!Number.isFinite(montant) || montant <= 0){ toast('Entre un montant valide 💶'); return; }
+  state.spends = Array.isArray(state.spends) ? state.spends : [];
+  state.spends.push({ label: label.slice(0, 40), amount: montant, ts: Date.now() });
+  save();
+  if(l) l.value = ''; if(a) a.value = '';
+  renderSpends();
+});
+/* Entrée depuis le champ montant : on ne fait pas retaper au doigt. */
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && e.target && (e.target.id === 'spAmount' || e.target.id === 'spLabel')){
+    e.preventDefault();
+    document.getElementById('btnSpend')?.click();
+  }
+});
 
 /* Le bandeau de trajet : il vit désormais en tête de l'onglet Transport
    (la carte « Ton voyage » a été retirée). #realPrice y est rempli par
@@ -3577,7 +3629,7 @@ function renderPlan(d){
    programme (sinon on perdrait les journées dépliées et les commentaires
    en cours de frappe). */
 function renderSections(d){
-  const panels = { programme: panProgramme, transport: panTransport, logement: panLogement, papiers: panPapiers, events: panEvents, budget: panBudget, maison: panMaison };
+  const panels = { programme: panProgramme, transport: panTransport, logement: panLogement, papiers: panPapiers, events: panEvents, budget: panBudget, manger: panManger, maison: panMaison };
   const zone = $('#zoneSections');
   if(!zone) return;
   zone.innerHTML = `
@@ -5166,7 +5218,12 @@ Réponds UNIQUEMENT en JSON :
   }catch(e){ if(e.message!=='NO_KEY') zone.innerHTML = errHTML('Chargement impossible.'); }
 }
 function renderBag(d, via){
-  $('#bagBadge').style.display = via==='groq' ? '' : 'none';
+  /* ⚠️ Ces trois zones n'existaient nulle part : la première ligne levait donc
+     une TypeError avant même d'afficher quoi que ce soit. On sort proprement si
+     le panneau n'est pas à l'écran plutôt que de casser le rendu qui l'entoure. */
+  if(!$('#zoneBag')) return;
+  const badge = $('#bagBadge');
+  if(badge) badge.style.display = via === 'groq' ? '' : 'none';
   let html = '';
   (d.categories||[]).forEach((c,ci)=>{
     html += `<h3 style="margin:${ci?14:0}px 0 9px">${esc(c.emoji||'📦')} ${esc(c.nom)}</h3>`;
@@ -5193,9 +5250,11 @@ document.addEventListener('click', e => {
   if(boxes.length && boxes.every(b => b.classList.contains('done'))){ confetti(); toast('🎉 Valise bouclée à 100 % !'); }
 });
 function updateBagProg(){
+  const barre = $('#bagProg');
+  if(!barre) return;                      /* panneau non affiché : rien à mettre à jour */
   const total = $$('#zoneBag .check').length;
   const done  = $$('#zoneBag .check.done').length;
-  $('#bagProg').style.width = total ? Math.round(done/total*100)+'%' : '0%';
+  barre.style.width = total ? Math.round(done/total*100)+'%' : '0%';
   const cnt = $('#bagCnt');
   if(cnt) cnt.textContent = total ? `${done}/${total}` : '';
 }
@@ -14315,6 +14374,13 @@ async function verifiePlanAffiche(){
   if(typeof orig === 'function'){
     window.renderSections = function(d){
       const r = orig.apply(this, arguments);
+      /* Le panneau vient d'être reconstruit : les zones que remplissent les
+         fonctions de rendu n'existent qu'à partir de maintenant. */
+      try{ if(_planTab === 'budget') renderSpends(); }catch(e){}
+      try{ if(_planTab === 'maison' && state.cache && state.cache.bag) renderBag(state.cache.bag, state.cache.bagVia); }catch(e){}
+      try{ if(_planTab === 'programme') initNote(); }catch(e){}
+      try{ if(_planTab === 'papiers' && state.cache && state.cache.talk) renderTalk(state.cache.talk, state.cache.talkVia); }catch(e){}
+      try{ if(_planTab === 'manger' && state.cache && state.cache.food) renderFood(state.cache.food); }catch(e){}
       setTimeout(() => { try{ verifiePlanAffiche(); }catch(e){} }, 60);
       return r;
     };
@@ -14390,12 +14456,44 @@ function maisonCoche(){
   return state.maison;
 }
 
+/* ============================================================
+   LA VALISE — rebranchée
+   ------------------------------------------------------------
+   loadBag() croise la météo réelle mesurée, le nombre exact de nuits, le
+   programme prévu et la présence d'enfants. Du bon travail, et #zoneBag
+   n'existait dans aucun fichier : la liste n'a jamais pu s'afficher.
+   Elle prend place ici, dans « Avant de partir » : on fait son sac puis on
+   ferme la maison, c'est le même moment du voyage.
+============================================================ */
+function valiseHTML(){
+  const dejaLa = state.cache && state.cache.bag;
+  return `
+    <div class="vl-tete">
+      <div>
+        <h3 style="margin:0 0 4px">Ta valise</h3>
+        <p class="hint" style="margin:0">Construite d'après la météo réelle de tes dates, la durée exacte et ton programme.</p>
+      </div>
+      <button type="button" class="btn sm ghost" id="btnBagGo">${dejaLa ? 'Refaire' : 'Construire ma liste'}</button>
+    </div>
+    <span id="bagBadge" class="via-badge" style="display:none">rapide</span>
+    <div class="vl-jauge"><div class="vl-barre"><span id="bagProg"></span></div><b id="bagCnt"></b></div>
+    <div id="zoneBag">${dejaLa ? '' : '<p class="hint" style="margin:0">Pas encore de liste. Le bouton ci-dessus la construit pour ce voyage précis.</p>'}</div>`;
+}
+document.addEventListener('click', e => {
+  if(!e.target.closest || !e.target.closest('#btnBagGo')) return;
+  if(state.cache) delete state.cache.bag;
+  save();
+  loadBag();
+});
+
 function panMaison(){
   const L = maisonListe(), c = maisonCoche();
   const faits = L.filter(x => c[x.id]).length;
   const pct = L.length ? Math.round(faits / L.length * 100) : 0;
   const pp = (typeof ppLire === 'function' ? ppLire() : {}) || {};
-  return `<p class="pan-intro">La maison que tu laisses derrière. Rien ici ne part sur internet&nbsp;: c'est une liste, elle reste sur ton appareil.</p>
+  return valiseHTML()
+    + `<h3 style="margin:26px 0 6px;padding-top:20px;border-top:1px solid var(--stroke)">La maison que tu laisses</h3>`
+    + `<p class="pan-intro" style="margin-top:0">Rien ici ne part sur internet&nbsp;: c'est une liste, elle reste sur ton appareil.</p>
     <div class="mz-jauge" role="img" aria-label="${faits} sur ${L.length} faits">
       <div class="mz-barre"><span style="width:${pct}%"></span></div>
       <b>${faits}/${L.length}</b>
@@ -15314,3 +15412,91 @@ function dureeEnJours(d){
   if(/mois|month/.test(s))   return n > 0 && n < 13 ? n * 30 : 30;
   return n > 0 && n < 400 ? n : 0;
 }
+
+/* ============================================================
+   MANGER — rebranché
+   ------------------------------------------------------------
+   loadFood() était le morceau le mieux construit du lot débranché : il relève
+   les tables RÉELLES du quartier dans OpenStreetMap (osmFood), les donne au
+   modèle avec l'ordre de n'inventer aucun nom, et porte le bloc dur des
+   contraintes alimentaires. Il visait #zoneFood, absent de tous les fichiers.
+   Il tournait donc dans le vide — et la contrainte « allergie » que j'ai
+   ajoutée dans son prompt ne s'exécutait jamais.
+   ⚠️ Les deux sélecteurs sont reconstruits à chaque rendu du panneau : leur
+   valeur est relue par loadFood() au moment du clic, pas mémorisée ici.
+============================================================ */
+function panManger(){
+  const dejaLa = state.cache && state.cache.food;
+  const p = state.prefs || {};
+  const contrainte = [p.regime, p.evite].filter(Boolean).join(' · ');
+  return `
+    <p class="pan-intro">Les adresses sont choisies dans un relevé réel du quartier, pas inventées.
+    ${contrainte ? '' : 'Tu peux préciser un régime ou une allergie à l’étape 1 — Acolyte en tiendra compte ici.'}</p>
+    ${contrainte ? `<div class="mg-contrainte">${ICO('bouclier', 15)} <span>Acolyte tient compte de&nbsp;: <b>${esc(contrainte)}</b></span></div>` : ''}
+    <div class="mg-form">
+      <div class="field"><label for="foodBud">Budget</label>
+        <select id="foodBud">
+          <option value="">Peu importe</option>
+          <option value="petit budget">Petit budget</option>
+          <option value="moyen">Moyen</option>
+          <option value="belle table">Belle table</option>
+        </select>
+      </div>
+      <div class="field"><label for="foodType">Envie</label>
+        <select id="foodType">
+          <option value="">Cuisine locale</option>
+          <option value="street food">Street food</option>
+          <option value="végétarien">Végétarien</option>
+          <option value="poisson & fruits de mer">Poisson &amp; fruits de mer</option>
+          <option value="petit-déjeuner / brunch">Petit-déjeuner / brunch</option>
+        </select>
+      </div>
+      <button type="button" class="btn sm" id="btnFoodGo">${dejaLa ? 'Chercher à nouveau' : 'Trouver où manger'}</button>
+    </div>
+    <div id="zoneFood">${dejaLa ? '' : '<p class="hint" style="margin:0">Choisis un budget et une envie, puis lance la recherche.</p>'}</div>`;
+}
+/* Écouteur délégué : le bouton n'existe qu'après le rendu du panneau, celui
+   posé au chargement du script ne s'accrochait à rien. */
+document.addEventListener('click', e => {
+  if(!e.target.closest || !e.target.closest('#btnFoodGo')) return;
+  if(state.cache) delete state.cache.food;
+  save();
+  loadFood();
+});
+
+/* ============================================================
+   CARNET DE NOTES ET GUIDE DE PHRASES — rebranchés
+   ------------------------------------------------------------
+   initNote() sauvegardait déjà les notes avec un anti-rebond de 500 ms, et
+   state.notes est conservé par safeState — mais #noteArea n'existait nulle
+   part. Des notes soigneusement persistées que personne ne pouvait écrire.
+   loadTalk() produit douze phrases avec leur prononciation ; sa place est
+   auprès du visa et des numéros d'urgence, dans « Papiers ».
+   ⚠️ initNote pose a.oninput À CHAQUE appel, et le panneau est reconstruit à
+   chaque changement d'onglet : oninput (et non addEventListener) est ici une
+   qualité — il REMPLACE le gestionnaire au lieu de les empiler.
+============================================================ */
+function carnetHTML(){
+  return `
+    <h3 style="margin:26px 0 6px;padding-top:20px;border-top:1px solid var(--stroke)">Ton carnet</h3>
+    <p class="hint" style="margin:0 0 10px">Ce que tu veux garder : un nom de rue, un horaire, une envie. Enregistré sur l'appareil au fil de la frappe.</p>
+    <textarea id="noteArea" rows="5" placeholder="Le café en face du marché ouvre à 7h…"></textarea>
+    <p class="hint" id="noteSaved" style="margin:6px 0 0"></p>`;
+}
+function phrasesHTML(){
+  const dejaLa = state.cache && state.cache.talk;
+  return `
+    <h3 style="margin:26px 0 6px;padding-top:20px;border-top:1px solid var(--stroke)">Dire l'essentiel sur place</h3>
+    <div class="ph-tete">
+      <p class="hint" style="margin:0">Douze phrases utiles, avec la prononciation écrite à la française.</p>
+      <button type="button" class="btn sm ghost" id="btnTalkGo">${dejaLa ? 'Refaire' : 'Obtenir les phrases'}</button>
+    </div>
+    <span id="talkBadge" class="via-badge" style="display:none">rapide</span>
+    <div id="zoneTalk"></div>`;
+}
+document.addEventListener('click', e => {
+  if(!e.target.closest || !e.target.closest('#btnTalkGo')) return;
+  if(state.cache) delete state.cache.talk;
+  save();
+  loadTalk();
+});
