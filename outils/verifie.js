@@ -278,6 +278,44 @@ titre('10. Sitemap');
    rétrogradation d'abord, puis le trou qu'il a trouvé dans ma correction —
    neutraliser suffisait pour AFFICHER, pas pour RÉÉCRIRE. Ce sont les deux cas
    que je n'aurais pas trouvés seul, et ce sont ceux qui comptent le plus. */
+/* ---------- 14. Fonctionnalités injoignables (AVERTISSEMENT) ----------
+   Le contrôle 7 signale les $('#x') morts un par un. Celui-ci regarde plus
+   haut : une FONCTION ENTIÈRE dont la zone cible n'existe pas n'a jamais pu
+   s'exécuter une seule fois, et personne ne le sait — pas d'erreur, pas de
+   trace dans la console, juste une fonctionnalité absente.
+   C'est ce qui est arrivé au générateur de valise, au trouveur de restaurants,
+   au compte à rebours, au carnet de notes : du code complet et soigné, écrit
+   pour une mise en page antérieure et jamais rebranché après une refonte.
+   ⚠️ NE SUPPRIME PAS SUR CETTE BASE. Ce contrôle dit « injoignable », pas
+   « inutile ». La bonne réponse est presque toujours de REBRANCHER : ces
+   fonctions représentent du travail réel, souvent meilleur que ce qui l'a
+   remplacé. */
+titre('14. Fonctionnalités injoignables (zone absente du HTML)');
+{
+  const js = lire('app.js'), html = lire('index.html');
+  const lignes = js.split('\n');
+  const orphelines = [];
+  for (const m of js.matchAll(/^(?:async )?function ([A-Za-z_$][\w$]*)/gm)) {
+    const debut = js.slice(0, m.index).split('\n').length - 1;
+    /* Bornes de la fonction : on suit les accolades jusqu'au retour à zéro. */
+    let prof = 0, fin = debut;
+    for (let j = debut; j < lignes.length; j++) {
+      for (const ch of lignes[j]) { if (ch === '{') prof++; else if (ch === '}') prof--; }
+      if (prof === 0 && j > debut) { fin = j; break; }
+    }
+    const corps = lignes.slice(debut, fin + 1).join('\n');
+    const z = corps.match(/\$\('#([A-Za-z][\w-]*)'\)/);
+    if (!z) continue;
+    if (html.includes('id="' + z[1] + '"')) continue;
+    /* La zone peut être fabriquée en JS : on ne signale que si personne ne la crée. */
+    if (js.includes('id="' + z[1] + '"') || js.includes(".id = '" + z[1] + "'")) continue;
+    orphelines.push(m[1] + '() -> #' + z[1]);
+  }
+  if (!orphelines.length) ok('toutes les fonctions visent une zone qui existe');
+  else warn(orphelines.length + ' fonction(s) visent une zone absente du HTML, donc jamais exécutées : '
+       + orphelines.slice(0, 8).join(', ') + (orphelines.length > 8 ? ' …' : ''));
+}
+
 /* ---------- 13. La CSP autorise-t-elle vraiment le backend ? (ERREUR) ----------
    `connect-src` était un joker sur tout *.val.run — c'est-à-dire sur le domaine
    partagé où chaque utilisateur de Val.town reçoit un sous-domaine. Il est
