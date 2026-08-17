@@ -3873,6 +3873,27 @@ async function loadDayDetail(jour){
     return;
   }
   box.innerHTML = loaderHTML('Construction de la journée heure par heure…');
+  try{
+    const d = await construitJour(jour);
+    box.innerHTML = timelineHTML(d, jour);
+  }catch(e){
+    if(e.message !== 'NO_KEY') box.innerHTML = errHTML('Journée indisponible pour le moment.', 'day' + jour);
+    _retryFns['day' + jour] = () => { box.dataset.open = '0'; loadDayDetail(jour); };
+  }
+}
+
+/* ⚠️ LE NOYAU, SANS AUCUN DOM. Ce bloc vivait à l'intérieur de loadDayDetail,
+   qui commence par `if(!box) return;` — donc rien ne pouvait construire une
+   journée tant que sa boîte n'était pas à l'écran. Or l'assistant travaille
+   depuis l'onglet Discussion, où [data-daybox] n'existe pas : il ne pouvait
+   que refuser les demandes du type « modifie l'après-midi du jour 3 ».
+   Le prompt n'est PAS dupliqué — loadDayDetail appelle cette fonction. Deux
+   copies auraient dérivé l'une de l'autre au premier ajustement. */
+async function construitJour(jour){
+  const t = state.trip;
+  if(!t) throw new Error('SANS_VOYAGE');
+  state.cache.days = state.cache.days || {};
+  if(state.cache.days[jour]) return state.cache.days[jour];
   const jr = (state.cache.plan?.programme || []).find(x => String(x.jour) === String(jour)) || {};
   const pace = { doux:'doux (peu d\'activités, du temps libre)', equilibre:'équilibré (2-3 activités)', intense:'intense (programme dense)' }[SET?.rythme] || 'équilibré';
   const prompt = `Tu es Acolyte, guide local expert de ${t.nom} (${t.pays}). ${ctx()}
@@ -3885,14 +3906,9 @@ TARIFS : donne le prix d'entrée réel de chaque visite payante. Si tu n'es pas 
 Réponds UNIQUEMENT en JSON :
 {"titre_journee":"thème du jour","etapes":[{"heure":"09:00","titre":"...","description":"1-2 phrases concrètes avec un vrai conseil","lieu":"nom précis pour Google Maps ou null","type":"visite|repas|pause|trajet","prix":"tarif d'entrée RÉEL par adulte, ex : « 18 € » ou « 12-16 € ». Écris « gratuit » quand ça l'est vraiment, et une chaîne VIDE pour un repas, une pause ou un trajet — on ne devine pas l'addition d'un restaurant."}]}
 Entre 6 et 9 étapes.`;
-  try{
-    const d = await gemini(prompt, true, 4096, false, 0.5);
-    state.cache.days[jour] = d; save();
-    box.innerHTML = timelineHTML(d, jour);
-  }catch(e){
-    if(e.message !== 'NO_KEY') box.innerHTML = errHTML('Journée indisponible pour le moment.', 'day' + jour);
-    _retryFns['day' + jour] = () => { box.dataset.open = '0'; loadDayDetail(jour); };
-  }
+  const d = await gemini(prompt, true, 4096, false, 0.5);
+  state.cache.days[jour] = d; save();
+  return d;
 }
 document.addEventListener('click', e => {
   const d = e.target.closest('[data-daydetail]');
@@ -6363,6 +6379,11 @@ function enterApp(){
    (date au format AAAA-MM-JJ) et incrémente CACHE dans sw.js.
 ============================================================ */
 const CHANGELOG = [
+  { v:'7.9', date:'2026-08-17', titre:'L’assistant ne refuse plus ce qu’il sait faire', items:[
+    '🛠️ « Modifie l’après-midi du jour 3 » juste après avoir créé ton voyage : l’assistant répondait qu’il fallait d’abord créer un voyage. Il construit maintenant la journée visée, puis applique ta demande',
+    '🎯 Il comprend quelle journée tu désignes — « jour 3 », « J3 », « la troisième journée » — et va modifier celle-là',
+    '💬 Quand tu ne précises aucun jour, il prend le premier et le dit, au lieu de choisir en silence'
+  ]},
   { v:'7.8', date:'2026-08-17', titre:'L’onglet Voyage remis en ordre', items:[
     '🗂️ Les sept onglets du voyage tiennent enfin tous à l’écran : ils se rangent sur trois rangées au lieu de défiler. Budget et Maison n’étaient tout simplement pas visibles',
     '🧭 Ils sont rangés dans l’ordre du voyage : ce qui sert sur place d’abord, ce qui sert avant de partir ensuite',
@@ -13422,11 +13443,64 @@ async function iaCreer(demande, deja){
 }
 
 /* ---- Mode MODIFIER : le noyau validé de l'assistant, piloté depuis ici ---- */
+/* Le numéro de jour visé par une demande. « le jour 3 », « J3 », « troisième
+   journée », « demain ». Rend null quand rien n'est désigné — on ne devine pas. */
+/* ⚠️ TABLE EXPLICITE, PAS DE CALCUL D'INDICE. Ma première version rangeait les
+   variantes accentuées et non accentuées dans un tableau plat et retrouvait le
+   rang par Math.floor(i/2)+1. « premier » n'ayant pas de variante sans accent,
+   tout était décalé d'un cran : « la troisième journée » rendait 2, et
+   l'assistant serait allé modifier le mauvais jour sans que rien ne le signale.
+   Une paire mot → nombre ne peut pas se décaler. */
+const IA_RANGS = {
+  1:['premier','première','premiere','1re','1ère'], 2:['deuxième','deuxieme','second','seconde'],
+  3:['troisième','troisieme'],  4:['quatrième','quatrieme'], 5:['cinquième','cinquieme'],
+  6:['sixième','sixieme'],      7:['septième','septieme'],   8:['huitième','huitieme'],
+  9:['neuvième','neuvieme'],   10:['dixième','dixieme']
+};
+function iaJourVise(texte){
+  const s = String(texte || '').toLowerCase();
+  const m = s.match(/\bj(?:our)?\s*\.?\s*(\d{1,2})\b/);
+  if(m) return +m[1];
+  for(const [n, mots] of Object.entries(IA_RANGS)){
+    if(mots.some(w => new RegExp('\\b' + w + '\\b').test(s))) return +n;
+  }
+  return null;
+}
+
 async function iaModifier(demande, complexe){
-  if(!state.cache || !state.cache.days || !Object.keys(state.cache.days).length){
-    iaAjoute('aco', "Tu n'as pas encore de programme jour par jour à modifier. "
-      + 'Crée d’abord un voyage, puis reviens me voir.', true);
-    return;
+  /* ⚠️ CE REFUS ÉTAIT LE PIRE MOMENT DE L'ASSISTANT. Juste après avoir généré
+     un voyage, `state.cache.days` est VIDE : les journées ne sont détaillées
+     qu'au clic, une par une. La demande la plus naturelle qui suit — « modifie
+     l'après-midi du jour 3 » — tombait donc sur « Crée d'abord un voyage »,
+     c'est-à-dire un refus qui demande de faire ce qu'on vient de faire.
+     On construit maintenant la journée visée avant de la modifier. Le coût est
+     assumé et annoncé : une journée manquante, c'est un appel de plus, pas une
+     impasse. */
+  const aDesJours = state.cache && state.cache.days && Object.keys(state.cache.days).length;
+  const aUnPlan   = state.cache && state.cache.plan && Array.isArray(state.cache.plan.programme)
+                    && state.cache.plan.programme.length;
+  if(!aDesJours){
+    if(!aUnPlan){
+      iaAjoute('aco', "Tu n'as pas encore de voyage à modifier. "
+        + 'Décris-moi ce que tu cherches et je t’en propose un.', true);
+      return;
+    }
+    const vise = iaJourVise(demande);
+    const jours = state.cache.plan.programme.map(j => +j.jour).filter(n => n > 0);
+    const cible = (vise && jours.includes(vise)) ? vise : jours[0];
+    if(!cible){
+      iaAjoute('aco', "Ton voyage n'a pas encore de journées numérotées. Ouvre l’onglet Voyage et lance le programme.", true);
+      return;
+    }
+    iaEtat('Je construis d’abord le jour ' + cible + '…', true);
+    try{
+      await construitJour(cible);
+      try{ tlRender(cible); }catch(e){}
+      iaAjoute('aco', `Le jour ${cible} n’était pas encore détaillé — je viens de le construire, et j’applique ta demande dessus.`);
+    }catch(e){
+      iaAjoute('aco', "Je n’ai pas réussi à construire cette journée. Réessaie dans un instant.", true);
+      return;
+    }
   }
   statCompte('assistant_utilise');
   /* Réorganiser une journée (déplacer, décaler, recomposer) demande de tenir

@@ -270,15 +270,46 @@ titre('10. Sitemap');
 
 
 /* ---------- 12. Le contrat de l'état du voyage ----------
-   Délégué à outils/test-etat.js, qui rejoue les quatre directions : données
-   d'avant le tampon, à jour, venues d'une version PLUS RÉCENTE, illisibles.
-   Le cas de la rétrogradation vient d'un lecteur du post Reddit — c'est le seul
-   que je n'aurais pas trouvé seul, et c'est celui qui compte le plus. */
+   Délégué à outils/test-etat.js, qui rejoue les quatre directions de LECTURE
+   (données d'avant le tampon, à jour, venues d'une version PLUS RÉCENTE,
+   illisibles) PUIS l'aller-retour d'ÉCRITURE : la v9 écrit, la v1 neutralise et
+   sauvegarde, la v9 revient — retrouve-t-elle son bien ?
+   Les deux familles viennent du même lecteur du post Reddit : la
+   rétrogradation d'abord, puis le trou qu'il a trouvé dans ma correction —
+   neutraliser suffisait pour AFFICHER, pas pour RÉÉCRIRE. Ce sont les deux cas
+   que je n'aurais pas trouvés seul, et ce sont ceux qui comptent le plus. */
+/* ---------- 13. La CSP autorise-t-elle vraiment le backend ? (ERREUR) ----------
+   `connect-src` était un joker sur tout *.val.run — c'est-à-dire sur le domaine
+   partagé où chaque utilisateur de Val.town reçoit un sous-domaine. Il est
+   maintenant épinglé à l'adresse exacte du backend, ce qui est plus sûr et
+   PLUS FRAGILE : changer `proxy` dans config.js sans toucher à index.html
+   couperait tout le réseau du site, en silence, et seulement en production.
+   Ce contrôle existe pour que l'oubli se voie ici plutôt que là-bas. */
+titre('13. La CSP et le backend sont-ils d’accord ?');
+{
+  const cfg = lire('config.js').match(/^\s{2}proxy:\s*'([^']*)'/m);
+  const csp = (lire('index.html').match(/Content-Security-Policy"[^>]*content="([^"]*)"/) || [])[1] || '';
+  const connect = (csp.match(/connect-src([^;]*)/) || [])[1] || '';
+  if (!cfg) {
+    warn('proxy introuvable dans config.js — contrôle impossible');
+  } else if (!cfg[1]) {
+    ok('aucun backend configuré (mode local) — rien à autoriser');
+  } else {
+    let origine = '';
+    try { origine = new URL(cfg[1]).origin; } catch (e) {}
+    if (!origine) err('le proxy de config.js n’est pas une adresse valide : ' + cfg[1]);
+    else if (connect.includes(origine)) ok('connect-src autorise ' + origine);
+    else if (/\*\.val\.run|\*\./.test(connect)) warn('connect-src passe encore par un joker — épingle l’adresse exacte');
+    else err('connect-src N’AUTORISE PAS ' + origine + ' → tous les appels seront bloqués en production');
+  }
+}
+
 titre('12. Contrat de l’état du voyage');
 {
   try {
-    execFileSync(process.execPath, [path.join(RACINE, 'outils', 'test-etat.js')], { stdio: 'pipe' });
-    ok('les quatre directions tiennent (12 assertions)');
+    const sortie = execFileSync(process.execPath, [path.join(RACINE, 'outils', 'test-etat.js')], { encoding: 'utf8' });
+    const n = (sortie.match(/  ✓ /g) || []).length;
+    ok('lecture ET aller-retour (' + n + ' assertions)');
   } catch (e) {
     const sortie = String(e.stdout || '') + String(e.stderr || '');
     err('le contrat de l’état est rompu :');
@@ -312,8 +343,20 @@ titre('12. Contrat de l’état du voyage');
 ============================================================ */
 async function controleServeur(){
   titre('11. Contrat du serveur (réseau)');
-  /* L'adresse vient de config.js : une seule source de vérité, jamais recopiée. */
-  const m = lire('config.js').match(/proxy:\s*'([^']*)'/);
+  /* L'adresse vient de config.js : une seule source de vérité, jamais recopiée.
+     ⚠️ ANCRÉ EN DÉBUT DE LIGNE, et c'est tout le sujet. Sans le `^\s{2}`, le
+     `.match()` (sans /g) renvoyait la PREMIÈRE occurrence du fichier — c'est-
+     à-dire l'exemple « https://acolyte.ton-compte.workers.dev » écrit dans le
+     commentaire d'en-tête de config.js. Le contrôle interrogeait donc un
+     domaine qui n'existe pas, concluait « backend injoignable », et comme
+     injoignable vaut AVERTISSEMENT il ne bloquait jamais rien.
+     Résultat : ce contrôle — écrit contre la panne la plus coûteuse du projet —
+     n'avait jamais interrogé le vrai serveur une seule fois, tout en ayant
+     l'air de fonctionner. Un contrôle qui ne teste rien est pire qu'absent :
+     on croit être couvert.
+     La vraie déclaration est indentée de deux espaces dans l'objet ; les
+     lignes de commentaire, elles, le sont de cinq. */
+  const m = lire('config.js').match(/^\s{2}proxy:\s*'([^']*)'/m);
   const base = (m && m[1] || '').replace(/\/+$/, '');
   if(!base){ warn('aucun proxy dans config.js — contrôle ignoré'); return; }
 
