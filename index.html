@@ -826,7 +826,7 @@
 
     <!-- ===== ONGLET 2 — PRÉFÉRENCES IA =====
          ⚠️ Les accordéons ont disparu, pas leurs contenus. Chaque identifiant
-         de réglage (#stStyle, #stRythme, #stSurPlace, #stFood, #stAcces,
+         de réglage (#stRythme, #stSurPlace, #stAcces,
          #stEco, #stDetail, #stIA, #stHome, #stAdults, #stKids, #stReset…) est
          conservé À L'IDENTIQUE : renderSettings() et applySettings() les
          câblent depuis app.js, et les renommer aurait tout débranché en
@@ -837,11 +837,14 @@
     <div class="pf-panel hidden" id="pfPanIa">
       <div class="card">
 
-          <h3 style="margin:0 0 6px">Ton style de voyage</h3>
-          <p class="hint" style="margin:0 0 8px">L'IA en tient compte à chaque proposition et à chaque plan.</p>
-          <div class="chips" id="stStyle"></div>
-
-          <h3 style="margin:16px 0 6px">Ton rythme</h3>
+          <!-- ⚠️ « Ton style de voyage » et « Alimentation » ont ete RETIRES.
+               Ils existaient aussi a l'etape 1 (l'ambiance, et le regime avec
+               ses allergies en texte libre), et les DEUX partaient dans le meme
+               prompt, sur deux lignes qui se suivaient : on pouvait donc etre
+               vegan ici et sans gluten la-bas, et le modele tranchait seul.
+               Le questionnaire l'emporte : il est plus precis, et il vaut pour
+               CE voyage — un reglage, lui, vaut pour toujours. -->
+          <h3 style="margin:0 0 6px">Ton rythme</h3>
           <div class="chips" id="stRythme"></div>
 
           <!-- Comment on se déplace SUR PLACE — à ne pas confondre avec le
@@ -850,9 +853,6 @@
           <h3 style="margin:16px 0 6px">Sur place, tu te déplaces</h3>
           <p class="hint" style="margin:0 0 8px">Change les durées entre deux visites, et la façon dont l'IA groupe tes journées.</p>
           <div class="chips" id="stSurPlace"></div>
-
-          <h3 style="margin:16px 0 6px">Alimentation</h3>
-          <div class="chips" id="stFood"></div>
 
           <h3 style="margin:16px 0 6px">Accessibilité</h3>
           <div class="chips" id="stAcces"></div>

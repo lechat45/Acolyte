@@ -7287,7 +7287,7 @@ document.addEventListener('click', e => {
   else if(genre === 'sec'){
     /* #accPrefs et #accActions étaient les anciens accordéons du profil,
        remplacés par les onglets. On vise directement ce qui existe. */
-    const cible = val === 'prefs' ? $('#stStyle') : $('#pfExport');
+    const cible = val === 'prefs' ? $('#stRythme') : $('#pfExport');
     /* si la section est dans un accordéon replié, on l'ouvre avant de viser */
     const acc = cible?.closest('.acc');
     if(acc && !acc.classList.contains('open')) acc.classList.add('open');
@@ -7401,13 +7401,18 @@ function applySettings(){
 /* Ce bloc part dans TOUS les prompts : l'IA connaît enfin tes goûts */
 function prefsBlock(){
   const L = [];
-  if(SET.style?.length) L.push(`Style de voyage recherché : ${SET.style.join(', ')}`);
+  /* ⚠️ LE STYLE ET L'ALIMENTATION NE SONT PLUS ICI. Ils vivaient a la fois dans
+     les reglages et dans le questionnaire, et les deux atterrissaient dans le
+     MEME prompt, sur deux lignes consecutives : quelqu'un ayant coche « vegan »
+     dans les reglages et « sans gluten » a l'etape 1 envoyait deux contraintes
+     differentes au modele, qui tranchait comme il pouvait.
+     Le questionnaire gagne parce qu'il est plus precis (regime ET allergies en
+     texte libre) et qu'il vaut POUR CE VOYAGE, alors qu'un reglage vaut pour
+     toujours — or on ne mange pas pareil a Tokyo et en Bretagne. */
   const R = { doux:'rythme DOUX : peu d\'activités par jour, du temps libre, pas de course',
               equilibre:'rythme ÉQUILIBRÉ : 2-3 activités par jour',
               intense:'rythme INTENSE : programme dense, on optimise chaque heure' };
   L.push(R[SET.rythme] || R.equilibre);
-  const F = { vege:'végétarien', vegan:'végan', halal:'halal', casher:'casher', sansgluten:'sans gluten' };
-  if(F[SET.food]) L.push(`Alimentation ${F[SET.food]} : les restaurants et adresses proposés DOIVENT proposer cette option`);
   if(SET.acces === 'oui') L.push("ACCESSIBILITÉ : le voyageur est à mobilité réduite — privilégie les lieux accessibles, évite les escaliers, sentiers escarpés et longues marches, et signale-le");
   if(SET.eviter?.length){
     const M = { avion:"l'AVION", train:'le TRAIN', voiture:'la VOITURE' };
@@ -7434,12 +7439,10 @@ function prefsBlock(){
 
 /* --- Rendu du panneau Préférences --- */
 const OPT = {
-  stStyle:  { key:'style',  multi:true,  items:[['detente','Détente'],['culture','Culture'],['aventure','Aventure'],['fete','Fête'],['nature','Nature'],['gastro','Gastronomie'],['famille','Famille'],['romantique','Romantique']] },
   stRythme: { key:'rythme', items:[['doux','Doux'],['equilibre','Équilibré'],['intense','Intense']] },
   /* Les libellés viennent de SUR_PLACE : une seule source, donc pas de risque
      qu'un choix existe ici sans vitesse associée — ou l'inverse. */
   stSurPlace: { key:'surPlace', items: Object.entries(SUR_PLACE).map(([k, v]) => [k, v.nom]) },
-  stFood:   { key:'food',   items:[['aucun','Aucune contrainte'],['vege','Végétarien'],['vegan','Végan'],['halal','Halal'],['casher','Casher'],['sansgluten','Sans gluten']] },
   stAcces:  { key:'acces',  items:[['non','Aucun besoin'],['oui','Mobilité réduite']] },
   stEco:    { key:'eviter', multi:true, items:[['avion','Éviter l\'avion'],['train','Éviter le train'],['voiture','Éviter la voiture']] },
   stTheme:  { key:'theme',  items:[['auto','Système'],['light','Clair'],['dark','Sombre']] },
@@ -11952,9 +11955,7 @@ verrouFond();
 ============================================================ */
 const QZ_KEY = 'acolite_questions';
 const QZ = [
-  { opt:'stStyle',    q:'Qu’est-ce qui te fait partir ?',            s:'Choisis-en autant que tu veux — l’IA cherchera des destinations qui cochent ces cases.' },
   { opt:'stRythme',   q:'Tu voyages à quel rythme ?',                s:'Ça décide du nombre de visites par journée, et du temps laissé entre elles.' },
-  { opt:'stFood',     q:'Tu manges comment ?',                       s:'Les restaurants et les marchés proposés en tiendront compte.' },
   { opt:'stSurPlace', q:'Sur place, tu te déplaces comment ?',       s:'Ça change les durées entre deux visites, et la façon de grouper tes journées.' },
   { opt:'stAcces',    q:'Un besoin d’accessibilité ?',               s:'Si oui, l’IA évite les sites escarpés et privilégie les accès de plain-pied.' }
 ];
