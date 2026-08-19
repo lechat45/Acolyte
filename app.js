@@ -1903,7 +1903,15 @@ function changeDest(){ gotoStep(1); }
 window.changeDest = changeDest;
 function refreshPasses(){
   const h = passHTML();
-  ['#passSlot2','#passSlot3','#passSlot4','#passSlot5'].forEach(s=>{ const el=$(s); if(el) el.innerHTML=h; });
+  /* Le seul emplacement qui se replie est celui de l'onglet Voyage : ailleurs,
+     le billet est ce qu'on vient voir. */
+  ['#passSlot2','#passSlot4','#passSlot5'].forEach(s=>{ const el=$(s); if(el) el.innerHTML=h; });
+  const trois = $('#passSlot3');
+  if(trois){
+    if(!h) { trois.innerHTML = ''; return; }
+    trois.innerHTML = (typeof passResumeHTML === 'function' ? passResumeHTML() : '')
+      + (passPlie() ? '' : h);
+  }
 }
 
 /* ============================================================
@@ -3731,6 +3739,9 @@ window.addEventListener('resize', () => { try{ planTabsOmbre(); }catch(e){} });
 function goPlanTab(id, focus){
   if(!state.cache.plan) return;
   _planTab = id;
+  /* On retient l'onglet consulté : revenir toujours sur « Programme » oblige
+     a re-cliquer a chaque visite quand on suit son budget ou sa valise. */
+  try{ localStorage.setItem('acolite_onglet', id); }catch(e){}
   renderSections(state.cache.plan);
   if(focus) $(`[data-plantab="${id}"]`)?.focus();
 }
@@ -15556,3 +15567,152 @@ Réponds UNIQUEMENT en JSON : {"local":"la traduction","pron":"prononciation pho
     if(err.message !== 'NO_KEY') zone.innerHTML = errHTML('Traduction impossible.');
   }
 });
+
+/* ============================================================
+   LE BILLET SE REPLIE
+   ------------------------------------------------------------
+   Mesuré sur un téléphone de 812 px : 694 px séparaient le haut de l'onglet
+   Voyage du premier contenu du programme — 85 % de l'écran avant de voir sa
+   journée. Le billet d'embarquement en prenait 337 à lui seul, alors qu'on le
+   consulte une fois par voyage, pas à chaque ouverture.
+   Il garde donc une ligne toujours visible — destination, dates — et se
+   déplie d'un geste. Le choix est mémorisé : quelqu'un qui aime l'avoir sous
+   les yeux ne se bat pas contre l'application à chaque visite.
+   ⚠️ Le repli ne vaut QUE pour l'onglet Voyage (#passSlot3). Dans la vue du
+   billet souvenir, le billet EST le contenu : l'y replier n'aurait aucun sens.
+============================================================ */
+/* ⚠️ `var` ET `function`, PAS `const`. refreshPasses() lit passPlie() et se
+   trouve 13 000 lignes plus haut ; il tourne pendant l'evaluation du script,
+   bien avant ce bloc. Avec `const`, l'appel tombait dans la zone morte
+   temporelle : ReferenceError, et l'evaluation du RESTE du fichier
+   s'arretait la — la table PONDS des curseurs n'etait plus initialisee, donc
+   le dosage ne partait plus dans le prompt.
+   C'est exactement le piege deja rencontre avec _blogIdx dans ce projet. Une
+   declaration hissee ne peut pas se retrouver dans cette situation. */
+var LS_PASS_PLIE = 'acolite_billet_plie';
+function passPlie(){ try{ return localStorage.getItem(LS_PASS_PLIE) !== '0'; }catch(e){ return true; } }
+
+/* Hissee pour la meme raison : refreshPasses l'appelle des l'evaluation. */
+function passResumeHTML(){
+  const t = state.trip, p = state.prefs || {};
+  if(!t) return '';
+  const d = (typeof stayDates === 'function' && stayDates()) || null;
+  const jj = s => s.split('-').reverse().slice(0, 2).join('/');
+  const dates = d ? `${jj(d.in)} → ${jj(d.out)}` : (p.when || 'dates flexibles');
+  return `<button type="button" class="pass-repli" id="passRepli" aria-expanded="${!passPlie()}">
+      <span class="pr-ico">${ICO('billet', 17)}</span>
+      <span class="pr-txt"><b>${esc(t.nom)}</b><em>${esc(dates)}</em></span>
+      <span class="pr-fl" aria-hidden="true">${ICO(passPlie() ? 'plus' : 'fermer', 15)}</span>
+    </button>`;
+}
+
+document.addEventListener('click', e => {
+  if(!e.target.closest || !e.target.closest('#passRepli')) return;
+  try{ localStorage.setItem(LS_PASS_PLIE, passPlie() ? '0' : '1'); }catch(err){}
+  refreshPasses();
+});
+
+/* ============================================================
+   L'ONGLET CONSULTÉ SE RETIENT
+   ------------------------------------------------------------
+   Le voyage rouvrait systématiquement sur « Programme ». Quelqu'un qui suit
+   ses dépenses sur place, ou qui coche sa valise la veille, recliquait à
+   chaque fois. On restaure le dernier onglet — sauf pendant le séjour, où
+   « Jour J » a une raison légitime d'imposer le programme.
+   ⚠️ On valide l'identifiant relu contre PLAN_TABS : un onglet supprimé
+   depuis (« Manger » n'existait pas hier) laisserait sinon un panneau vide,
+   sans erreur et sans explication.
+============================================================ */
+{
+  const orig = window.renderPlan;
+  if(typeof orig === 'function'){
+    let restaure = false;
+    window.renderPlan = function(d){
+      if(!restaure){
+        restaure = true;
+        try{
+          const id = localStorage.getItem('acolite_onglet');
+          if(id && PLAN_TABS.some(t => t.id === id)) _planTab = id;
+        }catch(e){}
+      }
+      return orig.apply(this, arguments);
+    };
+  }
+}
+
+/* ============================================================
+   LE QUESTIONNAIRE SE SOUVIENT
+   ------------------------------------------------------------
+   Vingt-trois champs à l'étape 1. Un rechargement, un onglet fermé par
+   mégarde, une mise à jour du service worker — et tout était à ressaisir.
+   C'est le genre de perte qui fait abandonner avant le premier résultat.
+   On enregistre donc au fil de la frappe, avec un anti-rebond, et on restaure
+   au chargement.
+   ⚠️ On NE RESTAURE QUE LES CHAMPS VIDES. Sinon on écraserait un pré-remplissage
+   légitime : applyTripDefaults() pose déjà la ville de départ et le nombre de
+   voyageurs depuis les réglages, et reopenTrip remplit le formulaire depuis un
+   voyage repris. Le brouillon est un filet, pas une autorité.
+   ⚠️ Rien de sensible ici — ce sont les envies de voyage, pas des identifiants.
+   Le champ libre est borné comme partout ailleurs.
+============================================================ */
+const LS_BROUILLON = 'acolite_questionnaire';
+const Q_CHAMPS = ['fFrom','fDest','fDays','fWhen','fBudget','fAdults','fKids','fKidsAges',
+                  'fDepart','fVibe','fWith','fStay','fTransport','fFree','fRegime','fEvite',
+                  'fBudgetMax','pNature','pRythme','pConfort'];
+const Q_CASES  = ['fMulti','fLocal','fBudgetStrict'];
+let _qBrouillonT = 0;
+
+function qBrouillonEcrit(){
+  const o = {};
+  for(const id of Q_CHAMPS){ const e = document.getElementById(id); if(e && e.value) o[id] = String(e.value).slice(0, 600); }
+  for(const id of Q_CASES){ const e = document.getElementById(id); if(e && e.checked) o[id] = 1; }
+  try{ localStorage.setItem(LS_BROUILLON, JSON.stringify(o)); }catch(e){}
+}
+function qBrouillonLit(){
+  let o = null;
+  try{ o = JSON.parse(localStorage.getItem(LS_BROUILLON) || 'null'); }catch(e){}
+  if(!o || typeof o !== 'object') return 0;
+  let n = 0;
+  for(const id of Q_CHAMPS){
+    const e = document.getElementById(id);
+    if(!e || o[id] == null) continue;
+    /* ⚠️ UN CURSEUR N'EST JAMAIS VIDE. La règle « ne restaure que les champs
+       vides » protège un pré-remplissage légitime, mais un <input type=range>
+       porte toujours une valeur — il n'aurait donc jamais été restauré, et le
+       dosage revenait silencieusement au milieu. On le restaure quand il est
+       resté sur sa valeur par défaut, ce qui revient au même : personne n'y a
+       touché depuis le chargement. */
+    if(e.type === 'range'){
+      if(e.value === (e.getAttribute('value') || '50')){ e.value = o[id]; n++; }
+      continue;
+    }
+    if(!String(e.value).trim()){ e.value = o[id]; n++; }
+  }
+  for(const id of Q_CASES){
+    const e = document.getElementById(id);
+    if(e && o[id] && !e.checked){ e.checked = true; e.dispatchEvent(new Event('change', { bubbles:true })); n++; }
+  }
+  /* les curseurs et la suggestion du Journal doivent refléter ce qu'on vient
+     de restaurer, sinon l'écran contredit le formulaire */
+  try{ if(typeof pondLu === 'function') pondLu(); }catch(e){}
+  try{ if(typeof vibeSuggestion === 'function') vibeSuggestion(); }catch(e){}
+  return n;
+}
+document.addEventListener('input', e => {
+  const id = e.target && e.target.id;
+  if(!id || (!Q_CHAMPS.includes(id) && !Q_CASES.includes(id))) return;
+  clearTimeout(_qBrouillonT);
+  _qBrouillonT = setTimeout(qBrouillonEcrit, 400);
+});
+document.addEventListener('change', e => {
+  const id = e.target && e.target.id;
+  if(id && (Q_CHAMPS.includes(id) || Q_CASES.includes(id))) qBrouillonEcrit();
+});
+/* Une fois le voyage choisi, le brouillon a fait son travail : le garder
+   ferait réapparaître d'anciennes envies au prochain questionnaire. */
+['chooseTrip', 'reopenTrip'].forEach(n => {
+  const o = window[n];
+  if(typeof o !== 'function') return;
+  window[n] = function(){ try{ localStorage.removeItem(LS_BROUILLON); }catch(e){} return o.apply(this, arguments); };
+});
+setTimeout(() => { try{ qBrouillonLit(); }catch(e){} }, 500);
