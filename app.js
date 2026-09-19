@@ -15807,3 +15807,37 @@ document.addEventListener('click', e => {
   inp.dispatchEvent(new Event('input', { bubbles:true }));
   document.getElementById('iaGo')?.click();
 });
+
+/* ============================================================
+   LE BLOC « STYLE DE VOYAGE » SE REPLIE
+   ------------------------------------------------------------
+   Vingt-trois champs avant le premier résultat. Les deux premiers blocs
+   suffisent à chercher ; le troisième affine, et il se dit lui-même
+   facultatif. Replié par défaut, il s'ouvre d'un geste — et reste ouvert
+   si un champ y est déjà rempli, sinon un réglage restauré depuis le
+   brouillon serait invisible et contredirait la recherche sans qu'on le voie.
+============================================================ */
+function qBloc3Ouvre(oui){
+  const btn = document.getElementById('qBloc3Btn'), corps = document.getElementById('qBloc3Corps');
+  if(!btn || !corps) return;
+  corps.hidden = !oui;
+  btn.setAttribute('aria-expanded', oui ? 'true' : 'false');
+  btn.closest('.q-bloc')?.classList.toggle('ouvert', !!oui);
+}
+function qBloc3Rempli(){
+  const corps = document.getElementById('qBloc3Corps');
+  if(!corps) return false;
+  for(const e of corps.querySelectorAll('input, select')){
+    if(e.type === 'checkbox'){ if(e.checked) return true; continue; }
+    if(e.type === 'range'){ if(e.value !== (e.getAttribute('value') || '50')) return true; continue; }
+    if(String(e.value || '').trim()) return true;
+  }
+  return false;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('#qBloc3Btn');
+  if(!b) return;
+  qBloc3Ouvre(document.getElementById('qBloc3Corps')?.hidden);
+});
+/* Après la restauration du brouillon (500 ms), on ouvre si quelque chose y vit. */
+setTimeout(() => { try{ if(qBloc3Rempli()) qBloc3Ouvre(true); }catch(e){} }, 700);

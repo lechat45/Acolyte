@@ -6066,3 +6066,41 @@ body::before{
 .ia-msg.aco .ia-txt{ background:var(--paper);border:1px solid var(--paper-edge);box-shadow:var(--ombre-dure) }
 .ia-msg.moi .ia-txt{ box-shadow:none }
 @media(prefers-reduced-motion:reduce){ .ia-ex-b{ transition:none } .ia-ex-b:hover{ transform:none } }
+
+/* ============================================================
+   LE BLOC 3 DU QUESTIONNAIRE, REPLIABLE
+============================================================ */
+.q-tete-btn{
+  display:flex;align-items:flex-start;gap:14px;width:100%;
+  background:transparent;border:0;padding:0;margin:0;
+  color:inherit;text-align:left;cursor:pointer;font:inherit;
+  min-height:44px;                                   /* 44px : cible tactile AAA */
+}
+.q-tete-btn h3{ margin:0 }
+.q-tete-btn .q-fl{
+  margin-left:auto;flex:0 0 auto;width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--paper-edge);border-radius:50%;
+  color:var(--txt-2);position:relative;
+  transition:transform .2s cubic-bezier(.2,.9,.3,1);
+}
+.q-tete-btn .q-fl::before{
+  content:'';width:8px;height:8px;
+  border-right:1.75px solid currentColor;border-bottom:1.75px solid currentColor;
+  transform:translateY(-2px) rotate(45deg);
+}
+.q-repli.ouvert .q-tete-btn .q-fl{ transform:rotate(180deg) }
+.q-repli:not(.ouvert){ padding-bottom:18px }
+.q-corps{ margin-top:16px }
+/* ⚠️ L'ATTRIBUT hidden NE SUFFIT PAS ICI. Le corps porte aussi la classe
+   .grid, dont le display:grid a la MÊME spécificité que le [hidden] du
+   navigateur et vient après lui dans la cascade : l'attribut était posé et
+   ignoré, le bloc restait déployé — 579 px mesurés avec hidden=true. Mon
+   premier test lisait l'attribut, pas le style calculé, et concluait à tort. */
+/* Et la règle GLOBALE, absente jusqu'ici : le projet avait `.hidden` en
+   classe mais rien pour l'attribut. Toute classe posant un display l'emportait
+   sur l'attribut. Trente éléments portent hidden dans la page : un seul était
+   trompé aujourd'hui, mais le prochain .grid, .row ou .chips masqué l'aurait
+   été aussi. */
+[hidden]{ display:none !important }
+@media(prefers-reduced-motion:reduce){ .q-tete-btn .q-fl{ transition:none } }

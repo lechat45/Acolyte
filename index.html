@@ -397,11 +397,18 @@
       </div>
     </div>
 
-    <div class="card q-bloc">
-      <div class="q-tete"><span class="q-n">3</span>
-        <div><h3>Style de voyage</h3><p class="hint">Facultatif — laisse vide et Acolyte décide.</p></div>
-      </div>
-      <div class="grid">
+    <!-- ⚠️ REPLIÉ PAR DÉFAUT. Vingt-trois champs à l'écran avant le premier
+         résultat, c'est le genre de mur qui fait abandonner. Les deux premiers
+         blocs suffisent à chercher ; celui-ci affine, et il le dit lui-même
+         (« facultatif »). Il s'ouvre d'un geste, et reste ouvert si un champ
+         y est déjà rempli — restauré depuis le brouillon, par exemple. -->
+    <div class="card q-bloc q-repli" id="qBloc3">
+      <button type="button" class="q-tete q-tete-btn" id="qBloc3Btn" aria-expanded="false" aria-controls="qBloc3Corps">
+        <span class="q-n">3</span>
+        <div><h3>Style de voyage</h3><p class="hint">Facultatif — laisse vide et Acolyte décide. Ouvre pour affiner : ambiance, rythme, régime, dosages.</p></div>
+        <span class="q-fl" aria-hidden="true"></span>
+      </button>
+      <div class="grid q-corps" id="qBloc3Corps" hidden>
         <div class="field"><label for="fVibe">Ambiance recherchée</label>
           <select id="fVibe">
             <option value="" selected>Peu importe — surprends-moi</option>
