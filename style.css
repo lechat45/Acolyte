@@ -6143,3 +6143,28 @@ body::before{
 .cat-empty-banner h3{ text-transform:none;letter-spacing:-.02em;font-size:1.1rem }
 .news-hello p, .key-tip p{ font-weight:600 }
 .rc-price, .hc-price{ background:var(--money) !important;color:var(--money-ink) !important }
+
+/* ============================================================
+   12. LA PREMIÈRE VISITE, EN PAPIER AUSSI
+   ------------------------------------------------------------
+   La carte d'accueil était la dernière surface à porter l'ancienne ombre
+   floue de 18 px : le tout premier objet qu'on voit d'Acolyte contredisait
+   tout le reste. Elle prend l'ombre dure, le fond papier et le rayon du
+   reste. (La carte des questions, elle, est plein écran sans ombre : c'est
+   voulu, elle n'est pas posée sur la page, elle la remplace.)
+============================================================ */
+.onboard-card{
+  background:var(--paper);
+  border:1px solid var(--paper-edge);
+  border-radius:var(--r-md);
+  box-shadow:var(--ombre-dure);
+}
+.onboard-card h2{ text-transform:none;letter-spacing:-.02em }
+.onboard-card p{ max-width:46ch;margin-left:auto;margin-right:auto }
+/* Le compte des étapes se lit, au lieu de se deviner : huit pastilles de 9 px
+   ne disent pas « il en reste trois », elles disent « c'est long ». */
+.onboard-etape{
+  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--txt-2);
+  display:block;margin-bottom:10px;
+}

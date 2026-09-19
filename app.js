@@ -6296,7 +6296,7 @@ const CHANGELOG = [
     '💬 L’assistant t’accueille avec trois exemples cliquables, adaptés à ton voyage. Plus besoin d’inventer la première phrase',
     '📝 Le questionnaire montre 11 champs au lieu de 23 : le bloc « style de voyage », facultatif, se déplie si tu veux affiner. Et tout ce que tu tapes est gardé si la page se recharge',
     '⚙️ Les réglages passent de 32 options à 18 : ce qui existait aussi dans le questionnaire n’y est plus, parce que les deux pouvaient se contredire',
-    '🔤 Les titres quittent les capitales, les textes longs sont bornés à 72 caractères par ligne, les petites étiquettes remontent à 11,5 px'
+    '🔤 Les titres quittent les capitales et les textes longs sont bornés à 72 caractères par ligne — au-delà, l’œil perd la ligne suivante'
   ]},
   { v:'7.9', date:'2026-08-17', titre:'L’assistant ne refuse plus ce qu’il sait faire', items:[
     '🛠️ « Modifie l’après-midi du jour 3 » juste après avoir créé ton voyage : l’assistant répondait qu’il fallait d’abord créer un voyage. Il construit maintenant la journée visée, puis applique ta demande',
@@ -6864,6 +6864,11 @@ function renderOnboard(){
   $('#onboardTitle').textContent = s.title;
   $('#onboardText').textContent = s.text;
   $('#onboardDots').innerHTML = ONB_STEPS.map((_, i) => `<i class="${i === _onbI ? 'on' : ''}"></i>`).join('');
+  /* Écrit le rang en toutes lettres : huit pastilles de 9 px ne disent pas
+     combien il en reste, et huit écrans sans compteur, c'est long. */
+  { const e = $('#onboardEtape'); if(e) e.textContent = isEN()
+      ? `Step ${_onbI + 1} of ${ONB_STEPS.length}`
+      : `Étape ${_onbI + 1} sur ${ONB_STEPS.length}`; }
   $('#onboardNext').textContent = _onbI === ONB_STEPS.length - 1 ? "C'est parti ! 🚀" : 'Suivant →';
 }
 function showOnboard(){
