@@ -3100,6 +3100,128 @@ function jjBudget(idx, total){
   return { bt, depense, reste, parJour: Math.round(reste / joursRestants), joursRestants };
 }
 
+/* ============================================================
+   LE RETOUR — ce qu'il reste quand le voyage est fini
+   ------------------------------------------------------------
+   Il n'existait AUCUN état « après le retour ». Le jour où l'on rentrait,
+   Acolyte continuait d'afficher un programme périmé et un compte à rebours
+   arrivé à zéro : l'application cessait simplement de servir.
+
+   C'est pourtant le moment où elle détient le plus de choses — le
+   programme suivi, les notes du carnet, les dépenses réelles, les
+   journées détaillées. Mises bout à bout, elles font un récit. Un outil
+   qu'on abandonne au retour devient une chose qu'on garde, et c'est ce
+   qui donne envie d'en préparer un deuxième.
+
+   ⚠️ On ne SUPPRIME rien et on ne remplace rien : le plan reste
+   consultable. Le récit s'ajoute au-dessus, là où la carte « aujourd'hui »
+   ne dit plus rien parce que le séjour est passé.
+============================================================ */
+function voyagePasse(){
+  const d = stayDates(); if(!d) return null;
+  const fin = new Date(d.out + 'T23:59:59');
+  if(isNaN(fin) || Date.now() <= fin.getTime()) return null;
+  return { fin, depuis: Math.floor((Date.now() - fin.getTime()) / 86400000) };
+}
+
+function bilanChiffres(){
+  const pl = state.cache?.plan || {};
+  const prog = pl.programme || [];
+  const lieux = new Set();
+  for(const j of prog) for(const l of (j.lieux || [])) if(l) lieux.add(String(l));
+  const depense = (state.spends || []).reduce((a, x) => a + (+x.amount || 0), 0);
+  const prevu = +pl.budget?.total || 0;
+  const detaillees = Object.keys(state.cache?.days || {}).length;
+  return { jours: prog.length, lieux: lieux.size, depense, prevu, detaillees,
+           notes: String(state.notes || '').trim() };
+}
+
+/* La carte qui apparaît à la place de « aujourd'hui », une fois rentré. */
+function retourHTML(){
+  const r = voyagePasse(); if(!r) return '';
+  const t = state.trip || {}, c = bilanChiffres();
+  const quand = r.depuis <= 0 ? 'Tu viens de rentrer'
+    : r.depuis === 1 ? 'Tu es rentré hier'
+    : r.depuis < 30 ? `Tu es rentré il y a ${r.depuis} jours`
+    : `${esc(t.nom || 'Ce voyage')}, c’était il y a ${Math.round(r.depuis / 30)} mois`;
+  const ecart = c.prevu ? Math.round(c.depense - c.prevu) : null;
+  return `<div class="card retour-card">
+    <div class="ret-tete">
+      <span class="ret-quand">${esc(quand)}</span>
+      <h2>${esc(t.nom || 'Ton voyage')}, ce qu’il en reste</h2>
+    </div>
+    <div class="ret-chiffres">
+      ${c.jours ? `<div><b>${c.jours}</b><span>journée${c.jours > 1 ? 's' : ''}</span></div>` : ''}
+      ${c.lieux ? `<div><b>${c.lieux}</b><span>lieu${c.lieux > 1 ? 'x' : ''}</span></div>` : ''}
+      ${c.depense ? `<div><b>${Math.round(c.depense)} €</b><span>dépensés${
+        ecart !== null ? (ecart <= 0 ? ` · ${Math.abs(ecart)} € sous le budget` : ` · ${ecart} € au-dessus`) : ''
+      }</span></div>` : ''}
+      ${c.notes ? `<div><b>${c.notes.split(/\n+/).filter(Boolean).length}</b><span>note${
+        c.notes.split(/\n+/).filter(Boolean).length > 1 ? 's' : ''}</span></div>` : ''}
+    </div>
+    <p class="ret-invite">Acolyte a gardé ton programme, tes notes et tes dépenses. De quoi en faire un souvenir lisible — ou repartir.</p>
+    <div class="ret-actes">
+      <button class="btn" type="button" id="btnRecit">${ICO('document', 16)} Voir le récit</button>
+      <button class="btn ghost sm" type="button" id="btnRepartir">${ICO('avion', 15)} Repartir ailleurs</button>
+    </div>
+  </div>`;
+}
+
+/* Le récit lui-même, dans la page d'impression : on le lit, on l'enregistre
+   en PDF, on l'envoie. Il réutilise #dossier — même mécanisme que le carnet
+   d'avant-départ, contenu différent. */
+function recitHTML(){
+  const t = state.trip || {}, p = state.prefs || {}, pl = state.cache?.plan || {};
+  const d = stayDates(), c = bilanChiffres();
+  const jours = pl.programme || [];
+  const dep = (state.spends || []).slice().sort((a, b) => (b.amount || 0) - (a.amount || 0));
+  let h = `<div class="cover">
+    <p class="brand">ACOLYTE · RÉCIT DE VOYAGE</p>
+    <h1>${esc(t.nom || '')}</h1>
+    <div class="rule"></div>
+    <p class="meta">${esc(t.pays || '')}${t.pays ? ' · ' : ''}${d ? esc(d.in + ' → ' + d.out) : ''}</p>
+  </div>`;
+  h += `<section><h2>En chiffres</h2><table>
+    ${c.jours ? `<tr><th>Journées</th><td>${c.jours}</td></tr>` : ''}
+    ${c.lieux ? `<tr><th>Lieux au programme</th><td>${c.lieux}</td></tr>` : ''}
+    ${c.depense ? `<tr><th>Dépensé</th><td>${Math.round(c.depense)} €${
+      c.prevu ? ` (budget prévu : ${c.prevu} €)` : ''}</td></tr>` : ''}
+    ${p.from ? `<tr><th>Départ de</th><td>${esc(p.from)}</td></tr>` : ''}
+  </table></section>`;
+  if(jours.length){
+    h += `<section><h2>Jour après jour</h2>`;
+    for(const j of jours){
+      h += `<h3>Jour ${esc(String(j.jour))} — ${esc(j.resume || j.titre || '')}</h3>`;
+      if((j.lieux || []).length) h += `<p>${esc(j.lieux.join(' · '))}</p>`;
+    }
+    h += `</section>`;
+  }
+  if(c.notes){
+    h += `<section><h2>Ton carnet</h2>` +
+      c.notes.split(/\n+/).filter(Boolean).map(l => `<p>${esc(l)}</p>`).join('') + `</section>`;
+  }
+  if(dep.length){
+    h += `<section><h2>Ce que tu as dépensé</h2><table>` +
+      dep.map(x => `<tr><th>${esc(x.label || '—')}</th><td>${Math.round(+x.amount || 0)} €</td></tr>`).join('') +
+      `</table></section>`;
+  }
+  return h;
+}
+
+function ouvreRecit(){
+  const dz = $('#dossier'); if(!dz) return;
+  dz.innerHTML = recitHTML();
+  dz.hidden = false;
+  const fini = () => { dz.hidden = true; window.removeEventListener('afterprint', fini); };
+  window.addEventListener('afterprint', fini);
+  window.print();
+  toast('📄 Choisis « Enregistrer au format PDF » pour le garder');
+}
+document.addEventListener('click', e => {
+  if(e.target.closest('#btnRecit')){ ouvreRecit(); return; }
+  if(e.target.closest('#btnRepartir')){ switchCat('trip'); gotoStep(1); }
+});
+
 function todayHTML(){
   const d = stayDates(); if(!d) return '';
   const now = new Date(), start = new Date(d.in + 'T00:00:00'), end = new Date(d.out + 'T23:59:59');
@@ -3750,7 +3872,9 @@ function tripRouteHTML(d){
 function renderPlan(d){
   /* #zonePlan ne porte plus que l'encart « aujourd'hui » (vide hors séjour) :
      le trajet est passé dans l'onglet Transport, le conseil dans Programme. */
-  const zp = $('#zonePlan'); if(zp) zp.innerHTML = todayHTML();
+  /* Les deux s'excluent : todayHTML ne rend rien hors séjour, retourHTML
+     ne rend rien avant la fin. La zone n'est donc jamais vide sans raison. */
+  const zp = $('#zonePlan'); if(zp) zp.innerHTML = todayHTML() + retourHTML();
   renderSections(d);
   refreshPasses();
   startWx();

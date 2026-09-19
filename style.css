@@ -6224,3 +6224,41 @@ body::before{
   letter-spacing:.05em;text-transform:uppercase;color:var(--txt-2);
 }
 .ar-ligne.done span:last-child{ text-decoration:line-through;color:var(--txt-2) }
+
+/* ============================================================
+   15. LE RETOUR
+   ------------------------------------------------------------
+   Une carte qui ne ressemble à aucune autre, parce qu'elle arrive à un
+   moment qui ne ressemble à aucun autre : le voyage est fini. Pas de
+   jaune — il n'y a rien d'urgent à presser —, du papier et des chiffres
+   en gros, qui se lisent d'un regard.
+============================================================ */
+.retour-card{
+  padding:22px;margin-bottom:16px;
+  background:var(--paper);
+  border:1px solid var(--paper-edge);border-left:5px solid var(--verifie);
+  border-radius:var(--r-md);box-shadow:var(--ombre-dure);
+}
+.ret-quand{
+  display:block;
+  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--txt-2);margin-bottom:4px;
+}
+.ret-tete h2{
+  font-size:1.5rem;line-height:1.15;margin:0 0 14px;
+  text-transform:none;letter-spacing:-.025em;border-bottom:0;padding-bottom:0;
+}
+.ret-chiffres{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+  gap:14px;padding:14px 0;border-top:1px solid var(--stroke);border-bottom:1px solid var(--stroke);
+}
+.ret-chiffres b{
+  display:block;font-family:'Fraunces',Georgia,serif;font-weight:900;
+  font-size:1.6rem;line-height:1.1;color:var(--txt);
+}
+.ret-chiffres span{
+  display:block;margin-top:2px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.74rem;color:var(--txt-2);line-height:1.35;
+}
+.ret-invite{margin:14px 0 16px;font-size:.92rem;line-height:1.5;color:var(--txt-2);max-width:56ch}
+.ret-actes{display:flex;flex-wrap:wrap;gap:10px}
