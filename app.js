@@ -6281,6 +6281,18 @@ function enterApp(){
    (date au format AAAA-MM-JJ) et incrémente CACHE dans sw.js.
 ============================================================ */
 const CHANGELOG = [
+  { v:'8.0', date:'2026-09-19', titre:'L’édition papier', items:[
+    '📖 Acolyte change de peau : moins tableau de bord, plus carnet de voyage. Les cartes ont une ombre franche, comme posées sur une table — elles se soulèvent au survol, s’enfoncent au clic',
+    '🟡 Le jaune ne veut plus dire qu’une chose : « appuie ici ». Les prix passent au crème, les mises en garde à l’orange. Ce qui est jaune se presse',
+    '✅ Un petit badge vert « vérifié » marque ce qui vient d’un relevé réel — météo mesurée, adresses OpenStreetMap, lieux retrouvés sur Wikipédia. Sans badge, c’est une estimation',
+    '🗂️ Les onglets du voyage se rangent en deux rangs nommés : « Sur place » et « Avant de partir ». Plus de défilement, plus de libellé tronqué',
+    '📐 La première proposition prend deux tiers de la largeur : c’est celle qu’Acolyte met en avant, et la mise en page le dit avant le texte',
+    '🎫 Le billet d’embarquement se replie en une ligne dans l’onglet Voyage — tu vois ton programme en arrivant, pas un billet que tu as déjà lu',
+    '💬 L’assistant t’accueille avec trois exemples cliquables, adaptés à ton voyage. Plus besoin d’inventer la première phrase',
+    '📝 Le questionnaire montre 11 champs au lieu de 23 : le bloc « style de voyage », facultatif, se déplie si tu veux affiner. Et tout ce que tu tapes est gardé si la page se recharge',
+    '⚙️ Les réglages passent de 32 options à 18 : ce qui existait aussi dans le questionnaire n’y est plus, parce que les deux pouvaient se contredire',
+    '🔤 Les titres quittent les capitales, les textes longs sont bornés à 72 caractères par ligne, les petites étiquettes remontent à 11,5 px'
+  ]},
   { v:'7.9', date:'2026-08-17', titre:'L’assistant ne refuse plus ce qu’il sait faire', items:[
     '🛠️ « Modifie l’après-midi du jour 3 » juste après avoir créé ton voyage : l’assistant répondait qu’il fallait d’abord créer un voyage. Il construit maintenant la journée visée, puis applique ta demande',
     '🎯 Il comprend quelle journée tu désignes — « jour 3 », « J3 », « la troisième journée » — et va modifier celle-là',

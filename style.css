@@ -6104,3 +6104,24 @@ body::before{
    été aussi. */
 [hidden]{ display:none !important }
 @media(prefers-reduced-motion:reduce){ .q-tete-btn .q-fl{ transition:none } }
+
+/* ============================================================
+   11. LES BANDEAUX QUI PARLENT NE SONT PAS DES BOUTONS
+   ------------------------------------------------------------
+   Trois bandeaux d'information (« quoi de neuf », « astuce », « aucun voyage »)
+   étaient en jaune plein alors qu'on ne peut pas les presser — ils volaient
+   la couleur de l'action. Ils passent sur papier avec un filet jaune à
+   gauche : la marque reste, l'appel à cliquer disparaît. Et deux prix
+   oubliés rejoignent les autres, en crème.
+============================================================ */
+.news-hello, .key-tip, .cat-empty-banner{
+  background:var(--paper);
+  border:1px solid var(--paper-edge);border-left:5px solid var(--primary);
+  box-shadow:var(--ombre-dure);
+  color:var(--txt);
+}
+.news-hello p, .key-tip p, .cat-empty-banner h3, .cat-empty-banner p, .cat-empty-banner .hint{ color:var(--txt) }
+.cat-empty-banner .hint{ color:var(--txt-2) }
+.cat-empty-banner h3{ text-transform:none;letter-spacing:-.02em;font-size:1.1rem }
+.news-hello p, .key-tip p{ font-weight:600 }
+.rc-price, .hc-price{ background:var(--money) !important;color:var(--money-ink) !important }
