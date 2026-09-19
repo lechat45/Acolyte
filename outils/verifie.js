@@ -356,6 +356,22 @@ titre('12. Contrat de l’état du voyage');
   }
 }
 
+titre('15. Copies de diagnostic oubliees');
+{
+  /* outils/zone-morte.js fabrique app.zone-morte.js et index.zone-morte.html
+     pour traquer les lectures en zone morte. Ces copies portent des sondes et
+     une banniere de verdict : publiees par megarde, elles alourdissent le site
+     et affichent un bandeau rouge a tout le monde. Le menage est une commande
+     (node outils/zone-morte.js --nettoie), donc il s'oublie. */
+  const copies = ['app.zone-morte.js', 'index.zone-morte.html',
+                  'app.instr.js', 'index.instr.html']
+    .filter(f => fs.existsSync(path.join(RACINE, f)));
+  if (copies.length) {
+    err('copie(s) de diagnostic a la racine : ' + copies.join(', '));
+    console.log('      -> node outils/zone-morte.js --nettoie');
+  } else ok('aucune copie de diagnostic a la racine');
+}
+
 /* ============================================================
    11. LE CONTRAT DU SERVEUR — on l'INTERROGE, on ne l'imagine pas
    ------------------------------------------------------------
