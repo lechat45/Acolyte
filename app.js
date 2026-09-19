@@ -4141,6 +4141,100 @@ document.addEventListener('click', e => {
   if(e.target.classList?.contains('overlay')) e.target.classList.remove('show');
 });
 
+/* ============================================================
+   LES CALQUES AU CLAVIER — Échap, focus à l'entrée, focus rendu
+   ------------------------------------------------------------
+   Il y a 17 calques dans Acolyte. À la souris on en sort par la croix ou
+   par un clic sur le fond. Au clavier on n'en sortait pas : Échap n'était
+   écouté que par les quatre jeux d'arcade et le kiosque. Et comme rien ne
+   déplaçait le focus à l'ouverture, on ouvrait une fenêtre par-dessus la
+   page… en restant avec le curseur DERRIÈRE elle. Tabuler menait alors
+   dans le contenu masqué, invisible sous le voile.
+
+   Un seul bloc s'en occupe pour tous, présents et à venir : l'observateur
+   voit aussi les calques fabriqués à la volée (questions, plan B, autour
+   de moi), qu'aucune liste écrite à la main n'aurait suivis.
+
+   ⚠️ DEUX EXCEPTIONS, et elles sont voulues :
+   • la barrière de confidentialité obligatoire ne se ferme pas — ni par la
+     croix (absente), ni par le fond, ni par Échap : il faut accepter ;
+   • les quatre jeux gardent LEUR gestionnaire d'Échap, parce qu'il doit
+     d'abord arrêter la boucle de jeu (arcadeStop). On les saute ici, sinon
+     on fermerait le calque en laissant le jeu tourner dans le vide.
+============================================================ */
+var ARCADE_OV = ['ovArcade', 'ovGeo', 'ovPong', 'ovPack'];
+var _ovRetour = null;   /* là où le focus doit revenir à la fermeture */
+
+function ovOuverts(){
+  /* ⚠️ PAS offsetParent : les calques sont en position:fixed, et un élément
+     fixe n'a PAS d'offsetParent — le filtre renvoyait toujours une liste
+     vide, donc Échap ne fermait jamais rien. On regarde l'affichage réel. */
+  return [...document.querySelectorAll('.overlay.show')]
+    .filter(o => getComputedStyle(o).display !== 'none' && o.getClientRects().length);
+}
+function ovFocusables(ov){
+  return [...ov.querySelectorAll('a[href],button,input,select,textarea,[tabindex]')]
+    .filter(e => !e.disabled && e.tabIndex !== -1 && (e.offsetWidth || e.offsetHeight));
+}
+function ovEntre(ov){
+  /* si quelque chose du calque a déjà le focus, on ne le bouscule pas */
+  if(ov.contains(document.activeElement)) return;
+  _ovRetour = document.activeElement;
+  const boite = ov.firstElementChild;
+  if(boite && !boite.getAttribute('role')){
+    boite.setAttribute('role', 'dialog');
+    boite.setAttribute('aria-modal', 'true');
+  }
+  const f = ovFocusables(ov);
+  /* on évite d'atterrir sur la croix : le premier vrai contrôle dit ce que
+     la fenêtre propose, la croix dit seulement comment en sortir */
+  const cible = f.find(e => !e.classList.contains('close-btn')) || f[0];
+  /* ⚠️ preventScroll, SINON ON OUVRE LA FENÊTRE EN BAS. Le premier contrôle
+     du journal des nouveautés est le bouton « J'ai vu », tout en bas des
+     soixante entrées : prendre le focus dessus faisait défiler jusqu'à lui,
+     et « Quoi de neuf ? » s'ouvrait sur une version de juillet au lieu de
+     la dernière. Le focus se pose, la vue ne bouge pas. */
+  if(cible) cible.focus({ preventScroll: true });
+  else if(boite){ boite.setAttribute('tabindex', '-1'); boite.focus({ preventScroll: true }); }
+}
+function ovSort(){
+  if(ovOuverts().length) return;            /* un autre calque reste ouvert */
+  const r = _ovRetour; _ovRetour = null;
+  if(r && r.isConnected && typeof r.focus === 'function') r.focus();
+}
+new MutationObserver(muts => {
+  for(const m of muts){
+    if(m.type === 'attributes' && m.target.classList?.contains('overlay')){
+      if(m.target.classList.contains('show')) ovEntre(m.target);
+      else ovSort();
+    }
+    for(const n of m.addedNodes || []){
+      if(n.nodeType === 1 && n.classList?.contains('overlay') && n.classList.contains('show')) ovEntre(n);
+    }
+  }
+}).observe(document.documentElement, { attributes:true, attributeFilter:['class'], subtree:true, childList:true });
+
+document.addEventListener('keydown', e => {
+  const ouverts = ovOuverts();
+  if(!ouverts.length) return;
+  const ov = ouverts[ouverts.length - 1];        /* le dernier ouvert est au-dessus */
+  if(e.key === 'Escape'){
+    if(_privacyGate && ov.id === 'ovPrivacy') return;
+    if(ARCADE_OV.includes(ov.id)) return;        /* leur gestionnaire arrête d'abord le jeu */
+    e.preventDefault();
+    ov.classList.remove('show');
+    return;
+  }
+  if(e.key !== 'Tab') return;
+  const f = ovFocusables(ov);
+  if(!f.length) return;
+  const premier = f[0], dernier = f[f.length - 1];
+  /* le focus s'était échappé derrière le voile : on le ramène */
+  if(!ov.contains(document.activeElement)){ e.preventDefault(); premier.focus(); return; }
+  if(e.shiftKey && document.activeElement === premier){ e.preventDefault(); dernier.focus(); }
+  else if(!e.shiftKey && document.activeElement === dernier){ e.preventDefault(); premier.focus(); }
+});
+
 function planValidate(){
   const d = state.cache.plan;
   if(!d){ toast("Le plan n'est pas encore prêt"); return; }
@@ -8291,6 +8385,17 @@ document.addEventListener('keydown', e => {
 ============================================================ */
 const PP_AVATARS = ['🌍','✈️','🎒','🧭','🏖️','🏔️','🚆','🗺️','⛵','🏛️','🌋','🐘'];
 const LS_PP = 'acolite_passeport';
+/* ⚠️ CETTE CLÉ EST ICI, ET PAS DANS SA SECTION (« ce qu'Acolyte retient »,
+   5 000 lignes plus bas), PARCE QU'ELLE EST LUE PENDANT L'ÉVALUATION DU
+   SCRIPT. enterApp() appelle renderProfile(), que profilPlus() enveloppe,
+   qui appelle ppMemoireHTML() → goutsLire() → cette clé. Déclarée en `const`
+   plus bas, elle était en zone morte : le ReferenceError tombait dans le
+   catch de goutsLire(), qui rend {} — et la mémoire du profil affichait
+   « Acolyte n'a encore rien retenu » même quand il avait retenu quelque
+   chose. Le garde `typeof goutsLire === 'function'` ne protégeait de rien :
+   il teste la FONCTION, qui est hoistée, pas la constante, qui ne l'est pas.
+   Trouvée par outils/zone-morte.js. */
+const LS_GOUTS = 'acolite_gouts';
 
 /* Le passeport vit à part du compte : le compte porte ce que le SERVEUR
    connaît (email, pseudo), le passeport ce qui ne quitte jamais l'appareil. */
@@ -14995,7 +15100,7 @@ function pondTexte(){
    genre, on le dit au modèle. Rien n'est deviné : le seuil est franc, la
    mémoire est lisible, et elle s'oublie (on ne garde que les vingt derniers).
 ============================================================ */
-const LS_GOUTS = 'acolite_gouts';
+/* LS_GOUTS est déclaré PLUS HAUT, avec LS_PP : lis le commentaire là-bas. */
 function goutsLire(){
   try{ const o = JSON.parse(localStorage.getItem(LS_GOUTS) || '{}'); return (o && typeof o === 'object') ? o : {}; }
   catch(e){ return {}; }
