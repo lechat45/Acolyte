@@ -557,7 +557,19 @@ async function gemini(prompt, expectJson = true, maxTok = 4096, _retry = false, 
   try{
     model = await resolveGemModel(key);
   }catch(e){
-    const m = String(e.message||'').replace(/^LIST:/,'') || 'Connexion à Gemini impossible';
+    /* ⚠️ LE PRÉFIXE « LIST: » EST UN MARQUEUR, PAS UNE DÉCORATION : il dit
+       « ce texte a été écrit pour un humain » (gemErrMsg s'en charge). Cette
+       ligne l'enlevait puis affichait le message QUEL QU'IL SOIT — y compris
+       les erreurs brutes du navigateur, qui n'ont pas ce marqueur. Sans
+       réseau, fetchT rejette avec « Failed to fetch », et un francophone
+       hors connexion lisait « ⚠️ Failed to fetch ». On ne transmet donc que
+       ce qui porte le marqueur, et on écrit le reste nous-mêmes. */
+    const brut = String(e.message || '');
+    const m = brut.startsWith('LIST:') ? brut.slice(5)
+      : (!navigator.onLine || /Failed to fetch|NetworkError|Load failed|abort/i.test(brut))
+        ? 'Pas de connexion — l’assistant a besoin du réseau. Ton voyage, lui, reste consultable.'
+        : 'Le moteur de rédaction ne répond pas — réessaie dans un instant.';
+    console.warn('[acolyte] moteur IA indisponible :', brut);   /* le brut va au débogage */
     toast('⚠️ ' + m);
     throw new Error('BAD_KEY');
   }

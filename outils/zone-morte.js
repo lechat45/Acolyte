@@ -51,6 +51,11 @@ const HTML = path.join(racine, 'index.html');
 const SORTIE_JS = path.join(racine, 'app.zone-morte.js');
 const SORTIE_HTML = path.join(racine, 'index.zone-morte.html');
 
+/* --nettoie : effacer les copies · --tout : signaler TOUTE erreur avalée,
+   pas seulement les zones mortes. Un catch qui rend une valeur par défaut
+   cache le même genre de silence, quelle que soit l'erreur. */
+const TOUT = process.argv.includes('--tout');
+
 if(process.argv.includes('--nettoie')){
   let n = 0;
   for(const f of [SORTIE_JS, SORTIE_HTML]) if(fs.existsSync(f)){ fs.unlinkSync(f); n++; }
@@ -116,13 +121,20 @@ for(const p of points){
 }
 out += brut.slice(prec);
 
-const SONDE = `/* ---- sonde zone morte (copie de diagnostic, ne pas publier) ---- */
+const SONDE = `var TOUT = ${TOUT};
+/* ---- sonde zone morte (copie de diagnostic, ne pas publier) ---- */
 window.__ZM = [];
 window.__zm = function(e, ligne){
   try{
-    if(!(e instanceof ReferenceError)) return;
-    if(!/before initialization|is not defined/.test(e.message || '')) return;
-    window.__ZM.push({ ligne: ligne, message: e.message, pile: (e.stack || '').split('\\n')[1] || '' });
+    if(TOUT){
+      /* un throw de chaîne est un signal voulu, pas un défaut */
+      if(!(e instanceof Error)) return;
+    }else{
+      if(!(e instanceof ReferenceError)) return;
+      if(!/before initialization|is not defined/.test(e.message || '')) return;
+    }
+    window.__ZM.push({ ligne: ligne, type: (e.constructor && e.constructor.name) || 'Error',
+                       message: e.message, pile: (e.stack || '').split('\\n')[1] || '' });
   }catch(_){}
 };
 window.addEventListener('error', function(ev){
@@ -139,18 +151,21 @@ setTimeout(function(){
     + 'font:13px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;max-height:46vh;overflow:auto;'
     + (z.length ? 'background:#B33023;color:#fff' : 'background:#1F7A4A;color:#fff');
   if(!z.length){
-    banc.textContent = '\\u2713 ZONE MORTE \\u2014 aucune lecture avalée. '
-      + 'Tous les chemins parcourus lisent des noms déjà déclarés.';
+    banc.textContent = TOUT
+      ? '\\u2713 Aucune erreur avalée sur ce chemin.'
+      : '\\u2713 ZONE MORTE \\u2014 aucune lecture avalée. '
+        + 'Tous les chemins parcourus lisent des noms déjà déclarés.';
   }else{
     var vus = {}, lignes = [];
     z.forEach(function(x){
       var k = x.ligne + '|' + x.message;
       if(vus[k]) return; vus[k] = 1;
-      lignes.push('  app.js ligne ' + x.ligne + ' \\u2014 ' + x.message + (x.pile ? '\\n     ' + x.pile.trim() : ''));
+      lignes.push('  app.js ligne ' + x.ligne + ' \\u2014 ' + (x.type || 'Error') + ' : ' + x.message
+                  + (x.pile ? '\\n     ' + x.pile.trim() : ''));
     });
-    banc.textContent = '\\u2717 ZONE MORTE \\u2014 ' + lignes.length
-      + ' lecture(s) avalée(s) par un catch :\\n' + lignes.join('\\n')
-      + '\\n\\nRemonte la déclaration au-dessus du premier appel, ou passe-la en var.';
+    banc.textContent = '\\u2717 ' + (TOUT ? 'ERREURS AVALÉES' : 'ZONE MORTE') + ' \\u2014 '
+      + lignes.length + ' erreur(s) avalée(s) par un catch :\\n' + lignes.join('\\n')
+      + (TOUT ? '' : '\\n\\nRemonte la déclaration au-dessus du premier appel, ou passe-la en var.');
   }
   document.body.appendChild(banc);
   console[z.length ? 'error' : 'log']('[zone-morte]', banc.textContent);
