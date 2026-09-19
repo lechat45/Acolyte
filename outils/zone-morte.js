@@ -187,12 +187,65 @@ setTimeout(function(){
       + lignes.length + ' erreur(s) avalée(s) par un catch :\\n' + lignes.join('\\n')
       + (TOUT ? '' : '\\n\\nRemonte la déclaration au-dessus du premier appel, ou passe-la en var.');
   }
+  /* Un parcours automatique est en cours : le pilote enchaîne l'état
+     suivant et c'est LUI qui parlera, à la fin. */
+  if(typeof window.__zmPiloteAvance === 'function' && window.__zmPiloteAvance(z)) return;
+  /* un parcours vient de se terminer, peut-etre avant un dernier rechargement */
+  if(typeof window.__zmBilanEnAttente === 'function'){
+    var attente = window.__zmBilanEnAttente();
+    if(attente){ window.__zmBilan(attente); return; }
+  }
   document.body.appendChild(banc);
+  banc.appendChild(document.createElement('br'));
+  var b = document.createElement('button');
+  b.textContent = 'Enchaîner les ' + (window.__zmPiloteEtats || 0) + ' états de départ';
+  b.style.cssText = 'margin-top:10px;padding:7px 13px;border:0;border-radius:6px;'
+    + 'font:600 12px/1 ui-monospace,Menlo,monospace;cursor:pointer;background:#fff;color:#111';
+  b.onclick = function(){ window.__zmPiloteDemarre(); };
+  banc.appendChild(b);
   console[z.length ? 'error' : 'log']('[zone-morte]', banc.textContent);
 }, 2500);
+
+/* ---- bilan du parcours complet ---- */
+window.__zmBilan = function(res){
+  /* ⚠️ DEUX NATURES, DEUX TRAITEMENTS. Une zone morte est TOUJOURS un défaut.
+     Les autres erreurs avalées ne le sont pas : BAD_GROQ quand le backend
+     refuse sans session, la caméra bloquée, le verrou d'écran sur une page
+     cachée — ce sont des catch qui font leur travail. Les compter ensemble
+     peignait le bilan en rouge pour une cause normale, et une alarme qui
+     crie pour rien finit par ne plus être lue. */
+  var estZM = function(x){ return x.type === 'ReferenceError'; };
+  var mauvais = res.filter(function(r){ return r.zones.some(estZM); });
+  var autres = res.reduce(function(n, r){
+    return n + r.zones.filter(function(x){ return !estZM(x); }).length; }, 0);
+  var banc = document.createElement('div');
+  banc.style.cssText = 'position:fixed;inset:0;z-index:99999;padding:24px;overflow:auto;'
+    + 'font:13px/1.6 ui-monospace,Menlo,monospace;white-space:pre-wrap;'
+    + (mauvais.length ? 'background:#B33023;color:#fff' : 'background:#1F7A4A;color:#fff');
+  var t = (mauvais.length ? '\\u2717' : '\\u2713') + ' PARCOURS COMPLET \\u2014 '
+    + res.length + ' \\u00e9tats de d\\u00e9part, '
+    + (mauvais.length ? mauvais.length + ' avec ZONE MORTE' : 'aucune zone morte')
+    + (autres ? '   (' + autres + ' autre(s) erreur(s) avalée(s) — à vérifier une par une)' : '')
+    + '\\n\\n';
+  res.forEach(function(r){
+    t += (r.zones.some(estZM) ? '  \\u2717 ' : '  \\u2713 ') + r.etat
+      + (r.zones.length ? '' : '') + '\\n';
+    var vus = {};
+    r.zones.forEach(function(x){
+      var k = x.ligne + '|' + x.message;
+      if(vus[k]) return; vus[k] = 1;
+      t += '        app.js ligne ' + x.ligne + ' \\u2014 ' + (x.type || 'Error') + ' : ' + x.message + '\\n';
+    });
+  });
+  banc.textContent = t;
+  document.body.appendChild(banc);
+  console[mauvais.length ? 'error' : 'log']('[zone-morte]', t);
+};
 `;
 
-fs.writeFileSync(SORTIE_JS, SONDE + out + RAPPORT, 'utf8');
+const PILOTE = fs.readFileSync(path.join(__dirname, 'zone-morte-pilote.js'), 'utf8');
+
+fs.writeFileSync(SORTIE_JS, SONDE + PILOTE + out + RAPPORT, 'utf8');
 
 const html = fs.readFileSync(HTML, 'utf8');
 if(!/src="app\.js"/.test(html)){
