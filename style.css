@@ -6351,3 +6351,5 @@ body::before{
 .pd-phrase span{display:block;font-size:1rem;font-weight:700;color:var(--txt)}
 .pd-phrase i{display:block;font-size:.8rem;color:var(--txt-2);font-style:italic}
 .pd-hors{margin:14px 0 0;font-size:.8rem;line-height:1.45;color:var(--txt-2)}
+.cn-pied{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px}
+.cn-pied .hint{flex:1;min-width:0}

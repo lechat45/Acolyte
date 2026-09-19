@@ -15980,12 +15980,82 @@ document.addEventListener('click', e => {
    chaque changement d'onglet : oninput (et non addEventListener) est ici une
    qualité — il REMPLACE le gestionnaire au lieu de les empiler.
 ============================================================ */
+/* ============================================================
+   ANCRER UNE NOTE — « ici, maintenant »
+   ------------------------------------------------------------
+   Les notes étaient horodatées nulle part et situées nulle part. En les
+   relisant au retour, on savait ce qu'on avait écrit, jamais où ni quand —
+   et c'est justement ce qui fait un souvenir plutôt qu'un pense-bête.
+
+   ⚠️ ON NE RESTRUCTURE PAS LE CARNET. Il est un texte libre (state.notes),
+   et c'est bien : on y écrit ce qu'on veut, comme on veut. Le transformer
+   en base de données structurée aurait mis en jeu ce que le voyageur a
+   déjà écrit, pour un gain discutable. Un bouton insère une ligne d'ancrage
+   à l'endroit du curseur, voilà tout. Le carnet reste du texte.
+
+   ⚠️ LE NOM DU LIEU EST TROUVÉ SANS RÉSEAU. Un géocodage inverse demanderait
+   une requête — au moment précis où l'on est peut-être hors connexion. On
+   cherche donc le lieu du programme LE PLUS PROCHE parmi ceux déjà
+   géolocalisés (plan._geo), et on ne le nomme que s'il est à moins de
+   700 m. Au-delà, on écrit les coordonnées : mieux vaut un chiffre exact
+   qu'un nom de quartier inventé.
+============================================================ */
+function carnetOuSuisJe(){
+  const pos = (typeof _jjPos !== 'undefined' && _jjPos && _jjPos.lat) ? _jjPos : null;
+  if(!pos) return null;
+  const geo = state.cache?.plan?._geo || {};
+  let meilleur = null, dist = Infinity;
+  for(const [nom, ll] of Object.entries(geo)){
+    if(!Array.isArray(ll) || ll.length < 2) continue;
+    const km = (typeof havKm === 'function')
+      ? havKm({ latitude: pos.lat, longitude: pos.lon }, { latitude: ll[0], longitude: ll[1] })
+      : Infinity;
+    if(km < dist){ dist = km; meilleur = nom; }
+  }
+  return {
+    pos,
+    lieu: (meilleur && dist <= 0.7) ? meilleur : null,
+    coord: pos.lat.toFixed(4) + ', ' + pos.lon.toFixed(4)
+  };
+}
+
+function carnetAncre(){
+  const a = $('#noteArea');
+  if(!a) return;
+  const ou = carnetOuSuisJe();
+  if(!ou){
+    if(typeof jjDemandePos === 'function'){ jjDemandePos(); toast('📍 Je cherche où tu es…'); }
+    return;
+  }
+  const h = new Date().toLocaleTimeString(LOC(), { hour:'2-digit', minute:'2-digit' });
+  const j = new Date().toLocaleDateString(LOC(), { day:'numeric', month:'short' });
+  const ligne = '— ' + (ou.lieu ? ou.lieu : ou.coord) + ', ' + j + ' ' + h + '\n';
+  /* à l'endroit du curseur, pas à la fin : on ancre la note qu'on est en
+     train d'écrire, pas le carnet entier */
+  const i = a.selectionStart ?? a.value.length;
+  const avant = a.value.slice(0, i), apres = a.value.slice(i);
+  const saut = (avant && !avant.endsWith('\n')) ? '\n' : '';
+  a.value = avant + saut + ligne + apres;
+  const fin = (avant + saut + ligne).length;
+  a.setSelectionRange(fin, fin);
+  a.focus();
+  state.notes = a.value;
+  save();
+  toast(ou.lieu ? '📍 ' + ou.lieu : '📍 Position notée');
+}
+document.addEventListener('click', e => {
+  if(e.target.closest('#btnAncre')) carnetAncre();
+});
+
 function carnetHTML(){
   return `
     <h3 style="margin:26px 0 6px;padding-top:20px;border-top:1px solid var(--stroke)">Ton carnet</h3>
     <p class="hint" style="margin:0 0 10px">Ce que tu veux garder : un nom de rue, un horaire, une envie. Enregistré sur l'appareil au fil de la frappe.</p>
     <textarea id="noteArea" rows="5" placeholder="Le café en face du marché ouvre à 7h…"></textarea>
-    <p class="hint" id="noteSaved" style="margin:6px 0 0"></p>`;
+    <div class="cn-pied">
+      <button type="button" class="btn sm ghost" id="btnAncre">${ICO('epingle',14)} Ici, maintenant</button>
+      <p class="hint" id="noteSaved" style="margin:0"></p>
+    </div>`;
 }
 function phrasesHTML(){
   const dejaLa = state.cache && state.cache.talk;
