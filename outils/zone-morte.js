@@ -39,7 +39,27 @@
      node outils/zone-morte.js
      puis ouvrir  index.zone-morte.html  dans le navigateur.
      Le verdict s'affiche dans la console ET en haut de la page.
+     node outils/zone-morte.js --tout      toute erreur avalée, pas que celles-ci
      node outils/zone-morte.js --nettoie   pour effacer les copies.
+
+   ⚠️ CE QU'IL FAUT TESTER, ET POURQUOI CLIQUER NE SERT À RIEN.
+   Une zone morte ne mord que PENDANT l'évaluation du script. Une fois la
+   page chargée, toutes les déclarations sont faites : cliquer partout ne
+   peut plus rien révéler. Seul l'ÉTAT DE DÉPART compte, parce qu'il change
+   ce qui s'exécute pendant l'évaluation. Recharge donc une fois par état :
+
+     • navigateur vierge (première visite)
+     • un voyage enregistré, avant le séjour, puis PENDANT le séjour
+     • acolite_onglet posé sur chacun des 8 onglets — l'onglet mémorisé est
+       redessiné pendant l'évaluation, et chacun fait tourner un autre code.
+       C'est le cas le plus productif, et le moins évident.
+     • connecté (acolite_user + acolite_logged + acolite_token), avec et
+       sans acolite_privacy : la barrière et la synchro ne tournent que là
+     • ?kiosque=1 · un lien de partage #v=… · hors connexion
+
+   C'est ce parcours qui a trouvé LS_GOUTS, lu par goutsLire() depuis
+   renderProfile() pendant l'évaluation : la mémoire du profil affichait
+   « Acolyte n'a encore rien retenu » alors qu'il avait retenu.
 ============================================================ */
 
 const fs = require('fs');
