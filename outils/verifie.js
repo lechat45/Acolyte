@@ -372,6 +372,104 @@ titre('15. Copies de diagnostic oubliees');
   } else ok('aucune copie de diagnostic a la racine');
 }
 
+titre('16. Budget d\'octets');
+{
+  /* Acolyte se veut utilisable hors connexion : tout part dans le cache du
+     service worker, et chaque kilo-octet est telecharge par quelqu'un, une
+     fois, souvent sur un reseau mediocre. Sans repere, un fichier grossit
+     sans que personne ne le decide — style.css a pris 9 % en une seule
+     session de travail.
+     La reference vit dans outils/poids.json. La deplacer est un GESTE
+     VOLONTAIRE (node outils/verifie.js --poids), pas un effet de bord :
+     c'est tout l'interet d'un budget. */
+  const P = path.join(__dirname, 'poids.json');
+  let ref = null;
+  try { ref = JSON.parse(fs.readFileSync(P, 'utf8')).ref; } catch (e) {}
+  if (!ref) {
+    warn('outils/poids.json absent ou illisible — pas de reference de poids');
+  } else {
+    let pire = 0;
+    const lignes = [];
+    for (const [nom, octets] of Object.entries(ref)) {
+      const p = path.join(RACINE, nom);
+      if (!fs.existsSync(p)) { warn('poids : ' + nom + ' introuvable'); continue; }
+      const maintenant = fs.statSync(p).size;
+      const pct = (maintenant - octets) / octets * 100;
+      if (Math.abs(pct) >= 0.05) pire = Math.max(pire, pct);
+      lignes.push('      ' + nom.padEnd(12) + (maintenant / 1024).toFixed(0).padStart(5) + ' Ko  '
+        + (pct >= 0 ? '+' : '') + pct.toFixed(1) + ' %');
+    }
+    if (process.argv.includes('--poids')) {
+      const neuf = {};
+      for (const nom of Object.keys(ref)) {
+        const p = path.join(RACINE, nom);
+        if (fs.existsSync(p)) neuf[nom] = fs.statSync(p).size;
+      }
+      fs.writeFileSync(P, JSON.stringify({ ref: neuf, pose: new Date().toISOString().slice(0, 10) }, null, 2) + '\n');
+      ok('reference de poids redeposee sur les tailles actuelles');
+    } else if (pire >= 15) {
+      err('un fichier a grossi de ' + pire.toFixed(1) + ' % depuis la derniere reference');
+      lignes.forEach(l => console.log(l));
+      console.log('      -> si c\'est voulu : node outils/verifie.js --poids');
+    } else if (pire >= 5) {
+      warn('croissance de ' + pire.toFixed(1) + ' % depuis la derniere reference');
+      lignes.forEach(l => console.log(l));
+    } else {
+      ok('poids stable depuis la derniere reference');
+    }
+  }
+}
+
+titre('17. Textes francais non traduits (dette)');
+{
+  /* isEN() existe, mais beaucoup de chaines sont en francais en dur. On ne
+     PRETEND PAS detecter tout ce qui n'est pas traduit : il faudrait
+     comprendre le code. On mesure un echantillon net et verifiable — les
+     appels a toast(), qui sont tous vus par l'utilisateur.
+
+     ⚠️ MA PREMIERE VERSION ETAIT FAUSSE, ET C'EST INSTRUCTIF : elle
+     reconnaissait le francais aux ACCENTS. « Sauvegarde impossible »,
+     « Photos illisibles », « Entre un montant valide » n'en portent aucun,
+     donc le controle annoncait « tout est bilingue » alors que la moitie ne
+     l'etait pas. Un detecteur qui rassure a tort est pire qu'absent. On
+     reconnait maintenant le francais a ses mots outils, que l'anglais n'a
+     pas — et on verifie le compte, pas seulement l'absence d'alerte. */
+  const js = lire('app.js');
+  const MOTS = new RegExp(
+    '\\b(le|la|les|un|une|des|du|de|ton|ta|tes|est|ne|pas|sur|pour|avec|dans|plus'
+    + '|puis|choisis|entre|renseigne|impossible|indisponible|illisible|illisibles'
+    + '|valide|enregistr|ajout|supprim|reessaie|deja|encore|maintenant|voyage)\\b', 'i');
+  const ACCENT = /[éèêëàâçùûôîï]/i;
+  const RE_TOAST = new RegExp("toast\\((['`])((?:(?!\\1).){4,90})\\1");
+  const nonTraduits = [];
+  let traduits = 0;
+  js.split('\n').forEach((l, i) => {
+    if (!/toast\(/.test(l)) return;
+    /* ⚠️ L'ORDRE COMPTE, ET JE M'Y SUIS REPRIS A DEUX FOIS. Un toast
+       bilingue s'ecrit toast(isEN() ? '...' : '...') : il n'y a PAS de
+       guillemet juste apres la parenthese, donc l'expression qui cherche
+       le texte ne matche pas, et la ligne etait ignoree avant d'avoir ete
+       comptee. Le controle annoncait « 0 % bilingues » alors qu'il y en a
+       dix-huit. On reconnait donc le bilingue D'ABORD. */
+    if (/isEN\(\)/.test(l)) { traduits++; return; }
+    const m = l.match(RE_TOAST);
+    if (!m) return;
+    const txt = m[2];
+    if (!(ACCENT.test(txt) || MOTS.test(txt))) return;   /* pas du francais reperable */
+    nonTraduits.push((i + 1) + ' : ' + txt.slice(0, 56));
+  });
+  const total = traduits + nonTraduits.length;
+  if (!total) warn('aucune notification reperee — le detecteur ne voit rien, verifie-le');
+  else if (!nonTraduits.length) ok(total + ' notification(s) reperee(s), toutes bilingues');
+  else {
+    const pct = Math.round(traduits / total * 100);
+    warn(nonTraduits.length + ' notification(s) en francais seulement sur '
+      + total + ' reperees (' + pct + ' % bilingues)');
+    nonTraduits.slice(0, 6).forEach(x => console.log('      ' + x));
+    if (nonTraduits.length > 6) console.log('      … et ' + (nonTraduits.length - 6) + ' autre(s)');
+  }
+}
+
 /* ============================================================
    11. LE CONTRAT DU SERVEUR — on l'INTERROGE, on ne l'imagine pas
    ------------------------------------------------------------
