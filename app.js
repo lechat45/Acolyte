@@ -15492,6 +15492,66 @@ function ppProchain(n){
    celui de l'identité et celui qui s'ouvre par défaut. getHistory() portait
    déjà de quoi le remplir sans un seul appel réseau.
 ============================================================ */
+/* ============================================================
+   LES TAMPONS — le passeport se remplit vraiment
+   ------------------------------------------------------------
+   Le profil COMPTAIT les pays (« 3 pays différents ») sans jamais les
+   montrer. Un compteur ne se regarde pas deux fois ; une page de
+   tampons, si.
+
+   ⚠️ PAS DE CARTE DU MONDE, ET C'EST UN CHOIX. Un fond de carte SVG
+   correct pèse des dizaines de kilo-octets, dans une application qui se
+   veut utilisable hors connexion et dont je viens de proposer un budget
+   d'octets. Le tampon dit la même chose — où tu es allé, quand — pour
+   quelques centaines d'octets, et il va mieux avec un carnet de voyage
+   qu'un planisphère.
+============================================================ */
+/* Le drapeau emoji EST le code ISO : 🇵🇹 s'écrit avec les indicateurs
+   régionaux P et T. Là où le système ne sait pas le dessiner, on le décode
+   plutôt que de prendre les deux premières lettres du pays — qui donnaient
+   « PO » pour le Portugal, dont le code est PT. */
+function codePays(x){
+  const s = String(x && x.drapeau || '');
+  const pts = [...s].map(c => c.codePointAt(0))
+    .filter(n => n >= 0x1F1E6 && n <= 0x1F1FF);
+  if(pts.length === 2) return pts.map(n => String.fromCharCode(65 + n - 0x1F1E6)).join('');
+  return String((x && (x.pays || x.nom)) || '?').trim().slice(0, 2).toUpperCase();
+}
+
+function ppTamponsHTML(){
+  const h = (typeof getHistory === 'function' ? getHistory() : []) || [];
+  if(!h.length){
+    return `<p class="hint" style="margin:0">Ton passeport est vierge. Le premier voyage que tu prépares y laissera son tampon.</p>`;
+  }
+  /* du plus récent au plus ancien : le dernier voyage est celui dont on se
+     souvient, et celui qu'on veut montrer */
+  const L = h.slice().reverse().slice(0, 12);
+  return `<div class="tampons">` + L.map((x, i) => {
+    const d = x.quand ? new Date(x.quand) : null;
+    const quand = d && !isNaN(d)
+      ? d.toLocaleDateString(LOC(), { month:'short', year:'numeric' }) : '';
+    /* l'inclinaison vient du NOM, pas du hasard : elle ne bouge pas d'un
+       rendu à l'autre, un tampon ne se repose pas tout seul */
+    const graine = String(x.nom || '').length + i * 3;
+    const angle = ((graine % 7) - 3) * 1.4;
+    /* Le drapeau retombe sur 📍 là où le système ne sait pas les dessiner
+       (Windows, notamment — drapeauxDessinables() le détecte). Quatre
+       épingles identiques ne distinguent rien : on grave alors les deux
+       premières lettres du pays, ce qui ressemble d'ailleurs davantage à
+       un vrai tampon. */
+    const dr = drapeauOuPoint(x.drapeau);
+    const marque = dr === '📍'
+      ? `<span class="tp-lettres" aria-hidden="true">${esc(codePays(x))}</span>`
+      : `<span class="tp-drapeau" aria-hidden="true">${esc(dr)}</span>`;
+    return `<div class="tampon" style="--tilt:${angle.toFixed(1)}deg">
+      ${marque}
+      <span class="tp-nom">${esc(x.nom || '')}</span>
+      ${x.pays ? `<span class="tp-pays">${esc(String(x.pays).split(/[,;]/)[0].trim())}</span>` : ''}
+      ${quand ? `<span class="tp-quand">${esc(quand)}</span>` : ''}
+    </div>`;
+  }).join('') + `</div>`;
+}
+
 function ppChiffres(){
   const h = (typeof getHistory === 'function' ? getHistory() : []) || [];
   const pays = new Set();
@@ -15666,6 +15726,17 @@ function profilPlus(){
     m.innerHTML = `<h3 style="margin:0 0 4px">${ICO('ampoule', 17)} Ce qu'Acolyte a appris de toi</h3>
       <p class="hint" style="margin:0 0 12px">Observé sur cet appareil, jamais envoyé. Tu peux tout effacer d'un bouton.</p>
       ${ppMemoireHTML()}`;
+    /* Les tampons : à part, parce que ce n'est pas de la mémoire mais de
+       l'histoire — et parce qu'on a envie de les voir sans dérouler. */
+    let tp = document.getElementById('pfTampons');
+    if(!tp){
+      tp = document.createElement('div');
+      tp.id = 'pfTampons'; tp.className = 'card';
+      pan.insertBefore(tp, m);
+    }
+    tp.innerHTML = `<h3 style="margin:0 0 4px">${ICO('passeport', 17)} Tes tampons</h3>
+      <p class="hint" style="margin:0 0 12px">Un par voyage préparé, du plus récent au plus ancien.</p>
+      ${ppTamponsHTML()}`;
   }
 }
 document.addEventListener('click', e => {
