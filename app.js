@@ -102,6 +102,7 @@ let state = {
   cache: {},          // réponses IA
   checklist: {},      // valise cochée
   maison: {},         // « avant de partir » cochée
+  reserves: {},       // « à réserver tôt » cochées
   spends: [],         // dépenses réelles
   chatLog: [],        // concierge
   notes: '',          // carnet
@@ -318,6 +319,9 @@ function safeState(raw){
        n'existe pas. C'est exactement le piège que le contrat d'état est là
        pour rendre visible. */
     maison:       s.maison && typeof s.maison === 'object' ? safeJSON(s.maison) : {},
+    /* Même piège, même remède : sans cette ligne les réservations cochées
+       disparaîtraient au rechargement. */
+    reserves:     s.reserves && typeof s.reserves === 'object' ? safeJSON(s.reserves) : {},
     spends:       Array.isArray(s.spends) ? s.spends.slice(0, 300).map(x => safeJSON(x)) : [],
     chatLog:      Array.isArray(s.chatLog) ? s.chatLog.slice(0, 100).map(x => safeJSON(x)) : [],
     notes:        _sTxt(s.notes, 20000),
@@ -3456,7 +3460,8 @@ function panTransport(d){
       <div class="ic-head"><span>ℹ️</span><h4>Bon à savoir</h4></div><p>${esc(tr.details)}</p></div>` : ''}
     ${d.sur_place ? `<div class="info-card">
       <div class="ic-head"><span>${ICO('metro',17)}</span><h4>Une fois sur place</h4></div><p>${esc(d.sur_place)}</p></div>` : ''}
-    ${carbonHTML(mode)}` + `
+    ${carbonHTML(mode)}
+    ${prixSuiviHTML()}` + `
     <div class="sim-appel">
       <div><b>Comparer pour de vrai</b><em>Vrais prix et vrais horaires, avion, train ou voiture.</em></div>
       <button type="button" class="btn sm" id="btnOpenSimPan">Ouvrir la simulation</button>
@@ -3570,6 +3575,66 @@ function budgetReelHTML(btNum, nuits){
     </div>`;
 }
 
+/* ============================================================
+   « À RÉSERVER TÔT » — une liste qu'on peut enfin cocher
+   ------------------------------------------------------------
+   L'IA produit deux à quatre réservations à faire à l'avance, chacune avec
+   son délai (« Palácio da Pena — 1 semaine avant »). C'était un paragraphe :
+   on le lisait, on ne pouvait rien en faire, et rien ne rappelait qu'il
+   restait quelque chose à réserver. La valise et la maison ont des cases
+   depuis longtemps ; c'est la seule liste du voyage qui n'en avait pas.
+
+   ⚠️ La clé ne peut pas être le rang dans la liste : l'IA renumérote quand
+   elle regénère, et on aurait vu des cases cochées se déplacer d'une ligne
+   à l'autre. On la dérive du TEXTE, qui, lui, désigne bien la même chose.
+============================================================ */
+function resaCle(txt){
+  const t = String(txt || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  let h = 5381;
+  for(let i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0;
+  return 'r' + h.toString(36);
+}
+function resaRestantes(d){
+  const plan = d || state.cache?.plan;
+  return (plan?.a_reserver || []).filter(r => !state.reserves?.[resaCle(r)]);
+}
+function aReserverHTML(d){
+  const L = d.a_reserver || [];
+  if(!L.length) return '';
+  const reste = resaRestantes(d).length;
+  return `<div class="info-card" style="margin-top:14px">
+    <div class="ic-head"><span>${ICO('billet',17)}</span><h4>À réserver tôt</h4>
+      <span class="ar-compte">${reste ? reste + ' sur ' + L.length : 'tout est réservé'}</span></div>
+    ${L.map(r => {
+      const k = resaCle(r), fait = !!state.reserves?.[k];
+      return `<button type="button" class="check ar-ligne${fait ? ' done' : ''}" data-resa="${k}"
+                aria-pressed="${fait}">
+        <span class="box">${fait ? '✔' : ''}</span><span>${esc(r)}</span>
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-resa]');
+  if(!el) return;
+  const k = el.dataset.resa;
+  state.reserves = state.reserves || {};
+  state.reserves[k] = !state.reserves[k];
+  save();
+  const fait = !!state.reserves[k];
+  el.classList.toggle('done', fait);
+  el.setAttribute('aria-pressed', String(fait));
+  el.querySelector('.box').textContent = fait ? '✔' : '';
+  /* le compteur de l'en-tête et le compte à rebours disent la même chose */
+  const c = el.closest('.info-card')?.querySelector('.ar-compte');
+  if(c){
+    const reste = resaRestantes().length, total = (state.cache?.plan?.a_reserver || []).length;
+    c.textContent = reste ? reste + ' sur ' + total : 'tout est réservé';
+  }
+  try{ futurBarMaj(); }catch(err){}
+  if(fait && !resaRestantes().length){ try{ confetti(); }catch(err){} toast('🎟️ Tout est réservé'); }
+});
+
 function panBudget(d){
   const bd = d.budget || {};
   const A = (state.prefs?.adults||1) + (state.prefs?.kids||0);
@@ -3602,9 +3667,7 @@ function panBudget(d){
       </div>`).join('')}
     </div>` : (bd.repartition ? `<div class="info-card"><p>${esc(bd.repartition)}</p></div>` : '')}
     <p class="hint" style="margin:12px 0 0">${ICO('ampoule',14)} Estimation indicative — les prix réels du transport s'affichent dans l'onglet Transport.</p>
-    ${(d.a_reserver||[]).length ? `<div class="info-card" style="margin-top:14px">
-      <div class="ic-head"><span>${ICO('billet',17)}</span><h4>À réserver tôt</h4></div>
-      ${d.a_reserver.map(r=>`<p class="ic-todo">${esc(r)}</p>`).join('')}</div>` : ''}
+    ${aReserverHTML(d)}
     ${suiviDepensesHTML()}`;
 }
 
@@ -3828,6 +3891,82 @@ function trackPrice(prix, source){
   } else {
     bar.style.display = 'none';
   }
+}
+
+/* ============================================================
+   LA COURBE DU PRIX — ce qui était mesuré sans être montré
+   ------------------------------------------------------------
+   trackPrice() enregistre depuis toujours un point par jour et par source,
+   trente au maximum. Personne ne les avait jamais vus : la seule chose qui
+   lisait cet historique était une alerte posée DANS la fenêtre de
+   simulation, donc visible uniquement de qui l'ouvrait, juste après une
+   recherche. Le relevé existait, la mémoire aussi, et l'écran nulle part.
+
+   On le montre là où la question se pose — l'onglet Transport — et on dit
+   ce qu'il veut dire : un prix seul n'apprend rien, un prix comparé à son
+   plus bas connu dit s'il faut réserver maintenant ou attendre.
+============================================================ */
+function prixHistorique(){
+  if(!state.trip) return null;
+  let all;
+  try{ all = JSON.parse(localStorage.getItem(LS_PRICES)) || {}; }catch(e){ return null; }
+  const h = all[`${state.trip.nom}_${state.prefs?.depart || 'flex'}`];
+  /* un seul point n'est pas un historique : on ne trace pas une droite */
+  return (Array.isArray(h) && h.length >= 2) ? h : null;
+}
+
+/* Courbe dessinée en SVG inline : aucun fichier, aucune dépendance, et elle
+   suit les encres du thème comme le reste. */
+function prixCourbeHTML(h){
+  const L = 260, H = 54, m = 5;
+  const p = h.map(x => +x.p).filter(n => isFinite(n));
+  if(p.length < 2) return '';
+  const bas = Math.min(...p), haut = Math.max(...p);
+  const etendue = haut - bas || 1;
+  const x = i => m + i * (L - 2 * m) / (p.length - 1);
+  const y = v => H - m - ((v - bas) / etendue) * (H - 2 * m);
+  const ligne = p.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const aire = `${ligne} L${x(p.length - 1).toFixed(1)},${H - m} L${x(0).toFixed(1)},${H - m} Z`;
+  const iBas = p.indexOf(bas);
+  return `<svg class="px-courbe" viewBox="0 0 ${L} ${H}" role="img"
+      aria-label="Évolution du prix relevé : de ${p[0]} à ${p[p.length - 1]} euros">
+    <path d="${aire}" class="px-aire"/>
+    <path d="${ligne}" class="px-trait" fill="none"/>
+    <circle cx="${x(iBas).toFixed(1)}" cy="${y(bas).toFixed(1)}" r="3.5" class="px-bas"/>
+    <circle cx="${x(p.length - 1).toFixed(1)}" cy="${y(p[p.length - 1]).toFixed(1)}" r="3.5" class="px-fin"/>
+  </svg>`;
+}
+
+function prixSuiviHTML(){
+  const h = prixHistorique();
+  if(!h) return '';
+  const p = h.map(x => +x.p).filter(n => isFinite(n));
+  if(p.length < 2) return '';
+  const actuel = p[p.length - 1], bas = Math.min(...p), haut = Math.max(...p);
+  const ecart = Math.round(actuel - bas);
+  const jours = new Set(h.map(x => x.d)).size;
+  const source = h[h.length - 1].s;
+  /* Le verdict AVANT la courbe : on lit une phrase, on regarde le dessin
+     ensuite si on veut les détails. L'inverse oblige à interpréter soi-même. */
+  let verdict, ton;
+  if(ecart <= 0){ verdict = 'C’est le prix le plus bas qu’Acolyte ait relevé. Si la date est sûre, c’est le moment.'; ton = 'bon'; }
+  else if(ecart <= 10){ verdict = `À ${ecart} € du plus bas relevé (${bas} €) — l’écart est mince.`; ton = 'bon'; }
+  else { verdict = `${ecart} € au-dessus du plus bas relevé (${bas} €). Les prix remontent souvent à l’approche du départ.`; ton = 'tiede'; }
+  return `
+    <div class="px-suivi px-${ton}">
+      <div class="px-tete">
+        <span class="px-titre">${ICO('money', 15)} Le prix que tu suis</span>
+        ${badgeVerifie(source ? 'Relevé sur ' + source : 'Relevé réel')}
+      </div>
+      <p class="px-verdict">${esc(verdict)}</p>
+      ${prixCourbeHTML(h)}
+      <div class="px-pied">
+        <span><b>${actuel} €</b> aujourd’hui</span>
+        <span>bas ${bas} €</span>
+        <span>haut ${haut} €</span>
+        <span>${jours} relevé${jours > 1 ? 's' : ''}</span>
+      </div>
+    </div>`;
 }
 
 
@@ -14110,6 +14249,14 @@ function kioPhrases(){
   const j1 = plan && Array.isArray(plan.programme) && plan.programme[0];
   if(j1 && j1.titre) out.push('Jour 1 · ' + String(j1.titre));
   if(t.budget_estime) out.push('Budget estimé · ' + String(t.budget_estime));
+  /* Le kiosque comptait les jours et rien d'autre. À trois semaines du
+     départ, ce qui est utile n'est pas le nombre de jours : c'est ce qu'il
+     reste à faire. On le dit d'autant plus fort qu'on approche. */
+  const reste = (typeof resaRestantes === 'function') ? resaRestantes() : [];
+  if(reste.length && c && !c.parti){
+    if(c.jours <= 14) out.push('⚠️ ' + reste[0]);
+    else out.push(`${reste.length} réservation${reste.length > 1 ? 's' : ''} encore à faire`);
+  }
   return out.length ? out : ['Ton voyage t’attend'];
 }
 
