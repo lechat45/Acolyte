@@ -547,7 +547,7 @@
 
     <!-- 3 · Réserver (replié : on n'y va qu'au moment de réserver) -->
     <div class="acc" id="accResa">
-      <div class="acc-head" data-acc>RÉSERVER <span class="arr">›</span></div>
+      <button class="acc-head" type="button" data-acc aria-expanded="false">RÉSERVER <span class="arr" aria-hidden="true">›</span></button>
       <div class="acc-body">
         <p class="sub" style="margin:0 0 12px">Tous les liens de réservation, déjà pré-remplis avec ta destination et tes dates.</p>
         <button class="btn" id="btnOpenResa" style="width:100%;justify-content:center">Réserver — billets, hôtels, activités</button>
@@ -582,7 +582,7 @@
 
     <!-- 4 · Gestion du voyage (replié : actions rares) -->
     <div class="acc" id="accManage">
-      <div class="acc-head" data-acc>GÉRER CE VOYAGE <span class="arr">›</span></div>
+      <button class="acc-head" type="button" data-acc aria-expanded="false">GÉRER CE VOYAGE <span class="arr" aria-hidden="true">›</span></button>
       <!-- ⚠️ SIX BOUTONS RIGOUREUSEMENT IDENTIQUES, c'était le problème : « ↺
            Nouveau voyage », qui efface tout, avait exactement l'allure
            d'« Exporter (.md) », qui ne fait qu'écrire un fichier. Trois groupes

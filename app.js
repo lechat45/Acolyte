@@ -43,7 +43,13 @@
     if(lbl){
       lbl.style.color = '#FF6B00';
       lbl.style.fontSize = '.62rem';
-      lbl.textContent = '⚠️ ' + (e.message || 'erreur au démarrage');
+      /* Le détail technique est en anglais et vient du navigateur : on le
+         GARDE, c'est la seule preuve exploitable pour rapporter la panne —
+         mais on le présente comme tel, derrière une phrase qui dit ce qui
+         se passe. Seul, « Cannot read properties of null » ne veut rien
+         dire pour qui lit le français et voit son écran figé. */
+      lbl.textContent = '⚠️ Acolyte n’a pas pu démarrer'
+        + (e.message ? ' — détail : ' + String(e.message).slice(0, 120) : '');
     }
     setTimeout(hide, 2500);
   });
@@ -4019,7 +4025,11 @@ document.addEventListener('click', e => {
 document.addEventListener('click', e => {
   const acc = e.target.closest('[data-acc]');
   if(acc){
-    acc.parentElement.classList.toggle('open');
+    const ouvert = acc.parentElement.classList.toggle('open');
+    /* L'en-tete est un vrai bouton (il l'etait en <div>, donc inatteignable au
+       clavier) : son etat doit etre ANNONCE, sinon un lecteur d'ecran dit
+       « bouton » sans jamais dire s'il est ouvert ou ferme. */
+    acc.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
     /* Le suivi des réservations se peuple à l'ouverture : inutile de le rendre
        tant que l'accordéon est replié. */
     try{ if(acc.parentElement.id === 'accResa') renderResas(); }catch(err){}
@@ -5073,9 +5083,9 @@ function renderFullPlan(d){
   $('#zoneItiAll').innerHTML = `<div class="divider"></div><h3 style="margin-bottom:12px">${ICO('calendrier',17)} Ton séjour complet</h3>` +
     (d.jours||[]).map((j,i)=>`
       <div class="acc ${i===0?'open':''}">
-        <div class="acc-head" data-acc>
-          Jour ${esc(j.jour)} — ${esc(j.titre)} <span class="arr">›</span>
-        </div>
+        <button class="acc-head" type="button" data-acc aria-expanded="${i===0?'true':'false'}">
+          Jour ${esc(j.jour)} — ${esc(j.titre)} <span class="arr" aria-hidden="true">›</span>
+        </button>
         <div class="acc-body">${timelineHTML(j)}</div>
       </div>`).join('');
 }

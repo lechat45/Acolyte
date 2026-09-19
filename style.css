@@ -1374,6 +1374,12 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   overflow:hidden;background:var(--secondary);box-shadow:var(--shadow);
 }
 .acc-head{
+  /* C'est un <button> depuis qu'on s'est apercu qu'un <div> cliquable est
+     invisible au clavier : on neutralise les styles propres au bouton
+     (bordure, fond gris, police systeme, texte centre) sans rien changer a
+     l'apparence d'avant. */
+  width:100%;border:0;text-align:left;font:inherit;color:inherit;
+  -webkit-appearance:none;appearance:none;
   padding:16px;cursor:pointer;display:flex;align-items:center;gap:10px;
   font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1rem;text-transform:uppercase;
   user-select:none;background:var(--primary);border-bottom:1px solid var(--stroke);
