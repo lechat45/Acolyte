@@ -6353,3 +6353,24 @@ body::before{
 .pd-hors{margin:14px 0 0;font-size:.8rem;line-height:1.45;color:var(--txt-2)}
 .cn-pied{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px}
 .cn-pied .hint{flex:1;min-width:0}
+
+/* ============================================================
+   18. LA MÉTÉO QUI CONTREDIT LE PROGRAMME
+   ------------------------------------------------------------
+   Orange, pas jaune : c'est une mise en garde, pas une action à presser.
+   Le jaune est réservé au bouton qui, lui, se presse.
+============================================================ */
+.wx-conseil{
+  margin:0 0 16px;padding:14px 16px;
+  background:var(--paper);
+  border:1px solid var(--paper-edge);border-left:5px solid var(--warn);
+  border-radius:var(--r-md);box-shadow:var(--ombre-dure);
+}
+.wxc-tete{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.wxc-titre{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--txt-2);
+}
+.wxc-txt{margin:0 0 12px;font-size:.92rem;line-height:1.5;color:var(--txt);max-width:56ch}
+.wxc-actes{display:flex;flex-wrap:wrap;gap:10px}

@@ -3673,12 +3673,203 @@ function panPapiers(d){
 
 /* ---- Panneau 1 : le programme jour par jour ---- */
 /* ---- Le programme jour par jour : cœur de la vue, toujours affiché ---- */
+/* ============================================================
+   LA MÉTÉO QUI AGIT — au lieu de se contenter d'être affichée
+   ------------------------------------------------------------
+   Acolyte relevait déjà la météo réelle (Open-Meteo), mais il en faisait
+   une MOYENNE sur le séjour, affichée dans un coin : « 22° à 28°, 15 % de
+   pluie ». Les valeurs jour par jour arrivaient dans la même réponse et
+   étaient jetées. Or une moyenne ne dit rien de ce qui compte : que le
+   jour 2, celui de Belém et du bord du Tage, annonce 80 % de pluie
+   pendant que le jour 4, celui des musées, sera sec.
+
+   On garde donc le détail, on le confronte au programme, et on propose
+   l'échange. L'assistant sait déjà refaire une journée ; ici on ne
+   refait rien, on intervertit — c'est plus sûr et c'est instantané.
+
+   ⚠️ CE QU'ACOLYTE DEVINE, ET IL LE DIT. Savoir qu'une journée se passe
+   dehors demande de comprendre « Miradouro de Santa Luzia » et « Museu
+   Nacional do Azulejo ». On s'appuie sur des mots-clés : c'est une
+   approximation, elle est annoncée comme telle dans l'interface, et
+   l'échange n'est JAMAIS automatique — il est proposé, le voyageur
+   décide.
+
+   ⚠️ PAS DE PRÉVISION AU-DELÀ DE SEIZE JOURS. Open-Meteo ne va pas plus
+   loin, et aucune source sérieuse ne le fait. Passé ce seuil on se tait
+   plutôt que d'afficher une moyenne de saison déguisée en prévision.
+============================================================ */
+
+/* Mots qui trahissent une journée en plein air, et ceux qui trahissent
+   l'inverse. Volontairement courts : un mot rare ne sert à rien, et un
+   mot ambigu (« palais », « château ») fait plus de mal que de bien. */
+const MOTS_DEHORS = ['parc','jardin','plage','miradouro','belv','panorama','vue','randonn',
+  'sentier','march','port','quai','place','praça','plaza','pont','colline','forêt','lac',
+  'rivière','île','promenade','balade','terrasse','ruelle','falaise','cascade','téléphérique',
+  'bateau','vélo','sunset','coucher','jardins','esplanade','quartier'];
+const MOTS_DEDANS = ['musée','museu','museo','galerie','cathédrale','église','igreja','basilique',
+  'aquarium','planétarium','bibliothèque','théâtre','opéra','thermes','spa','boutique',
+  'exposition','atelier','cave','brasserie','centre commercial','palácio','fondation','collection'];
+
+/* Renvoie un nombre entre -1 (clairement dedans) et +1 (clairement dehors).
+   0 = on ne sait pas, et dans ce cas on ne conseille rien. */
+function jourDehors(j){
+  const txt = ((j.resume || '') + ' ' + (j.titre || '') + ' ' + (j.lieux || []).join(' ')).toLowerCase();
+  let d = 0, x = 0;
+  for(const m of MOTS_DEHORS) if(txt.includes(m)) d++;
+  for(const m of MOTS_DEDANS) if(txt.includes(m)) x++;
+  if(!d && !x) return 0;
+  return (d - x) / Math.max(1, d + x);
+}
+
+/* La prévision jour par jour, gardée telle quelle. Mise en cache : on ne
+   redemande pas à chaque rendu du panneau. */
+async function meteoParJour(force){
+  const d = stayDates(); if(!d) return null;
+  const cle = 'wxJours_' + d.in;
+  if(!force && state.cache[cle]) return state.cache[cle];
+  /* au-delà de la fenêtre de prévision, aucune source ne sait */
+  const jAvant = Math.round((new Date(d.in) - Date.now()) / 86400000);
+  if(jAvant > 16) return null;
+  let g;
+  try{ g = await geocode(); }catch(e){ return null; }
+  if(!g?.latitude) return null;
+  try{
+    const r = await fetchT('https://api.open-meteo.com/v1/forecast'
+      + '?latitude=' + g.latitude + '&longitude=' + g.longitude
+      + '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_mean'
+      + '&timezone=auto&start_date=' + d.in + '&end_date=' + d.out, {}, 9000);
+    const w = await r.json();
+    if(!w?.daily?.time?.length) return null;
+    const out = w.daily.time.map((jour, i) => ({
+      d: jour,
+      min: Math.round(w.daily.temperature_2m_min[i]),
+      max: Math.round(w.daily.temperature_2m_max[i]),
+      pluie: Math.round((w.daily.precipitation_probability_mean || [])[i] || 0)
+    }));
+    state.cache[cle] = out; save();
+    return out;
+  }catch(e){ return null; }
+}
+
+/* Cherche LE meilleur échange : la journée la plus dehors sous la pluie,
+   contre la journée la plus dedans au sec. Renvoie null s'il n'y a rien
+   d'utile à dire — ce qui est le cas le plus fréquent, et tant mieux. */
+function meteoEchange(jours){
+  const prog = state.cache?.plan?.programme || [];
+  if(!jours || prog.length < 2) return null;
+  const SEUIL_PLUIE = 55, SEUIL_SEC = 30;
+  let mouille = null, sec = null;
+  prog.forEach((j, i) => {
+    const w = jours[i]; if(!w) return;
+    const dehors = jourDehors(j);
+    if(dehors > 0.2 && w.pluie >= SEUIL_PLUIE
+       && (!mouille || w.pluie > mouille.w.pluie)) mouille = { i, j, w, dehors };
+    if(dehors < -0.2 && w.pluie <= SEUIL_SEC
+       && (!sec || w.pluie < sec.w.pluie)) sec = { i, j, w, dehors };
+  });
+  if(!mouille || !sec || mouille.i === sec.i) return null;
+  return { mouille, sec };
+}
+
+/* L'échange lui-même. ⚠️ Le contenu change de place, les NUMÉROS restent :
+   un programme dont les jours sauteraient de 1 à 3 serait illisible. Et
+   tout ce qui est indexé par le numéro de jour doit suivre — le détail
+   heure par heure et la carte du jour, sinon on afficherait le programme
+   d'une journée avec la carte de l'autre. */
+function echangeJours(a, b){
+  const d = state.cache?.plan; if(!d?.programme) return false;
+  const P = d.programme;
+  if(!P[a] || !P[b]) return false;
+  const na = P[a].jour, nb = P[b].jour;
+  const tmp = P[a]; P[a] = P[b]; P[b] = tmp;
+  P[a].jour = na; P[b].jour = nb;
+  for(const cle of ['days', 'maps']){
+    const c = state.cache[cle];
+    if(!c) continue;
+    const va = c[na], vb = c[nb];
+    if(va === undefined && vb === undefined) continue;
+    if(vb === undefined) delete c[na]; else c[na] = vb;
+    if(va === undefined) delete c[nb]; else c[nb] = va;
+  }
+  save();
+  return true;
+}
+
+/* La carte de conseil, posée en tête du programme. Vide tant qu'il n'y a
+   rien à conseiller : un bandeau qui répète « rien à signaler » est du
+   bruit, et on finit par ne plus lire celui qui signale vraiment. */
+function meteoConseilHTML(){
+  const e = state.cache?._wxConseil;
+  if(!e) return '';
+  return `<div class="wx-conseil">
+    <div class="wxc-tete">
+      <span class="wxc-titre">${ICO('alerte', 15)} La météo contredit ton programme</span>
+      ${badgeVerifie('Open-Meteo')}
+    </div>
+    <p class="wxc-txt">Le <b>jour ${esc(String(e.mj))}</b> se passe dehors et annonce
+      <b>${esc(String(e.mp))} % de pluie</b>. Le <b>jour ${esc(String(e.sj))}</b> est à l’abri
+      et sera sec (${esc(String(e.sp))} %). Les intervertir garde ton programme entier.</p>
+    <div class="wxc-actes">
+      <button type="button" class="btn sm" id="btnWxEchange"
+        data-a="${e.ia}" data-b="${e.ib}">Intervertir les jours ${esc(String(e.mj))} et ${esc(String(e.sj))}</button>
+      <button type="button" class="btn sm ghost" id="btnWxIgnore">Laisser comme ça</button>
+    </div>
+    <p class="hint" style="margin:8px 0 0">Acolyte devine « dehors » ou « à l’abri » d’après les lieux du jour : c’est une approximation, à toi de trancher.</p>
+  </div>`;
+}
+
+/* Calcule le conseil puis redessine, une seule fois par plan. On ne bloque
+   jamais l'affichage du programme là-dessus : le réseau peut manquer. */
+/* ⚠️ Le verrou porte sur LE PLAN, pas sur la page. Un simple booleen ne se
+   relachait jamais : si le conseil etait calcule avant que la prevision ne
+   soit disponible — ou si le plan changeait ensuite — plus rien n'etait
+   recalcule de toute la session. On retient la date de depart, qui change
+   avec le voyage. */
+let _wxConseilPour = null;
+async function meteoConseilMaj(){
+  const d = stayDates();
+  const cle = d ? d.in + '_' + (state.cache?.plan?.programme || []).length : null;
+  if(!cle || _wxConseilPour === cle) return;
+  _wxConseilPour = cle;
+  try{
+    const jours = await meteoParJour();
+    const e = meteoEchange(jours);
+    if(!e) return;
+    state.cache._wxConseil = {
+      ia: e.mouille.i, ib: e.sec.i,
+      mj: e.mouille.j.jour, mp: e.mouille.w.pluie,
+      sj: e.sec.j.jour,     sp: e.sec.w.pluie
+    };
+    save();
+    if(_planTab === 'programme') renderSections(state.cache.plan);
+  }catch(err){}
+}
+
+document.addEventListener('click', e => {
+  const ech = e.target.closest('#btnWxEchange');
+  if(ech){
+    const a = +ech.dataset.a, b = +ech.dataset.b;
+    if(echangeJours(a, b)){
+      delete state.cache._wxConseil; save();
+      renderSections(state.cache.plan);
+      toast('🔁 Journées interverties');
+    }
+    return;
+  }
+  if(e.target.closest('#btnWxIgnore')){
+    delete state.cache._wxConseil; save();
+    renderSections(state.cache.plan);
+  }
+});
+
 function panProgramme(d){
   const jours = d.programme || [];
   /* le conseil clé, remonté ici depuis l'ancienne carte « Ton voyage » */
   const tip = d.conseil_cle ? `<div class="key-tip"><span class="kt-emo">${ICO('ampoule',18)}</span><p>${esc(d.conseil_cle)}</p></div>` : '';
   if(!jours.length) return tip + `<p class="hint">Aucune journée planifiée pour l'instant.</p>`;
-  return meteoHTML() + tip
+  /* le calcul part en tache de fond : il demande le reseau, le programme non */
+  try{ meteoConseilMaj(); }catch(e){}
+  return meteoHTML() + meteoConseilHTML() + tip
     + `<p class="pan-intro">Ton programme jour par jour. Une journée ne te va pas ? <strong>Vois-la heure par heure</strong>, ou demande à Acolyte de la <strong>refaire</strong>.</p>`
     + jours.map(jr => `
       <div class="day-block">
