@@ -13024,10 +13024,7 @@ function iaRender(){
      changement du fil (envoi, réponse, effacement, arrivée par la synchro) */
   iaClearMaj();
   if(!L.length){
-    fil.innerHTML = '<div class="ia-vide">'
-      + ICO('etincelle',30,'ia-vide-ico')
-      + "Pose une question sur ton voyage, décris-en un nouveau, ou demande une modification. "
-      + 'En français, comme à quelqu’un.</div>';
+    fil.innerHTML = iaVideHTML();
     return;
   }
   /* data-i porte l'index RÉEL dans chatLog : c'est l'ancre utilisée par
@@ -15772,3 +15769,41 @@ function videHTML(ico, texte, boutonId, boutonTexte){
     ${boutonId ? `<button type="button" class="btn sm" id="${esc(boutonId)}">${esc(boutonTexte || 'Commencer')}</button>` : ''}
   </div>`;
 }
+
+/* ============================================================
+   L'ASSISTANT : UN VIDE QUI INVITE
+   ------------------------------------------------------------
+   Une phrase centrée dans un grand vide dit « écris quelque chose » sans dire
+   quoi. Trois exemples cliquables disent ce que l'assistant sait faire, et
+   un clic les envoie : la première interaction ne demande plus d'inventer
+   une formulation.
+   ⚠️ Les exemples changent selon qu'il y a un voyage ou non. Proposer
+   « modifie le jour 2 » à quelqu'un qui n'a pas de voyage, c'est promettre
+   quelque chose qui échouera à la première réponse.
+============================================================ */
+function iaVideHTML(){
+  const t = state.trip;
+  const jours = Object.keys((state.cache && state.cache.days) || {}).length;
+  const ex = t
+    ? [ jours ? `Modifie l’après-midi du jour ${Object.keys(state.cache.days)[0]} pour quelque chose de plus calme` : `Détaille-moi le jour 1 à ${t.nom}`,
+        `Qu’est-ce que je dois absolument savoir avant d’aller à ${t.nom} ?`,
+        `Un restaurant pas touristique près de mon logement, budget serré` ]
+    : [ 'Un week-end au chaud en octobre, moins de 400 € par personne',
+        'Une semaine en train depuis Paris, sans avion, avec deux enfants',
+        'Une ville d’Europe où je n’ai jamais pensé aller, pour 5 jours' ];
+  return `<div class="ia-vide">
+      ${ICO('etincelle', 26, 'ia-vide-ico')}
+      <p class="ia-vide-t">${t ? `On parle de <b>${esc(t.nom)}</b> ?` : 'Par quoi on commence ?'}</p>
+      <div class="ia-ex">${ex.map(e => `<button type="button" class="ia-ex-b" data-iaex="${esc(e)}">${ICO('envoyer', 13)} ${esc(e)}</button>`).join('')}</div>
+      <p class="hint" style="margin:14px 0 0">Ou écris-lui en français, comme à quelqu’un.</p>
+    </div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-iaex]');
+  if(!b) return;
+  const inp = document.getElementById('iaInp');
+  if(!inp) return;
+  inp.value = b.dataset.iaex;
+  inp.dispatchEvent(new Event('input', { bubbles:true }));
+  document.getElementById('iaGo')?.click();
+});

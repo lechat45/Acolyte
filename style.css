@@ -6037,3 +6037,32 @@ body::before{
      ne changent rien à la lisibilité ; un mot coupé, si. */
   .plan-tab{ padding:7px 2px 6px;gap:2px;font-size:.6rem;letter-spacing:-.01em }
 }
+
+/* ============================================================
+   L'ASSISTANT — le vide qui invite, et les bulles en papier
+============================================================ */
+.ia-vide{ max-width:56ch;text-align:left }
+.ia-vide .ia-vide-ico{ color:var(--primary-txt);opacity:1;margin-bottom:12px }
+.ia-vide-t{
+  margin:0 0 14px;
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;
+  font-size:1.35rem;font-weight:700;letter-spacing:-.02em;color:var(--txt);
+}
+.ia-vide-t b{ color:var(--primary-txt) }
+.ia-ex{ display:flex;flex-direction:column;gap:8px }
+.ia-ex-b{
+  display:flex;align-items:center;gap:10px;width:100%;
+  min-height:44px;padding:10px 14px;text-align:left;
+  background:var(--paper);color:var(--txt);
+  border:1px solid var(--paper-edge);border-radius:var(--r-md);
+  box-shadow:var(--ombre-dure);cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;font-size:.86rem;line-height:1.4;
+  transition:transform .16s cubic-bezier(.2,.9,.3,1), box-shadow .16s cubic-bezier(.2,.9,.3,1);
+}
+.ia-ex-b svg{ flex:0 0 auto;color:var(--txt-2) }
+.ia-ex-b:hover{ transform:translate(-2px,-2px);box-shadow:var(--ombre-dure-h) }
+.ia-ex-b:active{ transform:translate(2px,2px);box-shadow:var(--ombre-dure-p) }
+/* Les bulles : celle d'Acolyte est une fiche posée, la tienne est plus plate. */
+.ia-msg.aco .ia-txt{ background:var(--paper);border:1px solid var(--paper-edge);box-shadow:var(--ombre-dure) }
+.ia-msg.moi .ia-txt{ box-shadow:none }
+@media(prefers-reduced-motion:reduce){ .ia-ex-b{ transition:none } .ia-ex-b:hover{ transform:none } }
