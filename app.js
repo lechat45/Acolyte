@@ -3164,17 +3164,17 @@ const _comDrafts = {};                          /* commentaires en cours de frap
    ⚠️ Et « Avant de partir » est devenu « Maison » : le libellé long à lui seul
    poussait deux onglets hors de l'écran. Le nom complet reste en title. */
 const PLAN_TABS = [
-  { id:'programme', ico:'calendrier', nom:'Programme' },
-  { id:'logement',  ico:'hotel',      nom:'Logement'  },
-  { id:'transport', ico:'train',      nom:'Transport' },
-  { id:'budget',    ico:'document',   nom:'Budget'    },
-  { id:'events',    ico:'etincelle',  nom:'Événements'},
-  { id:'papiers',   ico:'passeport',  nom:'Papiers'   },
+  { id:'programme', ico:'calendrier', nom:'Programme', rang:'place' },
+  { id:'logement',  ico:'hotel',      nom:'Logement',  rang:'place' },
+  { id:'transport', ico:'train',      nom:'Transport', rang:'place' },
+  { id:'budget',    ico:'document',   nom:'Budget',    rang:'place' },
+  { id:'events',    ico:'etincelle',  nom:'Événements', rang:'avant' },
+  { id:'papiers',   ico:'passeport',  nom:'Papiers',   rang:'avant' },
   /* « Manger » rebranché : loadFood() est ancré sur les tables RÉELLES relevées
      dans OpenStreetMap et porte les contraintes alimentaires. Son écran avait
      disparu lors d'une refonte, la fonction est restée. */
-  { id:'manger',    ico:'valise',     nom:'Manger', titre:'Où manger, ancré sur les adresses réelles du quartier' },
-  { id:'maison',    ico:'cle',        nom:'Maison', titre:'Avant de partir — la maison que tu laisses' }
+  { id:'manger',    ico:'assiette',   nom:'Manger', rang:'place', titre:'Où manger, ancré sur les adresses réelles du quartier' },
+  { id:'maison',    ico:'maison',     nom:'Maison', rang:'avant', titre:'La maison que tu laisses derrière toi' }
 ];
 
 /* ============================================================
@@ -3473,14 +3473,18 @@ function panEvents(){
 
 /* ---- Onglet Budget ---- */
 /* Devine un poste de dépense (icône) à partir de son libellé. */
+/* Le poste devient une ICÔNE du registre. Le rendu passait par un emoji
+   dont l'apparence dépendait de la police du système — sur Windows, « vol »
+   affichait un micro. Une clé dessinée ne dépend de rien. */
 function budgetIcon(label){
   const l = label.toLowerCase();
-  if(/transport|vol|avion|train|voiture|billet|trajet|bus/.test(l)) return '🚆';
-  if(/h[ôo]tel|logement|h[ée]berg|airbnb|nuit|dormir/.test(l)) return '🏨';
-  if(/resto|repas|nourri|manger|food|cuisine|boisson/.test(l)) return '🍽️';
-  if(/activit|visite|entr[ée]e|mus[ée]e|excursion|billet|loisir/.test(l)) return '🎫';
-  if(/extra|divers|impr[ée]vu|souvenir|shopping/.test(l)) return '✨';
-  return '💶';
+  let cle = 'money';
+  if(/transport|vol|avion|train|voiture|billet|trajet|bus/.test(l)) cle = /avion|vol/.test(l) ? 'avion' : 'train';
+  else if(/h[ôo]tel|logement|h[ée]berg|airbnb|nuit|dormir/.test(l)) cle = 'hotel';
+  else if(/resto|repas|nourri|manger|food|cuisine|boisson/.test(l)) cle = 'assiette';
+  else if(/activit|visite|entr[ée]e|mus[ée]e|excursion|loisir/.test(l)) cle = 'billet';
+  else if(/extra|divers|impr[ée]vu|souvenir|shopping/.test(l)) cle = 'etincelle';
+  return ICO(cle, 16);
 }
 /* Découpe la répartition libre de l'IA en postes { label, montant }. */
 function parseBudget(txt){
@@ -3609,7 +3613,7 @@ function suiviDepensesHTML(){
       <input id="spAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00">
       <button type="button" class="btn sm" id="btnSpend">Ajouter</button>
     </div>
-    <div id="zoneSpends">${n ? '' : '<p class="hint" style="margin:10px 0 0">Aucune dépense notée pour l’instant.</p>'}</div>`;
+    <div id="zoneSpends">${n ? '' : videHTML('cb', 'Aucune dépense notée. Saisis-les au fil du voyage : le total se compare à l’estimation ci-dessus.')}</div>`;
 }
 document.addEventListener('click', e => {
   if(!e.target.closest || !e.target.closest('#btnSpend')) return;
@@ -3691,8 +3695,7 @@ function renderSections(d){
       <h2 class="sections-title">Ton voyage</h2>
       <div class="plan-tabs-wrap">
         <div class="plan-tabs" role="tablist" aria-label="Détails du voyage">
-          ${PLAN_TABS.map(t => `<button class="plan-tab${t.id === _planTab ? ' on' : ''}" data-plantab="${t.id}" role="tab" aria-selected="${t.id === _planTab}"${t.titre ? ` title="${esc(t.titre)}"` : ''}>
-            ${ICO(t.ico,18)}${esc(t.nom)}</button>`).join('')}
+          ${ongletsEnRangs()}
         </div>
       </div>
       <div class="plan-panel">${(panels[_planTab] || panTransport)(d)}</div>
@@ -5130,7 +5133,7 @@ function renderFood(d){
       <div class="rc-top">
         <span class="rc-emo">${ICO('assiette',20)}</span>
         <div class="rc-id">
-          <h4>${esc(r.nom)}</h4>
+          <h4${d._verifies ? ' class="verifie" title="Relevé sur OpenStreetMap"' : ''}>${esc(r.nom)}</h4>
           <div class="rc-meta">${r.style ? esc(r.style) : ''}${r.quartier ? ' · ' + ICO('epingle',12) + ' ' + esc(r.quartier) : ''}</div>
         </div>
         <span class="rc-price">${esc(r.budget || '—')}</span>
@@ -5143,7 +5146,7 @@ function renderFood(d){
       </div>
     </div>`).join('')
     + `<p class="hint" style="margin-top:12px">${d._verifies
-        ? ICO('coche',13) + ' Adresses <strong>relevées sur OpenStreetMap</strong> : elles existent bel et bien. Acolyte a choisi parmi elles.'
+        ? badgeVerifie('osm') + ' Adresses <strong>relevées sur OpenStreetMap</strong> : elles existent bel et bien. Acolyte a choisi parmi elles.'
         : 'Sélection d\'Acolyte — vérifie les horaires avant de t\'y rendre.'} Les avis se consultent en un clic.</p>`;
 }
 
@@ -14174,7 +14177,7 @@ function lieuxBilanHTML(res){
     /* Rien d'anormal. On ne le dit que si on a vraiment pu vérifier quelque
        chose — annoncer « 0 lieu vérifié » n'informe personne. */
     if(situes < 2) return '';
-    return `<div class="lx-bilan lx-ok">${ICO('coche', 15)} <span>${situes} lieux du programme retrouvés à leur place sur la carte.</span></div>`;
+    return `<div class="lx-bilan lx-ok">${ICO('coche', 15)} <span>${situes} lieux du programme retrouvés à leur place sur la carte.</span> ${badgeVerifie('wiki')}</div>`;
   }
   const l = loin.slice(0, 6).map(x =>
     `<li><b>${esc(x.nom)}</b> — situé à ${x.km} km de ${esc((state.trip && state.trip.nom) || 'la destination')}</li>`).join('');
@@ -14330,7 +14333,7 @@ function valiseHTML(){
     </div>
     <span id="bagBadge" class="via-badge" style="display:none">rapide</span>
     <div class="vl-jauge"><div class="vl-barre"><span id="bagProg"></span></div><b id="bagCnt"></b></div>
-    <div id="zoneBag">${dejaLa ? '' : '<p class="hint" style="margin:0">Pas encore de liste. Le bouton ci-dessus la construit pour ce voyage précis.</p>'}</div>`;
+    <div id="zoneBag">${dejaLa ? '' : videHTML('sac', 'Pas encore de liste. Elle sera construite d’après la météo réelle de tes dates et la durée exacte du séjour.')}</div>`;
 }
 document.addEventListener('click', e => {
   if(!e.target.closest || !e.target.closest('#btnBagGo')) return;
@@ -15306,7 +15309,7 @@ function panManger(){
       </div>
       <button type="button" class="btn sm" id="btnFoodGo">${dejaLa ? 'Chercher à nouveau' : 'Trouver où manger'}</button>
     </div>
-    <div id="zoneFood">${dejaLa ? '' : '<p class="hint" style="margin:0">Choisis un budget et une envie, puis lance la recherche.</p>'}</div>`
+    <div id="zoneFood">${dejaLa ? '' : videHTML('assiette', 'Choisis un budget et une envie, puis lance la recherche : les adresses viendront d’un relevé réel du quartier.')}</div>`
     + specialitesHTML() + coursesHTML();
 }
 /* Écouteur délégué : le bouton n'existe qu'après le rendu du panneau, celui
@@ -15377,7 +15380,7 @@ function meteoHTML(){
       <canvas id="wxCv" width="56" height="56" aria-hidden="true"></canvas>
       <div class="wx-txt">
         <b>${Math.round(m.min)}° à ${Math.round(m.max)}°</b>
-        <span>${esc(mot)} · ${pluie} % de pluie · relevé réel</span>
+        <span>${esc(mot)} · ${pluie} % de pluie ${badgeVerifie('meteo')}</span>
       </div>
     </div>`;
 }
@@ -15417,7 +15420,7 @@ function ouLogerHTML(){
       </div>
       <button type="button" class="btn sm" id="btnStayGo">${dejaLa ? 'Chercher à nouveau' : 'Comparer'}</button>
     </div>
-    <div id="zoneStay">${dejaLa ? '' : '<p class="hint" style="margin:0">Choisis un type et une priorité, puis lance la comparaison.</p>'}</div>`;
+    <div id="zoneStay">${dejaLa ? '' : videHTML('quartier', 'Choisis un type et une priorité, puis lance la comparaison des quartiers.')}</div>`;
 }
 document.addEventListener('click', e => {
   if(!e.target.closest || !e.target.closest('#btnStayGo')) return;
@@ -15716,3 +15719,56 @@ document.addEventListener('change', e => {
   window[n] = function(){ try{ localStorage.removeItem(LS_BROUILLON); }catch(e){} return o.apply(this, arguments); };
 });
 setTimeout(() => { try{ qBrouillonLit(); }catch(e){} }, 500);
+
+/* ============================================================
+   LES ONGLETS EN DEUX RANGS NOMMÉS
+   ------------------------------------------------------------
+   Huit cases égales, c'était 175 px sur quatre rangées sans hiérarchie, et
+   un libellé « Maison » qu'on avait tronqué pour faire tenir la grille. Deux
+   rangs, chacun avec son étiquette : ce qui sert SUR PLACE, ce qui sert
+   AVANT DE PARTIR. L'étiquette donne le contexte, le libellé peut rester
+   court sans devenir obscur.
+   ⚠️ Un onglet sans `rang` va dans le premier : un ajout oublié ne disparaît
+   pas, il est juste mal rangé — ce qui se voit et se corrige.
+============================================================ */
+function ongletsEnRangs(){
+  const rangs = [
+    { id:'place', nom:'Sur place' },
+    { id:'avant', nom:'Avant de partir' }
+  ];
+  const un = t => `<button class="plan-tab${t.id === _planTab ? ' on' : ''}" data-plantab="${t.id}" role="tab" aria-selected="${t.id === _planTab}"${t.titre ? ` title="${esc(t.titre)}"` : ''}>${ICO(t.ico,18)}${esc(t.nom)}</button>`;
+  return rangs.map(r => {
+    const liste = PLAN_TABS.filter(t => (t.rang || 'place') === r.id);
+    if(!liste.length) return '';
+    return `<div class="pt-rang"><span class="pt-rang-nom">${esc(r.nom)}</span>${liste.map(un).join('')}</div>`;
+  }).join('');
+}
+
+/* ============================================================
+   LA DONNÉE VÉRIFIÉE SE VOIT
+   ------------------------------------------------------------
+   Un badge discret, constant, avec la source en infobulle. Posé là où une
+   donnée vient d'un relevé réel et non du modèle : les tables OpenStreetMap,
+   la météo mesurée, les lieux retrouvés sur Wikipédia. L'absence de badge
+   dit « estimé » — on n'ajoute pas une seconde marque pour le dire.
+============================================================ */
+function badgeVerifie(source){
+  const src = { osm:'Relevé sur OpenStreetMap', meteo:'Relevé Open-Meteo, données réelles',
+                wiki:'Retrouvé sur Wikipédia', bce:'Taux réel de la Banque centrale européenne' }[source] || 'Donnée vérifiée';
+  return `<span class="verifie-badge" title="${esc(src)}">${ICO('coche',11)} vérifié</span>`;
+}
+
+/* ============================================================
+   LES ÉTATS VIDES APPELLENT À L'ACTION
+   ------------------------------------------------------------
+   Un panneau sans données ressemblait à un panneau chargé : même intro, même
+   mise en page, juste rien dessous. L'état vide devient une invitation — une
+   icône, une phrase, et le bouton qui fait apparaître le contenu.
+============================================================ */
+function videHTML(ico, texte, boutonId, boutonTexte){
+  return `<div class="vide">
+    <span class="vide-ico">${ICO(ico, 26)}</span>
+    <p>${esc(texte)}</p>
+    ${boutonId ? `<button type="button" class="btn sm" id="${esc(boutonId)}">${esc(boutonTexte || 'Commencer')}</button>` : ''}
+  </div>`;
+}

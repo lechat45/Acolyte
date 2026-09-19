@@ -5811,3 +5811,229 @@ body.dg-actif .tl-item{ touch-action:none }
 .plan-panel h3[style]{ margin-top:24px !important }
 .plan-panel > h3:first-child,
 .plan-panel > *:first-child h3{ margin-top:0 }
+
+/* ############################################################
+   ACOLYTE — ÉDITION PAPIER
+   ------------------------------------------------------------
+   Une refonte de la surface, posée EN FIN DE FEUILLE pour gagner la cascade
+   sans réécrire les 5 700 lignes qui précèdent. Chaque bloc dit ce qu'il
+   corrige et pourquoi. Le fil conducteur : le site est un carnet de voyage,
+   pas un tableau de bord — donc du papier, de l'encre, des cartes posées,
+   et un seul jaune qui veut dire « appuie ici ».
+   ⚠️ Rien ici ne touche aux encres de texte : les 278 contrastes mesurés
+   restent ceux qui ont été validés. On déplace des fonds, des ombres, des
+   rayons, des tailles — jamais une couleur de texte sur un fond de texte.
+############################################################ */
+
+/* ============================================================
+   1. JETONS SUPPLÉMENTAIRES
+   ------------------------------------------------------------
+   Le jaune portait 134 usages et quatre rôles : marque, action, prix, alerte.
+   Un accent qui signifie tout ne signale plus rien. On lui retire les prix
+   et les alertes, qui gagnent leur propre encre.
+============================================================ */
+:root{
+  --money:      #E8D9A8;   /* prix et montants : un crème chaud, lisible, sans crier */
+  --money-ink:  #1A1A1A;
+  --warn:       #F2954B;   /* les mises en garde reprennent l'orange, déjà défini */
+  --paper:      #1F1E1B;   /* une carte légèrement plus chaude que la page */
+  --paper-edge: rgba(255,255,255,.14);
+  --ombre-dure: 4px 4px 0 rgba(0,0,0,.55);        /* la carte posée sur la table */
+  --ombre-dure-h: 6px 6px 0 rgba(0,0,0,.55);      /* soulevée au survol */
+  --ombre-dure-p: 1px 1px 0 rgba(0,0,0,.55);      /* enfoncée au clic */
+  --verifie:    #5BC98B;
+}
+:root[data-theme="light"]{
+  --money:      #6B5A1E;
+  --money-ink:  #FFFFFF;
+  --paper:      #FFFDF7;
+  --paper-edge: rgba(0,0,0,.14);
+  --ombre-dure: 4px 4px 0 rgba(20,20,20,.18);
+  --ombre-dure-h: 6px 6px 0 rgba(20,20,20,.18);
+  --ombre-dure-p: 1px 1px 0 rgba(20,20,20,.18);
+  --verifie:    #0E5030;   /* plus sombre qu'en premier jet : 3,66:1 mesuré avec #1F7A4A sur son fond teinté */
+}
+
+/* ============================================================
+   2. LA CARTE POSÉE
+   ------------------------------------------------------------
+   Une ombre floue de 18 px dit « interface ». Une ombre dure décalée dit
+   « objet » : la carte a une épaisseur, elle est posée, on peut la soulever.
+   Le rayon descend de 20 à 14 px — le papier ne s'arrondit pas autant.
+============================================================ */
+.card{
+  background:var(--paper);
+  border:1px solid var(--paper-edge);
+  border-radius:var(--r-md);
+  box-shadow:var(--ombre-dure);
+  transition:transform .18s cubic-bezier(.2,.9,.3,1), box-shadow .18s cubic-bezier(.2,.9,.3,1);
+}
+.dest, .arcade-card, .gal-card, .blog-card{
+  box-shadow:var(--ombre-dure);
+  transition:transform .18s cubic-bezier(.2,.9,.3,1), box-shadow .18s cubic-bezier(.2,.9,.3,1);
+}
+.dest:hover, .arcade-card:hover, .gal-card:hover, .blog-card:hover{
+  transform:translate(-2px,-2px);
+  box-shadow:var(--ombre-dure-h);
+}
+.dest:active, .arcade-card:active, .gal-card:active, .blog-card:active{
+  transform:translate(3px,3px);
+  box-shadow:var(--ombre-dure-p);
+}
+@media(prefers-reduced-motion:reduce){
+  .card, .dest, .arcade-card, .gal-card, .blog-card{ transition:none }
+  .dest:hover, .arcade-card:hover, .gal-card:hover, .blog-card:hover{ transform:none }
+}
+
+/* ============================================================
+   3. LE JAUNE, UN SEUL RÔLE
+   ------------------------------------------------------------
+   Il reste sur la marque et sur l'action principale. Les prix passent au
+   crème, les alertes à l'orange. Ce qui est jaune est désormais quelque
+   chose qu'on peut PRESSER — et rien d'autre.
+============================================================ */
+.tag.money, .tr-fact, .tc-fact, .pan-price, .spend-total{
+  background:var(--money) !important;
+  color:var(--money-ink) !important;
+  border-color:transparent !important;
+}
+.tag.money svg, .tr-fact svg, .tc-fact svg, .pan-price svg{ color:var(--money-ink) }
+.budget-head{ background:var(--money) !important }
+.budget-head, .budget-head *{ color:var(--money-ink) !important }
+/* ⚠️ Les puces posées sur la tête du budget ont leur propre fond sombre
+   (#101010) : l'encre foncée du parent y devenait illisible — 1,09:1, mesuré.
+   Elles gardent leur fond et reprennent une encre claire. */
+.budget-head .budget-chip{ background:var(--money-ink) !important;color:var(--money) !important }
+.urg-doute, .mz-fini, .mem-actif, .mg-contrainte, .att-pret{
+  background:var(--warn) !important;color:var(--on-accent) !important;
+}
+
+/* ============================================================
+   4. LA DONNÉE VÉRIFIÉE SE VOIT
+   ------------------------------------------------------------
+   Un prix relevé sur OpenStreetMap et un prix estimé par le modèle avaient
+   exactement la même apparence. Un trait pointillé vert sous ce qui est
+   VÉRIFIÉ — et une infobulle qui dit d'où ça vient. Le reste ne change pas :
+   c'est l'absence de marque qui dit « estimé ».
+============================================================ */
+.verifie{
+  text-decoration:underline dotted var(--verifie);
+  text-decoration-thickness:1.5px;text-underline-offset:3px;
+  cursor:help;
+}
+/* ⚠️ Doublé volontairement : (0,2,0). Posé dans .wx-txt, le badge tombait
+   sous `.wx-txt span` (0,1,1) et prenait son gris — mesuré à 4,46:1 au lieu
+   du vert prévu. Un sélecteur répété bat la règle contextuelle sans !important. */
+.verifie-badge.verifie-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:2px 8px;border-radius:999px;
+  background:color-mix(in srgb, var(--verifie) 18%, transparent);
+  color:var(--verifie);
+  font-family:'Inter',system-ui,sans-serif;font-size:.68rem;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;
+  vertical-align:middle;white-space:nowrap;
+}
+.verifie-badge svg{ width:11px;height:11px }
+:root[data-theme="light"] .verifie-badge.verifie-badge{ background:color-mix(in srgb, var(--verifie) 10%, transparent) }
+
+/* ============================================================
+   5. L'ÉCHELLE TYPOGRAPHIQUE
+   ------------------------------------------------------------
+   Les titres de section cessent d'être en CAPITALES. Un titre en capitales
+   serif crie ; un titre en bas-de-casse serif grasse, crénage serré, se lit
+   comme un titre de journal.
+============================================================ */
+h1, h2, h3{ text-transform:none;letter-spacing:-.025em }
+h1, h2{ font-size:1.75rem;line-height:1.1;border-bottom:0;padding-bottom:0;margin-bottom:10px }
+h3{ font-size:1.2rem;line-height:1.2 }
+.pan-h3{ font-size:1.05rem }
+.plan-panel > .pan-intro:first-child,
+.plan-panel > .wx-bloc + .pan-intro,
+.plan-panel > .key-tip + .pan-intro{
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;
+  font-size:1.05rem;font-weight:500;line-height:1.5;
+  color:var(--txt);max-width:60ch;
+}
+
+/* ============================================================
+   6. LES ONGLETS EN DEUX RANGS NOMMÉS
+   ------------------------------------------------------------
+   Huit cases égales sur quatre rangées : 175 px sans hiérarchie. Deux rangs,
+   chacun avec son étiquette — « Sur place » et « Avant de partir » — et
+   « Maison » cesse d'être un libellé tronqué puisque le rang dit le contexte.
+============================================================ */
+.plan-tabs{ display:flex;flex-direction:column;gap:8px;padding:10px }
+.plan-tabs .pt-rang{ display:grid;grid-template-columns:repeat(auto-fit, minmax(96px, 1fr));gap:5px }
+.plan-tabs .pt-rang-nom{
+  grid-column:1 / -1;
+  font-family:'Inter',system-ui,sans-serif;font-size:.66rem;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--txt-2);
+  padding:2px 6px 0;
+}
+.plan-tabs .pt-rang + .pt-rang{ border-top:1px solid var(--stroke);padding-top:8px }
+.plan-tab{ border-radius:var(--r-sm) }
+.plan-tab.on{ transform:none;box-shadow:var(--ombre-dure-p) }
+
+/* ============================================================
+   7. LES ÉTATS VIDES APPELLENT À L'ACTION
+============================================================ */
+.vide{
+  display:flex;flex-direction:column;align-items:flex-start;gap:12px;
+  padding:22px;margin:4px 0 10px;
+  border:1.5px dashed var(--paper-edge);border-radius:var(--r-md);
+}
+.vide .vide-ico{ color:var(--txt-2);display:flex }
+.vide p{ margin:0;font-family:'Inter',system-ui,sans-serif;font-size:.86rem;color:var(--txt-2);max-width:52ch }
+
+/* ============================================================
+   8. LES PETITS BLOCS D'ICÔNE
+============================================================ */
+.item .emo:has(svg){ width:auto;min-width:28px;padding:0 2px }
+
+/* ============================================================
+   9. LA GRILLE ASYMÉTRIQUE DES PROPOSITIONS
+   ------------------------------------------------------------
+   Demandée deux fois, jamais faite. La PREMIÈRE proposition prend deux tiers
+   de la largeur : c'est celle qu'Acolyte met en avant, et la mise en page le
+   dit avant le texte. Sur téléphone tout repasse en une colonne.
+============================================================ */
+@media(min-width:760px){
+  .dest-grid{ grid-template-columns:repeat(6, 1fr);gap:18px }
+  .dest-grid > .dest{ grid-column:span 2 }
+  .dest-grid > .dest:first-child{ grid-column:span 4 }
+  .dest-grid > .dest:first-child:nth-last-child(1){ grid-column:span 6 }
+  .dest-grid > .dest:first-child .dest-main h3{ font-size:1.6rem }
+  .dest-grid > .dest:first-child .dest-facts{ grid-template-columns:repeat(3, 1fr) }
+}
+
+/* ============================================================
+   10. LE GRAIN DU PAPIER
+   ------------------------------------------------------------
+   Un léger bruit sur le fond de page, invisible de près, qui retire l'aplat
+   parfait des écrans générés. Dessiné en SVG inline, donc aucun fichier.
+============================================================ */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22g%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%22.9%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22160%22 height=%22160%22 filter=%22url(%23g)%22/%3E%3C/svg%3E");
+}
+:root[data-theme="light"] body::before{ opacity:.05 }
+
+/* ⚠️ RÉGRESSION MOBILE CORRIGÉE. Mesurée à 354 px pour la barre en deux
+   rangs sur 375 px — pire que les 175 px d'avant. Avec minmax(96px) il ne
+   tenait que trois onglets par ligne : « Sur place » (cinq) passait sur deux
+   lignes. À 58 px, cinq tiennent (5×58 + 4×4 = 306 sur 311) : chaque rang
+   tient sur UNE ligne, et la police de 9,9 px du mode colonne y loge
+   « Événements » sans le couper. */
+@media(max-width:460px){
+  .plan-tabs{ padding:8px 6px;gap:6px }
+  /* 5 colonnes dans ~290 px utiles : 5×53 + 4×3 = 277. Le padding horizontal
+     des onglets descend à 2 px pour laisser 49 px au mot le plus long. */
+  .plan-tabs .pt-rang{ grid-template-columns:repeat(auto-fit, minmax(53px, 1fr));gap:3px }
+  .plan-tabs .pt-rang-nom{ font-size:.6rem;padding:0 4px }
+  .plan-tabs .pt-rang + .pt-rang{ padding-top:6px }
+  /* ⚠️ .6rem (9,6 px) et non .62rem (9,92) : à 9,92 « Événements » dépasse
+     sa case d'un pixel dans une colonne de 58 px. Mesuré. Les 0,3 px de moins
+     ne changent rien à la lisibilité ; un mot coupé, si. */
+  .plan-tab{ padding:7px 2px 6px;gap:2px;font-size:.6rem;letter-spacing:-.01em }
+}
