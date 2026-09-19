@@ -3101,6 +3101,153 @@ function jjBudget(idx, total){
 }
 
 /* ============================================================
+   « JE SUIS PERDU » — un seul écran, et il marche sans réseau
+   ------------------------------------------------------------
+   Tout existait déjà, éparpillé : la position (jjDemandePos), l'adresse du
+   logement (le plan), les numéros d'urgence (table en dur), les phrases
+   utiles (cache), les commerces autour (osmAutour). Il fallait trois clics
+   et savoir où chercher — c'est-à-dire exactement ce qu'on n'a pas quand on
+   en a besoin.
+
+   ⚠️ CE PANNEAU EST CONÇU POUR LE TUNNEL, PAS POUR LA DÉMO. Chaque bloc
+   fonctionne sans connexion : le GPS n'a pas besoin de réseau, les numéros
+   d'urgence sont en dur, le logement et les phrases viennent du cache. Ce
+   qui demande le réseau (ouvrir la carte) est proposé en dernier et annoncé
+   comme tel — jamais en premier, jamais comme seule issue.
+
+   ⚠️ ON N'INVENTE AUCUNE ADRESSE. Le plan donne un quartier, pas un numéro
+   de rue : on montre ce qu'on a, tel quel, et on le rend copiable pour
+   qu'il soit MONTRÉ à quelqu'un. Écrire une adresse plausible serait pire
+   que n'en écrire aucune — on enverrait quelqu'un au mauvais endroit.
+============================================================ */
+function perduPos(){
+  return (typeof _jjPos !== 'undefined' && _jjPos && _jjPos.lat) ? _jjPos : null;
+}
+
+/* Ce qu'on montre à un chauffeur ou à un passant : une seule ligne, dans la
+   langue du pays si on l'a, sinon telle quelle. */
+function perduAdresse(){
+  const pl = state.cache?.plan || {}, t = state.trip || {};
+  const lg = pl.logement || {};
+  const bouts = [lg.type, lg.quartier, t.nom, t.pays].filter(Boolean).map(String);
+  return bouts.length ? bouts.join(', ') : '';
+}
+
+function perduHTML(){
+  const t = state.trip || {}, pl = state.cache?.plan || {};
+  const cc = (typeof ccFor === 'function') ? ccFor(t.pays) : null;
+  const u = (typeof urgenceFor === 'function') ? urgenceFor(cc) : null;
+  const pos = perduPos();
+  const adresse = perduAdresse();
+
+  /* distance jusqu'au logement, si on sait où il est */
+  let retour = '';
+  const geo = pl._geo || {};
+  const ll = geo[pl.logement?.quartier] || geo[t.nom];
+  if(pos && ll && typeof havKm === 'function'){
+    const km = havKm({ latitude: pos.lat, longitude: pos.lon }, { latitude: ll[0], longitude: ll[1] });
+    retour = (typeof jjMarche === 'function') ? jjMarche(km) : (km.toFixed(1) + ' km');
+  }
+
+  const tel = n => `<a class="pd-num" href="tel:${esc(n)}">${esc(n)}</a>`;
+
+  return `
+  <div class="pd">
+    <div class="pd-bloc">
+      <h4>${ICO('epingle', 16)} Où tu es</h4>
+      ${pos
+        ? `<p class="pd-coord" id="pdCoord">${pos.lat.toFixed(5)}, ${pos.lon.toFixed(5)}</p>
+           <button type="button" class="btn sm ghost" id="pdCopie">Copier ces coordonnées</button>`
+        : `<p class="pd-vide">Position pas encore connue.</p>
+           <button type="button" class="btn sm" id="pdGeo">Me localiser</button>`}
+    </div>
+
+    ${adresse ? `<div class="pd-bloc">
+      <h4>${ICO('maison', 16)} Rentrer</h4>
+      <p class="pd-adresse" id="pdAdresse">${esc(adresse)}</p>
+      ${retour ? `<p class="pd-dist">${esc(retour)} depuis ta position</p>` : ''}
+      <p class="hint" style="margin:6px 0 8px">Montre cette ligne à un chauffeur ou à un passant. Acolyte connaît le quartier, pas le numéro de rue.</p>
+      <button type="button" class="btn sm ghost" id="pdCopieAdr">Copier l’adresse</button>
+    </div>` : ''}
+
+    ${u ? `<div class="pd-bloc">
+      <h4>${ICO('telephone', 16)} Demander de l’aide</h4>
+      <div class="pd-nums">
+        <span>Police ${tel(u.police)}</span>
+        <span>Ambulance ${tel(u.ambulance)}</span>
+        <span>Pompiers ${tel(u.pompiers)}</span>
+      </div>
+      ${u.note ? `<p class="hint" style="margin:6px 0 0">${esc(u.note)}</p>` : ''}
+      ${!u.sur ? `<p class="pd-doute">Numéros non confirmés pour ce pays — le 112 reste le repli le plus sûr. Vérifie sur la fiche officielle dès que tu as du réseau.</p>` : ''}
+    </div>` : ''}
+
+    ${perduPhrasesHTML()}
+
+    <p class="pd-hors">Tout ce qui précède fonctionne sans connexion. ${
+      pos ? `<a href="https://www.openstreetmap.org/?mlat=${pos.lat}&mlon=${pos.lon}#map=17/${pos.lat}/${pos.lon}"
+              target="_blank" rel="noopener">Ouvrir la carte</a> demande du réseau.` : ''}</p>
+  </div>`;
+}
+
+/* Les phrases ne s'affichent que si elles ont DÉJÀ été récupérées : les
+   demander ici supposerait du réseau, au pire moment. */
+function perduPhrasesHTML(){
+  const t = state.cache?.talk;
+  const L = (t && Array.isArray(t.phrases)) ? t.phrases : [];
+  if(!L.length) return '';
+  const utiles = L.filter(p => /aide|perdu|police|h[oô]pital|o[uù]|combien|merci|pardon/i.test(
+    String(p.fr || p.francais || '') )).slice(0, 4);
+  const choix = utiles.length ? utiles : L.slice(0, 3);
+  return `<div class="pd-bloc">
+    <h4>${ICO('discussion', 16)} Le dire sur place</h4>
+    ${choix.map(p => `<p class="pd-phrase"><b>${esc(p.fr || p.francais || '')}</b>
+      <span>${esc(p.local || p.trad || '')}</span>
+      ${p.pron ? `<i>${esc(p.pron)}</i>` : ''}</p>`).join('')}
+  </div>`;
+}
+
+function ouvrePerdu(){
+  let ov = document.getElementById('ovPerdu');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.id = 'ovPerdu';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `<div class="modal" style="max-height:88vh;overflow-y:auto">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h2 style="margin:0">Je suis perdu</h2>
+      <button class="close-btn" data-close="ovPerdu" aria-label="Fermer">✕</button>
+    </div>
+    ${perduHTML()}
+  </div>`;
+  ov.classList.add('show');
+  /* on demande la position APRÈS l'ouverture : l'écran s'affiche tout de
+     suite, la position le complète quand elle arrive */
+  if(!perduPos() && typeof jjDemandePos === 'function'){
+    try{ jjDemandePos(); }catch(e){}
+    setTimeout(() => { if(document.getElementById('ovPerdu')?.classList.contains('show') && perduPos()) ouvrePerdu(); }, 1800);
+  }
+}
+
+document.addEventListener('click', e => {
+  if(e.target.closest('#btnPerdu')){ ouvrePerdu(); return; }
+  if(e.target.closest('#pdGeo')){
+    if(typeof jjDemandePos === 'function') jjDemandePos();
+    setTimeout(ouvrePerdu, 1500);
+    return;
+  }
+  const c = e.target.closest('#pdCopie, #pdCopieAdr');
+  if(c){
+    const src = c.id === 'pdCopie' ? document.getElementById('pdCoord') : document.getElementById('pdAdresse');
+    const txt = src ? src.textContent.trim() : '';
+    if(!txt) return;
+    try{ navigator.clipboard.writeText(txt); toast('Copié'); }
+    catch(err){ toast('Copie impossible — sélectionne le texte'); }
+  }
+});
+
+/* ============================================================
    LE RETOUR — ce qu'il reste quand le voyage est fini
    ------------------------------------------------------------
    Il n'existait AUCUN état « après le retour ». Le jour où l'on rentrait,
@@ -3249,6 +3396,9 @@ function todayHTML(){
     <div class="jj-head">
       <span class="jj-jour">${EN ? 'Day' : 'Jour'} ${idx}${prog.length ? `<i>/${prog.length}</i>` : ''}</span>
       <span class="jj-heure">${now.toLocaleTimeString(LOC(), { hour:'2-digit', minute:'2-digit' })}</span>
+      <!-- Le secours est ICI, sur l'écran du jour, et pas rangé dans un
+           onglet : le jour où il sert, on ne cherche pas. -->
+      <button type="button" class="jj-perdu" id="btnPerdu">${ICO('aide', 15)} Je suis perdu</button>
     </div>
 
     ${suiv ? `
