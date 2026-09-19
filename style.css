@@ -94,7 +94,7 @@
   /* assombri de #1E8C57 pour la même raison que l'orange : le texte blanc de
      l'étiquette « OK » n'y atteignait que 4,25:1. À #1A7F4E : 5,01:1. */
   --ok:     #1A7F4E;
-  --danger: #C4372C;
+  --danger: #B33023;   /* 4,35:1 sur le gris de la zone sensible avec #C4372C — un cran plus sombre passe (5,05) */
   --txt:    #16160F;
   --txt-2:  #63625B;
   --stroke: rgba(0,0,0,.12);
@@ -848,7 +848,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .news-entry.latest::before{left:-22px;top:15px}
 .news-entry.latest h4{font-size:1.06rem}
 .news-entry.latest .news-items li{color:var(--txt)}
-.news-entry:not(.latest){opacity:.86}
+.news-entry:not(.latest){opacity:.92}   /* .86 faisait tomber --txt-2 à 4,43:1 sur blanc ; .92 tient à 5,08 */
 
 /* ===== Badge Product Hunt (bas du profil) ===== */
 .ph-card{
