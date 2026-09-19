@@ -377,9 +377,9 @@ function save(){
       };
       localStorage.setItem(LS_TRIP, JSON.stringify(slim));
       state.cache = slim.cache;
-      toast('💾 Stockage plein — cache allégé');
+      toast(isEN() ? '💾 Storage full — cache trimmed' : '💾 Stockage plein — cache allégé');
     }catch(e2){
-      toast('⚠️ Sauvegarde impossible (stockage plein ou désactivé)');
+      toast(isEN() ? '⚠️ Could not save (storage full or disabled)' : '⚠️ Sauvegarde impossible (stockage plein ou désactivé)');
     }
   }
   /* Envoi vers le compte, groupé et silencieux. Placé APRÈS le try/catch
@@ -480,7 +480,7 @@ function flushNetQueue(){
   if(!navigator.onLine || !_netQueue.length) return;
   const jobs = _netQueue.splice(0, _netQueue.length);
   updateNetBadge();
-  toast(`📶 Connexion revenue — reprise de ${jobs.length} élément(s)`);
+  toast(isEN() ? `📶 Back online — resuming ${jobs.length} item(s)` : `📶 Connexion revenue — reprise de ${jobs.length} élément(s)`);
   jobs.forEach(j => { try{ j.fn(); }catch(e){} });
 }
 function updateNetBadge(){
@@ -562,7 +562,7 @@ async function gemErrMsg(r){
 
 async function gemini(prompt, expectJson = true, maxTok = 4096, _retry = false, temp = 0.85, _hops = 0){
   const key = gemKey();
-  if(!key && !useBackend()){ toast('😕 Service momentanément indisponible'); throw new Error('NO_KEY'); }
+  if(!key && !useBackend()){ toast(isEN() ? '😕 Service temporarily unavailable' : '😕 Service momentanément indisponible'); throw new Error('NO_KEY'); }
   let model;
   try{
     model = await resolveGemModel(key);
@@ -654,7 +654,7 @@ async function gemini(prompt, expectJson = true, maxTok = 4096, _retry = false, 
   if(!txt){
     /* réponse vide (réflexion trop longue ?) → une relance avec le double de place */
     if(!_retry) return gemini(prompt, expectJson, maxTok * 2, true, temp, _hops);
-    toast('😕 Petit accroc — je réessaie'); throw new Error('EMPTY');
+    toast(isEN() ? '😕 Small hiccup — trying again' : '😕 Petit accroc — je réessaie'); throw new Error('EMPTY');
   }
   if(!expectJson) return txt;
   txt = txt.replace(/```json|```/g,'').trim();
@@ -1698,7 +1698,7 @@ function renderDestinations(d){
     if(!v) return;
     state.propAnswers = [...(state.propAnswers || []), 'Précision : ' + v].slice(-12);
     save();
-    toast('🎯 Acolyte réajuste ses propositions…');
+    toast(isEN() ? '🎯 Acolyte is adjusting its suggestions…' : '🎯 Acolyte réajuste ses propositions…');
     proposeTrips(state.propAnswers.join(' · '));
   };
   const rgo = $('#refineGo'); if(rgo) rgo.onclick = doRefine;
@@ -1783,7 +1783,7 @@ document.addEventListener('click', e => {
 function reopenTrip(i){
   const x = getHistory().slice().reverse()[i];
   if(!x) return;
-  if(!x.trip){ const f = $('#fDest'); if(f) f.value = x.nom; gotoStep(1); toast('Destination pré-remplie 👍'); return; }
+  if(!x.trip){ const f = $('#fDest'); if(f) f.value = x.nom; gotoStep(1); toast(isEN() ? 'Destination pre-filled 👍' : 'Destination pré-remplie 👍'); return; }
   state.trip = x.trip;
   if(x.prefs) state.prefs = x.prefs;
   state.cache = {}; state.checklist = {}; state.maison = {}; state.spends = []; state.chatLog = []; state.notes = ''; state.resas = [];
@@ -1792,7 +1792,7 @@ function reopenTrip(i){
   state.board = { votes:{}, comments:{} };
   save();
   unlockSteps();
-  toast(`On repart pour ${x.trip.nom} ! ✈️`);
+  toast(isEN() ? `Off to ${x.trip.nom} again! ✈️` : `On repart pour ${x.trip.nom} ! ✈️`);
   gotoStep(3);
 }
 document.addEventListener('click', e => {
@@ -1809,7 +1809,7 @@ function chooseTrip(i){
   state.board = { votes:{}, comments:{} };   /* votes/commentaires liés à l'ancien voyage */
   save();
   unlockSteps();
-  toast(`Cap sur ${state.trip.nom} ! ✈️`);
+  toast(isEN() ? `Heading to ${state.trip.nom}! ✈️` : `Cap sur ${state.trip.nom} ! ✈️`);
   gotoStep(3);
 }
 
@@ -1954,8 +1954,8 @@ function openSub(t){
 
 function gotoStep(n, sub){
   n = Math.min(n, 3);
-  if(n === 2 && !(state.destinations||[]).length){ toast('Remplis d’abord le questionnaire 😉'); return; }
-  if(n === 3 && !state.trip){ toast('Choisis d’abord un des 3 voyages 😉'); return; }
+  if(n === 2 && !(state.destinations||[]).length){ toast(isEN() ? 'Fill in the questionnaire first 😉' : 'Remplis d’abord le questionnaire 😉'); return; }
+  if(n === 3 && !state.trip){ toast(isEN() ? 'Pick one of the 3 trips first 😉' : 'Choisis d’abord un des 3 voyages 😉'); return; }
   state.step = n; save();
   $$('.step').forEach(s => s.classList.toggle('active', +s.dataset.step === n));
   /* La barre de progression : une seule variable CSS, écrite ici — donc elle
@@ -2839,7 +2839,7 @@ document.addEventListener('click', e => {
   if(!b) return;
   const ev = (state.cache._evList || [])[+b.dataset.addev];
   const plan = state.cache.plan;
-  if(!ev || !plan?.programme?.length){ toast('Génère d’abord le programme'); return; }
+  if(!ev || !plan?.programme?.length){ toast(isEN() ? 'Generate the itinerary first' : 'Génère d’abord le programme'); return; }
   const dts = stayDates();
   let cible = null;
   /* si l'événement porte une date du séjour → on vise CE jour-là */
@@ -2856,7 +2856,7 @@ document.addEventListener('click', e => {
   delete state.cache.days?.[cible.jour];      /* le détail horaire doit être refait */
   save();
   renderPlan(plan);
-  toast(`✔ « ${String(ev.nom).slice(0, 28)} » ajouté au jour ${cible.jour}`);
+  toast(isEN() ? `✔ “${String(ev.nom).slice(0, 28)}” added to day ${cible.jour}` : `✔ « ${String(ev.nom).slice(0, 28)} » ajouté au jour ${cible.jour}`);
   setTimeout(() => document.querySelector(`[data-daybox="${CSS.escape(String(cible.jour))}"]`)?.closest('.day-block')?.scrollIntoView({ block:'center' }), 120);
 });
 
@@ -3242,8 +3242,8 @@ document.addEventListener('click', e => {
     const src = c.id === 'pdCopie' ? document.getElementById('pdCoord') : document.getElementById('pdAdresse');
     const txt = src ? src.textContent.trim() : '';
     if(!txt) return;
-    try{ navigator.clipboard.writeText(txt); toast('Copié'); }
-    catch(err){ toast('Copie impossible — sélectionne le texte'); }
+    try{ navigator.clipboard.writeText(txt); toast(isEN() ? 'Copied' : 'Copié'); }
+    catch(err){ toast(isEN() ? 'Could not copy — select the text' : 'Copie impossible — sélectionne le texte'); }
   }
 });
 
@@ -3362,7 +3362,7 @@ function ouvreRecit(){
   const fini = () => { dz.hidden = true; window.removeEventListener('afterprint', fini); };
   window.addEventListener('afterprint', fini);
   window.print();
-  toast('📄 Choisis « Enregistrer au format PDF » pour le garder');
+  toast(isEN() ? '📄 Choose “Save as PDF” to keep it' : '📄 Choisis « Enregistrer au format PDF » pour le garder');
 }
 document.addEventListener('click', e => {
   if(e.target.closest('#btnRecit')){ ouvreRecit(); return; }
@@ -3852,7 +3852,7 @@ document.addEventListener('click', e => {
     if(echangeJours(a, b)){
       delete state.cache._wxConseil; save();
       renderSections(state.cache.plan);
-      toast('🔁 Journées interverties');
+      toast(isEN() ? '🔁 Days swapped' : '🔁 Journées interverties');
     }
     return;
   }
@@ -4095,7 +4095,7 @@ document.addEventListener('click', e => {
     c.textContent = reste ? reste + ' sur ' + total : 'tout est réservé';
   }
   try{ futurBarMaj(); }catch(err){}
-  if(fait && !resaRestantes().length){ try{ confetti(); }catch(err){} toast('🎟️ Tout est réservé'); }
+  if(fait && !resaRestantes().length){ try{ confetti(); }catch(err){} toast(isEN() ? '🎟️ Everything is booked' : '🎟️ Tout est réservé'); }
 });
 
 function panBudget(d){
@@ -4164,7 +4164,7 @@ document.addEventListener('click', e => {
   const l = document.getElementById('spLabel'), a = document.getElementById('spAmount');
   const label = (l && l.value.trim()) || 'Dépense';
   const montant = parseFloat(a && a.value);
-  if(!Number.isFinite(montant) || montant <= 0){ toast('Entre un montant valide 💶'); return; }
+  if(!Number.isFinite(montant) || montant <= 0){ toast(isEN() ? 'Enter a valid amount 💶' : 'Entre un montant valide 💶'); return; }
   state.spends = Array.isArray(state.spends) ? state.spends : [];
   state.spends.push({ label: label.slice(0, 40), amount: montant, ts: Date.now() });
   save();
@@ -4446,7 +4446,7 @@ async function planB(jour){
      contrat est identique — une chaîne, ou null si le voyageur renonce. */
   const raison = await pbDemande(jour);
   if(raison === null) return;
-  toast('🔄 Nouvelle version du jour ' + jour + '…');
+  toast(isEN() ? '🔄 New version of day ' : '🔄 Nouvelle version du jour ' + jour + '…');
   try{
     const autres = d.programme.filter(x => +x.jour !== +jour).map(x => `J${x.jour} : ${x.resume} (${(x.lieux||[]).join(', ')})`).join('\n');
     const R = state.cache._real || {};
@@ -4468,7 +4468,7 @@ Réponds UNIQUEMENT en JSON : {"jour":${jour},"resume":"phrase courte","lieux":[
     state.cache.plan = d; save();
     renderPlan(d);
     toast('✅ Jour ' + jour + ' réorganisé');
-  }catch(e){ toast('❌ Impossible de refaire cette journée'); }
+  }catch(e){ toast(isEN() ? '❌ Could not redo that day' : '❌ Impossible de refaire cette journée'); }
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-planb]');
@@ -4550,7 +4550,7 @@ document.addEventListener('click', e => {
     delete _comDrafts[j];          /* envoyé → le brouillon n'a plus lieu d'être */
     save(); refreshCollabBar(j);
     const box = document.querySelector(`[data-combox="${CSS.escape(j)}"]`); if(box) box.hidden = false;
-    toast('💬 Commentaire ajouté — partage la sauvegarde à ton co-voyageur');
+    toast(isEN() ? '💬 Comment added — share the backup with your travel companion' : '💬 Commentaire ajouté — partage la sauvegarde à ton co-voyageur');
   }
 });
 document.addEventListener('keydown', e => {
@@ -4684,7 +4684,7 @@ document.addEventListener('click', e => {
     state.propAnswers = (state.propAnswers || []).slice(-12);
     state._qsDone = true; save();
     $('#ovQs').classList.remove('show');
-    toast('🎯 Merci — Acolyte affine tes propositions…');
+    toast(isEN() ? '🎯 Thanks — Acolyte is refining your suggestions…' : '🎯 Merci — Acolyte affine tes propositions…');
     proposeTrips(state.propAnswers.join(' · '));   /* on relance les PROPOSITIONS avec les réponses */
     return;
   }
@@ -4731,7 +4731,7 @@ function buildResa(){
 }
 
 const _e1 = $('#btnOpenResa'); if(_e1) _e1.onclick = () => {
-  if(!state.trip){ toast('Choisis d’abord un voyage 😉'); return; }
+  if(!state.trip){ toast(isEN() ? 'Pick a trip first 😉' : 'Choisis d’abord un voyage 😉'); return; }
   buildResa();
   $('#ovResa').classList.add('show');
   loadHotels();
@@ -4849,7 +4849,7 @@ function planValidate(){
   delete state.cache['transport_' + state.mode];
   save();
   loadTransport();
-  toast(`Plan validé — billets ${d.transport?.mode||''} juste en dessous 🎫`);
+  toast(isEN() ? `Plan confirmed — ${d.transport?.mode||''} tickets just below 🎫` : `Plan validé — billets ${d.transport?.mode||''} juste en dessous 🎫`);
   $('#zoneTransport').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
@@ -4863,7 +4863,7 @@ document.addEventListener('click', e => {
     state.planAnswers.push(`${q.dataset.q} → ${q.dataset.a}`.slice(0,200));
     state.planAnswers = state.planAnswers.slice(-12);
     save();
-    toast('Réponse prise en compte ✔');
+    toast(isEN() ? 'Answer recorded ✔' : 'Réponse prise en compte ✔');
     loadPlan(true);
   }
 });
@@ -5132,7 +5132,7 @@ async function ryRoundTrip(){
   const to   = $('#ryTo').value.trim().toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);
   const date = $('#ryDate').value;
   const flex = +$('#ryFlex').value, stay = +$('#ryStay').value;
-  if(from.length!==3 || to.length!==3 || !date){ toast('Renseigne 2 codes IATA + une date'); return; }
+  if(from.length!==3 || to.length!==3 || !date){ toast(isEN() ? 'Enter 2 IATA codes and a date' : 'Renseigne 2 codes IATA + une date'); return; }
   zone.innerHTML = loaderHTML('Interrogation des tarifs Ryanair…');
   const outFrom = addDays(date, -Math.min(flex, Math.floor((new Date(date)-Date.now())/864e5)));
   const outTo   = addDays(date, flex);
@@ -5184,7 +5184,7 @@ async function ryCalendar(){
   const from = $('#ryFrom').value.trim().toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);
   const to   = $('#ryTo').value.trim().toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);
   const date = $('#ryDate').value || ryDefaultDate();
-  if(from.length!==3 || to.length!==3){ toast('Renseigne 2 codes IATA'); return; }
+  if(from.length!==3 || to.length!==3){ toast(isEN() ? 'Enter 2 IATA codes' : 'Renseigne 2 codes IATA'); return; }
   zone.innerHTML = loaderHTML('Chargement du calendrier des prix…');
   const month = date.slice(0,7) + '-01';
   try{
@@ -5233,7 +5233,7 @@ async function tpSearch(){
   const to   = $('#ryTo').value.trim().toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);
   const date = $('#ryDate').value || ryDefaultDate();
   const stay = +$('#ryStay').value;
-  if(from.length<2 || to.length<2){ toast('Renseigne 2 codes IATA'); return; }
+  if(from.length<2 || to.length<2){ toast(isEN() ? 'Enter 2 IATA codes' : 'Renseigne 2 codes IATA'); return; }
   zone.innerHTML = loaderHTML('Interrogation Aviasales — toutes compagnies…');
   const ret = addDays(date, stay);
   const base = `https://api.travelpayouts.com/aviasales/v3/prices_for_dates?origin=${from}&destination=${to}`
@@ -5297,7 +5297,7 @@ async function dbSearch(){
   const zone = $('#zoneDb');
   const qFrom = $('#dbFrom').value.trim(), qTo = $('#dbTo').value.trim();
   const when = $('#dbWhen').value;
-  if(!qFrom || !qTo){ toast('Renseigne les 2 gares'); return; }
+  if(!qFrom || !qTo){ toast(isEN() ? 'Enter both stations' : 'Renseigne les 2 gares'); return; }
   zone.innerHTML = loaderHTML('Recherche des gares…');
   try{
     const [a, b] = await Promise.all([dbStation(qFrom), dbStation(qTo)]);
@@ -6005,7 +6005,7 @@ document.addEventListener('click', e => {
   el.querySelector('.box').textContent = state.checklist[k] ? '✔' : '';
   updateBagProg();
   const boxes = $$('#zoneBag .check');
-  if(boxes.length && boxes.every(b => b.classList.contains('done'))){ confetti(); toast('🎉 Valise bouclée à 100 % !'); }
+  if(boxes.length && boxes.every(b => b.classList.contains('done'))){ confetti(); toast(isEN() ? '🎉 Bag packed, 100 %!' : '🎉 Valise bouclée à 100 % !'); }
 });
 function updateBagProg(){
   const barre = $('#bagProg');
@@ -6119,7 +6119,7 @@ document.addEventListener('click', e => {
    EXPORT .md
 ============================================================ */
 const _e11 = $('#btnExport'); if(_e11) _e11.onclick = () => {
-  if(!state.trip){ toast('Choisis d’abord une destination'); return; }
+  if(!state.trip){ toast(isEN() ? 'Pick a destination first' : 'Choisis d’abord une destination'); return; }
   const t = state.trip, p = state.prefs || {}, c = state.cache;
   let md = `# ✈️ Voyage Acolyte — ${t.nom}, ${t.pays}\n\n`;
   md += `- **Départ :** ${p.from||''}\n- **Durée :** ${p.days||''}\n- **Période :** ${p.when||'flexible'}\n- **Budget :** ${t.budget_estime||''}\n- **Voyageurs :** ${p.who||''}\n\n${t.resume||''}\n`;
@@ -6181,7 +6181,7 @@ const _e11 = $('#btnExport'); if(_e11) _e11.onclick = () => {
   a.download = `acolyte-${t.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-')}.md`;
   a.click();
   URL.revokeObjectURL(a.href);
-  toast('Voyage exporté 📄');
+  toast(isEN() ? 'Trip exported 📄' : 'Voyage exporté 📄');
 };
 
 /* ============================================================
@@ -6264,13 +6264,13 @@ async function buildDayMap(jour){
 }
 async function prepareOfflineMaps(){
   const plan = state.cache.plan;
-  if(!state.trip || !(plan?.programme || []).length){ toast('Génère d’abord le plan (étape 3) 😉'); return; }
+  if(!state.trip || !(plan?.programme || []).length){ toast(isEN() ? 'Generate the plan first (step 3) 😉' : 'Génère d’abord le plan (étape 3) 😉'); return; }
   const btn = $('#btnMaps'); if(btn){ btn.disabled = true; }
   state.cache.maps = state.cache.maps || {};
   let ok = 0, ko = 0;
   for(const jr of plan.programme){
     if(state.cache.maps[jr.jour]){ ok++; continue; }
-    toast(`🗺️ Carte du jour ${jr.jour}…`);
+    toast(isEN() ? `🗺️ Map for day ${jr.jour}…` : `🗺️ Carte du jour ${jr.jour}…`);
     try{
       const url = await buildDayMap(jr.jour);
       if(url){ state.cache.maps[jr.jour] = url; ok++; save(); }
@@ -6345,20 +6345,20 @@ function buildDossierHTML(){
   return h;
 }
 function openDossier(){
-  if(!state.trip){ toast('Choisis d’abord un voyage'); return; }
-  if(!state.cache.plan){ toast('Génère d’abord le plan (étape 3) 😉'); return; }
+  if(!state.trip){ toast(isEN() ? 'Pick a trip first' : 'Choisis d’abord un voyage'); return; }
+  if(!state.cache.plan){ toast(isEN() ? 'Generate the plan first (step 3) 😉' : 'Génère d’abord le plan (étape 3) 😉'); return; }
   const dz = $('#dossier');
   dz.innerHTML = buildDossierHTML();
   dz.hidden = false;
   const done = () => { dz.hidden = true; window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done);
   window.print();   /* le voyageur choisit « Enregistrer en PDF » */
-  toast('📄 Choisis « Enregistrer au format PDF » dans la fenêtre d’impression');
+  toast(isEN() ? '📄 Choose “Save as PDF” in the print dialog' : '📄 Choisis « Enregistrer au format PDF » dans la fenêtre d’impression');
 }
 const _eDos = $('#btnDossier'); if(_eDos) _eDos.onclick = openDossier;
 
 /* --- Signal hors-ligne : rassure le voyageur, son plan reste là --- */
-window.addEventListener('offline', () => toast('📴 Hors connexion — ton plan reste consultable dans Acolyte'));
+window.addEventListener('offline', () => toast(isEN() ? '📴 Offline — your plan stays readable in Acolyte' : '📴 Hors connexion — ton plan reste consultable dans Acolyte'));
 
 /* --- Sauvegarde / restauration du voyage complet (fichier .json) ---
    Sécurise les données contre un vidage du localStorage / changement d'appareil. */
@@ -6370,8 +6370,8 @@ function backupTrip(){
     a.href = URL.createObjectURL(blob);
     a.download = `acolyte-voyage-${String(state.trip?.nom || 'brouillon').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`;
     a.click(); URL.revokeObjectURL(a.href);
-    toast('💾 Voyage sauvegardé dans un fichier');
-  }catch(e){ toast('Sauvegarde impossible'); }
+    toast(isEN() ? '💾 Trip saved to a file' : '💾 Voyage sauvegardé dans un fichier');
+  }catch(e){ toast(isEN() ? 'Could not save' : 'Sauvegarde impossible'); }
 }
 function restoreTrip(file){
   const rd = new FileReader();
@@ -6386,13 +6386,13 @@ function restoreTrip(file){
       state = safeState(s);
       save();
       _pcPhotos = null;   /* invalide les photos de la carte postale */
-      toast('📂 Voyage importé ✔');
+      toast(isEN() ? '📂 Trip imported ✔' : '📂 Voyage importé ✔');
       renderGallery();
       if(state.trip){ unlockSteps(); gotoStep(Math.min(3, state.step || 3)); }
       else gotoStep(1);
-    }catch(e){ toast('Fichier invalide — ce n’est pas une sauvegarde Acolyte'); }
+    }catch(e){ toast(isEN() ? 'Invalid file — this is not an Acolyte backup' : 'Fichier invalide — ce n’est pas une sauvegarde Acolyte'); }
   };
-  rd.onerror = () => toast('Lecture du fichier impossible');
+  rd.onerror = () => toast(isEN() ? 'Could not read the file' : 'Lecture du fichier impossible');
   rd.readAsText(file);
 }
 const _eBk = $('#btnBackup'); if(_eBk) _eBk.onclick = backupTrip;
@@ -6454,12 +6454,12 @@ function initNote(){
 }
 const _e13 = $('#btnRes'); if(_e13) _e13.onclick = () => {
   const ref = $('#resRef').value.trim();
-  if(!ref){ toast('Ajoute au moins une référence'); return; }
+  if(!ref){ toast(isEN() ? 'Add at least one reference' : 'Ajoute au moins une référence'); return; }
   state.resas.push({ type: $('#resType').value, ref, link: $('#resLink').value.trim() });
   save();
   $('#resRef').value = ''; $('#resLink').value = '';
   renderResas();
-  toast('Réservation ajoutée 📎');
+  toast(isEN() ? 'Booking added 📎' : 'Réservation ajoutée 📎');
 };
 function renderResas(){
   if(!$('#zoneRes')) return;             /* accordéon replié */
@@ -6486,7 +6486,7 @@ const _e14 = $('#btnGo'); if(_e14) _e14.onclick = () => { state.propAnswers = []
 const _e15 = $('#btnLucky'); if(_e15) _e15.onclick = () => { state.propAnswers = []; state._qsDone = false; proposeTrips('', true); };
 const _e15b = $('#btnCountry'); if(_e15b) _e15b.onclick = () => {
   const c = $('#fDest').value.trim();
-  if(!c){ toast('Écris un pays dans « Destination souhaitée » 😉'); $('#fDest').focus(); return; }
+  if(!c){ toast(isEN() ? 'Write a country under “Where to” 😉' : 'Écris un pays dans « Destination souhaitée » 😉'); $('#fDest').focus(); return; }
   state.propAnswers = []; state._qsDone = false;
   proposeTrips('', false, c);
 };
@@ -6775,7 +6775,7 @@ async function fgDemandeCode(btn){
   fgShow2(true);
   $('#fgCode')?.focus();
   /* Formulation NEUTRE : voir l'avertissement ci-dessus. */
-  toast('📬 Si un compte existe pour cette adresse, un code vient de partir');
+  toast(isEN() ? '📬 If an account exists for this address, a code is on its way' : '📬 Si un compte existe pour cette adresse, un code vient de partir');
 }
 const _eFgSend = $('#btnFgSend'); if(_eFgSend) _eFgSend.onclick = () => { if(!authBusy) fgDemandeCode(_eFgSend); };
 const _eFgAgain = $('#btnFgAgain'); if(_eFgAgain) _eFgAgain.onclick = () => { if(!authBusy) fgDemandeCode(_eFgAgain); };
@@ -6800,7 +6800,7 @@ const _eFgReset = $('#btnFgReset'); if(_eFgReset) _eFgReset.onclick = async () =
   /* on n'oublie pas les champs derrière soi : un mot de passe reste lisible
      dans le DOM, et cet écran peut être réaffiché */
   ['fgCode','fgPass','fgPass2'].forEach(id => { const e = $('#'+id); if(e) e.value = ''; });
-  toast('🔑 Mot de passe changé — tu es connecté');
+  toast(isEN() ? '🔑 Password changed — you are signed in' : '🔑 Mot de passe changé — tu es connecté');
   await pullSync();
   enterApp();
 };
@@ -6840,7 +6840,7 @@ const _e20 = $('#btnSignup'); if(_e20) _e20.onclick = async () => {
   statCompte('inscription');
   $('#vfEmail').textContent = email;
   authShow('authVerify');
-  toast('📬 Code envoyé — pense à regarder tes indésirables');
+  toast(isEN() ? '📬 Code sent — remember to check your spam folder' : '📬 Code envoyé — pense à regarder tes indésirables');
 };
 
 const _e21 = $('#btnResend'); if(_e21) _e21.onclick = async () => {
@@ -6850,7 +6850,7 @@ const _e21 = $('#btnResend'); if(_e21) _e21.onclick = async () => {
   const r = await srvFetch('/auth/forgot', { method:'POST', body:{ email:u.email } });
   authWait(_e21, false);
   authErr(r.ok ? '' : (r.data.error || 'Envoi impossible.'));
-  if(r.ok) toast('📬 Nouveau code envoyé');
+  if(r.ok) toast(isEN() ? '📬 New code sent' : '📬 Nouveau code envoyé');
 };
 
 const _e22 = $('#btnVerify'); if(_e22) _e22.onclick = async () => {
@@ -6865,7 +6865,7 @@ const _e22 = $('#btnVerify'); if(_e22) _e22.onclick = async () => {
   lsSet(LS_AUTH, '1');
   await pullSync();
   enterApp();
-  toast('Compte vérifié — bienvenue ! 🎉');
+  toast(isEN() ? 'Account verified — welcome! 🎉' : 'Compte vérifié — bienvenue ! 🎉');
 };
 
 /* ============================================================
@@ -8243,7 +8243,7 @@ function applyTripDefaults(){
   const ki = $('#fKids'); if(ki && SET.defKids !== undefined) ki.value = String(SET.defKids);
 }
 {
-  const hc = $('#stHome'); if(hc) hc.onchange = () => { SET.homeCity = hc.value.trim().slice(0, 60); saveSettings(); applyTripDefaults(); toast('🏠 Ville de départ par défaut enregistrée'); };
+  const hc = $('#stHome'); if(hc) hc.onchange = () => { SET.homeCity = hc.value.trim().slice(0, 60); saveSettings(); applyTripDefaults(); toast(isEN() ? '🏠 Default departure city saved' : '🏠 Ville de départ par défaut enregistrée'); };
   const sa = $('#stAdults'); if(sa) sa.onchange = () => { SET.defAdults = +sa.value || 2; saveSettings(); applyTripDefaults(); };
   const sk = $('#stKids'); if(sk) sk.onchange = () => { SET.defKids = +sk.value || 0; saveSettings(); applyTripDefaults(); };
 }
@@ -8256,7 +8256,7 @@ document.addEventListener('click', e => {
       SET[k] = arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
     } else SET[k] = v;
     saveSettings(); renderSettings();
-    toast('✔ Préférence enregistrée — l\'IA en tiendra compte');
+    toast(isEN() ? '✔ Preference saved — the AI will take it into account' : '✔ Préférence enregistrée — l\'IA en tiendra compte');
     return;
   }
   const tg = e.target.closest('[data-tog]');
@@ -8269,7 +8269,7 @@ document.addEventListener('click', e => {
     if(!confirm('Réinitialiser toutes tes préférences ?')) return;
     SET = { ...SET_DEF };
     saveSettings(); renderSettings();
-    toast('↺ Préférences réinitialisées');
+    toast(isEN() ? '↺ Preferences reset' : '↺ Préférences réinitialisées');
   }
 });
 document.addEventListener('change', e => {
@@ -8911,8 +8911,8 @@ function mapStep(dir){
    question qui compte. On trace le pointillé jusqu'à l'étape la plus proche. */
 function mapLocate(){
   const map = mapEngine();
-  if(!navigator.geolocation || !map){ toast('Géolocalisation indisponible sur cet appareil'); return; }
-  toast('🧭 Recherche de ta position…');
+  if(!navigator.geolocation || !map){ toast(isEN() ? 'Location is not available on this device' : 'Géolocalisation indisponible sur cet appareil'); return; }
+  toast(isEN() ? '🧭 Looking for your position…' : '🧭 Recherche de ta position…');
   navigator.geolocation.getCurrentPosition(pos => {
     const me = { lat: pos.coords.latitude, lon: pos.coords.longitude };
     const r = (window._projRoutes || [])[_mapIdx];
@@ -8922,7 +8922,7 @@ function mapLocate(){
     if(!situes.length){
       map.setLine(r?.line || []);
       map.panTo(me.lat, me.lon, 15);
-      toast('📍 Te voilà !');
+      toast(isEN() ? '📍 There you are!' : '📍 Te voilà !');
       return;
     }
     /* l'étape la plus proche : c'est « et maintenant ? » répondu en un chiffre */
@@ -8933,8 +8933,8 @@ function mapLocate(){
     }
     map.setLine(r.line || [], [[me.lat, me.lon], [best.lat, best.lon]]);
     map.fit([[me.lat, me.lon], [best.lat, best.lon]], 70);
-    toast(`📍 Tu es à ${amDist(bestKm)} de ${String(best.nom).split(',')[0]} — ${amWalkMin(bestKm)} min à pied`);
-  }, () => toast('Position refusée ou introuvable'), { timeout: 8000, enableHighAccuracy: true });
+    toast(isEN() ? `📍 You are ${amDist(bestKm)} from ${String(best.nom).split(',')[0]} — ${amWalkMin(bestKm)} min on foot` : `📍 Tu es à ${amDist(bestKm)} de ${String(best.nom).split(',')[0]} — ${amWalkMin(bestKm)} min à pied`);
+  }, () => toast(isEN() ? 'Location refused or not found' : 'Position refusée ou introuvable'), { timeout: 8000, enableHighAccuracy: true });
 }
 
 document.addEventListener('click', e => {
@@ -8948,7 +8948,7 @@ document.addEventListener('click', e => {
     const r = (window._projRoutes || [])[_mapIdx];
     const s = (r?.stops || [])[+st.dataset.mapstop];
     if(!s) return;
-    if(s.lat == null){ toast(`« ${String(s.nom).split(',')[0]} » n’a pas pu être localisé`); return; }
+    if(s.lat == null){ toast(isEN() ? `“${String(s.nom).split(',')[0]}” could not be located` : `« ${String(s.nom).split(',')[0]} » n’a pas pu être localisé`); return; }
     const map = mapEngine();
     if(!map) return;
     map.panTo(s.lat, s.lon, 16);
@@ -9167,7 +9167,7 @@ function ppEnregistre(){
   $('#ovProfil')?.classList.remove('show');
   renderProfile();
   try{ majNavTools(); }catch(e){}
-  toast('✔ Passeport mis à jour');
+  toast(isEN() ? '✔ Passport updated' : '✔ Passeport mis à jour');
 }
 
 /* ⚠️ Les icônes du profil sont posées ICI, une fois, à partir de ICO_D.
@@ -9345,7 +9345,7 @@ const _e27 = $('#pfLogout'); if(_e27) _e27.onclick = async () => {
   await srvFetch('/auth/logout', { method:'POST', auth:true });
   clearToken();
   localStorage.removeItem(LS_AUTH);
-  toast('À bientôt 👋');
+  toast(isEN() ? 'See you soon 👋' : 'À bientôt 👋');
   requireAuth();
 };
 const LS_THEME = 'acolite_theme';
@@ -9420,15 +9420,15 @@ const _e29 = $('#pfChangePass'); if(_e29) _e29.onclick = async () => {
   if(!confirm(`Un code va être envoyé à ${u.email} pour confirmer le changement. Continuer ?`)) return;
   const r0 = await srvFetch('/auth/forgot', { method:'POST', body:{ email:u.email } });
   if(!r0.ok) return toast('❌ ' + (r0.data.error || 'Envoi impossible'));
-  toast('📬 Code envoyé — regarde tes indésirables');
+  toast(isEN() ? '📬 Code sent — check your spam folder' : '📬 Code envoyé — regarde tes indésirables');
   const code = (prompt('Code reçu par email (6 chiffres) :') || '').trim();
   if(!code) return;
   const np = prompt('Nouveau mot de passe (8 caractères minimum) :'); if(np === null) return;
-  if(np.length < 8){ toast('❌ 8 caractères minimum'); return; }
+  if(np.length < 8){ toast(isEN() ? '❌ 8 characters minimum' : '❌ 8 caractères minimum'); return; }
   const r = await srvFetch('/auth/reset', { method:'POST', body:{ email:u.email, code, password:np } });
   if(!r.ok) return toast('❌ ' + (r.data.error || 'Changement impossible'));
   setToken(r.data.token);          /* l'ancienne session vient d'être fermée */
-  toast('🔑 Mot de passe changé ✔');
+  toast(isEN() ? '🔑 Password changed ✔' : '🔑 Mot de passe changé ✔');
 };
 
 /* Le changement d'adresse reposait sur le mot de passe stocké dans le
@@ -9436,13 +9436,13 @@ const _e29 = $('#pfChangePass'); if(_e29) _e29.onclick = async () => {
    route dédiée (vérifier l'ancienne adresse, puis la nouvelle). En
    attendant on le dit franchement plutôt que de laisser un bouton mort. */
 const _e30 = $('#pfChangeEmail'); if(_e30) _e30.onclick = () => {
-  toast('✉️ Changement d’adresse bientôt disponible');
+  toast(isEN() ? '✉️ Changing your address is coming soon' : '✉️ Changement d’adresse bientôt disponible');
 };
 
 const _e31 = $('#pfClearCache'); if(_e31) _e31.onclick = () => {
   if(!confirm('Vider le cache IA ? Le voyage, tes notes et tes dépenses sont conservés — seuls les contenus générés par l\'IA (plan, itinéraire, restos…) seront recalculés.')) return;
   state.cache = {}; save();
-  toast('🧹 Cache IA vidé — contenus régénérés à la prochaine visite');
+  toast(isEN() ? '🧹 AI cache cleared — content will be regenerated on your next visit' : '🧹 Cache IA vidé — contenus régénérés à la prochaine visite');
 };
 
 const _e32 = $('#pfMyData'); if(_e32) _e32.onclick = () => {
@@ -9453,7 +9453,7 @@ const _e32 = $('#pfMyData'); if(_e32) _e32.onclick = () => {
   a.download = 'acolite-mes-donnees.json';
   a.click();
   URL.revokeObjectURL(a.href);
-  toast('📄 Données téléchargées');
+  toast(isEN() ? '📄 Data downloaded' : '📄 Données téléchargées');
 };
 
 /* Suppression de compte : confirmation DANS l'app.
@@ -9593,7 +9593,7 @@ function importPayload(str){
   save(); unlockSteps();
   switchCat('trip');
   gotoStep(3);
-  toast(`🎫 Voyage importé : cap sur ${trip.nom} !`);
+  toast(isEN() ? `🎫 Trip imported: off to ${trip.nom}!` : `🎫 Voyage importé : cap sur ${trip.nom} !`);
   return true;
 }
 
@@ -9663,7 +9663,7 @@ async function openScan(){
         const q = window.jsQR(img.data, img.width, img.height);
         if(q && q.data.startsWith('ACOLITE1:')){
           closeScan();
-          try{ importPayload(q.data); }catch(e){ toast('❌ QR illisible'); }
+          try{ importPayload(q.data); }catch(e){ toast(isEN() ? '❌ Unreadable QR code' : '❌ QR illisible'); }
           return;
         }
       }
@@ -9688,7 +9688,7 @@ const _cscanFile = $('#scanFile'); if(_cscanFile) _cscanFile.onchange = async e 
     if(!g){ $('#scanMsg').textContent = '❌ Lecture impossible.'; return; }
     g.drawImage(img, 0, 0);
     const q = window.jsQR(g.getImageData(0,0,cv.width,cv.height).data, cv.width, cv.height);
-    if(q && q.data.startsWith('ACOLITE1:')){ closeScan(); try{ importPayload(q.data); }catch(er){ toast('❌ QR illisible'); } }
+    if(q && q.data.startsWith('ACOLITE1:')){ closeScan(); try{ importPayload(q.data); }catch(er){ toast(isEN() ? '❌ Unreadable QR code' : '❌ QR illisible'); } }
     else $('#scanMsg').textContent = '❌ Aucun QR Acolyte détecté sur cette photo.';
   };
   img.src = URL.createObjectURL(f);
@@ -9701,13 +9701,13 @@ document.addEventListener('click', e => {
 /* --- Partage par lien : #v=payload → import direct à l'ouverture --- */
 async function shareLink(){
   const pl = tripPayload();
-  if(!pl){ toast('Choisis d’abord un voyage'); return; }
+  if(!pl){ toast(isEN() ? 'Pick a trip first' : 'Choisis d’abord un voyage'); return; }
   const url = tripURL();      /* base64url : rien à échapper */
   const txt = `Mon voyage à ${state.trip.nom} sur Acolyte ✈️`;
   try{
     if(navigator.share){ await navigator.share({ title:'Acolyte', text:txt, url }); return; }
     await navigator.clipboard.writeText(url);
-    toast('🔗 Lien copié — envoie-le à tes amis');
+    toast(isEN() ? '🔗 Link copied — send it to your friends' : '🔗 Lien copié — envoie-le à tes amis');
   }catch(e){
     if(e.name !== 'AbortError') prompt('Copie ce lien :', url);
   }
@@ -9720,7 +9720,7 @@ function checkImportHash(){
   if(!m) return;
   history.replaceState(null, '', location.pathname);
   try{ importPayload(decodeURIComponent(m[1])); }
-  catch(e){ toast('❌ Lien de voyage invalide'); }
+  catch(e){ toast(isEN() ? '❌ Invalid trip link' : '❌ Lien de voyage invalide'); }
 }
 /* Le lien peut arriver alors qu'Acolyte est DÉJÀ ouvert : dans ce cas le
    navigateur change juste l'ancre, sans recharger la page — et rien ne se
@@ -9731,7 +9731,7 @@ addEventListener('hashchange', checkImportHash);
 /* --- Export .ics : le programme dans ton agenda (Google/Apple/Outlook) --- */
 function exportICS(){
   const t = state.trip, plan = state.cache.plan, d = stayDates();
-  if(!t || !plan?.programme?.length || !d){ toast('Il faut un voyage avec une date de départ'); return; }
+  if(!t || !plan?.programme?.length || !d){ toast(isEN() ? 'You need a trip with a departure date' : 'Il faut un voyage avec une date de départ'); return; }
   const pad = n => String(n).padStart(2, '0');
   const fmt = dt => `${dt.getUTCFullYear()}${pad(dt.getUTCMonth()+1)}${pad(dt.getUTCDate())}`;
   const start = new Date(d.in + 'T00:00:00Z');
@@ -9755,19 +9755,19 @@ function exportICS(){
   a.href = URL.createObjectURL(new Blob([ics], { type:'text/calendar' }));
   a.download = `acolyte-${String(t.nom).toLowerCase().replace(/[^a-z0-9]+/g,'-')}.ics`;
   a.click(); URL.revokeObjectURL(a.href);
-  toast('📅 Programme exporté — ouvre-le pour l’ajouter à ton agenda');
+  toast(isEN() ? '📅 Itinerary exported — open it to add it to your calendar' : '📅 Programme exporté — ouvre-le pour l’ajouter à ton agenda');
 }
 document.addEventListener('click', e => { if(e.target.closest('[data-ics]')) exportICS(); });
 
 /* --- Boarding pass → image PNG partageable (canvas maison) --- */
 async function passPNG(){
   const t = state.trip, p = state.prefs || {};
-  if(!t){ toast('Choisis d’abord un voyage'); return; }
+  if(!t){ toast(isEN() ? 'Pick a trip first' : 'Choisis d’abord un voyage'); return; }
   const W = 1200, H = 560, M = 30;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const g = cv.getContext('2d');
-  if(!g){ toast('Canvas indisponible'); return; }
+  if(!g){ toast(isEN() ? 'Canvas not available' : 'Canvas indisponible'); return; }
   const K = '#101010', Y = '#FFE600', WH = '#FFFFFF', P = '#F4F3EF';
   const plan = state.cache.plan || {}, d = stayDates(), u = getUser();
   const CW = W - M * 2, CH = H - M * 2 - 12;        /* carte */
@@ -9952,7 +9952,7 @@ async function passPNG(){
     if(file && navigator.canShare?.({ files: [file] })){
       try{
         await navigator.share({ files: [file], title: 'Mon ticket Acolyte', text: `Mon voyage à ${t.nom} ✈️` });
-        toast('📤 Ticket partagé — le QR s’ouvre avec l’appareil photo');
+        toast(isEN() ? '📤 Ticket shared — the QR code opens with the camera' : '📤 Ticket partagé — le QR s’ouvre avec l’appareil photo');
         return;
       }catch(e){ if(e.name === 'AbortError') return; }
     }
@@ -9961,7 +9961,7 @@ async function passPNG(){
     a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
-    toast('📷 Ticket téléchargé — le QR s’ouvre avec l’appareil photo');
+    toast(isEN() ? '📷 Ticket downloaded — the QR code opens with the camera' : '📷 Ticket téléchargé — le QR s’ouvre avec l’appareil photo');
   }, 'image/png');
 }
 document.addEventListener('click', e => { if(e.target.closest('[data-passpng]')) passPNG(); });
@@ -10402,7 +10402,7 @@ document.addEventListener('click', e => {
 /* --- Tes propres photos --- */
 function pcUseFiles(files){
   const arr = [...files].filter(f => /^image\//.test(f.type)).slice(0, 4);
-  if(!arr.length){ toast('Choisis des images 📷'); return; }
+  if(!arr.length){ toast(isEN() ? 'Pick some images 📷' : 'Choisis des images 📷'); return; }
   /* data: URL (et non blob:) car la CSP img-src n'autorise pas blob: */
   Promise.all(arr.map(f => new Promise(res => {
     const rd = new FileReader();
@@ -10411,14 +10411,14 @@ function pcUseFiles(files){
     rd.readAsDataURL(f);
   }))).then(ps => {
     const ok = ps.filter(Boolean);
-    if(!ok.length){ toast('Photos illisibles'); return; }
+    if(!ok.length){ toast(isEN() ? 'Unreadable photos' : 'Photos illisibles'); return; }
     _pcPhotos = ok;
     /* on ne force la disposition que si elle est trop petite pour montrer toutes les photos —
        sinon on respecte le choix de l'utilisateur (ex : 1 photo en « Collage »). */
     const slots = { grande:1, duo:2, collage:4 }[_pcLayout] || 1;
     if(ok.length > slots) _pcLayout = ok.length >= 3 ? 'collage' : 'duo';
     pcChips(); renderPostcard();
-    toast(`📸 ${ok.length} photo(s) ajoutée(s)`);
+    toast(isEN() ? `📸 ${ok.length} photo(s) added` : `📸 ${ok.length} photo(s) ajoutée(s)`);
   });
 }
 const _ePcMine = $('#pcMine'); if(_ePcMine) _ePcMine.onclick = () => $('#pcFile')?.click();
@@ -10442,7 +10442,7 @@ const _ePcD = $('#pcDownload'); if(_ePcD) _ePcD.onclick = () => {
     a.href = URL.createObjectURL(b);
     a.download = `acolyte-postcard-${String(state.trip?.nom||'voyage').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.png`;
     a.click(); URL.revokeObjectURL(a.href);
-    toast('🖼️ Carte postale téléchargée');
+    toast(isEN() ? '🖼️ Postcard downloaded' : '🖼️ Carte postale téléchargée');
   }, 'image/png');
 };
 const _ePcS = $('#pcShare'); if(_ePcS) _ePcS.onclick = () => {
@@ -13764,7 +13764,7 @@ function iaAjouteAuxVoyages(i, j){
   const src = (state.lastProps && state.lastProps.destinations || [])
     .find(x => x && String(x.nom) === c.nom);
   if(!src){
-    toast('Cette proposition n’est plus disponible — relance la recherche');
+    toast(isEN() ? 'This suggestion is no longer available — start a new search' : 'Cette proposition n’est plus disponible — relance la recherche');
     return;
   }
   state.destinations = [src];
@@ -15427,7 +15427,7 @@ function pbDemande(jour){
         }
         if(e.target.closest('#pbGo')){
           const v = (document.getElementById('pbTexte').value || '').trim();
-          if(!v){ toast('Dis en deux mots ce qui ne va pas'); return; }
+          if(!v){ toast(isEN() ? 'Tell us in a few words what is wrong' : 'Dis en deux mots ce qui ne va pas'); return; }
           ov.classList.remove('show');
           const f = _pbSuite; _pbSuite = null;
           if(f) f(v.slice(0, 160));
@@ -15636,7 +15636,7 @@ function auAjoute(i){
   const r = _auRows[i];
   if(!r) return;
   const jours = Object.keys((state.cache && state.cache.days) || {});
-  if(!jours.length){ toast('Détaille d’abord une journée pour pouvoir y ajouter quelque chose'); return; }
+  if(!jours.length){ toast(isEN() ? 'Open a day in detail first, then you can add to it' : 'Détaille d’abord une journée pour pouvoir y ajouter quelque chose'); return; }
   /* Le jour d'aujourd'hui si le séjour a commencé, le premier détaillé sinon. */
   let jour = jours[0];
   try{
@@ -15655,8 +15655,8 @@ function auAjoute(i){
     lieu: r.nom,
     type: _auCat === 'manger' ? 'repas' : _auCat === 'voir' ? 'visite' : 'pause'
   }]);
-  if(res && res.refusees && res.refusees.length){ toast('Ajout refusé : ' + (res.refusees[0].err || '')); return; }
-  toast(`✔ « ${r.nom.slice(0, 28)} » ajouté au jour ${jour}`);
+  if(res && res.refusees && res.refusees.length){ toast(isEN() ? 'Could not add: ' : 'Ajout refusé : ' + (res.refusees[0].err || '')); return; }
+  toast(isEN() ? `✔ “${r.nom.slice(0, 28)}” added to day ${jour}` : `✔ « ${r.nom.slice(0, 28)} » ajouté au jour ${jour}`);
   document.getElementById('ovAutour')?.classList.remove('show');
 }
 
@@ -15978,7 +15978,7 @@ function ppMemoireHTML(){
 document.addEventListener('click', e => {
   if(!e.target.closest || !e.target.closest('#pfOublie')) return;
   try{ localStorage.removeItem(LS_GOUTS); }catch(err){}
-  toast('Acolyte a tout oublié');
+  toast(isEN() ? 'Acolyte has forgotten everything' : 'Acolyte a tout oublié');
   if(typeof renderProfile === 'function') renderProfile();
 });
 
@@ -16215,7 +16215,7 @@ function carnetAncre(){
   if(!a) return;
   const ou = carnetOuSuisJe();
   if(!ou){
-    if(typeof jjDemandePos === 'function'){ jjDemandePos(); toast('📍 Je cherche où tu es…'); }
+    if(typeof jjDemandePos === 'function'){ jjDemandePos(); toast(isEN() ? '📍 Looking for where you are…' : '📍 Je cherche où tu es…'); }
     return;
   }
   const h = new Date().toLocaleTimeString(LOC(), { hour:'2-digit', minute:'2-digit' });
@@ -16438,7 +16438,7 @@ function traducteurHTML(){
 document.addEventListener('click', e => {
   if(!e.target.closest) return;
   if(e.target.closest('#btnOpenSimPan')){
-    if(!state.trip){ toast('Choisis d’abord un voyage 😉'); return; }
+    if(!state.trip){ toast(isEN() ? 'Pick a trip first 😉' : 'Choisis d’abord un voyage 😉'); return; }
     const ov = document.getElementById('ovSim');
     if(ov){ ov.classList.add('show'); try{ loadTransport(); }catch(err){} }
   }
@@ -16462,7 +16462,7 @@ document.addEventListener('click', async e => {
   const q = (champ && champ.value.trim()) || '';
   if(!q || !zone) return;
   const t = state.trip;
-  if(!t){ toast('Choisis d’abord un voyage 😉'); return; }
+  if(!t){ toast(isEN() ? 'Pick a trip first 😉' : 'Choisis d’abord un voyage 😉'); return; }
   zone.innerHTML = loaderHTML('Traduction…');
   const prompt = `Traduis cette phrase française vers ${t.langue || 'la langue locale de ' + t.pays}.
 Phrase : "${q}"
