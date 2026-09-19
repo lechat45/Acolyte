@@ -5963,9 +5963,14 @@ h3{ font-size:1.2rem;line-height:1.2 }
    « Maison » cesse d'être un libellé tronqué puisque le rang dit le contexte.
 ============================================================ */
 .plan-tabs{ display:flex;flex-direction:column;gap:8px;padding:10px }
-.plan-tabs .pt-rang{ display:grid;grid-template-columns:repeat(auto-fit, minmax(96px, 1fr));gap:5px }
+/* Flex, pas grid : le nom du rang occupait toutes les colonnes, donc auto-fit
+   n'en voyait aucune de vide et n'en repliait aucune — huit pistes pour cinq
+   onglets, trois cases blanches à droite. En flex, les onglets se partagent
+   la largeur qu'il y a. */
+.plan-tabs .pt-rang{ display:flex;flex-wrap:wrap;gap:5px }
+.plan-tabs .pt-rang > .plan-tab{ flex:1 1 96px;min-width:0 }
 .plan-tabs .pt-rang-nom{
-  grid-column:1 / -1;
+  flex-basis:100%;
   font-family:'Inter',system-ui,sans-serif;font-size:.66rem;font-weight:700;
   letter-spacing:.09em;text-transform:uppercase;color:var(--txt-2);
   padding:2px 6px 0;
@@ -6002,6 +6007,18 @@ h3{ font-size:1.2rem;line-height:1.2 }
   .dest-grid > .dest{ grid-column:span 2 }
   .dest-grid > .dest:first-child{ grid-column:span 4 }
   .dest-grid > .dest:first-child:nth-last-child(1){ grid-column:span 6 }
+  /* À trois propositions ou plus, la vedette prend la pleine largeur et se
+     pose À L'HORIZONTALE : le texte à gauche, les chiffres à droite. Deux
+     tiers + un tiers laissait la troisième seule sur une rangée avec quatre
+     colonnes vides ; l'étirer sur deux rangées creusait un vide en son
+     milieu. À l'horizontale, elle est courte, et rien ne reste vide. */
+  .dest-grid > .dest:first-child:nth-last-child(n+3){
+    grid-column:span 6;
+    display:grid;grid-template-columns:5fr 7fr;column-gap:28px;align-items:start;
+  }
+  .dest-grid > .dest:first-child:nth-last-child(n+3) > .dest-main{ grid-column:1;grid-row:1 / span 4 }
+  /* exactement trois : les deux autres se partagent la rangée du dessous */
+  .dest-grid > .dest:first-child:nth-last-child(3) ~ .dest{ grid-column:span 3 }
   .dest-grid > .dest:first-child .dest-main h3{ font-size:1.6rem }
   .dest-grid > .dest:first-child .dest-facts{ grid-template-columns:repeat(3, 1fr) }
 }
@@ -6029,7 +6046,8 @@ body::before{
   .plan-tabs{ padding:8px 6px;gap:6px }
   /* 5 colonnes dans ~290 px utiles : 5×53 + 4×3 = 277. Le padding horizontal
      des onglets descend à 2 px pour laisser 49 px au mot le plus long. */
-  .plan-tabs .pt-rang{ grid-template-columns:repeat(auto-fit, minmax(53px, 1fr));gap:3px }
+  .plan-tabs .pt-rang{ gap:3px }
+  .plan-tabs .pt-rang > .plan-tab{ flex-basis:53px }
   .plan-tabs .pt-rang-nom{ font-size:.6rem;padding:0 4px }
   .plan-tabs .pt-rang + .pt-rang{ padding-top:6px }
   /* ⚠️ .6rem (9,6 px) et non .62rem (9,92) : à 9,92 « Événements » dépasse
