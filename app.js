@@ -6260,9 +6260,14 @@ const _e23 = $('#btnLogin'); if(_e23) _e23.onclick = async () => {
 function enterApp(){
   $('#authWrap').classList.add('hidden');
   passEyesReset();   /* on ne laisse pas un mot de passe en clair derrière soi */
-  /* si la politique a changé depuis la dernière acceptation, on la redemande
-     avant tout le reste */
-  if(!requirePrivacy()) return;
+  /* Si la politique a changé depuis la dernière acceptation, on la redemande
+     avant tout le reste — mais SEULEMENT à quelqu'un qui a un compte. Un
+     visiteur sans compte n'a rien accepté et rien à accepter : aucune donnée
+     ne le concerne côté serveur, et il donnera son accord à la création du
+     compte (la case est dans le formulaire). Sans cette condition, la visite
+     libre s'ouvrait sur un mur de mentions légales sans croix — précisément
+     le péage que la visite libre devait supprimer. */
+  if(estConnecte() && !requirePrivacy()) return;
   renderProfile(); renderSettings(); renderGallery(); checkNews();
   /* Après la lecture de l'état : c'est safeState qui vient de lever le drapeau. */
   futurBarMaj();
@@ -10039,6 +10044,19 @@ if(state.step > 1) gotoStep(Math.min(state.step, 3));
     box?.closest('.day-block')?.scrollIntoView({ block:'center' });
   } }catch(e){} }, 400);
 })();
+/* ⚠️ Les trois questions d'arrivée sont déclarées ICI, et pas dans leur
+   section (plus bas), parce que requireAuth() s'exécute à la ligne suivante,
+   PENDANT l'évaluation du script. Déclarées en `const` après cette ligne,
+   QZ_KEY et QZ étaient en zone morte quand qzFait() les lisait : le
+   ReferenceError tombait dans son catch, qui répond « déjà fait » — et les
+   questions n'ont jamais été posées à personne, sans la moindre erreur en
+   console. Même piège que _blogIdx et passPlie. */
+const QZ_KEY = 'acolite_questions';
+const QZ = [
+  { opt:'stRythme',   q:'Tu voyages à quel rythme ?',                s:'Ça décide du nombre de visites par journée, et du temps laissé entre elles.' },
+  { opt:'stSurPlace', q:'Sur place, tu te déplaces comment ?',       s:'Ça change les durées entre deux visites, et la façon de grouper tes journées.' },
+  { opt:'stAcces',    q:'Un besoin d’accessibilité ?',               s:'Si oui, l’IA évite les sites escarpés et privilégie les accès de plain-pied.' }
+];
 requireAuth();
 
 /* app.js est arrivé au bout : le vérificateur de démarrage ne déclenchera pas d'alerte */
@@ -11979,12 +11997,8 @@ verrouFond();
    ⚠️ On peut TOUT passer. Un questionnaire obligatoire devant la porte fait
    fermer l'onglet, et ces réglages sont tous modifiables dans le profil.
 ============================================================ */
-const QZ_KEY = 'acolite_questions';
-const QZ = [
-  { opt:'stRythme',   q:'Tu voyages à quel rythme ?',                s:'Ça décide du nombre de visites par journée, et du temps laissé entre elles.' },
-  { opt:'stSurPlace', q:'Sur place, tu te déplaces comment ?',       s:'Ça change les durées entre deux visites, et la façon de grouper tes journées.' },
-  { opt:'stAcces',    q:'Un besoin d’accessibilité ?',               s:'Si oui, l’IA évite les sites escarpés et privilégie les accès de plain-pied.' }
-];
+/* QZ_KEY et QZ sont déclarés PLUS HAUT, juste avant requireAuth() — lis le
+   commentaire là-bas : ici, ils étaient en zone morte au démarrage. */
 var _qzI = 0;
 function qzFait(){ try{ return !!localStorage.getItem(QZ_KEY); }catch(e){ return true; } }
 function qzTermine(){
