@@ -70,19 +70,17 @@
 <meta name="twitter:description" content="D'une simple envie à un programme jour par jour : destination, transport, logement et itinéraire, organisés pour toi.">
 <meta name="twitter:image" content="https://lechat45.github.io/Acolyte/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<!-- ⚠️ L'ASSOCIATION TYPOGRAPHIQUE, ET POURQUOI SORA EST PARTIE.
-     Sora est une grotesque géométrique — exactement la police que porte la
-     moitié des outils d'IA. Employée sur les titres, elle datait le site avant
-     même qu'on lise un mot, et aucune couleur ne rattrape ça.
-     · FRAUNCES pour les titres : une serif à taille optique, avec du caractère
-       (les empattements s'épaississent, le « g » a une queue dessinée). Elle
-       apporte ce qu'aucune grotesque ne donne — une main, une époque.
+<!-- L'ASSOCIATION TYPOGRAPHIQUE D'HORIZON.
+     · MANROPE pour les titres : une grotesque humaniste, ronde sans être
+       molle, qui tient les grandes tailles sans devenir décorative. C'est
+       elle qui donne à l'interface son air calme et contemporain.
      · INTER pour le texte courant : neutre, faite pour l'écran, elle ne
-       cherche pas à exister. C'est le contraste entre les deux qui structure
-       la page, pas la taille des caractères.
-     opsz : Fraunces ajuste son dessin à la taille — plus contrastée en grand,
-     plus robuste en petit. C'est ce qui l'empêche de paraître décorative. -->
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+       cherche pas à exister.
+     ⚠️ Fraunces (serif à taille optique) portait les titres de l'édition
+     papier. Horizon est une interface sans empattements : elle n'y a plus
+     d'emploi, et c'est une famille de moins à télécharger. Les 104 règles
+     qui la nommaient passent par --font-titre, défini une seule fois. -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <!-- Données structurées : décrit le site à Google dans son vocabulaire.
      Ce n'est PAS du script exécuté (type application/ld+json = bloc de
@@ -216,9 +214,9 @@
            fermaient jamais, et l'avion ressemblait à une ancre. Une icône de
            24 px ne se devine pas, elle se recopie.
            stroke-width 1.75 comme la maquette. -->
-      <button data-cat="map"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3.5 2.8 6v14.5L9 18l6 2.5 6.2-2.5V3.5L15 6 9 3.5Z"/><path d="M9 3.5V18M15 6v14.5"/></svg>Carte</button>
-      <button data-cat="trip" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.4c.85 0 1.5.65 1.5 1.5v4.9l7.1 4.1v2l-7.1-2.2v4.2l2.5 1.8v1.5L12 19.6l-4 .6v-1.5l2.5-1.8v-4.2L3.4 15v-2l7.1-4.1v-5c0-.84.65-1.5 1.5-1.5Z"/></svg>Voyage</button>
-      <button data-cat="blog"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 21.2h12.2a2 2 0 0 0 2-2V6.6l-3.4-3.4H6.5a2 2 0 0 0-2 2v3.4"/><path d="M4.5 9.5H3.2a1 1 0 0 0-1 1v8.7a2 2 0 0 0 2 2"/><path d="M8 8h4M8 12h7M8 16h7"/></svg>Blog</button>
+      <button data-cat="map"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3.5 2.8 6v14.5L9 18l6 2.5 6.2-2.5V3.5L15 6 9 3.5Z"/><path d="M9 3.5V18M15 6v14.5"/></svg>Explorer</button>
+      <button data-cat="trip" class="on"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.4c.85 0 1.5.65 1.5 1.5v4.9l7.1 4.1v2l-7.1-2.2v4.2l2.5 1.8v1.5L12 19.6l-4 .6v-1.5l2.5-1.8v-4.2L3.4 15v-2l7.1-4.1v-5c0-.84.65-1.5 1.5-1.5Z"/></svg>Mes voyages</button>
+      <button data-cat="blog"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 21.2h12.2a2 2 0 0 0 2-2V6.6l-3.4-3.4H6.5a2 2 0 0 0-2 2v3.4"/><path d="M4.5 9.5H3.2a1 1 0 0 0-1 1v8.7a2 2 0 0 0 2 2"/><path d="M8 8h4M8 12h7M8 16h7"/></svg>Découvrir</button>
       <button data-cat="profile"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20.8v-1.9a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1.9"/><path d="M12 3.2a4.1 4.1 0 1 0 0 8.2 4.1 4.1 0 0 0 0-8.2Z"/></svg>Profil</button>
       <!-- ⚠️ L'ONGLET EST MAINTENANT SUR TÉLÉPHONE AUSSI. Il était réservé à
            l'ordinateur ; la barre du bas passe donc de 4 à 5 colonnes — voir
@@ -249,9 +247,23 @@
       <button id="ntInstall" type="button" title="Installer l'application" aria-label="Installer l'application" style="display:none">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11.8"/><path d="m7 10.5 5 5 5-5M4.2 20h15.6"/></svg>
       </button>
+      <!-- La cloche ouvre le journal des nouveautés — la seule chose
+           qu'Acolyte ait à notifier. La pastille n'apparaît que si la
+           version en cours n'a pas encore été vue (checkNews la pose). -->
+      <button id="ntCloche" type="button" class="nt-cloche" title="Quoi de neuf ?" aria-label="Quoi de neuf ?">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="nt-point" id="ntPoint" hidden></span>
+      </button>
       <button id="ntMe" type="button" class="nt-me" title="Mon compte">
         <span class="nt-av" id="ntAv" aria-hidden="true">?</span><span class="nt-nom" id="ntNom">Compte</span>
       </button>
+      <!-- L'action principale de la barre : elle ramène au questionnaire,
+           c'est-à-dire au début d'un vrai voyage. -->
+      <button id="ntNouveau" type="button" class="btn nt-nouveau">Nouveau voyage</button>
     </div>
   </header>
 
@@ -287,20 +299,41 @@
          composition CSS/SVG et non une photo — aucun fichier à télécharger,
          rien à autoriser dans la politique de sécurité, et il reste net sur
          tous les écrans. -->
-    <div class="hero">
-      <div class="hero-deco" aria-hidden="true"></div>
-      <div class="hero-in">
-        <!-- h1 de la page : titre principal pour Google et les lecteurs d'écran -->
-        <h1>Où est-ce qu'on t'emmène ?</h1>
-        <p class="sub">Décris tes envies, Acolyte te propose des destinations sur mesure — puis t'aide à affiner.</p>
+    <!-- ============================================================
+         LE HÉROS — HORIZON
+         ------------------------------------------------------------
+         La référence pose le texte à gauche et une photographie à droite.
+         ⚠️ PAS DE PHOTOGRAPHIE DÉCORATIVE DISTANTE ICI. Acolyte n'embarque
+         aucune image et se veut utilisable hors connexion : poser une photo
+         de banque d'images en tête de page ajouterait des centaines de
+         kilo-octets, une dépendance réseau au premier affichage, et un trou
+         blanc dès qu'elle ne charge pas. La scène est dessinée en CSS et en
+         SVG — zéro octet transféré, nette à toutes les tailles, et elle
+         fonctionne dans le tunnel comme le reste de l'application.
+         Quand un voyage existe, c'est SA destination qui s'affiche à la
+         place : une vraie photo, qui veut dire quelque chose.
+    ============================================================ -->
+    <section class="hero-h">
+      <div class="hero-h-txt">
+        <h1>Le voyage, à votre façon.</h1>
+        <p class="hero-h-sur">Planifiez moins. Vivez plus.</p>
+        <p class="hero-h-desc">Imaginez votre prochaine escapade. Acolyte vous aide à
+          créer un itinéraire qui vous ressemble, de la première idée aux souvenirs du retour.</p>
+        <div class="hero-h-actes">
+          <button type="button" class="btn" id="heroCreer">Créer mon voyage</button>
+          <button type="button" class="btn ghost" id="heroDecouvrir">Découvrir les destinations</button>
+        </div>
       </div>
-      <svg class="hero-globe" viewBox="0 0 90 90" aria-hidden="true">
-        <circle cx="45" cy="46" r="23" fill="none" stroke="currentColor" stroke-width="2.4"/>
-        <ellipse cx="45" cy="46" rx="9" ry="23" fill="none" stroke="currentColor" stroke-width="2.4"/>
-        <path d="M23 39 h44 M23 53 h44" stroke="currentColor" stroke-width="2.4" fill="none"/>
-        <path d="M45 14 v-9 M69 24 l7 -7 M21 24 l-7 -7 M78 46 h9 M3 46 h9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
-      </svg>
-    </div>
+      <div class="hero-h-vue" aria-hidden="true">
+        <div class="hhv-ciel"></div>
+        <svg class="hhv-relief" viewBox="0 0 400 260" preserveAspectRatio="none">
+          <path class="hhv-l1" d="M0 190 L70 128 L118 170 L176 96 L250 182 L312 140 L400 196 L400 260 L0 260 Z"/>
+          <path class="hhv-l2" d="M0 216 L62 174 L140 212 L214 162 L288 210 L352 180 L400 214 L400 260 L0 260 Z"/>
+          <path class="hhv-l3" d="M0 240 L96 214 L190 238 L286 212 L400 240 L400 260 L0 260 Z"/>
+        </svg>
+        <span class="hhv-soleil"></span>
+      </div>
+    </section>
     <div class="card" id="tripGallery" hidden>
       <h3 style="margin:0 0 4px">Mes voyages</h3>
       <p class="sub" style="margin:0 0 12px">Reprends un voyage déjà exploré, ou lances-en un nouveau ci-dessous.</p>

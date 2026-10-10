@@ -19,94 +19,131 @@
 ============================================================ */
 
 /* ---- Thème sombre : la référence, c'est lui ---- */
+/* ============================================================
+   ACOLYTE — HORIZON
+   ------------------------------------------------------------
+   Le clair est désormais la RÉFÉRENCE : ivoire, cartes blanches, bleu
+   nuit pour l'encre, turquoise pour l'action. Le sombre reste, parce
+   qu'il est proposé par un vrai bouton et que des gens l'utilisent — il
+   n'est pas un autre design, c'est le même retourné : même turquoise,
+   même géométrie, mêmes espacements.
+
+   ⚠️ CES VALEURS SONT MESURÉES, PAS CHOISIES À L'ŒIL. Le gris
+   secondaire de la référence (#727B86) ne donne que 4,08:1 sur l'ivoire
+   — sous le seuil des 4,5 exigés pour du texte courant, et c'est la
+   couleur de TOUTES les dates et descriptions. Il descend à #6A7380 :
+   4,56:1, et l'œil ne fait pas la différence. Même raison pour le
+   turquoise écrit sur le turquoise pâle (4,12 → #1F6E72, 5,18).
+============================================================ */
+
+/* ---- Thème clair : la référence, c'est lui ---- */
 :root {
-  --bg:          #121212;   /* page */
-  --bg-2:        #171717;   /* colonne de gauche */
-  --secondary:   #1C1C1C;   /* carte */
-  --surface-2:   #232323;   /* champ, pastille */
-  --primary:     #FFE600;   /* le jaune de la marque, en accent */
-  --primary-ink: #141414;   /* encre posée SUR le jaune */
-  /* ⚠️ LE JAUNE ÉCRIT — à utiliser dès qu'on met du TEXTE en jaune.
-     --primary est une couleur de FOND : on pose --primary-ink dessus. Employé
-     comme encre il ne tient que sur du sombre. Trois endroits l'utilisaient en
-     texte sur une surface claire (#FFE600 sur #F5F4F0 = 1,15:1, illisible) et
-     personne ne l'avait vu, parce qu'en thème SOMBRE ça passe : le défaut
-     n'existait que dans un thème sur deux.
-     En sombre, le jaune écrit reste le jaune de la marque. En clair, il
-     s'assombrit juste ce qu'il faut (voir le bloc clair plus bas).
-     ⚠️ Si tu écris `color:var(--primary)` un jour, demande-toi sur quel fond.
-     Si le fond peut être clair, c'est --primary-txt qu'il faut. */
-  --primary-txt: #FFE600;
-  /* Encre posée sur les accents colorés (vert, orange, cyan). En thème sombre
-     ces aplats sont CLAIRS, donc l'encre y est foncée ; en thème clair ils
-     sont foncés, donc elle est blanche. Le jaune, lui, ne change pas de
-     thème : il garde --primary-ink des deux côtés. */
-  --on-accent: #141414;
-  --accent-cyan:   #5BD6E8;
+  --bg:          #FAF9F6;   /* page, ivoire */
+  --bg-2:        #F2F0EA;   /* colonne de gauche, fond secondaire */
+  --secondary:   #FFFFFF;   /* carte */
+  --surface-2:   #F2F0EA;   /* champ, pastille */
+
+  /* L'ACTION. Un seul turquoise, et il ne veut dire qu'une chose : on
+     peut appuyer. Même discipline que le jaune d'avant — un accent qui
+     signifie tout ne signale plus rien. */
+  --primary:     #247F83;
+  --primary-ink: #FFFFFF;   /* encre posée SUR le turquoise — 4,73:1 */
+  /* Le turquoise ÉCRIT sur un fond clair : plus sombre, sinon il ne
+     passe pas sur le turquoise pâle des puces (4,12 contre 5,18). */
+  --primary-txt: #1F6E72;
+  --on-accent:   #FFFFFF;
+
+  --accent-cyan:   #1B6E78;
+  --accent-violet: #5B4BC4;
+  --accent-orange: #B4530E;
+  --ok:     #1A7F4E;
+  --danger: #B33023;
+
+  --txt:    #17263C;        /* bleu nuit — 14,5:1 sur l'ivoire */
+  --txt-2:  #6A7380;        /* 4,56:1 — ne pas remonter, voir l'avertissement */
+  --stroke:   #E9E7E1;
+  --stroke-2: #D8D5CC;
+
+  --field-focus: #F4FAF9;
+  --card-hover:  #FDFDFB;
+  --locked:      #F2F0EA;
+  --tab-on:      #FFFFFF;
+
+  /* Des ombres LÉGÈRES et diffuses, pas l'ombre dure de l'édition papier :
+     Horizon pose les cartes sur la page, il ne les cloue pas dessus. */
+  --shadow:    0 1px 2px rgba(23,38,60,.04), 0 6px 20px rgba(23,38,60,.06);
+  --shadow-lg: 0 2px 4px rgba(23,38,60,.04), 0 18px 48px rgba(23,38,60,.10);
+  --glow:      0 0 0 3px rgba(36,127,131,.16);
+
+  /* Les deux familles, nommées une seule fois : 104 règles de titre et 111
+     de texte les lisent par ces jetons. Changer de police redevient une
+     ligne, au lieu d'un remplacement dans tout le fichier. */
+  --font-titre: 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-texte: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --r-lg: 18px;
+  --r-md: 12px;
+  --r-sm: 8px;
+
+  /* Jetons hérités, réaccordés sur Horizon plutôt que supprimés :
+     des centaines de règles les lisent déjà. */
+  --money:      #E5F2EF;    /* turquoise pâle : les montants */
+  --money-ink:  #1F6E72;
+  --warn:       #B4530E;
+  --paper:      #FFFFFF;    /* « papier » = la carte blanche */
+  --paper-edge: #E9E7E1;
+  --ombre-dure:   var(--shadow);
+  --ombre-dure-h: var(--shadow-lg);
+  --ombre-dure-p: 0 1px 2px rgba(23,38,60,.06);
+  --verifie:    #1A7F4E;
+
+  color-scheme: light;
+}
+
+/* ---- Thème sombre : le même dessin, retourné. Le bleu nuit de la
+   référence devient le fond, le turquoise s'éclaircit juste assez. ---- */
+:root[data-theme="dark"] {
+  --bg:          #101A28;
+  --bg-2:        #152235;
+  --secondary:   #17263C;   /* le bleu nuit de la référence : la carte */
+  --surface-2:   #1E2F49;
+
+  --primary:     #2E9FA4;
+  --primary-ink: #06161B;
+  --primary-txt: #6FD0D4;   /* turquoise écrit sur fond sombre */
+  --on-accent:   #06161B;
+
+  --accent-cyan:   #6FD0D4;
   --accent-violet: #B49BF0;
   --accent-orange: #F2954B;
   --ok:     #5BC98B;
   --danger: #E9695F;
-  --txt:    #F2F1EC;
-  --txt-2:  #A5A49D;  /* 6,8:1 sur --bg — ne pas redescendre, voir plus bas */
-  --stroke: rgba(255,255,255,.11);   /* le filet d'un pixel */
-  --stroke-2: rgba(255,255,255,.20); /* filet appuyé : survol, champ actif */
-  --field-focus: #262626;
-  --card-hover:  #212121;
-  --locked:      #1A1A1A;
-  --tab-on:      #262626;
-  --shadow:    0 6px 18px rgba(0,0,0,.35);
-  --shadow-lg:  0 18px 44px rgba(0,0,0,.48);
-  --glow:      0 0 0 1px rgba(255,230,0,.35), 0 8px 28px rgba(255,230,0,.14);
-  --r-lg: 20px;
-  --r-md: 14px;
-  --r-sm: 10px;
-  color-scheme: dark;
-}
 
-/* ---- Thème clair : le même dessin, retourné. Pas un autre design. ---- */
-:root[data-theme="light"] {
-  --bg:          #F5F4F0;
-  --bg-2:        #EFEEE9;
-  --secondary:   #FFFFFF;
-  --surface-2:   #F7F6F2;
-  --primary:     #FFE600;
-  --primary-ink: #141414;
-  /* Le jaune ÉCRIT, version claire. #7E6B00 est le même jaune poussé jusqu'à
-     la lisibilité : 4,78:1 sur --bg, 4,65:1 sur le fond teinté du badge « à la
-     une », 5,26:1 sur blanc — les trois passent. Le jaune de FOND, lui, ne
-     bouge pas d'un cheveu : la marque reste la marque. */
-  --primary-txt: #7E6B00;
-  --on-accent: #FFFFFF;
-  --accent-cyan:   #1B8FA6;
-  --accent-violet: #6D4FC4;
-  /* assombri de #C25A11 : les liens en portent la couleur, et sur le blanc ils
-     plafonnaient à 4,41:1 — juste sous la norme. À #B85410 : 4,87:1, et le
-     texte blanc POSÉ dessus (bandeau réseau, étiquette « warn ») y gagne
-     exactement autant.
-     ⚠️ CORRIGÉ À NOUVEAU — et le piège vaut d'être noté. #B85410 avait été
-     mesuré sur du BLANC PUR (#FFFFFF, la carte), mais la plupart des liens
-     reposent sur --bg (#F5F4F0), qui est plus SOMBRE : là, le rapport retombe
-     à 4,42:1, toujours sous la norme. Le bon fond de référence est le fond
-     RÉEL du texte, pas le plus clair de la palette.
-     À #B04E0E : 4,84:1 sur --bg et 5,33:1 sur blanc — les deux passent. */
-  --accent-orange: #B04E0E;
-  /* assombri de #1E8C57 pour la même raison que l'orange : le texte blanc de
-     l'étiquette « OK » n'y atteignait que 4,25:1. À #1A7F4E : 5,01:1. */
-  --ok:     #1A7F4E;
-  --danger: #B33023;   /* 4,35:1 sur le gris de la zone sensible avec #C4372C — un cran plus sombre passe (5,05) */
-  --txt:    #16160F;
-  --txt-2:  #63625B;
-  --stroke: rgba(0,0,0,.12);
-  --stroke-2: rgba(0,0,0,.24);
-  --field-focus: #FFFDEB;
-  --card-hover:  #FAF9F5;
-  --locked:      #EAE9E3;
-  --tab-on:      #FFFFFF;
-  --shadow:    0 4px 14px rgba(20,20,15,.10);
-  --shadow-lg:  0 16px 40px rgba(20,20,15,.16);
-  --glow:      0 0 0 1px rgba(190,168,0,.55), 0 8px 24px rgba(255,230,0,.22);
-  color-scheme: light;
+  --txt:    #EEF2F7;
+  --txt-2:  #9BA7B8;        /* 6,6:1 sur --bg */
+  --stroke:   rgba(255,255,255,.10);
+  --stroke-2: rgba(255,255,255,.20);
+
+  --field-focus: #203450;
+  --card-hover:  #1B2C45;
+  --locked:      #152235;
+  --tab-on:      #1E2F49;
+
+  --shadow:    0 1px 2px rgba(0,0,0,.30), 0 6px 20px rgba(0,0,0,.34);
+  --shadow-lg: 0 2px 4px rgba(0,0,0,.30), 0 18px 48px rgba(0,0,0,.46);
+  --glow:      0 0 0 3px rgba(46,159,164,.30);
+
+  --money:      #1C3B45;
+  --money-ink:  #8FDFE3;
+  --warn:       #F2954B;
+  --paper:      #17263C;
+  --paper-edge: rgba(255,255,255,.10);
+  --ombre-dure:   var(--shadow);
+  --ombre-dure-h: var(--shadow-lg);
+  --ombre-dure-p: 0 1px 2px rgba(0,0,0,.40);
+  --verifie:    #5BC98B;
+
+  color-scheme: dark;
 }
 
 /* ⚠️ L'encre posée sur les aplats jaunes (et les autres aplats vifs) est
@@ -118,7 +155,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
-  font-family:'Inter',system-ui,sans-serif;
+  font-family:var(--font-texte);
   background-color:var(--bg);
   
   color:var(--txt);
@@ -149,17 +186,17 @@ body{
 }
 .boot-mark .mascot{width:92px;height:92px}
 .boot-mark span{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:3rem;line-height:1;
+  font-family:var(--font-titre);font-weight:900;font-size:3rem;line-height:1;
   color:#101010;letter-spacing:-.04em;
 }
 .boot-word{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:2.6rem;letter-spacing:-.04em;
-  text-transform:uppercase;color:var(--txt);line-height:1;
+  font-family:var(--font-titre);font-weight:900;font-size:2.6rem;letter-spacing:-.04em;
+  text-transform:none;color:var(--txt);line-height:1;
   animation:bootUp .45s .1s ease both;
 }
 .boot-sub{
-  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.66rem;letter-spacing:.22em;
-  color:var(--txt-2);text-transform:uppercase;
+  font-family:var(--font-texte);font-weight:800;font-size:.66rem;letter-spacing:.22em;
+  color:var(--txt-2);text-transform:none;
   animation:bootUp .45s .18s ease both;
 }
 .boot-bar{
@@ -177,8 +214,8 @@ body{
   transition:width .35s ease;
 }
 .boot-step{
-  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.62rem;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--txt-2);
+  font-family:var(--font-texte);font-weight:800;font-size:.62rem;letter-spacing:.1em;
+  text-transform:none;color:var(--txt-2);
   animation:bootUp .45s .34s ease both;
 }
 @keyframes bootFail{to{opacity:0;visibility:hidden;pointer-events:none}}
@@ -203,8 +240,8 @@ header{
   margin-bottom:18px;
 }
 .logo{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:2.15rem;
-  letter-spacing:-.03em;display:flex;align-items:center;gap:10px;text-transform:uppercase;
+  font-family:var(--font-titre);font-weight:900;font-size:2.15rem;
+  letter-spacing:-.03em;display:flex;align-items:center;gap:10px;text-transform:none;
 }
 /* La mascotte remplace l'ancien carré orange. Elle garde le regard et
    le clignement — sa signature — mais pas le balancement : un logo qui
@@ -288,7 +325,7 @@ header{
 .step{
   flex:1;min-width:125px;padding:12px 14px;border-radius:var(--r-md);cursor:pointer;
   background:var(--secondary);border:1px solid var(--stroke);
-  font-size:.85rem;font-weight:800;color:var(--txt);text-transform:uppercase;white-space:nowrap;
+  font-size:.85rem;font-weight:800;color:var(--txt);text-transform:none;white-space:nowrap;
   display:flex;align-items:center;gap:8px;transition:all .1s ease;
   box-shadow:var(--shadow);
 }
@@ -306,7 +343,7 @@ header{
   background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-lg);
   padding:24px;margin-bottom:24px;box-shadow:var(--shadow);
 }
-h1,h2,h3{font-family:'Fraunces',Georgia,'Times New Roman',serif;letter-spacing:-.02em;text-transform:uppercase;font-weight:900}
+h1,h2,h3{font-family:var(--font-titre);letter-spacing:-.02em;text-transform:none;font-weight:900}
 /* le h1 de la page porte le même style que les h2 : la hiérarchie change pour
    Google et les lecteurs d'écran, pas l'apparence */
 h1,h2{font-size:1.4rem;margin-bottom:8px;display:inline-block;border-bottom:1px solid var(--stroke);padding-bottom:4px}
@@ -318,7 +355,7 @@ h3{font-size:1.1rem;margin-top:6px}
 .grid.tight{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
 .field label{
   display:block;font-size:.8rem;font-weight:800;color:var(--txt);
-  text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;
+  text-transform:none;letter-spacing:.04em;margin-bottom:6px;
 }
 /* ⚠️ 16px N'EST PAS UN CHOIX DE STYLE, C'EST UN SEUIL DE SAFARI.
    Sous iOS, poser le doigt dans un champ dont le texte fait MOINS de 16px
@@ -362,8 +399,8 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 
 /* ===== Buttons ===== */
 .btn{
-  border:1px solid var(--stroke);cursor:pointer;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;
-  font-size:1rem;text-transform:uppercase;padding:14px 28px;border-radius:var(--r-md);
+  border:1px solid var(--stroke);cursor:pointer;font-family:var(--font-titre);font-weight:900;
+  font-size:1rem;text-transform:none;padding:14px 28px;border-radius:var(--r-md);
   transition:all .1s ease;display:inline-flex;align-items:center;gap:10px;
   color:var(--primary-ink);background:var(--primary);box-shadow:var(--shadow);text-decoration:none;
 }
@@ -390,7 +427,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .ai-badge{
   display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:900;
   padding:4px 10px;border-radius:0;border:1px solid var(--stroke);
-  text-transform:uppercase;vertical-align:middle;box-shadow:var(--shadow);
+  text-transform:none;vertical-align:middle;box-shadow:var(--shadow);
 }
 .ai-badge.gemini{background:var(--accent-violet);color:var(--on-accent)}
 .ai-badge.groq{background:var(--accent-orange);color:var(--on-accent)}
@@ -568,7 +605,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 /* en-tête : le drapeau en grand, le nom dessous, bien centré */
 .cmp thead th{
   background:var(--primary);color:#101010;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;text-transform:uppercase;font-size:.76rem;
+  font-family:var(--font-titre);font-weight:900;text-transform:none;font-size:.76rem;
   cursor:pointer;text-align:center;border-bottom:1px solid var(--stroke);line-height:1.3;
   transition:filter .1s ease;
 }
@@ -577,8 +614,8 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .cmp .cmp-flag{font-size:1.7rem;display:inline-block;margin-bottom:2px}
 /* colonne des critères : étiquettes claires, collées à gauche au défilement */
 .cmp tbody th[scope="row"]{
-  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;
-  text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;
+  font-family:var(--font-texte);font-weight:900;font-size:.72rem;
+  text-transform:none;letter-spacing:.02em;white-space:nowrap;
   color:var(--txt-2);background:var(--bg);position:sticky;left:0;z-index:1;
   border-right:1px solid var(--stroke);
 }
@@ -604,12 +641,12 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .gal-flag{
   flex:none;width:38px;height:38px;display:grid;place-items:center;
   border-radius:50%;background:var(--surface-2);border:1px solid var(--stroke);
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.82rem;
+  font-family:var(--font-titre);font-weight:900;font-size:.82rem;
   letter-spacing:.02em;line-height:1;color:var(--txt-2);
   overflow:hidden;
 }
 .gal-info{flex:1;min-width:0;display:flex;flex-direction:column}
-.gal-info b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gal-info b{font-family:var(--font-titre);font-weight:900;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gal-info span{font-size:.76rem;color:var(--txt-2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gal-open{flex-shrink:0}
 /* Retirer un voyage : discret par défaut, il ne doit pas concurrencer
@@ -633,7 +670,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
    énorme sans qu'aucun des deux chiffres paraisse excessif. */
 .privacy-check input{width:auto;flex-shrink:0;margin-top:1px;box-shadow:none}
 .privacy-check a{color:var(--accent-orange);font-weight:800;text-decoration:underline;cursor:pointer}
-.legal h4{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.9rem;margin:14px 0 4px}
+.legal h4{font-family:var(--font-titre);font-size:.9rem;margin:14px 0 4px}
 .legal h4:first-child{margin-top:0}
 .legal p{font-size:.84rem;line-height:1.55;color:var(--txt-2);margin:0}
 /* ===== Case à cocher d'option (questionnaire) =====
@@ -642,7 +679,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
    liste déroulante, personne ne la trouve. */
 .field.wide{grid-column:1/-1}
 /* ⚠️ Sélecteur `.field label.opt-check` et non `.opt-check` seul : la règle
-   `.field label` impose display:block ET text-transform:uppercase, et elle est
+   `.field label` impose display:block ET text-transform:none, et elle est
    plus spécifique. Sans ce préfixe, la case tombait sur sa propre ligne et la
    phrase d'explication s'affichait TOUT EN MAJUSCULES. */
 .field label.opt-check{
@@ -658,7 +695,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   accent-color:var(--primary);cursor:pointer;
 }
 .field label.opt-check b{
-  display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.92rem;
+  display:block;font-family:var(--font-titre);font-weight:900;font-size:.92rem;
   text-transform:none;letter-spacing:0;color:var(--txt);
 }
 .field label.opt-check em{
@@ -678,7 +715,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .pays-box.hidden{display:none}
 .pays-box > label{
   display:block;font-size:.78rem;font-weight:800;color:var(--txt);
-  text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;
+  text-transform:none;letter-spacing:.04em;margin-bottom:6px;
 }
 .pays-add{display:flex;gap:8px;align-items:stretch}
 .pays-add input{flex:1;min-width:0}
@@ -692,7 +729,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   background:var(--primary);color:#101010;
   border:1px solid var(--stroke);box-shadow:var(--shadow);
   border-radius:var(--r-md);padding:6px 8px 6px 11px;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.8rem;
+  font-family:var(--font-titre);font-weight:900;font-size:.8rem;
 }
 .pays-tag .num{
   background:#101010;color:var(--primary);
@@ -717,7 +754,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .onboard[hidden]{display:none}
 .onboard-card{position:relative;max-width:380px;width:100%;background:var(--secondary);border:1px solid var(--stroke);box-shadow:var(--shadow);border-radius:var(--r-lg);padding:34px 26px 22px;text-align:center;animation:pop .3s ease both}
 .onboard-emoji{font-size:3.4rem;line-height:1;margin-bottom:12px}
-.onboard-card h2{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.3rem;margin:0 0 8px}
+.onboard-card h2{font-family:var(--font-titre);font-weight:900;font-size:1.3rem;margin:0 0 8px}
 .onboard-card p{color:var(--txt-2);font-size:.95rem;line-height:1.55;margin:0 0 22px}
 .onboard-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .onboard-dots{display:flex;gap:7px}
@@ -729,9 +766,9 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .pc-preview{position:relative;border:1px solid var(--stroke);border-radius:var(--r-md);overflow:hidden;background:var(--bg);min-height:180px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:var(--shadow)}
 .pc-preview img{width:100%;display:block}
 .pc-preview img:not([src]){display:none}
-.pc-loading{position:absolute;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;color:var(--txt-2);font-size:.85rem}
+.pc-loading{position:absolute;font-family:var(--font-titre);font-weight:800;color:var(--txt-2);font-size:.85rem}
 .pc-group{margin-bottom:10px}
-.pc-label{display:block;font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;text-transform:uppercase;color:var(--txt-2);margin-bottom:6px}
+.pc-label{display:block;font-family:var(--font-texte);font-weight:900;font-size:.72rem;text-transform:none;color:var(--txt-2);margin-bottom:6px}
 .pc-chips{display:flex;gap:8px;flex-wrap:wrap}
 .pc-chip{
   padding:8px 14px;border:1px solid var(--stroke);border-radius:var(--r-lg);
@@ -758,12 +795,12 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .dest:hover{border-color:var(--stroke);transform:translate(-3px,-3px);box-shadow:var(--shadow);background:var(--card-hover)}
 .dest .flag{font-size:2.2rem;margin-bottom:8px}
 .dest h3{font-size:1.25rem;margin-bottom:4px}
-.dest .country{font-size:.85rem;font-weight:700;color:var(--txt-2);margin-bottom:10px;text-transform:uppercase}
+.dest .country{font-size:.85rem;font-weight:700;color:var(--txt-2);margin-bottom:10px;text-transform:none}
 .dest p{font-size:.9rem;color:var(--txt-2);line-height:1.5;margin-bottom:12px}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .tag{
   font-size:.7rem;font-weight:800;padding:4px 10px;border-radius:0;
-  background:var(--bg);border:1px solid var(--stroke);color:var(--txt);text-transform:uppercase;
+  background:var(--bg);border:1px solid var(--stroke);color:var(--txt);text-transform:none;
 }
 .tag.money{background:var(--primary)}
 .tag.cyan{background:var(--accent-cyan)}
@@ -775,7 +812,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(76px + env(safe-area-inset-bottom, 0px));z-index:60;
   max-width:calc(100% - 24px);padding:8px 14px;
-  font:600 .74rem 'Inter',system-ui,sans-serif;text-align:center;
+  font:600 .74rem var(--font-texte);text-align:center;
   background:var(--accent-orange);color:var(--on-accent);
   border:1px solid var(--stroke);border-radius:var(--r-lg);box-shadow:var(--shadow);
 }
@@ -818,15 +855,15 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 
 .news-entry .news-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .news-v{
-  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;
+  font-family:var(--font-texte);font-weight:900;font-size:.72rem;
   background:var(--secondary);color:var(--txt);
   padding:2px 9px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
 .news-entry.latest .news-v{background:var(--primary);color:#101010}
 .news-date{font-size:.72rem;font-weight:700;color:var(--txt-2)}
 .news-new{
-  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.6rem;text-transform:uppercase;
-  letter-spacing:.08em;background:var(--ok);color:var(--on-accent);
+  font-family:var(--font-texte);font-weight:900;font-size:.6rem;text-transform:none;
+  letter-spacing:.01em;background:var(--ok);color:var(--on-accent);
   padding:3px 8px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
 .news-entry h4{margin:0 0 8px;font-size:1rem;line-height:1.3}
@@ -869,7 +906,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 /* fond jaune dans les deux thèmes : l'encre reste donc foncée */
 .ph-eyebrow{
   display:inline-block;margin-bottom:8px;padding:3px 10px;
-  font:700 .62rem 'Inter',system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;
+  font:700 .62rem var(--font-texte);text-transform:none;letter-spacing:.1em;
   background:#101010;color:var(--primary);border-radius:var(--r-md);
 }
 .ph-card h3{margin:0 0 8px;font-size:1.5rem;line-height:1.1;color:#101010}
@@ -896,7 +933,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .tr-top{display:flex;align-items:center;gap:12px}
 .tr-mode{font-size:1.8rem;line-height:1;flex-shrink:0}
 .tr-journey{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
-.tr-pt{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-pt{font-family:var(--font-titre);font-weight:900;font-size:1.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* ⚠️ LE DÉPART NE RÉTRÉCIT PLUS. Les deux points du trajet étaient également
    compressibles (flex-shrink:1 par défaut), donc une destination longue mangeait
    la ville de DÉPART : « Saint-Pierre-et-Miquelon » réduisait « Paris » de 48 à
@@ -913,7 +950,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 /* les infos deviennent des étiquettes distinctes : même contenu, plus clair */
 .tr-facts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
 .tr-fact{
-  font:600 .72rem 'Inter',system-ui,sans-serif;color:var(--txt);white-space:nowrap;
+  font:600 .72rem var(--font-texte);color:var(--txt);white-space:nowrap;
   padding:4px 10px;background:var(--bg);
   border:1px solid var(--stroke);border-radius:var(--r-lg);
 }
@@ -1021,7 +1058,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   position:relative;min-width:0;white-space:nowrap;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:7px;
   padding:11px 14px;border:2px solid transparent;border-radius:var(--r-md);background:transparent;
-  font:700 .8rem 'Fraunces',Georgia,serif;color:var(--txt-2);
+  font:700 .8rem var(--font-titre);color:var(--txt-2);
   transition:transform .12s ease, color .12s ease, background .12s ease, box-shadow .12s ease;
 }
 .plan-tab span{font-size:1.1rem;line-height:1;transition:transform .15s ease}
@@ -1054,12 +1091,12 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
      serif d'affichage — s'y referme. La taille et la police sont posées à deux
      endroits différents, donc rien ne signalait l'incohérence. */
   .plan-tab{flex:none;flex-direction:column;gap:3px;padding:8px 10px;font-size:.62rem;
-            font-family:'Inter',system-ui,sans-serif}
+            font-family:var(--font-texte)}
   .plan-tab span{font-size:1.2rem}
 }
 .plan-panel{animation:pop .25s ease both}
 .pan-intro{font-size:.82rem;font-weight:600;color:var(--txt-2);line-height:1.5;margin:0 0 14px}
-.pan-sub{font-family:'Inter',system-ui,sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
+.pan-sub{font-family:var(--font-texte);font-size:.72rem;text-transform:none;letter-spacing:.01em;
   color:var(--txt-2);margin:18px 0 8px}
 
 /* --- panneau Logement --- */
@@ -1071,14 +1108,14 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .etapes{display:flex;flex-direction:column;gap:7px;margin-top:11px}
 .etape{display:flex;flex-direction:column;padding:9px 11px;background:var(--bg);
   border:1px solid var(--stroke);border-radius:9px}
-.etape b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.88rem}
+.etape b{font-family:var(--font-titre);font-size:.88rem}
 .etape span{font-size:.76rem;color:var(--txt-2);font-weight:600}
 
 /* --- panneau Programme : lignes de journée compactes --- */
 .day-row{display:flex;align-items:flex-start;gap:11px;padding:13px;
   background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-md);
   box-shadow:var(--shadow)}
-.day-num{flex-shrink:0;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.78rem;
+.day-num{flex-shrink:0;font-family:var(--font-titre);font-weight:900;font-size:.78rem;
   background:var(--primary);color:#101010;padding:4px 9px;border:1px solid var(--stroke);border-radius:8px}
 .day-txt{flex:1;min-width:0}
 .day-txt h4{margin:0;font-size:.98rem;line-height:1.3}
@@ -1091,7 +1128,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .day-act{
   flex:1;min-width:140px;
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  font:600 .8rem 'Fraunces',Georgia,serif;color:var(--txt);cursor:pointer;
+  font:600 .8rem var(--font-titre);color:var(--txt);cursor:pointer;
   padding:9px 12px;background:var(--bg);
   border:1px solid var(--stroke);border-radius:9px;box-shadow:var(--shadow);
   transition:transform .1s ease, box-shadow .1s ease, background .1s ease;
@@ -1110,7 +1147,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .ic-head{display:flex;align-items:center;gap:9px;margin-bottom:6px}
 .ic-head span{font-size:1.2rem;line-height:1}
 .ic-head h4{margin:0;font-size:.95rem;flex:1}
-.ic-head b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.95rem}
+.ic-head b{font-family:var(--font-titre);font-size:.95rem}
 .info-card p{margin:0;font-size:.87rem;line-height:1.5;color:var(--txt-2)}
 .ic-note{margin-top:5px !important;font-size:.78rem !important;opacity:.85}
 .ic-todo{margin-top:5px !important;font-weight:700;color:var(--txt) !important}
@@ -1128,10 +1165,10 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .tc-body{flex:1;min-width:0}
 .tc-body h4{margin:0;font-size:1.15rem}
 .tc-facts{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
-.tc-fact{font:600 .74rem 'Inter',system-ui,sans-serif;background:#101010;color:var(--primary);padding:4px 10px;border-radius:var(--r-lg);white-space:nowrap}
+.tc-fact{font:600 .74rem var(--font-texte);background:#101010;color:var(--primary);padding:4px 10px;border-radius:var(--r-lg);white-space:nowrap}
 .tc-why{margin:6px 0 0;font-size:.9rem;font-weight:600;line-height:1.5}
 .carbon-card .carbon-big{margin:0;font-size:1rem}
-.carbon-card .carbon-big strong{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:1.15rem}
+.carbon-card .carbon-big strong{font-family:var(--font-titre);font-size:1.15rem}
 .carbon-card .carbon-big span{font-size:.8rem;color:var(--txt-2);font-weight:600}
 
 /* ===== Cartes restaurant ===== */
@@ -1146,7 +1183,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .rc-id h4{margin:0;font-size:1rem;line-height:1.25}
 .rc-meta{font-size:.76rem;font-weight:600;color:var(--txt-2);margin-top:3px}
 .rc-price{
-  flex-shrink:0;font:700 .76rem 'Fraunces',Georgia,serif;
+  flex-shrink:0;font:700 .76rem var(--font-titre);
   background:var(--primary);color:#101010;padding:5px 10px;
   border:1px solid var(--stroke);border-radius:var(--r-md);text-align:center;max-width:130px;line-height:1.25;
 }
@@ -1163,7 +1200,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .hotel-card.best{box-shadow:var(--shadow);border-width:1px}
 .hc-badge{
   position:absolute;top:-11px;left:12px;
-  font:700 .62rem 'Inter',system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em;
+  font:700 .62rem var(--font-texte);text-transform:none;letter-spacing:.04em;
   background:var(--ok);color:var(--on-accent);padding:3px 9px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
 .hc-top{display:flex;align-items:flex-start;gap:11px}
@@ -1173,7 +1210,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .hc-meta{font-size:.76rem;font-weight:600;color:var(--txt-2);margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .hc-note{white-space:nowrap}
 .hc-stars{color:var(--accent-orange);letter-spacing:1px}
-.hc-price{flex-shrink:0;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1rem;
+.hc-price{flex-shrink:0;font-family:var(--font-titre);font-weight:900;font-size:1rem;
   background:var(--primary);color:#101010;padding:5px 10px;border:1px solid var(--stroke);border-radius:var(--r-md);white-space:nowrap}
 .hc-price small{font-weight:700;font-size:.62rem;opacity:.75}
 .hc-why{margin:10px 0 0;font-size:.86rem;line-height:1.5;color:var(--txt-2)}
@@ -1188,16 +1225,16 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   margin-bottom:16px;
 }
 .budget-total{display:flex;flex-direction:column;line-height:1}
-.bt-num{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.9rem}
-.bt-lbl{font-weight:800;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;opacity:.75;margin-top:3px}
+.bt-num{font-family:var(--font-titre);font-weight:900;font-size:1.9rem}
+.bt-lbl{font-weight:800;font-size:.72rem;text-transform:none;letter-spacing:.01em;opacity:.75;margin-top:3px}
 .budget-chips{display:flex;flex-wrap:wrap;gap:7px}
-.budget-chip{font:600 .74rem 'Inter',system-ui,sans-serif;background:#101010;color:var(--primary);
+.budget-chip{font:600 .74rem var(--font-texte);background:#101010;color:var(--primary);
   padding:5px 11px;border-radius:var(--r-lg);white-space:nowrap}
 .budget-breakdown{margin-bottom:4px}
 .budget-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:7px 0}
 .budget-row .br-ico{font-size:1.1rem}
 .br-label{font-weight:700;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.br-amount{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.82rem;white-space:nowrap}
+.br-amount{font-family:var(--font-titre);font-weight:900;font-size:.82rem;white-space:nowrap}
 .br-bar{grid-column:1 / -1;height:8px;background:var(--bg);border:1px solid var(--stroke);border-radius:var(--r-sm);overflow:hidden}
 .br-bar i{display:block;height:100%;background:var(--accent-cyan);border-right:1px solid var(--stroke);min-width:3px;transition:width .4s ease}
 
@@ -1207,7 +1244,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .day-collab{display:flex;align-items:center;gap:14px;margin:8px 0 14px;padding-left:4px;flex-wrap:wrap}
 .cvote{
   display:inline-flex;align-items:center;gap:7px;
-  font:600 .78rem 'Fraunces',Georgia,serif;color:var(--txt);
+  font:600 .78rem var(--font-titre);color:var(--txt);
   background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-lg);
   padding:7px 15px;cursor:pointer;box-shadow:var(--shadow);
   transition:transform .1s ease, box-shadow .1s ease, background .1s ease;
@@ -1222,7 +1259,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 }
 .day-comments[hidden]{display:none}
 .com-list p{margin:0 0 7px;font-size:.85rem;line-height:1.45}
-.com-list b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:.78rem;background:var(--primary);color:#101010;padding:1px 7px;border:1.5px solid var(--stroke);border-radius:9px;margin-right:5px}
+.com-list b{font-family:var(--font-titre);font-size:.78rem;background:var(--primary);color:#101010;padding:1px 7px;border:1.5px solid var(--stroke);border-radius:9px;margin-right:5px}
 .com-bar{display:flex;gap:8px;margin-top:9px}
 .com-inp{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--stroke);border-radius:8px;background:var(--secondary);color:var(--txt);font:600 .85rem inherit}
 .com-inp:focus{outline:none;box-shadow:var(--shadow)}
@@ -1258,8 +1295,8 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 }
 .tl-item:nth-child(2n)::before{background:var(--accent-violet)}
 .tl-time{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.9rem;
-  text-transform:uppercase;background:var(--primary);display:inline-block;
+  font-family:var(--font-titre);font-weight:900;font-size:.9rem;
+  text-transform:none;background:var(--primary);display:inline-block;
   padding:2px 6px;border:1px solid var(--stroke);margin-bottom:4px;
 }
 .tl-title{font-weight:800;font-size:1.1rem;margin:4px 0 6px}
@@ -1292,7 +1329,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   background:var(--secondary);box-shadow:var(--shadow);padding:12px;
 }
 .tl-form label{
-  display:block;font-size:.7rem;font-weight:800;text-transform:uppercase;
+  display:block;font-size:.7rem;font-weight:800;text-transform:none;
   letter-spacing:.04em;color:var(--txt-2);margin-bottom:9px;
 }
 .tl-form input,.tl-form select,.tl-form textarea{
@@ -1318,7 +1355,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   animation:pop .35s ease both;box-shadow:var(--shadow);
 }
 .item .emo{font-size:1.8rem;flex-shrink:0}
-.item h4{font-size:1.05rem;font-weight:800;margin-bottom:4px;font-family:'Fraunces',Georgia,'Times New Roman',serif;text-transform:uppercase}
+.item h4{font-size:1.05rem;font-weight:800;margin-bottom:4px;font-family:var(--font-titre);text-transform:none}
 .item p{font-size:.9rem;color:var(--txt-2);line-height:1.5}
 .item .side{margin-left:auto;text-align:right;}
 
@@ -1354,7 +1391,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   margin-bottom:10px;animation:pop .3s ease both;box-shadow:var(--shadow);
 }
 .phrase .fr{font-size:.85rem;font-weight:700;color:var(--txt-2);margin-bottom:4px}
-.phrase .loc{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.15rem;color:var(--txt)}
+.phrase .loc{font-family:var(--font-titre);font-weight:900;font-size:1.15rem;color:var(--txt)}
 .phrase .pron{font-size:.8rem;color:var(--accent-orange);font-weight:700;font-style:italic;margin-top:4px}
 
 /* ===== Budget ===== */
@@ -1364,7 +1401,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.8rem;font-weight:700;color:var(--txt);margin-bottom:16px}
 .legend b{font-weight:900}
 .legend .sw{display:inline-block;width:12px;height:12px;border-radius:0;border:1px solid var(--stroke);margin-right:6px;vertical-align:middle}
-.spend-total{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.8rem;color:var(--txt);text-transform:uppercase}
+.spend-total{font-family:var(--font-titre);font-weight:900;font-size:1.8rem;color:var(--txt);text-transform:none}
 .spend-del{margin-left:auto;color:var(--danger);cursor:pointer;font-size:1.1rem;font-weight:bold;opacity:.8;flex-shrink:0}
 .spend-del:hover{opacity:1;transform:scale(1.1)}
 
@@ -1381,7 +1418,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   width:100%;border:0;text-align:left;font:inherit;color:inherit;
   -webkit-appearance:none;appearance:none;
   padding:16px;cursor:pointer;display:flex;align-items:center;gap:10px;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1rem;text-transform:uppercase;
+  font-family:var(--font-titre);font-weight:900;font-size:1rem;text-transform:none;
   user-select:none;background:var(--primary);border-bottom:1px solid var(--stroke);
 }
 .acc:not(.open) .acc-head{border-bottom:none} /* fix : double trait quand fermé */
@@ -1403,7 +1440,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .subtab{
   padding:10px 18px;border-radius:var(--r-sm);font-size:.85rem;font-weight:800;cursor:pointer;
   background:var(--secondary);border:1px solid var(--stroke);color:var(--txt);
-  text-transform:uppercase;transition:all .1s ease;user-select:none;
+  text-transform:none;transition:all .1s ease;user-select:none;
   box-shadow:var(--shadow);
 }
 .subtab.on{background:var(--primary);transform:translate(-1px,-1px);box-shadow:var(--shadow)}
@@ -1464,18 +1501,18 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .game-custom h3{margin:0;font-size:1.15rem;color:#fff}
 .gc-hint{margin:0;font-size:.84rem;color:#cfd6ef}
 .gc-group{width:100%;max-width:400px}
-.gc-label{display:block;font:700 .78rem 'Fraunces',Georgia,serif;margin:0 0 6px;text-align:left}
+.gc-label{display:block;font:700 .78rem var(--font-titre);margin:0 0 6px;text-align:left}
 .gc-swatches{display:flex;flex-wrap:wrap;gap:8px}
 .gc-swatch{
   display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;
   background:rgba(255,255,255,.08);border:2px solid transparent;border-radius:var(--r-md);
-  padding:8px 10px;color:#fff;font:700 .64rem 'Inter',system-ui,sans-serif;
+  padding:8px 10px;color:#fff;font:700 .64rem var(--font-texte);
 }
 .gc-swatch:hover{background:rgba(255,255,255,.16)}
 .gc-swatch.on{border-color:var(--primary);background:rgba(255,230,0,.18)}
 .gc-swatch svg{display:block}
 .game-hud{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
-  font:700 .9rem 'Fraunces',Georgia,serif;margin:0 0 8px}
+  font:700 .9rem var(--font-titre);margin:0 0 8px}
 /* multiplicateur de combo : n'apparaît qu'au-delà de ×1 */
 .game-combo{
   background:var(--primary);color:#101010;padding:2px 10px;border-radius:var(--r-lg);
@@ -1485,7 +1522,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .game-combo[hidden]{display:none}
 @keyframes comboPop{from{transform:scale(.6)}to{transform:scale(1)}}
 .game-tip{font-size:.8rem;opacity:.85}
-.game-best{font:700 .88rem 'Fraunces',Georgia,serif;color:var(--primary)}
+.game-best{font:700 .88rem var(--font-titre);color:var(--primary)}
 .game-best[hidden]{display:none}
 .game-stage{position:relative;border:1px solid var(--stroke);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow);background:#0b1026}
 #gameCanvas{display:block;width:100%;height:auto;cursor:crosshair;touch-action:none}
@@ -1633,7 +1670,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   width:100%;min-width:0;                       /* aucune colonne ne peut s'élargir */
   border:2px solid transparent;border-radius:var(--r-md);
   background:transparent;
-  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;
+  font-family:var(--font-texte);font-weight:800;font-size:.66rem;text-transform:none;letter-spacing:.04em;
   /* ⚠️ ENCRE PLEINE (--txt) ET NON L'ENCRE ATTÉNUÉE (--txt-2).
      Les pictogrammes de la barre du bas étaient en gris moyen : lisibles au
      calme, mais c'est la navigation principale de l'app sur téléphone, souvent
@@ -1668,8 +1705,8 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 /* Plan clé en main : 3 stats compactes */
 .plan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .plan-stat{border:1px solid var(--stroke);background:var(--secondary);padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:104px;overflow:hidden}
-.plan-stat .k{font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--txt-2)}
-.plan-stat .v{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1rem;text-transform:uppercase;margin-top:2px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;hyphens:none}
+.plan-stat .k{font-family:var(--font-texte);font-weight:800;font-size:.62rem;text-transform:none;letter-spacing:.01em;color:var(--txt-2)}
+.plan-stat .v{font-family:var(--font-titre);font-weight:900;font-size:1rem;text-transform:none;margin-top:2px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;hyphens:none}
 .plan-stat .s{font-size:.74rem;font-weight:600;color:var(--txt-2);margin-top:2px;line-height:1.3;overflow-wrap:break-word}
 .plan-stat.wx{flex-direction:row;align-items:center;gap:10px}
 .plan-stat.wx canvas{flex:0 0 48px;width:48px;height:48px}
@@ -1698,7 +1735,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 
 .cat-empty-card{text-align:center;max-width:330px;padding:24px}
 .cat-empty-card .ce-emoji{font-size:3rem;line-height:1;margin-bottom:10px}
-.cat-empty-card h3{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.1rem;margin:0 0 6px;text-transform:uppercase}
+.cat-empty-card h3{font-family:var(--font-titre);font-weight:900;font-size:1.1rem;margin:0 0 6px;text-transform:none}
 .cat-empty-card p{color:var(--txt-2);font-size:.9rem;margin:0 0 16px;line-height:1.5}
 .cat-empty-banner{
   display:flex;align-items:center;gap:12px;
@@ -1708,7 +1745,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .cat-empty-banner[hidden]{display:none}
 .cat-empty-banner .ce-emoji{font-size:1.7rem}
-.cat-empty-banner h3{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.9rem;text-transform:uppercase}
+.cat-empty-banner h3{font-family:var(--font-titre);font-weight:900;font-size:.9rem;text-transform:none}
 .cat-empty-banner .hint{color:rgba(16,16,16,.72)}
 
 .auth-wrap{
@@ -1721,7 +1758,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   border-radius:var(--r-lg);padding:28px;box-shadow:var(--shadow);
 }
 .auth-logo{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:2rem;text-transform:uppercase;
+  font-family:var(--font-titre);font-weight:900;font-size:2rem;text-transform:none;
   letter-spacing:-.03em;margin-bottom:4px;display:flex;align-items:center;gap:10px;
 }
 /* ⚠️ CES DEUX RÈGLES FORÇAIENT LE GLOBE À 42 px, et c'était le défaut du logo.
@@ -1738,7 +1775,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .auth-logo .logo-mark{flex:none}
 .auth-switch{font-size:.85rem;font-weight:700;margin-top:14px}
 .auth-switch a{color:var(--accent-orange);cursor:pointer;text-decoration:underline}
-.code-inp{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.5rem;letter-spacing:.4em;text-align:center}
+.code-inp{font-family:var(--font-titre);font-weight:900;font-size:1.5rem;letter-spacing:.4em;text-align:center}
 /* ⚠️ L'ancienne déclaration de .profile-big vivait ICI — un pavé jaune encadré,
    avec min-height:60px, du padding, une bordure et une ombre. Elle a été
    SUPPRIMÉE, pas corrigée : la seule qui compte est celle du bloc « écran de
@@ -1794,7 +1831,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .dest-facts .fk{
   font-weight:800;flex-shrink:0;
-  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em;
+  font-family:var(--font-texte);font-size:.72rem;text-transform:none;letter-spacing:.02em;
 }
 .dest-facts .fv{
   font-weight:600;color:var(--txt);
@@ -1836,7 +1873,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   color:#101010;
 }
 .pass-route .iata{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.9rem;letter-spacing:-.03em;line-height:1;
+  font-family:var(--font-titre);font-weight:900;font-size:1.9rem;letter-spacing:-.03em;line-height:1;
 }
 .pass-route .dash{
   flex:1;min-width:14px;height:0;
@@ -1888,8 +1925,8 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .pass-info .pi{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pass-info .pk{
-  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.58rem;
-  text-transform:uppercase;letter-spacing:.12em;opacity:.65;
+  font-family:var(--font-texte);font-weight:900;font-size:.58rem;
+  text-transform:none;letter-spacing:.01em;opacity:.65;
 }
 .pass-info .pv{
   font-weight:700;font-size:.86rem;line-height:1.25;
@@ -1960,8 +1997,8 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    donc la même échelle — sinon on lit deux jeux d'icônes au lieu d'un. */
 .pact-i{width:18px;height:18px;flex:none}
 .pact span{
-  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.68rem;
-  text-transform:uppercase;letter-spacing:.04em;color:inherit;white-space:nowrap;
+  font-family:var(--font-texte);font-weight:800;font-size:.68rem;
+  text-transform:none;letter-spacing:.04em;color:inherit;white-space:nowrap;
 }
 /* La mention légale reste sur le jaune, en encre atténuée : c'est une note de
    bas de billet, pas un troisième bloc. */
@@ -2002,10 +2039,10 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    mascotte (qui y est positionnée en absolu) */
 .sb-mark:has(.travel-scene){width:auto;height:auto}
 .sb-mark .mascot:not(.traveler){width:42px;height:42px}
-.sb-mark span{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.15rem;color:var(--primary-ink);line-height:1}
+.sb-mark span{font-family:var(--font-titre);font-weight:900;font-size:1.15rem;color:var(--primary-ink);line-height:1}
 .sb-body{flex:1;min-width:0}
 .sb-text{
-  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;text-transform:uppercase;
+  font-family:var(--font-texte);font-weight:900;font-size:.72rem;text-transform:none;
   letter-spacing:.04em;color:#101010;margin-bottom:5px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
@@ -2039,7 +2076,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .arcade-card:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow);background:var(--card-hover)}
 .arcade-card:active{transform:translateY(1px);box-shadow:var(--shadow)}
 .ac-ico{font-size:1.9rem;line-height:1}
-.ac-nom{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.95rem;text-transform:uppercase}
+.ac-nom{font-family:var(--font-titre);font-weight:900;font-size:.95rem;text-transform:none}
 .ac-desc{font-size:.78rem;color:var(--txt-2);line-height:1.35}
 
 /* ===== Jeu « Où est-ce ? » ===== */
@@ -2055,7 +2092,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .geo-hint{margin:0;font-size:.82rem;font-weight:700;color:var(--txt-2);text-align:center}
 .geo-names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.geo-q{grid-column:1/-1;margin:0;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.9rem;text-align:center}
+.geo-q{grid-column:1/-1;margin:0;font-family:var(--font-titre);font-weight:900;font-size:.9rem;text-align:center}
 .geo-name{
   border:1px solid var(--stroke);background:var(--secondary);color:var(--txt);
   box-shadow:var(--shadow);border-radius:var(--r-md);
@@ -2113,7 +2150,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   width:32px;height:32px;display:grid;place-items:center;padding:0;
   border:3px solid #101010;box-shadow:2px 2px 0 #101010;border-radius:50%;
   background:var(--primary);color:#101010;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.82rem;line-height:1;
+  font-family:var(--font-titre);font-weight:900;font-size:.82rem;line-height:1;
   cursor:pointer;pointer-events:auto;
 }
 .am-mark:active{transform-origin:center;box-shadow:0 0 0 #101010}
@@ -2134,7 +2171,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .am-zb{
   width:34px;height:34px;display:grid;place-items:center;padding:0;
   background:#fff;color:#101010;border:3px solid #101010;box-shadow:2px 2px 0 #101010;
-  border-radius:9px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.05rem;
+  border-radius:9px;font-family:var(--font-titre);font-weight:900;font-size:1.05rem;
   line-height:1;cursor:pointer;
 }
 .am-zb:active{transform:translate(2px,2px);box-shadow:0 0 0 #101010}
@@ -2200,8 +2237,8 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   min-height:52px;
   background:var(--secondary);color:var(--txt);
   border:1px solid var(--stroke);box-shadow:var(--shadow);
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.85rem;
-  text-transform:uppercase;letter-spacing:.06em;
+  font-family:var(--font-titre);font-weight:900;font-size:.85rem;
+  text-transform:none;letter-spacing:.01em;
   cursor:pointer;
 }
 .modal-close:active{transform:translate(4px,4px);box-shadow:none}
@@ -2346,30 +2383,30 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   body > *:not(#dossier){display:none !important}
   #dossier{
     display:block !important;color:#111;background:#fff;
-    font-family:'Inter',Helvetica,Arial,sans-serif;font-size:10.5pt;line-height:1.55;
+    font-family:var(--font-texte);font-size:10.5pt;line-height:1.55;
   }
   /* ---- couverture ---- */
   #dossier .cover{
     border:2.5pt solid #111;border-radius:6pt;padding:16pt 18pt;margin-bottom:16pt;
     background:#FFE600;break-inside:avoid;
   }
-  #dossier .cover .brand{font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:9pt;letter-spacing:.16em;margin:0 0 6pt}
-  #dossier h1{font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:27pt;line-height:1.05;margin:0}
+  #dossier .cover .brand{font-family:var(--font-titre);font-weight:900;font-size:9pt;letter-spacing:.01em;margin:0 0 6pt}
+  #dossier h1{font-family:var(--font-titre);font-weight:900;font-size:27pt;line-height:1.05;margin:0}
   #dossier .cover .meta{margin:10pt 0 0;font-size:11pt;font-weight:600}
   #dossier .cover .rule{height:3pt;background:#111;width:64pt;margin:9pt 0 0;border-radius:2pt}
   /* ---- sections ---- */
   #dossier section{break-inside:avoid;margin-bottom:15pt}
   #dossier h2{
-    font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:12pt;
+    font-family:var(--font-titre);font-weight:900;font-size:12pt;
     margin:0 0 7pt;padding:4pt 8pt;background:#111;color:#fff;border-radius:3pt;
   }
-  #dossier h3{font-family:'Fraunces',Georgia,serif;font-size:11pt;margin:0 0 2pt}
+  #dossier h3{font-family:var(--font-titre);font-size:11pt;margin:0 0 2pt}
   /* ---- tableaux clé/valeur ---- */
   #dossier table{width:100%;border-collapse:collapse;font-size:10pt}
   #dossier th{
     text-align:left;vertical-align:top;width:96pt;padding:5pt 10pt 5pt 0;
-    font-family:'Fraunces',Georgia,serif;font-size:8.5pt;text-transform:uppercase;
-    letter-spacing:.06em;color:#555;font-weight:800;
+    font-family:var(--font-titre);font-size:8.5pt;text-transform:none;
+    letter-spacing:.01em;color:#555;font-weight:800;
   }
   #dossier td{padding:5pt 0;border-bottom:.75pt solid #ddd;vertical-align:top}
   #dossier tr:last-child td{border-bottom:0}
@@ -2382,12 +2419,12 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   #dossier .lieux{margin:1pt 0 0;font-size:9.5pt;color:#444}
   #dossier .heures{margin:4pt 0 0;padding-left:13pt;font-size:9.5pt}
   #dossier .heures li{margin-bottom:2.5pt}
-  #dossier .heures strong{font-family:'Fraunces',Georgia,serif;font-size:9pt}
+  #dossier .heures strong{font-family:var(--font-titre);font-size:9pt}
   #dossier ul{margin:2pt 0 0;padding-left:14pt}
   #dossier li{margin-bottom:2pt}
   /* ---- références de réservation : bien visibles ---- */
   #dossier .refs td{font-size:11pt}
-  #dossier .refs strong{font-family:'Fraunces',Georgia,serif;font-size:12pt;letter-spacing:.02em}
+  #dossier .refs strong{font-family:var(--font-titre);font-size:12pt;letter-spacing:.02em}
   #dossier .lnk{display:block;font-size:8pt;color:#666;word-break:break-all;margin-top:1pt}
   /* ---- carte du jour ---- */
   #dossier .djmap{display:block;width:100%;max-width:400pt;margin:5pt 0 3pt;border:1pt solid #bbb;border-radius:3pt}
@@ -2439,8 +2476,8 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   /* .logo-word ne porte QUE la mise en place des lettres : la fonte, la
      graisse et les capitales viennent normalement de .logo, absent ici. */
   .rail-logoword{
-    font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.7rem;
-    letter-spacing:-.03em;text-transform:uppercase;color:var(--txt);
+    font-family:var(--font-titre);font-weight:900;font-size:1.7rem;
+    letter-spacing:-.03em;text-transform:none;color:var(--txt);
   }
   .rail-tag{
     display:block;font-style:normal;font-size:.72rem;font-weight:500;
@@ -2450,10 +2487,10 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   /* Titre de la colonne : il annonce ce qu'elle montre, et change avec la
      catégorie (Étapes / Journées du voyage / Mon compte). */
   .rail-title{
-    font-family:'Inter',sans-serif;font-weight:600;font-size:.63rem;
+    font-family:var(--font-texte);font-weight:600;font-size:.63rem;
     /* .2em comme la maquette : à cette taille, c'est l'espacement qui dit
        « intertitre » et non la graisse. */
-    text-transform:uppercase;letter-spacing:.2em;color:var(--txt-2);
+    text-transform:none;letter-spacing:.2em;color:var(--txt-2);
     /* pas d'opacity : à .75 sur --txt-2, ce titre tombait à 3,19:1 */
     margin:0 0 -14px 0;
   }
@@ -2490,7 +2527,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
     border-radius:999px;border:1.5px solid var(--stroke-2);background:var(--bg);
   }
   .rs-t b{
-    display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:600;font-size:.875rem;
+    display:block;font-family:var(--font-titre);font-weight:600;font-size:.875rem;
     /* ni capitales ni interlettrage : 1b réserve ça aux intertitres */
     color:var(--txt-2);line-height:1.2;
   }
@@ -2579,9 +2616,9 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .hero-in{position:relative;max-width:34rem}
 .hero h1{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;
+  font-family:var(--font-titre);font-weight:900;
   font-size:clamp(1.7rem,4.4vw,2.7rem);line-height:1.06;
-  letter-spacing:-.03em;text-transform:uppercase;margin:0;
+  letter-spacing:-.03em;text-transform:none;margin:0;
 }
 /* le souligné jaune tracé à la main sous le titre */
 .hero h1::after{
@@ -2688,8 +2725,8 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   background:var(--surface-2);color:var(--txt-2);
   border:1px solid var(--stroke);border-radius:999px;
   padding:9px 16px;
-  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.74rem;
-  text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;
+  font-family:var(--font-texte);font-weight:800;font-size:.74rem;
+  text-transform:none;letter-spacing:.05em;white-space:nowrap;
   transition:background .12s ease,color .12s ease;
 }
 .mapbar .rt:hover:not(.on){color:var(--txt);border-color:var(--stroke-2)}
@@ -2752,7 +2789,7 @@ header{position:relative;z-index:5}
 .stop b{
   flex:none;width:22px;height:22px;display:grid;place-items:center;
   border-radius:50%;background:var(--primary);color:var(--primary-ink);
-  font-family:'Inter',system-ui,sans-serif;font-size:.68rem;font-weight:900;
+  font-family:var(--font-texte);font-size:.68rem;font-weight:900;
 }
 /* étape que le relevé n'a pas su situer : montrée, mais clairement inactive */
 .stop.off{opacity:.5;cursor:not-allowed}
@@ -2782,13 +2819,13 @@ header{position:relative;z-index:5}
 .bc-body{display:flex;flex-direction:column;gap:6px;padding:16px 18px;min-width:0}
 .bc-cat{
   display:inline-block;align-self:flex-start;
-  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.62rem;
-  text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);
+  font-family:var(--font-texte);font-weight:800;font-size:.62rem;
+  text-transform:none;letter-spacing:.01em;color:var(--txt-2);
   background:var(--surface-2);border:1px solid var(--stroke);
   border-radius:999px;padding:4px 10px;
 }
 .bc-titre{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.05rem;
+  font-family:var(--font-titre);font-weight:900;font-size:1.05rem;
   line-height:1.25;color:var(--txt);
 }
 .bc-sous{font-size:.86rem;line-height:1.5;color:var(--txt-2)} /* opacity retirée : contraste */
@@ -2805,7 +2842,7 @@ header{position:relative;z-index:5}
   padding:8px 2px 0;text-align:right;
 }
 .art-titre{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;
+  font-family:var(--font-titre);font-weight:900;
   font-size:clamp(1.5rem,3.4vw,2.2rem);line-height:1.12;
   letter-spacing:-.02em;margin:12px 0 0;
 }
@@ -2825,14 +2862,14 @@ header{position:relative;z-index:5}
   border-radius:var(--r-md);padding:11px 13px;
 }
 .af-k{
-  display:block;font-size:.64rem;font-weight:800;text-transform:uppercase;
-  letter-spacing:.07em;color:var(--txt-2);
+  display:block;font-size:.64rem;font-weight:800;text-transform:none;
+  letter-spacing:.01em;color:var(--txt-2);
 }
-.af-v{display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.95rem;margin-top:3px}
+.af-v{display:block;font-family:var(--font-titre);font-weight:900;font-size:.95rem;margin-top:3px}
 
 .art-sec{margin-top:26px}
 .art-sec h2{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.22rem;
+  font-family:var(--font-titre);font-weight:900;font-size:1.22rem;
   line-height:1.3;margin:0 0 10px;
 }
 /* Le corps du texte : une largeur de lecture confortable, pas la pleine
@@ -2933,8 +2970,8 @@ header{position:relative;z-index:5}
 }
 .foot-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px 30px}
 .foot-col h2{
-  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.72rem;
-  text-transform:uppercase;letter-spacing:.09em;
+  font-family:var(--font-texte);font-weight:900;font-size:.72rem;
+  text-transform:none;letter-spacing:.01em;
   color:var(--txt);margin:0 0 8px;
 }
 .foot-col p{margin:0 0 8px}
@@ -3012,7 +3049,7 @@ header{position:relative;z-index:5}
   position:absolute;left:-9999px;top:0;z-index:200;
   padding:12px 20px;border-radius:0 0 var(--r-md) 0;
   background:var(--primary);color:var(--primary-ink);
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.85rem;
+  font-family:var(--font-titre);font-weight:900;font-size:.85rem;
   text-decoration:none;
 }
 .skip:focus{left:0}
@@ -3039,7 +3076,7 @@ header{position:relative;z-index:5}
 .urg-n:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
 .urg-ico{font-size:1.5rem;line-height:1;flex:none}
 .urg-n b{
-  display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.4rem;
+  display:block;font-family:var(--font-titre);font-weight:900;font-size:1.4rem;
   line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:.02em;
 }
 .urg-n i{display:block;font-style:normal;font-size:.74rem;font-weight:700;color:var(--txt-2);margin-top:2px}
@@ -3059,7 +3096,7 @@ header{position:relative;z-index:5}
   padding:10px 12px;background:var(--surface-2);
   border:1px solid var(--stroke);border-radius:var(--r-sm);font-size:.88rem;
 }
-.tableau-ami .l b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;color:var(--primary)}
+.tableau-ami .l b{font-family:var(--font-titre);font-weight:900;color:var(--primary)}
 .tableau-ami .l i{font-style:normal;font-size:.8rem;color:var(--txt-2)}
 
 /* ---- Prix d'entrée d'une visite ----
@@ -3067,7 +3104,7 @@ header{position:relative;z-index:5}
    lit AVEC le lieu, pas comme une information séparée. */
 .tl-prix{
   display:inline-block;margin-left:8px;vertical-align:2px;
-  font:600 .68rem 'Inter',system-ui,sans-serif;white-space:nowrap;
+  font:600 .68rem var(--font-texte);white-space:nowrap;
   background:var(--surface-2);color:var(--txt-2);
   border:1px solid var(--stroke);border-radius:999px;padding:2px 9px;
 }
@@ -3078,7 +3115,7 @@ header{position:relative;z-index:5}
   background:var(--surface-2);border:1px solid var(--stroke);
   font-size:.86rem;font-weight:700;
 }
-.tl-total b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:1.02rem}
+.tl-total b{font-family:var(--font-titre);font-size:1.02rem}
 /* ⚠️ L'avertissement fait partie du chiffre : un tarif vient d'un modèle et
    peut être périmé. Ne le retire pas pour « faire propre ». */
 .tl-total span{font-size:.74rem;font-weight:600;color:var(--txt-2)}
@@ -3111,11 +3148,11 @@ header{position:relative;z-index:5}
 .breel-moyen{border-left-color:var(--accent-orange)}
 .breel-mal{border-left-color:var(--danger)}
 .breel-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.breel-mot{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}
+.breel-mot{font-family:var(--font-titre);font-weight:900;font-size:.82rem;text-transform:none;letter-spacing:.04em}
 .breel-ok .breel-mot{color:var(--ok)}
 .breel-moyen .breel-mot{color:var(--accent-orange)}
 .breel-mal .breel-mot{color:var(--danger)}
-.breel-chiffres{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.95rem;font-variant-numeric:tabular-nums}
+.breel-chiffres{font-family:var(--font-titre);font-weight:900;font-size:.95rem;font-variant-numeric:tabular-nums}
 .breel-jauge{
   position:relative;height:10px;margin:10px 0 8px;
   background:var(--bg);border:1px solid var(--stroke);border-radius:999px;overflow:hidden;
@@ -3139,21 +3176,21 @@ header{position:relative;z-index:5}
    la règle groupée de fin de fichier. Ne pose pas de couleur claire ici.
 ============================================================ */
 .jj-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-.jj-jour{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.1rem;text-transform:uppercase}
+.jj-jour{font-family:var(--font-titre);font-weight:900;font-size:1.1rem;text-transform:none}
 .jj-jour i{font-style:normal;opacity:.55;font-size:.85rem}
-.jj-heure{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.jj-heure{font-family:var(--font-titre);font-weight:900;font-size:1.35rem;font-variant-numeric:tabular-nums}
 .jj-lbl{
-  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.62rem;
-  text-transform:uppercase;letter-spacing:.1em;opacity:.62;margin:14px 0 2px;
+  font-family:var(--font-texte);font-weight:900;font-size:.62rem;
+  text-transform:none;letter-spacing:.1em;opacity:.62;margin:14px 0 2px;
 }
 /* La prochaine étape : l'heure et le lieu, en grand. C'est LA réponse. */
 .jj-suiv{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .jj-h{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.9rem;line-height:1;
+  font-family:var(--font-titre);font-weight:900;font-size:1.9rem;line-height:1;
   font-variant-numeric:tabular-nums;
 }
 .jj-t{font-weight:800;font-size:1.05rem;line-height:1.3;flex:1;min-width:140px}
-.jj-suiv-t{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.1rem;margin:0}
+.jj-suiv-t{font-family:var(--font-titre);font-weight:900;font-size:1.1rem;margin:0}
 .jj-dist{margin:8px 0 0;font-weight:800;font-size:.92rem}
 .jj-lieux{margin:6px 0 0;font-size:.86rem;opacity:.8;line-height:1.5}
 .jj-libre{margin:10px 0 0;font-weight:700}
@@ -3163,7 +3200,7 @@ header{position:relative;z-index:5}
   margin-top:14px;padding-top:12px;border-top:1px solid rgba(20,20,20,.18);
   font-size:.88rem;font-weight:700;
 }
-.jj-budget b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:1.05rem}
+.jj-budget b{font-family:var(--font-titre);font-size:1.05rem}
 .jj-b2{opacity:.7;font-size:.8rem}
 .jj-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .jj-acts .btn{flex:1 1 auto;justify-content:center}
@@ -3180,12 +3217,12 @@ header{position:relative;z-index:5}
   border-left:3px solid var(--primary);border-radius:var(--r-md);
 }
 .art-som-t{
-  font-family:'Inter',system-ui,sans-serif;font-weight:900;font-size:.66rem;
-  text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);margin:0 0 8px;
+  font-family:var(--font-texte);font-weight:900;font-size:.66rem;
+  text-transform:none;letter-spacing:.01em;color:var(--txt-2);margin:0 0 8px;
 }
 .art-som ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .art-som li{font-size:.9rem;line-height:1.45}
-.art-som li::marker{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;color:var(--primary)}
+.art-som li::marker{font-family:var(--font-titre);font-weight:900;color:var(--primary)}
 .art-som a{color:var(--txt);text-decoration:none;border-bottom:1px solid transparent}
 .art-som a:hover{border-bottom-color:var(--primary)}
 .art-sec{scroll-margin-top:92px}
@@ -3231,8 +3268,8 @@ header{position:relative;z-index:5}
 
 /* ---- Papiers & formalités : sous-titres du panneau ---- */
 .pan-h3{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:.8rem;
-  text-transform:uppercase;letter-spacing:.07em;color:var(--txt);
+  font-family:var(--font-titre);font-weight:900;font-size:.8rem;
+  text-transform:none;letter-spacing:.01em;color:var(--txt);
   margin:0 0 10px;
 }
 
@@ -3241,7 +3278,7 @@ header{position:relative;z-index:5}
    bouton), donc les étapes doivent se lire d'un coup d'œil, pas se déchiffrer. */
 .inst-pas{margin:14px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:10px}
 .inst-pas li{font-size:.92rem;line-height:1.55;color:var(--txt)}
-.inst-pas li::marker{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;color:var(--primary)}
+.inst-pas li::marker{font-family:var(--font-titre);font-weight:900;color:var(--primary)}
 .inst-pas strong{color:var(--txt);font-weight:800}
 
 /* ============================================================
@@ -3493,16 +3530,16 @@ header{position:relative;z-index:5}
    ajouter de texte à lire. aria-hidden sur le panneau entier, il est décoratif. */
 .auth-brand::after{
   content:'A';position:absolute;right:-6%;bottom:-22%;
-  font:700 34rem 'Fraunces',Georgia,serif;line-height:.8;
+  font:700 34rem var(--font-titre);line-height:.8;
   color:var(--txt);opacity:.028;pointer-events:none;user-select:none;
 }
 .auth-brand-logo{margin-bottom:auto}
 .auth-brand-logo .logo-word{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:2.1rem;
-  text-transform:uppercase;letter-spacing:-.03em;
+  font-family:var(--font-titre);font-weight:900;font-size:2.1rem;
+  text-transform:none;letter-spacing:-.03em;
 }
 .auth-brand-h{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.9rem;line-height:1.22;
+  font-family:var(--font-titre);font-weight:900;font-size:1.9rem;line-height:1.22;
   letter-spacing:-.02em;margin:0 0 26px;max-width:20ch;
 }
 .auth-brand-l{list-style:none;margin:0 0 auto;padding:0;display:flex;flex-direction:column;gap:14px}
@@ -3528,7 +3565,7 @@ header{position:relative;z-index:5}
 .auth-card > *{width:100%;max-width:30rem;margin-left:auto;margin-right:auto}
 
 .auth-h1{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.85rem;
+  font-family:var(--font-titre);font-weight:900;font-size:1.85rem;
   letter-spacing:-.02em;margin:0 0 4px;
 }
 .auth-card .sub{margin:0 0 26px;font-size:.92rem;color:var(--txt-2)}
@@ -3556,8 +3593,8 @@ header{position:relative;z-index:5}
    l'écran, et le focus se voit mieux parce que seul le trait change. */
 .auth-card .field{margin-top:18px;position:relative}
 .auth-card .field label{
-  display:block;font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.66rem;
-  text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);margin-bottom:6px;
+  display:block;font-family:var(--font-texte);font-weight:800;font-size:.66rem;
+  text-transform:none;letter-spacing:.01em;color:var(--txt-2);margin-bottom:6px;
 }
 /* Même seuil que plus haut : .98rem = 15,68px, donc zoom iOS au focus. C'est le
    pire endroit pour ça — l'inscription est le premier écran d'un nouveau
@@ -3672,7 +3709,7 @@ header{position:relative;z-index:5}
    sélecteurs doublés » que compte verifie.js est bénigne partout ailleurs. */
 .map-src-b{
   border:0;background:transparent;color:#fff;cursor:pointer;
-  font:600 .68rem 'Inter',system-ui,sans-serif;letter-spacing:.03em;
+  font:600 .68rem var(--font-texte);letter-spacing:.03em;
   padding:6px 12px;border-radius:999px;white-space:nowrap;
 }
 .map-src-b.on{background:var(--primary);color:var(--primary-ink)}
@@ -3707,7 +3744,7 @@ header{position:relative;z-index:5}
   margin:0 0 26px;padding-bottom:22px;border-bottom:1px solid var(--stroke);
 }
 .blog-head h2{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.85rem;
+  font-family:var(--font-titre);font-weight:900;font-size:1.85rem;
   letter-spacing:-.025em;margin:0 0 8px;
 }
 .blog-head .sub{margin:0;font-size:.86rem;color:var(--txt-2)}
@@ -3737,10 +3774,10 @@ header{position:relative;z-index:5}
      presque blanc. Écrire par-dessus en --primary donnait 1,12:1 — du jaune sur
      du jaune pâle. --primary-txt le rend lisible sans toucher au voile. */
   background:rgba(255,230,0,.13);color:var(--primary-txt);
-  font:700 .6rem 'Inter',system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;
+  font:700 .6rem var(--font-texte);letter-spacing:.01em;text-transform:none;
 }
 .bu-titre{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;font-size:1.5rem;line-height:1.25;
+  font-family:var(--font-titre);font-weight:900;font-size:1.5rem;line-height:1.25;
   letter-spacing:-.02em;margin:16px 0 10px;
 }
 .bu-sous{font-size:.86rem;line-height:1.6;color:var(--txt-2);margin-bottom:16px;max-width:44ch}
@@ -3769,11 +3806,11 @@ header{position:relative;z-index:5}
 .blog-grille .bc-img img, .blog-grille .bc-img svg{width:100%;height:100%;object-fit:cover;display:block}
 .blog-grille .bc-cat{
   background:transparent;border:0;border-radius:0;padding:0;
-  font:700 .58rem 'Inter',system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;
+  font:700 .58rem var(--font-texte);letter-spacing:.01em;text-transform:none;
   color:var(--txt-2);
 }
 .blog-grille .bc-titre{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.98rem;line-height:1.35;
+  font-family:var(--font-titre);font-weight:800;font-size:.98rem;line-height:1.35;
   letter-spacing:-.01em;transition:color .14s ease;
 }
 .blog-grille .bc-sous{font-size:.8rem;line-height:1.55;color:var(--txt-2)}
@@ -3789,7 +3826,7 @@ header{position:relative;z-index:5}
 /* ---- Les compteurs de la colonne ---- */
 .rs-cnt{
   background:transparent !important;border:0 !important;
-  font:700 .72rem 'Inter',system-ui,sans-serif;color:var(--txt-2);
+  font:700 .72rem var(--font-texte);color:var(--txt-2);
   width:auto !important;height:auto !important;margin-left:auto;
 }
 /* ⚠️ PAS --primary-ink ici. Cette encre foncée suppose un aplat jaune derrière,
@@ -3881,7 +3918,7 @@ header{position:relative;z-index:5}
     /* Inter, bas de casse, 13 px : la maquette réserve Sora et les capitales
        aux intertitres. Des onglets en capitales grasses criaient plus fort que
        le titre de la page. */
-    font-family:'Inter',sans-serif;font-weight:600;font-size:.81rem;
+    font-family:var(--font-texte);font-weight:600;font-size:.81rem;
     text-transform:none;letter-spacing:0;color:var(--txt-2);
   }
   .catnav button:not(.on):hover{color:var(--txt);background:none}
@@ -3927,14 +3964,14 @@ header{position:relative;z-index:5}
 
   .navtools .nt-me{
     width:auto;height:40px;gap:9px;padding:0 4px 0 0;border-radius:999px;
-    font-family:'Inter',sans-serif;font-weight:600;font-size:.78rem;color:var(--txt);
+    font-family:var(--font-texte);font-weight:600;font-size:.78rem;color:var(--txt);
   }
   .nt-av{
     width:30px;height:30px;flex:none;border-radius:999px;
     display:flex;align-items:center;justify-content:center;
     background:var(--surface-2);
-    font-family:'Inter',system-ui,sans-serif;font-weight:700;font-size:.69rem;color:var(--txt);
-    text-transform:uppercase;
+    font-family:var(--font-texte);font-weight:700;font-size:.69rem;color:var(--txt);
+    text-transform:none;
   }
   .nt-nom{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
@@ -3984,16 +4021,16 @@ header{position:relative;z-index:5}
      ce bloc sans connaître l'histoire, on ne comprend pas pourquoi elle est là. */
   display:flex;align-items:center;justify-content:center;
   background:var(--primary);color:var(--primary-ink);
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:1.37rem;line-height:1;
-  padding:0;letter-spacing:0;text-transform:uppercase;
+  font-family:var(--font-titre);font-weight:800;font-size:1.37rem;line-height:1;
+  padding:0;letter-spacing:0;text-transform:none;
 }
-#pfEmail{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:1.3rem;letter-spacing:-.02em}
+#pfEmail{font-family:var(--font-titre);font-weight:800;font-size:1.3rem;letter-spacing:-.02em}
 /* La pastille d'installation, à droite comme dans la maquette. */
 .pf-inst{
   margin-left:auto;flex:none;
   display:flex;align-items:center;gap:8px;height:38px;padding:0 16px;
   border-radius:999px;border:1px solid var(--stroke-2);background:none;
-  font-family:'Inter',sans-serif;font-weight:600;font-size:.78rem;
+  font-family:var(--font-texte);font-weight:600;font-size:.78rem;
   color:var(--txt);cursor:pointer;transition:background .14s ease;
 }
 .pf-inst:hover{background:var(--surface-2)}
@@ -4010,11 +4047,11 @@ header{position:relative;z-index:5}
      Sur ordinateur la carte est retirée, donc la gouttière n'a plus de raison
      d'être — elle est remise à zéro dans la requête média plus bas. */
   padding:16px 16px 14px;margin:0;
-  font-family:'Inter',system-ui,sans-serif;font-weight:700;
+  font-family:var(--font-texte);font-weight:700;
   /* .7rem et non .63 : à .2em d'interlettrage sur un petit écran, c'est la
      taille qui décide si l'étiquette se lit ou se devine. */
   font-size:.7rem;
-  letter-spacing:.2em;text-transform:uppercase;
+  letter-spacing:.2em;text-transform:none;
   /* Le jaune passe du FOND au TEXTE : c'est tout le principe de 1g.
      ⚠️ --primary-txt et NON --primary. Le principe est bon, la variable ne
      l'était pas : #FFE600 écrit sur le fond clair du profil donne 1,15:1, donc
@@ -4038,7 +4075,7 @@ header{position:relative;z-index:5}
 }
 .pf-panels #accActions .item.act:last-of-type{border-bottom:0}
 .pf-panels #accActions .item.act h4{
-  font-family:'Inter',sans-serif;font-weight:500;font-size:.82rem;letter-spacing:0;
+  font-family:var(--font-texte);font-weight:500;font-size:.82rem;letter-spacing:0;
 }
 .pf-panels #accActions .item.act .emo{font-size:1rem;opacity:.75}
 
@@ -4054,7 +4091,7 @@ header{position:relative;z-index:5}
 }
 .danger-zone h3{
   display:flex;align-items:center;gap:9px;margin:0;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700;font-size:.82rem;color:var(--danger);
+  font-family:var(--font-titre);font-weight:700;font-size:.82rem;color:var(--danger);
 }
 .danger-zone p{margin:9px 0 12px;font-size:.78rem;line-height:1.5;color:var(--txt-2)}
 .danger-zone p strong{color:var(--txt);font-weight:600}
@@ -4198,7 +4235,7 @@ header{position:relative;z-index:5}
   background:none;border:0;border-radius:0;box-shadow:none;
   border-bottom:1px solid var(--stroke-2);
   padding:10px 0;
-  font-family:'Inter',sans-serif;font-weight:500;font-size:16px;
+  font-family:var(--font-texte);font-weight:500;font-size:16px;
   transition:border-color .14s ease;
 }
 /* ⚠️ Le plancher de 44px vise les champs d'UNE ligne, et le textarea en est
@@ -4221,7 +4258,7 @@ header{position:relative;z-index:5}
    secondaire, ils passent sous le seuil de lecture confortable sur un
    téléphone. .75rem = 12px, la micro-étiquette reste une micro-étiquette. */
 #catTrip .field > label{
-  font-family:'Inter',sans-serif;font-weight:500;font-size:.75rem;
+  font-family:var(--font-texte);font-weight:500;font-size:.75rem;
   letter-spacing:.02em;text-transform:none;color:var(--txt-2);
   margin-bottom:8px;
 }
@@ -4233,7 +4270,7 @@ header{position:relative;z-index:5}
 #view1 .go-acts .btn:not(.ghost),
 #btnGo{
   border-radius:999px;height:46px;padding:0 26px;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700;font-size:.87rem;
+  font-family:var(--font-titre);font-weight:700;font-size:.87rem;
   box-shadow:none;
 }
 /* ⚠️ Les trois autres cessent d'être des boutons DESSINÉS, pas d'être des
@@ -4244,7 +4281,7 @@ header{position:relative;z-index:5}
 #view1 .btn.ghost{
   background:none;border:0;box-shadow:none;padding:0 2px;
   min-height:44px;                    /* la cible reste atteignable au doigt */
-  font-family:'Inter',sans-serif;font-weight:600;font-size:.78rem;
+  font-family:var(--font-texte);font-weight:600;font-size:.78rem;
   color:var(--txt-2);text-transform:none;letter-spacing:0;
 }
 #view1 .btn.ghost:hover{background:none;color:var(--txt);text-decoration:underline;text-underline-offset:3px}
@@ -4292,11 +4329,11 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   }
 }
 .qz-pas{
-  display:block;font-family:'Inter',sans-serif;font-weight:600;font-size:.63rem;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--txt-2);
+  display:block;font-family:var(--font-texte);font-weight:600;font-size:.63rem;
+  letter-spacing:.2em;text-transform:none;color:var(--txt-2);
 }
 .qz-q{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:1.5rem;line-height:1.18;
+  font-family:var(--font-titre);font-weight:800;font-size:1.5rem;line-height:1.18;
   letter-spacing:-.02em;color:var(--txt);margin:14px 0 8px;
 }
 .qz-s{margin:0 0 22px;font-size:.85rem;line-height:1.55;color:var(--txt-2)}
@@ -4314,7 +4351,7 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 .qz-points{display:flex;gap:6px;flex:1}
 .qz-points i{width:6px;height:6px;border-radius:999px;background:var(--stroke-2);display:block}
 .qz-points i.on{background:var(--primary);width:18px}
-.qz-bas .btn{border-radius:999px;height:46px;padding:0 26px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:700}
+.qz-bas .btn{border-radius:999px;height:46px;padding:0 26px;font-family:var(--font-titre);font-weight:700}
 .qz-tout{
   background:none;border:0;box-shadow:none;margin-top:14px;
   min-height:44px;font-size:.78rem;font-weight:600;color:var(--txt-2);
@@ -4329,7 +4366,7 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
    donc plus aucune hiérarchie entre « répondre » et « passer ». */
 .btn.qz-skip{
   background:none;border:0;box-shadow:none;padding:0 6px;height:46px;
-  font-family:'Inter',sans-serif;font-weight:600;font-size:.82rem;
+  font-family:var(--font-texte);font-weight:600;font-size:.82rem;
   color:var(--txt-2);border-radius:999px;text-transform:none;letter-spacing:0;
 }
 .btn.qz-skip:hover{background:none;color:var(--txt);text-decoration:underline;text-underline-offset:3px}
@@ -4391,11 +4428,11 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 .asst-vers{
   display:flex;width:100%;align-items:center;gap:14px;text-align:left;min-height:44px;
   background:none;border:0;padding:2px 0;cursor:pointer;color:var(--txt);
-  font-family:'Inter',sans-serif;
+  font-family:var(--font-texte);
 }
 .asst-vers-ico{font-size:1.2rem;flex:none;line-height:1}
 .asst-vers-t{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
-.asst-vers-t b{font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.9rem}
+.asst-vers-t b{font-family:var(--font-titre);font-weight:800;font-size:.9rem}
 .asst-vers-t em{font-style:normal;font-size:.8rem;color:var(--txt-2);line-height:1.4}
 .asst-vers-fl{flex:none;color:var(--txt-2);font-size:1.1rem;transition:transform .14s ease}
 .asst-vers:hover .asst-vers-fl{transform:translateX(3px);color:var(--txt)}
@@ -4454,7 +4491,7 @@ body.fond-fige{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   padding:0;flex:none;
   background:var(--primary-ink);color:var(--primary);
   border:0;border-radius:var(--r-md);box-shadow:var(--shadow);
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;
+  font-family:var(--font-titre);font-weight:800;
   cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;}
 .ph-discord:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow-lg)}
 .ph-discord:active{transform:translateY(1px);box-shadow:var(--shadow)}
@@ -4561,8 +4598,8 @@ body{ min-height:100dvh }
    D'où le contour et non l'aplat — le jaune plein est réservé à ce sur quoi on
    clique, règle posée par le bloc des onglets d'ordinateur. */
 .ia-beta{
-  font-family:'Inter',sans-serif;font-weight:700;font-size:.6rem;
-  text-transform:uppercase;letter-spacing:.1em;
+  font-family:var(--font-texte);font-weight:700;font-size:.6rem;
+  text-transform:none;letter-spacing:.1em;
   color:var(--accent-orange);border:1px solid var(--accent-orange);
   border-radius:999px;padding:3px 9px;vertical-align:middle;
   position:relative;top:-2px;
@@ -4583,7 +4620,7 @@ body{ min-height:100dvh }
 .ia-intent{
   align-self:flex-start;flex:none;
   display:inline-flex;align-items:center;gap:2px;
-  font-family:'Inter',sans-serif;font-weight:600;font-size:.8rem;color:var(--txt);
+  font-family:var(--font-texte);font-weight:600;font-size:.8rem;color:var(--txt);
   background:var(--surface-2);border:1px solid var(--stroke);
   border-left:3px solid var(--primary);border-radius:var(--r-sm);
   padding:7px 14px;margin:0 0 12px;line-height:1.4;
@@ -4633,8 +4670,8 @@ body{ min-height:100dvh }
 
 .ia-msg{display:flex;flex-direction:column;gap:5px;max-width:78%}
 .ia-msg .ia-qui{
-  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.6rem;
-  text-transform:uppercase;letter-spacing:.09em;color:var(--txt-2);
+  font-family:var(--font-texte);font-weight:800;font-size:.6rem;
+  text-transform:none;letter-spacing:.01em;color:var(--txt-2);
 }
 .ia-msg .ia-txt{
   font-size:.88rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;
@@ -4687,7 +4724,7 @@ body{ min-height:100dvh }
   flex:1;min-height:44px;max-height:160px;resize:none;
   background:none;border:0;border-radius:0;box-shadow:none;
   padding:9px 0;
-  font-family:'Inter',sans-serif;font-weight:500;line-height:1.5;
+  font-family:var(--font-texte);font-weight:500;line-height:1.5;
 }
 /* ⚠️ La règle de base pose un `transform` au focus sur tout champ : ici il
    ferait sauter le texte à l'intérieur de la barre, qui elle ne bouge pas. */
@@ -4747,8 +4784,8 @@ body{ min-height:100dvh }
 /* Le niveau : une mention, pas un bouton — contour et non aplat, comme
    l'étiquette « bêta » de l'assistant. */
 .pp-niveau{
-  flex:none;font-family:'Inter',sans-serif;font-weight:700;font-size:.62rem;
-  text-transform:uppercase;letter-spacing:.1em;border:1px solid var(--primary-txt);
+  flex:none;font-family:var(--font-texte);font-weight:700;font-size:.62rem;
+  text-transform:none;letter-spacing:.1em;border:1px solid var(--primary-txt);
   border-radius:999px;padding:3px 10px;white-space:nowrap;}
 .pp-bio{margin:8px 0 0;font-size:.86rem;line-height:1.45;color:var(--txt);font-style:italic}
 .pp-bio:empty{display:none}
@@ -4766,11 +4803,11 @@ body{ min-height:100dvh }
 }
 .pp-stat:last-child{border-right:0}
 .pp-stat .k{
-  display:block;font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.58rem;
-  text-transform:uppercase;letter-spacing:.1em;color:var(--txt-2);
+  display:block;font-family:var(--font-texte);font-weight:800;font-size:.58rem;
+  text-transform:none;letter-spacing:.1em;color:var(--txt-2);
 }
 .pp-stat .v{
-  display:block;margin-top:3px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:900;
+  display:block;margin-top:3px;font-family:var(--font-titre);font-weight:900;
   font-size:1rem;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
@@ -4802,7 +4839,7 @@ body{ min-height:100dvh }
   flex:none;display:flex;align-items:center;gap:7px;white-space:nowrap;cursor:pointer;
   min-height:44px;
   padding:11px 16px;border:2px solid transparent;border-radius:var(--r-md);
-  background:transparent;font:700 .78rem 'Fraunces',Georgia,serif;color:var(--txt-2);
+  background:transparent;font:700 .78rem var(--font-titre);color:var(--txt-2);
   transition:color .12s ease,background .12s ease;
 }
 .pf-tab span{font-size:1.05rem;line-height:1}
@@ -4825,7 +4862,7 @@ body{ min-height:100dvh }
 .pp-badge.off .pb-t b{color:var(--txt-2)}
 .pb-i{font-size:1.5rem;line-height:1;flex:none}
 .pb-t{min-width:0}
-.pb-t b{display:block;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-weight:800;font-size:.78rem;color:var(--txt)}
+.pb-t b{display:block;font-family:var(--font-titre);font-weight:800;font-size:.78rem;color:var(--txt)}
 .pb-t em{display:block;font-style:normal;font-size:.72rem;color:var(--txt-2);margin-top:2px;line-height:1.35}
 
 /* ---- Le résumé du voyage actif, dans l'onglet Passeport ---- */
@@ -4889,8 +4926,8 @@ body{ min-height:100dvh }
   border-radius:var(--r-md);padding:16px;
 }
 .iac-t{display:flex;flex-direction:column;gap:2px;min-width:0}
-.iac-t b{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.1rem;line-height:1.2;color:var(--txt)}
-.iac-t em{font-style:normal;font-size:.74rem;color:var(--txt-2);text-transform:uppercase;letter-spacing:.08em}
+.iac-t b{font-family:var(--font-titre);font-weight:700;font-size:1.1rem;line-height:1.2;color:var(--txt)}
+.iac-t em{font-style:normal;font-size:.74rem;color:var(--txt-2);text-transform:none;letter-spacing:.01em}
 .iac-r{margin:0;font-size:.84rem;line-height:1.5;color:var(--txt-2)}
 .iac-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
 .iac-f span{
@@ -5076,7 +5113,7 @@ body{ min-height:100dvh }
   flex:none;width:30px;height:30px;border-radius:50%;
   display:grid;place-items:center;
   background:var(--primary);color:var(--primary-ink);
-  font-family:'Inter',system-ui,sans-serif;font-weight:800;font-size:.85rem;
+  font-family:var(--font-texte);font-weight:800;font-size:.85rem;
 }
 
 /* ============================================================
@@ -5146,7 +5183,7 @@ body{ min-height:100dvh }
 .vb-carte:hover{transform:translateX(2px);border-color:var(--stroke-2)}
 .vb-i{flex:none;color:var(--primary-txt)}
 .vb-t{min-width:0;flex:1}
-.vb-t b{display:block;font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:.92rem;color:var(--txt);line-height:1.25}
+.vb-t b{display:block;font-family:var(--font-titre);font-weight:600;font-size:.92rem;color:var(--txt);line-height:1.25}
 .vb-t em{display:block;font-style:normal;font-size:.76rem;color:var(--txt-2);margin-top:2px}
 .vb-fl{flex:none;color:var(--txt-2)}
 :root.no-motion .vb-carte{transition:none}
@@ -5155,7 +5192,7 @@ body{ min-height:100dvh }
    pas rester actifs en même temps. */
 .bi-unite{
   display:grid;place-items:center;flex:none;min-width:44px;min-height:44px;
-  font-family:'Inter',system-ui,sans-serif;font-weight:800;color:var(--txt-2);
+  font-family:var(--font-texte);font-weight:800;color:var(--txt-2);
 }
 .q-inactif{opacity:.55}
 .q-inactif label{color:var(--txt-2)}
@@ -5182,7 +5219,7 @@ body{ min-height:100dvh }
 }
 .att-pilule.on{ transform:translate(-50%,0);opacity:1;pointer-events:auto }
 .att-txt{
-  font-family:'Inter',system-ui,sans-serif;
+  font-family:var(--font-texte);
   font-size:.86rem;color:var(--txt);white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;
 }
@@ -5192,7 +5229,7 @@ body{ min-height:100dvh }
   min-height:44px;padding:0 18px;                /* 44px : cible tactile AAA */
   background:var(--primary);color:var(--primary-ink);
   border:0;border-radius:999px;cursor:pointer;
-  font-family:'Inter',system-ui,sans-serif;font-size:.85rem;font-weight:700;
+  font-family:var(--font-texte);font-size:.85rem;font-weight:700;
   transition:transform .16s ease;
 }
 .att-pilule .att-go:hover{ transform:translateY(-1px) }
@@ -5211,7 +5248,7 @@ body{ min-height:100dvh }
   margin-top:12px;padding:10px 10px 10px 14px;
   background:var(--primary);color:var(--primary-ink);
   border-radius:14px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.85rem;font-weight:600;
+  font-family:var(--font-texte);font-size:.85rem;font-weight:600;
   animation:attPop .3s cubic-bezier(.2,.9,.3,1.2);
 }
 .att-pret span{ display:inline-flex;align-items:center;gap:8px }
@@ -5219,7 +5256,7 @@ body{ min-height:100dvh }
   min-height:34px;padding:0 15px;flex:0 0 auto;
   background:var(--primary-ink);color:var(--primary);
   border:0;border-radius:999px;cursor:pointer;
-  font-family:'Inter',system-ui,sans-serif;font-size:.82rem;font-weight:700;
+  font-family:var(--font-texte);font-size:.82rem;font-weight:700;
 }
 @keyframes attPop{ from{ opacity:0;transform:translateY(8px) } to{ opacity:1;transform:none } }
 
@@ -5268,7 +5305,7 @@ html.kio-actif, html.kio-actif body{ overflow:hidden }
 @keyframes kioFade{ from{ opacity:0 } to{ opacity:1 } }
 .kio-corps{ text-align:center;max-width:min(92vw, 900px) }
 .kio-n{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;
+  font-family:var(--font-titre);
   font-weight:900;font-size:clamp(5rem, 34vmin, 17rem);line-height:.86;
   letter-spacing:-.05em;color:#FFE600;
   font-variant-numeric:tabular-nums;                 /* le chiffre ne danse pas */
@@ -5277,13 +5314,13 @@ html.kio-actif, html.kio-actif body{ overflow:hidden }
 .kio-n.kio-go{ font-size:clamp(2.6rem, 13vmin, 7rem);letter-spacing:-.035em }
 .kio-n.kio-vide{ color:#5A5A52 }
 .kio-u{
-  font-family:'Inter',system-ui,sans-serif;
+  font-family:var(--font-texte);
   font-size:clamp(.95rem, 3.1vmin, 1.6rem);font-weight:600;
   color:#F2F1EC;margin-top:min(3vmin, 20px);
   text-wrap:balance;
 }
 .kio-dest{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;
+  font-family:var(--font-titre);
   font-weight:900;font-size:clamp(1.3rem, 5.4vmin, 3rem);
   letter-spacing:-.03em;color:#F2F1EC;
   margin-top:min(4vmin, 26px);
@@ -5291,7 +5328,7 @@ html.kio-actif, html.kio-actif body{ overflow:hidden }
   border-top:1px solid rgba(255,255,255,.13);
 }
 .kio-bas{
-  font-family:'Inter',system-ui,sans-serif;
+  font-family:var(--font-texte);
   font-size:clamp(.8rem, 2.4vmin, 1.15rem);
   color:#A5A49D;margin-top:min(2.6vmin, 16px);
   min-height:1.4em;                                  /* la ligne ne saute pas en changeant */
@@ -5320,7 +5357,7 @@ html.kio-actif, html.kio-actif body{ overflow:hidden }
 ============================================================ */
 .lx-bilan{
   margin-top:16px;padding:12px 14px;border-radius:14px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.84rem;
+  font-family:var(--font-texte);font-size:.84rem;
   border:1px solid var(--stroke);
 }
 .lx-ok{ display:flex;align-items:center;gap:9px;color:var(--txt-2);background:var(--bg) }
@@ -5345,13 +5382,13 @@ html.kio-actif, html.kio-actif body{ overflow:hidden }
   background:var(--primary);transition:width .35s cubic-bezier(.2,.9,.3,1);
 }
 .mz-jauge b{
-  font-family:'Inter',system-ui,sans-serif;font-size:.82rem;
+  font-family:var(--font-texte);font-size:.82rem;
   color:var(--txt-2);font-variant-numeric:tabular-nums;flex:0 0 auto;
 }
 .mz-opt{
   display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:10px 12px;
   background:var(--bg);border:1px dashed var(--stroke);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.83rem;color:var(--txt-2);cursor:pointer;
+  font-family:var(--font-texte);font-size:.83rem;color:var(--txt-2);cursor:pointer;
 }
 .mz-opt input{ width:18px;height:18px;flex:0 0 auto;accent-color:var(--primary) }
 .mz-liste{ list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px }
@@ -5364,8 +5401,8 @@ html.kio-actif, html.kio-actif body{ overflow:hidden }
 .mz-li label:hover{ border-color:var(--txt-2) }
 .mz-li input{ width:19px;height:19px;margin-top:1px;flex:0 0 auto;accent-color:var(--primary);cursor:pointer }
 .mz-txt{ display:flex;flex-direction:column;gap:2px;min-width:0 }
-.mz-txt b{ font-family:'Inter',system-ui,sans-serif;font-size:.88rem;font-weight:650;color:var(--txt) }
-.mz-txt em{ font-family:'Inter',system-ui,sans-serif;font-size:.78rem;font-style:normal;color:var(--txt-2);line-height:1.45 }
+.mz-txt b{ font-family:var(--font-texte);font-size:.88rem;font-weight:650;color:var(--txt) }
+.mz-txt em{ font-family:var(--font-texte);font-size:.78rem;font-style:normal;color:var(--txt-2);line-height:1.45 }
 /* Fait : on efface sans supprimer — la ligne reste lisible et décochable. */
 .mz-li.fait label{ background:var(--bg) }
 .mz-li.fait .mz-txt b{ color:var(--txt-2);text-decoration:line-through;text-decoration-thickness:1px }
@@ -5373,7 +5410,7 @@ html.kio-actif, html.kio-actif body{ overflow:hidden }
 .mz-fini{
   display:flex;align-items:center;gap:9px;margin-top:14px;padding:12px 14px;
   background:var(--primary);color:var(--primary-ink);border-radius:14px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.86rem;font-weight:650;
+  font-family:var(--font-texte);font-size:.86rem;font-weight:650;
 }
 
 /* ============================================================
@@ -5400,7 +5437,7 @@ body.dg-actif .tl-item{ touch-action:none }
 ============================================================ */
 .geo-mien{
   display:flex;align-items:center;gap:8px;margin:6px 0 0;
-  font-family:'Inter',system-ui,sans-serif;font-size:.78rem;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.78rem;color:var(--txt-2);
 }
 .geo-mien svg{ color:var(--primary-txt);flex:0 0 auto }
 
@@ -5444,7 +5481,7 @@ body.dg-actif .tl-item{ touch-action:none }
 .pond{ display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin:0 0 12px }
 .pond:last-of-type{ margin-bottom:0 }
 .pond span{
-  font-family:'Inter',system-ui,sans-serif;font-size:.78rem;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.78rem;color:var(--txt-2);
   white-space:nowrap;min-width:56px;
 }
 .pond span:last-child{ text-align:right }
@@ -5454,7 +5491,7 @@ body.dg-actif .tl-item{ touch-action:none }
 }
 .pond-lu{
   margin:12px 0 0;padding-top:10px;border-top:1px solid var(--stroke);
-  font-family:'Inter',system-ui,sans-serif;font-size:.78rem;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.78rem;color:var(--txt-2);
 }
 .pond-lu b{ color:var(--txt) }
 
@@ -5474,11 +5511,11 @@ body.dg-actif .tl-item{ touch-action:none }
   background:var(--bg);border:1px solid var(--stroke);border-radius:12px;
 }
 .au-rayon label{
-  margin:0;font-family:'Inter',system-ui,sans-serif;font-size:.8rem;color:var(--txt-2);
+  margin:0;font-family:var(--font-texte);font-size:.8rem;color:var(--txt-2);
 }
 .au-rayon input[type=range]{ width:100%;min-width:0;height:32px;accent-color:var(--primary);cursor:pointer }
 .au-rayon b{
-  font-family:'Inter',system-ui,sans-serif;font-size:.82rem;color:var(--txt);
+  font-family:var(--font-texte);font-size:.82rem;color:var(--txt);
   font-variant-numeric:tabular-nums;min-width:58px;text-align:right;
 }
 .au-liste{ overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;min-height:120px }
@@ -5489,20 +5526,20 @@ body.dg-actif .tl-item{ touch-action:none }
 }
 .au-txt{ min-width:0;display:flex;flex-direction:column;gap:2px }
 .au-txt b{
-  font-family:'Inter',system-ui,sans-serif;font-size:.88rem;font-weight:650;color:var(--txt);
+  font-family:var(--font-texte);font-size:.88rem;font-weight:650;color:var(--txt);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.au-txt em{ font-family:'Inter',system-ui,sans-serif;font-size:.76rem;font-style:normal;color:var(--txt-2) }
+.au-txt em{ font-family:var(--font-texte);font-size:.76rem;font-style:normal;color:var(--txt-2) }
 .au-h{
   display:inline-flex;align-items:center;gap:5px;margin-top:2px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.72rem;color:var(--txt-2);
 }
 .au-cote{ display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:0 0 auto }
 .au-km{
-  font-family:'Inter',system-ui,sans-serif;font-size:.88rem;font-weight:700;color:var(--primary-txt);
+  font-family:var(--font-texte);font-size:.88rem;font-weight:700;color:var(--primary-txt);
   font-variant-numeric:tabular-nums;
 }
-.au-min{ font-family:'Inter',system-ui,sans-serif;font-size:.71rem;color:var(--txt-2);white-space:nowrap }
+.au-min{ font-family:var(--font-texte);font-size:.71rem;color:var(--txt-2);white-space:nowrap }
 .au-cote .btn{ margin-top:4px }
 @media(max-width:460px){
   .au-item{ flex-direction:column;align-items:stretch;gap:9px }
@@ -5515,12 +5552,12 @@ body.dg-actif .tl-item{ touch-action:none }
 ============================================================ */
 .pp-prochain{
   display:block;margin-top:3px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.74rem;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.74rem;color:var(--txt-2);
 }
 .pf-urg-v{
   margin:0;padding:11px 13px;
   background:var(--bg);border:1px solid var(--stroke);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.92rem;font-weight:650;color:var(--txt);
+  font-family:var(--font-texte);font-size:.92rem;font-weight:650;color:var(--txt);
   overflow-wrap:anywhere;
 }
 .pf-urg h3{ display:flex;align-items:center;gap:8px }
@@ -5532,18 +5569,18 @@ body.dg-actif .tl-item{ touch-action:none }
 .mem-actif{
   display:flex;align-items:center;gap:9px;margin:0 0 14px;padding:11px 13px;
   background:var(--primary);color:var(--primary-ink);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.85rem;
+  font-family:var(--font-texte);font-size:.85rem;
 }
 .mem-actif svg{ flex:0 0 auto }
 .mem-lbl{
-  margin:0 0 8px;font-family:'Inter',system-ui,sans-serif;
-  font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--txt-2);
+  margin:0 0 8px;font-family:var(--font-texte);
+  font-size:.72rem;letter-spacing:.01em;text-transform:none;color:var(--txt-2);
 }
 .mem-liste{ list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:5px }
 .mem-liste li{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:9px 12px;background:var(--bg);border:1px solid var(--stroke);border-radius:10px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.82rem;
+  font-family:var(--font-texte);font-size:.82rem;
 }
 .mem-liste li b{ color:var(--txt);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
 .mem-liste li span{ color:var(--txt-2);font-size:.74rem;flex:0 0 auto }
@@ -5559,8 +5596,8 @@ body.dg-actif .tl-item{ touch-action:none }
 .ger-grp + .ger-grp{ border-top:1px solid var(--stroke);padding-top:16px }
 .ger-lbl{
   margin:0 0 10px;
-  font-family:'Inter',system-ui,sans-serif;
-  font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  font-family:var(--font-texte);
+  font-size:.72rem;font-weight:700;letter-spacing:.01em;text-transform:none;
   color:var(--txt-2);
 }
 .ger-danger{ padding-bottom:0 }
@@ -5587,7 +5624,7 @@ body.dg-actif .tl-item{ touch-action:none }
   min-height:44px;padding:0 12px;                    /* 44px : cible tactile AAA */
   background:var(--bg);color:var(--txt);
   border:1px solid var(--stroke);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;font-size:16px;   /* 16px : iOS ne zoome pas en dessous */
+  font-family:var(--font-texte);font-size:16px;   /* 16px : iOS ne zoome pas en dessous */
 }
 .sp-form input:focus{ outline:2px solid var(--primary);outline-offset:1px }
 .sp-form .btn{ min-height:44px }
@@ -5612,7 +5649,7 @@ body.dg-actif .tl-item{ touch-action:none }
   background:var(--primary);transition:width .35s cubic-bezier(.2,.9,.3,1);
 }
 .vl-jauge b{
-  font-family:'Inter',system-ui,sans-serif;font-size:.82rem;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.82rem;color:var(--txt-2);
   font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:38px;text-align:right;
 }
 /* Les lignes à cocher : même cible tactile que le reste. */
@@ -5620,7 +5657,7 @@ body.dg-actif .tl-item{ touch-action:none }
   display:flex;align-items:center;gap:12px;min-height:44px;
   padding:9px 12px;margin-bottom:6px;cursor:pointer;
   background:var(--secondary);border:1px solid var(--stroke);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.86rem;color:var(--txt);
+  font-family:var(--font-texte);font-size:.86rem;color:var(--txt);
   transition:border-color .16s ease, background .16s ease;
 }
 #zoneBag .check:hover{ border-color:var(--txt-2) }
@@ -5641,7 +5678,7 @@ body.dg-actif .tl-item{ touch-action:none }
 .mg-contrainte{
   display:flex;align-items:center;gap:9px;margin:0 0 14px;padding:10px 13px;
   background:var(--primary);color:var(--primary-ink);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.84rem;
+  font-family:var(--font-texte);font-size:.84rem;
 }
 .mg-contrainte svg{ flex:0 0 auto }
 .mg-form{ display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:16px }
@@ -5659,7 +5696,7 @@ body.dg-actif .tl-item{ touch-action:none }
   width:100%;min-height:110px;padding:12px;
   background:var(--bg);color:var(--txt);
   border:1px solid var(--stroke);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;font-size:16px;line-height:1.55;
+  font-family:var(--font-texte);font-size:16px;line-height:1.55;
   resize:vertical;
 }
 #noteArea:focus{ outline:2px solid var(--primary);outline-offset:1px }
@@ -5668,7 +5705,7 @@ body.dg-actif .tl-item{ touch-action:none }
 .phrase{
   padding:11px 13px;margin-bottom:7px;
   background:var(--secondary);border:1px solid var(--stroke);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;
+  font-family:var(--font-texte);
 }
 .phrase .fr{ font-size:.84rem;color:var(--txt-2) }
 .phrase .loc{ font-size:1rem;font-weight:650;color:var(--txt);margin:2px 0 }
@@ -5683,8 +5720,8 @@ body.dg-actif .tl-item{ touch-action:none }
 }
 .wx-bloc canvas{ width:56px;height:56px;flex:0 0 56px }
 .wx-txt{ display:flex;flex-direction:column;gap:2px;min-width:0 }
-.wx-txt b{ font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:900;color:var(--txt);letter-spacing:-.02em }
-.wx-txt span{ font-family:'Inter',system-ui,sans-serif;font-size:.78rem;color:var(--txt-2) }
+.wx-txt b{ font-family:var(--font-titre);font-size:1.35rem;font-weight:900;color:var(--txt);letter-spacing:-.02em }
+.wx-txt span{ font-family:var(--font-texte);font-size:.78rem;color:var(--txt-2) }
 
 /* ============================================================
    RÉSERVATIONS — le formulaire rebranché
@@ -5694,7 +5731,7 @@ body.dg-actif .tl-item{ touch-action:none }
   min-height:44px;padding:0 12px;                    /* 44px : cible tactile AAA */
   background:var(--bg);color:var(--txt);
   border:1px solid var(--stroke);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;font-size:16px;   /* 16px : iOS ne zoome pas */
+  font-family:var(--font-texte);font-size:16px;   /* 16px : iOS ne zoome pas */
 }
 .res-form select:focus,.res-form input:focus{ outline:2px solid var(--primary);outline-offset:1px }
 .res-form .btn{ min-height:44px }
@@ -5712,7 +5749,7 @@ body.dg-actif .tl-item{ touch-action:none }
   min-height:44px;padding:0 12px;                    /* 44px : cible tactile AAA */
   background:var(--bg);color:var(--txt);
   border:1px solid var(--stroke);border-radius:12px;
-  font-family:'Inter',system-ui,sans-serif;font-size:16px;   /* 16px : iOS ne zoome pas */
+  font-family:var(--font-texte);font-size:16px;   /* 16px : iOS ne zoome pas */
 }
 .tr-form input:focus{ outline:2px solid var(--primary);outline-offset:1px }
 .tr-form .btn{ min-height:44px }
@@ -5721,8 +5758,8 @@ body.dg-actif .tl-item{ touch-action:none }
   margin-top:18px;padding:14px;
   background:var(--bg);border:1px solid var(--stroke);border-radius:14px;
 }
-.sim-appel b{ display:block;font-family:'Inter',system-ui,sans-serif;font-size:.92rem;color:var(--txt) }
-.sim-appel em{ font-family:'Inter',system-ui,sans-serif;font-size:.78rem;font-style:normal;color:var(--txt-2) }
+.sim-appel b{ display:block;font-family:var(--font-texte);font-size:.92rem;color:var(--txt) }
+.sim-appel em{ font-family:var(--font-texte);font-size:.78rem;font-style:normal;color:var(--txt-2) }
 .sim-appel .btn{ flex:0 0 auto;min-height:44px }
 
 /* ============================================================
@@ -5797,9 +5834,9 @@ body.dg-actif .tl-item{ touch-action:none }
 .pass-repli:hover{ border-color:var(--txt-2) }
 .pr-ico{ display:flex;color:var(--primary-txt);flex:0 0 auto }
 .pr-txt{ display:flex;flex-direction:column;gap:1px;min-width:0;flex:1 }
-.pr-txt b{ font-family:'Inter',system-ui,sans-serif;font-size:.92rem;font-weight:650;
+.pr-txt b{ font-family:var(--font-texte);font-size:.92rem;font-weight:650;
            overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
-.pr-txt em{ font-family:'Inter',system-ui,sans-serif;font-size:.76rem;font-style:normal;color:var(--txt-2) }
+.pr-txt em{ font-family:var(--font-texte);font-size:.76rem;font-style:normal;color:var(--txt-2) }
 .pr-fl{ display:flex;color:var(--txt-2);flex:0 0 auto }
 
 /* ============================================================
@@ -5832,33 +5869,18 @@ body.dg-actif .tl-item{ touch-action:none }
 ############################################################ */
 
 /* ============================================================
-   1. JETONS SUPPLÉMENTAIRES
+   1. JETONS — RETIRÉS, ILS VIVENT MAINTENANT EN TÊTE DE FEUILLE
    ------------------------------------------------------------
-   Le jaune portait 134 usages et quatre rôles : marque, action, prix, alerte.
-   Un accent qui signifie tout ne signale plus rien. On lui retire les prix
-   et les alertes, qui gagnent leur propre encre.
+   Ce bloc redéclarait --money, --paper, --ombre-dure et --verifie pour
+   l'« édition papier ». Comme il est plus bas dans le fichier, il GAGNAIT
+   la cascade et écrasait les jetons Horizon posés en tête : le site
+   serait resté jaune et sombre quoi qu'on écrive plus haut.
+
+   Les mêmes noms sont désormais définis une seule fois, en haut, et
+   réaccordés sur Horizon — --paper est la carte blanche, --money le
+   turquoise pâle des montants, --ombre-dure une ombre douce. Les
+   centaines de règles qui les lisent n'ont pas eu à changer.
 ============================================================ */
-:root{
-  --money:      #E8D9A8;   /* prix et montants : un crème chaud, lisible, sans crier */
-  --money-ink:  #1A1A1A;
-  --warn:       #F2954B;   /* les mises en garde reprennent l'orange, déjà défini */
-  --paper:      #1F1E1B;   /* une carte légèrement plus chaude que la page */
-  --paper-edge: rgba(255,255,255,.14);
-  --ombre-dure: 4px 4px 0 rgba(0,0,0,.55);        /* la carte posée sur la table */
-  --ombre-dure-h: 6px 6px 0 rgba(0,0,0,.55);      /* soulevée au survol */
-  --ombre-dure-p: 1px 1px 0 rgba(0,0,0,.55);      /* enfoncée au clic */
-  --verifie:    #5BC98B;
-}
-:root[data-theme="light"]{
-  --money:      #6B5A1E;
-  --money-ink:  #FFFFFF;
-  --paper:      #FFFDF7;
-  --paper-edge: rgba(0,0,0,.14);
-  --ombre-dure: 4px 4px 0 rgba(20,20,20,.18);
-  --ombre-dure-h: 6px 6px 0 rgba(20,20,20,.18);
-  --ombre-dure-p: 1px 1px 0 rgba(20,20,20,.18);
-  --verifie:    #0E5030;   /* plus sombre qu'en premier jet : 3,66:1 mesuré avec #1F7A4A sur son fond teinté */
-}
 
 /* ============================================================
    2. LA CARTE POSÉE
@@ -5935,8 +5957,8 @@ body.dg-actif .tl-item{ touch-action:none }
   padding:2px 8px;border-radius:999px;
   background:color-mix(in srgb, var(--verifie) 18%, transparent);
   color:var(--verifie);
-  font-family:'Inter',system-ui,sans-serif;font-size:.68rem;font-weight:700;
-  letter-spacing:.04em;text-transform:uppercase;
+  font-family:var(--font-texte);font-size:.68rem;font-weight:700;
+  letter-spacing:.04em;text-transform:none;
   vertical-align:middle;white-space:nowrap;
 }
 .verifie-badge svg{ width:11px;height:11px }
@@ -5956,7 +5978,7 @@ h3{ font-size:1.2rem;line-height:1.2 }
 .plan-panel > .pan-intro:first-child,
 .plan-panel > .wx-bloc + .pan-intro,
 .plan-panel > .key-tip + .pan-intro{
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;
+  font-family:var(--font-titre);
   font-size:1.05rem;font-weight:500;line-height:1.5;
   color:var(--txt);max-width:60ch;
 }
@@ -5977,8 +5999,8 @@ h3{ font-size:1.2rem;line-height:1.2 }
 .plan-tabs .pt-rang > .plan-tab{ flex:1 1 96px;min-width:0 }
 .plan-tabs .pt-rang-nom{
   flex-basis:100%;
-  font-family:'Inter',system-ui,sans-serif;font-size:.66rem;font-weight:700;
-  letter-spacing:.09em;text-transform:uppercase;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.66rem;font-weight:700;
+  letter-spacing:.01em;text-transform:none;color:var(--txt-2);
   padding:2px 6px 0;
 }
 .plan-tabs .pt-rang + .pt-rang{ border-top:1px solid var(--stroke);padding-top:8px }
@@ -5994,7 +6016,7 @@ h3{ font-size:1.2rem;line-height:1.2 }
   border:1.5px dashed var(--paper-edge);border-radius:var(--r-md);
 }
 .vide .vide-ico{ color:var(--txt-2);display:flex }
-.vide p{ margin:0;font-family:'Inter',system-ui,sans-serif;font-size:.86rem;color:var(--txt-2);max-width:52ch }
+.vide p{ margin:0;font-family:var(--font-texte);font-size:.86rem;color:var(--txt-2);max-width:52ch }
 
 /* ============================================================
    8. LES PETITS BLOCS D'ICÔNE
@@ -6069,7 +6091,7 @@ body::before{
 .ia-vide .ia-vide-ico{ color:var(--primary-txt);opacity:1;margin-bottom:12px }
 .ia-vide-t{
   margin:0 0 14px;
-  font-family:'Fraunces',Georgia,'Times New Roman',serif;
+  font-family:var(--font-titre);
   font-size:1.35rem;font-weight:700;letter-spacing:-.02em;color:var(--txt);
 }
 .ia-vide-t b{ color:var(--primary-txt) }
@@ -6080,7 +6102,7 @@ body::before{
   background:var(--paper);color:var(--txt);
   border:1px solid var(--paper-edge);border-radius:var(--r-md);
   box-shadow:var(--ombre-dure);cursor:pointer;
-  font-family:'Inter',system-ui,sans-serif;font-size:.86rem;line-height:1.4;
+  font-family:var(--font-texte);font-size:.86rem;line-height:1.4;
   transition:transform .16s cubic-bezier(.2,.9,.3,1), box-shadow .16s cubic-bezier(.2,.9,.3,1);
 }
 .ia-ex-b svg{ flex:0 0 auto;color:var(--txt-2) }
@@ -6170,8 +6192,8 @@ body::before{
 /* Le compte des étapes se lit, au lieu de se deviner : huit pastilles de 9 px
    ne disent pas « il en reste trois », elles disent « c'est long ». */
 .onboard-etape{
-  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;font-weight:700;
-  letter-spacing:.09em;text-transform:uppercase;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.72rem;font-weight:700;
+  letter-spacing:.01em;text-transform:none;color:var(--txt-2);
   display:block;margin-bottom:10px;
 }
 
@@ -6192,8 +6214,8 @@ body::before{
 .px-tete{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
 .px-titre{
   display:inline-flex;align-items:center;gap:7px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;font-weight:700;
-  letter-spacing:.07em;text-transform:uppercase;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.72rem;font-weight:700;
+  letter-spacing:.01em;text-transform:none;color:var(--txt-2);
 }
 .px-verdict{margin:0 0 10px;font-size:.92rem;line-height:1.5;color:var(--txt);max-width:52ch}
 .px-courbe{display:block;width:100%;height:54px;overflow:visible}
@@ -6203,7 +6225,7 @@ body::before{
 .px-fin{fill:var(--txt);stroke:var(--paper);stroke-width:2}
 .px-pied{
   display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:8px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.74rem;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.74rem;color:var(--txt-2);
 }
 .px-pied b{color:var(--txt);font-size:.85rem}
 
@@ -6220,8 +6242,8 @@ body::before{
 }
 .ar-compte{
   margin-left:auto;
-  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;font-weight:700;
-  letter-spacing:.05em;text-transform:uppercase;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.72rem;font-weight:700;
+  letter-spacing:.05em;text-transform:none;color:var(--txt-2);
 }
 .ar-ligne.done span:last-child{ text-decoration:line-through;color:var(--txt-2) }
 
@@ -6241,8 +6263,8 @@ body::before{
 }
 .ret-quand{
   display:block;
-  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;font-weight:700;
-  letter-spacing:.09em;text-transform:uppercase;color:var(--txt-2);margin-bottom:4px;
+  font-family:var(--font-texte);font-size:.72rem;font-weight:700;
+  letter-spacing:.01em;text-transform:none;color:var(--txt-2);margin-bottom:4px;
 }
 .ret-tete h2{
   font-size:1.5rem;line-height:1.15;margin:0 0 14px;
@@ -6253,12 +6275,12 @@ body::before{
   gap:14px;padding:14px 0;border-top:1px solid var(--stroke);border-bottom:1px solid var(--stroke);
 }
 .ret-chiffres b{
-  display:block;font-family:'Fraunces',Georgia,serif;font-weight:900;
+  display:block;font-family:var(--font-titre);font-weight:900;
   font-size:1.6rem;line-height:1.1;color:var(--txt);
 }
 .ret-chiffres span{
   display:block;margin-top:2px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.74rem;color:var(--txt-2);line-height:1.35;
+  font-family:var(--font-texte);font-size:.74rem;color:var(--txt-2);line-height:1.35;
 }
 .ret-invite{margin:14px 0 16px;font-size:.92rem;line-height:1.5;color:var(--txt-2);max-width:56ch}
 .ret-actes{display:flex;flex-wrap:wrap;gap:10px}
@@ -6287,18 +6309,18 @@ body::before{
 }
 .tp-drapeau{font-size:1.5rem;line-height:1.1}
 .tp-nom{
-  font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:.95rem;
+  font-family:var(--font-titre);font-weight:900;font-size:.95rem;
   line-height:1.15;text-align:center;color:var(--txt);
 }
 .tp-pays,.tp-quand{
-  font-family:'Inter',system-ui,sans-serif;font-size:.68rem;
-  letter-spacing:.06em;text-transform:uppercase;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.68rem;
+  letter-spacing:.01em;text-transform:none;color:var(--txt-2);
 }
 .tp-quand{margin-top:3px}
 .tp-lettres{
   display:grid;place-items:center;width:32px;height:32px;
   border:2px solid var(--paper-edge);border-radius:50%;
-  font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:.82rem;
+  font-family:var(--font-titre);font-weight:900;font-size:.82rem;
   letter-spacing:.02em;color:var(--txt-2);
 }
 
@@ -6314,7 +6336,7 @@ body::before{
   margin-left:auto;display:inline-flex;align-items:center;gap:6px;
   padding:6px 11px;min-height:32px;
   background:none;border:1px solid var(--stroke);border-radius:999px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;font-weight:700;
+  font-family:var(--font-texte);font-size:.72rem;font-weight:700;
   color:var(--primary-ink);cursor:pointer;
 }
 .jj-perdu:hover{background:rgba(0,0,0,.08)}
@@ -6324,22 +6346,22 @@ body::before{
 .pd-bloc:first-child{border-top:0;padding-top:4px}
 .pd-bloc h4{
   margin:0 0 8px;display:flex;align-items:center;gap:8px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.74rem;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.74rem;font-weight:700;
+  letter-spacing:.01em;text-transform:none;color:var(--txt-2);
 }
 .pd-coord{
   margin:0 0 10px;font-family:ui-monospace,Menlo,monospace;
   font-size:1.15rem;font-weight:700;color:var(--txt);letter-spacing:.02em;
 }
 .pd-adresse{
-  margin:0 0 4px;font-family:'Fraunces',Georgia,serif;font-weight:900;
+  margin:0 0 4px;font-family:var(--font-titre);font-weight:900;
   font-size:1.1rem;line-height:1.3;color:var(--txt);
 }
 .pd-dist{margin:0 0 4px;font-size:.86rem;color:var(--txt-2)}
 .pd-vide{margin:0 0 10px;color:var(--txt-2)}
 .pd-nums{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.88rem;color:var(--txt-2)}
 .pd-num{
-  font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:1.25rem;
+  font-family:var(--font-titre);font-weight:900;font-size:1.25rem;
   color:var(--txt);text-decoration:none;border-bottom:2px solid var(--primary);
 }
 .pd-doute{
@@ -6369,8 +6391,152 @@ body::before{
 .wxc-tete{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
 .wxc-titre{
   display:inline-flex;align-items:center;gap:7px;
-  font-family:'Inter',system-ui,sans-serif;font-size:.72rem;font-weight:700;
-  letter-spacing:.07em;text-transform:uppercase;color:var(--txt-2);
+  font-family:var(--font-texte);font-size:.72rem;font-weight:700;
+  letter-spacing:.01em;text-transform:none;color:var(--txt-2);
 }
 .wxc-txt{margin:0 0 12px;font-size:.92rem;line-height:1.5;color:var(--txt);max-width:56ch}
 .wxc-actes{display:flex;flex-wrap:wrap;gap:10px}
+
+/* ############################################################
+   ACOLYTE — HORIZON · LA SURFACE
+   ------------------------------------------------------------
+   Posé en fin de feuille pour gagner la cascade, comme l'édition papier
+   avant lui. Les jetons (couleurs, polices, rayons, ombres) sont en TÊTE
+   de fichier ; ici on ne règle que la géométrie et les composants que la
+   référence redessine : la barre du haut, le héros, les cartes de voyage,
+   l'aperçu d'itinéraire et le copilote.
+############################################################ */
+
+/* ============================================================
+   H1. LA BARRE DU HAUT
+   ------------------------------------------------------------
+   La référence : un filet net sous la barre, le logo discret à gauche,
+   les onglets au centre, et à droite la cloche, le compte et l'action
+   principale. Rien ne flotte, rien ne déborde.
+============================================================ */
+@media (min-width:900px){
+  header{
+    background:var(--secondary);
+    border-bottom:1px solid var(--stroke);
+    padding:0 26px;margin:0 0 28px;min-height:64px;
+    align-items:center;gap:28px;
+  }
+  /* ⚠️ PAS DE PLEINE LARGEUR PAR `calc(50% - 50vw)`. Je l'avais fait pour
+     que la barre touche les bords comme dans la référence : 100vw COMPTE LA
+     BARRE DE DÉFILEMENT, la page débordait donc de quelques pixels à droite
+     et le navigateur dézoomait tout. La barre reste dans la gouttière du
+     .wrap — le filet du bas suffit à la lire comme un bord. */
+  header .logo{
+    font-size:1.22rem;font-weight:800;letter-spacing:-.02em;
+    margin:0 10px 0 0;gap:8px;
+  }
+  .catnav button{ font-size:.88rem;font-weight:600;padding:0 }
+  .catnav button.on{ border-bottom:0;color:var(--primary-txt);font-weight:700 }
+  .catnav{ gap:30px }
+  .navtools{ display:flex;align-items:center;gap:12px;margin-left:auto }
+}
+.nt-cloche{
+  position:relative;display:none;align-items:center;justify-content:center;
+  width:38px;height:38px;border:0;border-radius:50%;
+  background:none;color:var(--txt-2);cursor:pointer;
+}
+.nt-cloche:hover{ background:var(--surface-2);color:var(--txt) }
+.nt-cloche svg{ width:19px;height:19px }
+.nt-point{
+  position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;
+  background:var(--danger);border:2px solid var(--secondary);
+}
+/* ⚠️ flex:none SUR CHAQUE OUTIL DE DROITE. Sans ça, le conteneur flex les
+   comprime quand la place manque : « Nouveau voyage » se retrouvait à 40 px
+   de large pour 85 px de texte, et dépassait de la page — un débordement
+   horizontal de 21 px, invisible à l'œil mais qui fait défiler la page de
+   côté. C'est la NAV qui doit céder la place, pas l'action principale. */
+.navtools > *{ flex:none }
+/* ⚠️ `.navtools button` impose 40 px de large à TOUS les boutons de la
+   barre d'outils — c'est juste pour les ronds d'icône, faux pour une
+   action écrite : « Nouveau voyage » se retrouvait rogné à 40 px pour
+   85 px de texte. On lui rend sa largeur de contenu. */
+.nt-nouveau.nt-nouveau{
+  width:auto;height:auto;min-height:38px;border-radius:999px;
+  padding:0 16px;white-space:nowrap;
+  background:var(--primary);color:var(--primary-ink);
+  font-family:var(--font-texte);font-weight:700;font-size:.84rem;
+}
+.nt-nouveau.nt-nouveau:hover{ background:var(--primary-txt);color:#fff }
+@media (min-width:900px){
+  .catnav{ min-width:0;flex-wrap:wrap }
+  .catnav button{ white-space:nowrap }
+}
+/* entre 900 et 1150 px la barre est serrée : on resserre les gouttières
+   plutôt que de laisser quoi que ce soit se faire écraser */
+@media (min-width:900px) and (max-width:1150px){
+  header{ gap:16px;padding:0 18px }
+  .catnav{ gap:18px }
+  .catnav button{ font-size:.82rem }
+  .navtools{ gap:8px }
+}
+@media (min-width:900px){ .nt-cloche{ display:flex } }
+
+/* ============================================================
+   H2. LE HÉROS
+   ------------------------------------------------------------
+   Texte à gauche, paysage à droite — la composition de la référence.
+   Le paysage est DESSINÉ (trois courbes en SVG et un dégradé) : aucun
+   octet transféré, net à toutes les tailles, et il s'affiche hors
+   connexion comme le reste.
+============================================================ */
+.hero-h{
+  display:grid;grid-template-columns:1fr;gap:26px;
+  align-items:center;margin:0 0 28px;
+}
+.hero-h h1{
+  font-family:var(--font-titre);font-weight:800;
+  font-size:clamp(2rem,4.6vw,3.1rem);line-height:1.05;letter-spacing:-.035em;
+  color:var(--txt);margin:0;border:0;padding:0;text-transform:none;
+}
+.hero-h h1::after{ content:none }          /* le souligné de l'ancien héros */
+.hero-h-sur{
+  font-family:var(--font-titre);font-weight:700;
+  font-size:clamp(1.05rem,2vw,1.4rem);line-height:1.2;letter-spacing:-.02em;
+  color:var(--txt);margin:10px 0 0;
+}
+.hero-h-desc{
+  margin:14px 0 0;max-width:46ch;
+  font-size:1rem;line-height:1.6;color:var(--txt-2);
+}
+.hero-h-actes{ display:flex;flex-wrap:wrap;gap:12px;margin-top:22px }
+
+/* --- Le paysage --- */
+.hero-h-vue{
+  position:relative;overflow:hidden;
+  border-radius:var(--r-lg);border:1px solid var(--stroke);
+  aspect-ratio:16/10;min-height:200px;background:var(--surface-2);
+}
+.hhv-ciel{
+  position:absolute;inset:0;
+  background:linear-gradient(170deg, #DCEDEA 0%, #EAF3F0 42%, #FAF6EE 100%);
+}
+:root[data-theme="dark"] .hhv-ciel{
+  background:linear-gradient(170deg, #16304A 0%, #122840 48%, #0E1E31 100%);
+}
+.hhv-relief{ position:absolute;inset:auto 0 0 0;width:100%;height:72% }
+.hhv-l1{ fill:#9CC5C3 }
+.hhv-l2{ fill:#5FA3A5 }
+.hhv-l3{ fill:var(--primary) }
+:root[data-theme="dark"] .hhv-l1{ fill:#24525C }
+:root[data-theme="dark"] .hhv-l2{ fill:#1C4049 }
+:root[data-theme="dark"] .hhv-l3{ fill:#133038 }
+.hhv-soleil{
+  position:absolute;top:16%;right:17%;width:62px;height:62px;border-radius:50%;
+  background:radial-gradient(circle at 38% 36%, #FFF4DF 0%, #F6D9A8 62%, #EFC88A 100%);
+  box-shadow:0 0 44px rgba(246,217,168,.75);
+}
+:root[data-theme="dark"] .hhv-soleil{
+  background:radial-gradient(circle at 38% 36%, #FFF8EC 0%, #F3E0BC 60%, #E7CE9E 100%);
+  box-shadow:0 0 54px rgba(243,224,188,.38);
+}
+@media (prefers-reduced-motion:reduce){ .hhv-soleil{ box-shadow:none } }
+
+@media (min-width:900px){
+  .hero-h{ grid-template-columns:1.05fr .95fr;gap:40px;margin-bottom:34px }
+}

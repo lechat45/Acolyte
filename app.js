@@ -1211,7 +1211,7 @@ function openGame(){
     ctx.globalAlpha = 1;
     /* points gagnés, qui s'élèvent et s'effacent */
     ctx.textAlign = 'center';
-    ctx.font = '900 17px Fraunces, Georgia, serif';
+    ctx.font = '800 17px Manrope, system-ui, sans-serif';
     texts.forEach(t => {
       ctx.globalAlpha = Math.max(0, Math.min(1, t.life * 1.4));
       ctx.fillStyle = t.col;
@@ -4659,7 +4659,7 @@ function openQsPopup(qs){
   const pg = $('#qsProg');
   if(pg) pg.innerHTML = _qsList.map(() => '<i></i>').join('');
   $('#zoneQs').innerHTML = _qsList.map((q, i) => `
-    <h4 style="margin:14px 0 6px;font-family:'Fraunces',Georgia,serif">${i+1}. ${esc(q.texte)}</h4>
+    <h4 style="margin:14px 0 6px;font-family:var(--font-titre)">${i+1}. ${esc(q.texte)}</h4>
     <div class="chips even" data-qi="${i}">${q.options.map(o=>`<div class="chip qsopt" data-qi="${i}" data-a="${esc(o)}">${esc(o)}</div>`).join('')}</div>`).join('');
   $('#btnQsGo').disabled = true;
   $('#ovQs').classList.add('show');
@@ -5200,7 +5200,7 @@ async function ryCalendar(){
         const best = f.price.value === min;
         return `<div style="min-width:74px;text-align:center;padding:9px 6px;border-radius:var(--r-md);border:2px solid ${best?'var(--ok)':'var(--stroke)'};background:${best?'rgba(34,197,94,.15)':'var(--secondary)'}">
           <div style="font-size:.68rem;color:var(--txt-2)">${esc(frDate(f.day))}</div>
-          <div style="font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:.9rem;color:${best?'var(--ok)':'var(--txt)'}">${f.price.value.toFixed(0)}€</div>
+          <div style="font-family:var(--font-titre);font-weight:800;font-size:.9rem;color:${best?'var(--ok)':'var(--txt)'}">${f.price.value.toFixed(0)}€</div>
           ${f.soldOut?'<div style="font-size:.6rem;color:var(--danger)">complet</div>':''}
         </div>`;
       }).join('') +
@@ -6246,13 +6246,13 @@ async function buildDayMap(jour){
     g.fillStyle = '#101010'; g.beginPath(); g.arc(x + 2, y + 2, 15, 0, 7); g.fill();
     g.fillStyle = '#FFE600'; g.beginPath(); g.arc(x, y, 15, 0, 7); g.fill();
     g.strokeStyle = '#101010'; g.lineWidth = 3; g.stroke();
-    g.fillStyle = '#101010'; g.font = '900 16px Fraunces, Georgia'; g.textAlign = 'center';
+    g.fillStyle = '#101010'; g.font = '800 16px Manrope, system-ui'; g.textAlign = 'center';
     g.fillText(String(i + 1), x, y + 6); g.textAlign = 'left';
   });
   /* bandeau titre + légende + attribution */
   g.fillStyle = '#FFE600'; g.fillRect(0, 0, 768, 40);
   g.strokeStyle = '#101010'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, 765, 37);
-  g.fillStyle = '#101010'; g.font = '900 19px Fraunces, Georgia';
+  g.fillStyle = '#101010'; g.font = '800 19px Manrope, system-ui';
   g.fillText(`Jour ${jour} — ${String(jr.resume || '').slice(0, 44)}`, 14, 27);
   const leg = pts.map((p, i) => `${i + 1}·${String(p.nom).split(',')[0].slice(0, 18)}`).join('   ');
   g.fillStyle = 'rgba(255,255,255,.94)'; g.fillRect(0, 512 - 30, 768, 30);
@@ -7421,6 +7421,7 @@ function openNews(all){
 function closeNews(){
   lsSet(LS_SEEN_V, APP_VERSION);
   $('#ovNews')?.classList.remove('show');
+  try{ majCloche(); }catch(e){}
 }
 /* à l'ouverture : si la version a changé depuis la dernière visite → on annonce */
 function checkNews(){
@@ -7433,6 +7434,31 @@ function checkNews(){
   const ok = $('#newsOk'); if(ok) ok.onclick = closeNews;
   const pf = $('#pfNews'); if(pf) pf.onclick = () => openNews(true);
   const v = $('#pfVersion'); if(v) v.textContent = `· version ${APP_VERSION}`;
+  /* La cloche de la barre du haut : elle ouvre le même journal, et porte
+     une pastille tant que la version en cours n'a pas été vue. C'est la
+     seule chose qu'Acolyte ait à notifier — pas de badge décoratif. */
+  const cl = $('#ntCloche'); if(cl) cl.onclick = () => { openNews(true); majCloche(); };
+  /* « Nouveau voyage » ramène à l'étape 1 : c'est le vrai début d'un
+     voyage, pas un raccourci décoratif. */
+  const nv = $('#ntNouveau');
+  if(nv) nv.onclick = () => { switchCat('trip'); gotoStep(1); };
+  /* Les deux boutons du héros mènent à du réel : le premier au champ de
+     départ du questionnaire, le second au journal des destinations. */
+  const hc = $('#heroCreer');
+  if(hc) hc.onclick = () => {
+    switchCat('trip'); gotoStep(1);
+    const champ = $('#fDest') || $('#fFrom');
+    if(champ){ champ.scrollIntoView({ block:'center', behavior:'smooth' }); setTimeout(() => champ.focus(), 320); }
+  };
+  const hd = $('#heroDecouvrir');
+  if(hd) hd.onclick = () => switchCat('blog');
+  majCloche();
+}
+function majCloche(){
+  const p = $('#ntPoint'); if(!p) return;
+  let vu = null;
+  try{ vu = localStorage.getItem(LS_SEEN_V); }catch(e){}
+  p.hidden = (vu === APP_VERSION);
 }
 
 /* ============================================================
@@ -9773,7 +9799,7 @@ async function passPNG(){
   const CW = W - M * 2, CH = H - M * 2 - 12;        /* carte */
   const STUB = 300;                                  /* largeur du talon */
   /* la police du site, si elle est déjà chargée sur la page */
-  try{ await document.fonts.load('900 76px Fraunces'); await document.fonts.load('800 15px Fraunces'); }catch(e){}
+  try{ await document.fonts.load('800 76px Manrope'); await document.fonts.load('700 15px Manrope'); }catch(e){}
   const fit = (txt, size, max, weight = '700', fam = 'Inter, Arial') => {
     let px = size;
     do { g.font = `${weight} ${px}px ${fam}`; px -= 1; } while(g.measureText(txt).width > max && px > 9);
@@ -9795,18 +9821,18 @@ async function passPNG(){
   /* logo : carré noir + A jaune, comme l'écran de démarrage */
   g.fillStyle = K; g.fillRect(M + 34, M + 26, 46, 46);
   g.fillStyle = Y; g.textAlign = 'center';
-  g.font = '900 30px Fraunces, Georgia';
+  g.font = '800 30px Manrope, system-ui';
   g.fillText('A', M + 57, M + 60);
   g.textAlign = 'left';
   g.fillStyle = K;
-  g.font = '900 26px Fraunces, Georgia';
+  g.font = '800 26px Manrope, system-ui';
   g.fillText('ACOLYTE · BOARDING PASS', M + 96, M + 58);
   g.fillRect(M + 96, M + 68, 372, 5);
   /* route : départ à gauche, arrivée alignée à droite, avion au centre */
   const from = (p.from || 'PAR').slice(0, 3).toUpperCase();
   const to = (t.iata || t.nom.slice(0, 3)).toUpperCase();
   const bodyR = M + CW - STUB - 34;                  /* bord droit interne du corps */
-  g.font = '900 76px Fraunces, Georgia';
+  g.font = '800 76px Manrope, system-ui';
   /* espacement entre lettres : sinon le Y colle au O et le code devient illisible */
   const LS = 9;
   const spacedW = s => { let w = 0; for(const ch of s) w += g.measureText(ch).width + LS; return Math.max(0, w - LS); };
@@ -9847,7 +9873,7 @@ async function passPNG(){
     const x = M + 34 + (i % 3) * colW;
     const y = M + 232 + Math.floor(i / 3) * 74;
     g.fillStyle = 'rgba(16,16,16,0.62)';
-    g.font = '800 14px Fraunces, Georgia';
+    g.font = '800 14px Manrope, system-ui';
     g.fillText(c[0], x, y);
     g.fillStyle = K;
     g.font = fit(c[1], 25, colW - 24, '800');
@@ -9915,12 +9941,12 @@ async function passPNG(){
   g.fillStyle = K;
   g.textAlign = 'center';
   if(!qrOK){
-    g.font = '900 17px Fraunces, Georgia';
+    g.font = '800 17px Manrope, system-ui';
     g.fillText('QR INDISPONIBLE', sx, M + 150);
     g.font = '600 12px Inter, Arial';
     g.fillText('hors-ligne — regénère le ticket', sx, M + 172);
   }
-  g.font = '900 16px Fraunces, Georgia';
+  g.font = '800 16px Manrope, system-ui';
   /* le texte reflète le nouveau comportement : n'importe quel téléphone suffit */
   g.fillText('SCANNE-MOI', sx, M + 306);
   g.font = '600 12px Inter, Arial';
@@ -9930,7 +9956,7 @@ async function passPNG(){
   g.setLineDash([10, 8]); g.lineWidth = 3;
   g.beginPath(); g.moveTo(sx - 105, M + 358); g.lineTo(sx + 105, M + 358); g.stroke();
   g.setLineDash([]);
-  g.font = fit(`${from} ✈ ${to}`, 30, STUB - 60, '900', 'Fraunces, Georgia, serif');
+  g.font = fit(`${from} ✈ ${to}`, 30, STUB - 60, '900', 'Manrope, system-ui, sans-serif');
   g.fillText(`${from} ✈ ${to}`, sx, M + 402);
   g.font = '800 13px Inter, Arial';
   g.fillStyle = 'rgba(16,16,16,0.62)';
@@ -10051,7 +10077,7 @@ function pcTile(g, x, y, w, h){
   g.fillStyle = 'rgba(0,0,0,.4)'; g.textAlign = 'center';
   g.font = `${Math.round(u * 0.24)}px Arial`;
   g.fillText('📷', cx, cy + u * 0.02);
-  g.font = `900 ${Math.max(12, Math.round(u * 0.11))}px Fraunces, Georgia`;
+  g.font = `900 ${Math.max(12, Math.round(u * 0.11))}px Manrope, system-ui`;
   g.fillText('PHOTO', cx, cy + u * 0.28);
   g.textAlign = 'left';
 }
@@ -10062,7 +10088,7 @@ function pcPostmark(g, cx, cy, r, txt, sub){
   g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke();
   g.beginPath(); g.arc(cx, cy, r - 7, 0, 7); g.stroke();
   g.textAlign = 'center'; g.fillStyle = '#2b2b2b';
-  g.font = `900 ${Math.round(r * 0.30)}px Fraunces, Georgia`;
+  g.font = `900 ${Math.round(r * 0.30)}px Manrope, system-ui`;
   g.fillText(String(txt || '').slice(0, 9).toUpperCase(), cx, cy - 1);
   g.font = `700 ${Math.round(r * 0.21)}px Inter, Arial`;
   g.fillText(String(sub || '').slice(0, 12), cx, cy + r * 0.34);
@@ -10079,7 +10105,7 @@ function pcStamp(g, x, y){
   g.strokeRect(x + 5, y + 5, w - 10, h - 10); g.setLineDash([]);
   g.textAlign = 'center';
   g.fillStyle = '#C0392B'; g.font = '34px Arial'; g.fillText('✈', x + w / 2, y + h / 2 + 8);
-  g.fillStyle = '#2b2b2b'; g.font = '900 10px Fraunces, Georgia'; g.fillText('PAR AVION', x + w / 2, y + h - 14);
+  g.fillStyle = '#2b2b2b'; g.font = '800 10px Manrope, system-ui'; g.fillText('PAR AVION', x + w / 2, y + h - 14);
   g.textAlign = 'left';
 }
 /* La disposition dépend UNIQUEMENT du choix de l'utilisateur : les emplacements
@@ -10128,7 +10154,7 @@ function pcInfo(t){
   };
 }
 /* règle la taille de police pour tenir dans `max` */
-function pcFit(g, txt, max, start, weight = '900', fam = 'Fraunces, Georgia, serif'){
+function pcFit(g, txt, max, start, weight = '900', fam = 'Manrope, system-ui, sans-serif'){
   let fs = start;
   do { g.font = `${weight} ${fs}px ${fam}`; fs -= 2; } while(g.measureText(txt).width > max && fs > 14);
   return Math.min(g.measureText(txt).width, max);
@@ -10174,7 +10200,7 @@ function tplClassique(g, W, H, { S, I, style, layout, photos }){
   const tx = pad + 24;
   pcStamp(g, W - pad - 104, by + 16);
   g.textAlign = 'left';
-  g.font = '800 12px Fraunces, Georgia'; g.fillStyle = S.hlt;
+  g.font = '800 12px Manrope, system-ui'; g.fillStyle = S.hlt;
   pcTrack(g, 'CARNET DE VOYAGE', tx, by + 30, 3);          /* sur-titre */
   const tw = pcFit(g, I.nom, W - 2*pad - 150, 58);
   g.fillStyle = S.bandInk; g.fillText(I.nom, tx, by + 78);
@@ -10182,7 +10208,7 @@ function tplClassique(g, W, H, { S, I, style, layout, photos }){
   g.font = '800 22px Inter, Arial'; g.fillStyle = S.sub;
   g.fillText(`${I.pays}  ·  ${I.dates}`, tx, by + 124);
   if(I.hl.length){ g.font = '700 17px Inter, Arial'; g.fillStyle = S.hlt; g.fillText('📍 ' + I.hl.slice(0,3).join('  ·  ').slice(0,62), tx, by + 152); }
-  g.textAlign = 'right'; g.font = '900 19px Fraunces, Georgia'; g.fillStyle = S.bandInk;
+  g.textAlign = 'right'; g.font = '800 19px Manrope, system-ui'; g.fillStyle = S.bandInk;
   g.fillText('ACOLYTE ✈', W - pad - 20, by + bandH - 14); g.textAlign = 'left';
 }
 
@@ -10196,7 +10222,7 @@ function tplMagazine(g, W, H, { S, I, layout, photos, style }){
   const tx = 48;
   g.textAlign = 'left';
   /* sur-titre façon magazine, en haut à gauche */
-  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '800 13px Fraunces, Georgia';
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '800 13px Manrope, system-ui';
   pcTrack(g, 'CARNET DE VOYAGE', tx, 56, 4);
   const tw = pcFit(g, I.nom, W - 210, 86);
   g.fillStyle = '#fff'; g.fillText(I.nom, tx, H - 112);
@@ -10205,7 +10231,7 @@ function tplMagazine(g, W, H, { S, I, layout, photos, style }){
   g.fillText(`${I.pays}  ·  ${I.dates}`, tx, H - 54);
   if(I.hl.length){ g.font = '700 18px Inter, Arial'; g.fillStyle = 'rgba(255,255,255,.72)'; g.fillText('📍 ' + I.hl.slice(0,3).join('  ·  ').slice(0,64), tx, H - 22); }
   pcStamp(g, W - 132, 32);
-  g.textAlign = 'right'; g.font = '900 18px Fraunces, Georgia'; g.fillStyle = 'rgba(255,255,255,.85)';
+  g.textAlign = 'right'; g.font = '800 18px Manrope, system-ui'; g.fillStyle = 'rgba(255,255,255,.85)';
   g.fillText('ACOLYTE ✈', W - 40, H - 22); g.textAlign = 'left';
 }
 
@@ -10233,7 +10259,7 @@ function tplDos(g, W, H, { S, I, photos, style }){
   /* droite : timbre + lignes d'adresse */
   const rx = mid + 46;
   /* en-tête façon vraie carte postale */
-  g.font = '800 13px Fraunces, Georgia'; g.fillStyle = S.hlt;
+  g.font = '800 13px Manrope, system-ui'; g.fillStyle = S.hlt;
   pcTrack(g, 'CARTE POSTALE · CORRESPONDANCE', rx, pad + 22, 3);
   pcStamp(g, W - pad - 96, pad + 44);
   pcPostmark(g, W - pad - 124, pad + 88, 38, I.pays.slice(0, 3), I.dates.slice(0, 5));
@@ -10245,7 +10271,7 @@ function tplDos(g, W, H, { S, I, photos, style }){
   g.font = '700 18px Inter, Arial'; g.fillStyle = S.sub;
   g.fillText(I.pays, rx + 6, H / 2 + 34);
   g.fillText(I.dates, rx + 6, H / 2 + 80);
-  g.textAlign = 'right'; g.font = '900 17px Fraunces, Georgia'; g.fillStyle = S.ink;
+  g.textAlign = 'right'; g.font = '800 17px Manrope, system-ui'; g.fillStyle = S.ink;
   g.fillText('ACOLYTE ✈', W - pad, H - pad + 10); g.textAlign = 'left';
 }
 
@@ -10272,7 +10298,7 @@ function tplPellicule(g, W, H, { S, I, layout, photos, style }){
   g.fillText(`${I.pays}  ·  ${I.dates}`, tx, y + 56);
   if(I.hl.length){ g.font = '700 17px Inter, Arial'; g.fillStyle = S.hlt; g.fillText('📍 ' + I.hl.slice(0,3).join('  ·  ').slice(0,58), tx, y + 88); }
   pcStamp(g, W - 138, H - 156);
-  g.textAlign = 'right'; g.font = '900 17px Fraunces, Georgia'; g.fillStyle = S.ink;
+  g.textAlign = 'right'; g.font = '800 17px Manrope, system-ui'; g.fillStyle = S.ink;
   g.fillText('ACOLYTE ✈', W - 44, H - 26); g.textAlign = 'left';
 }
 
@@ -10289,7 +10315,7 @@ function tplMosaique(g, W, H, { S, I, photos, style }){
   g.fillStyle = S.accent; g.fillRect(bx, by, 8, bh);
   const tx = bx + 26;
   g.textAlign = 'left'; g.fillStyle = S.bg;
-  g.font = '800 12px Fraunces, Georgia'; pcTrack(g, 'CARNET DE VOYAGE', tx, by + 30, 3);
+  g.font = '800 12px Manrope, system-ui'; pcTrack(g, 'CARNET DE VOYAGE', tx, by + 30, 3);
   pcFit(g, I.nom, bw - 52, 46); g.fillStyle = S.bg; g.fillText(I.nom, tx, by + 76);
   g.font = '800 19px Inter, Arial'; g.globalAlpha = .8;
   g.fillText(`${I.pays}  ·  ${I.dates}`, tx, by + 108);
@@ -10297,7 +10323,7 @@ function tplMosaique(g, W, H, { S, I, photos, style }){
   g.globalAlpha = 1;
   pcStamp(g, W - pad - 100, pad + 14);
   /* signature posée sur une photo → blanc + ombre pour rester lisible */
-  g.textAlign = 'right'; g.font = '900 16px Fraunces, Georgia';
+  g.textAlign = 'right'; g.font = '800 16px Manrope, system-ui';
   g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText('ACOLYTE ✈', W - pad - 11, H - pad - 7);
   g.fillStyle = '#fff'; g.fillText('ACOLYTE ✈', W - pad - 12, H - pad - 8); g.textAlign = 'left';
 }
@@ -10305,7 +10331,7 @@ function tplMosaique(g, W, H, { S, I, photos, style }){
 /* ---- MODÈLE 6 : Passeport (page de passeport + tampon d'entrée) ---- */
 function tplPasseport(g, W, H, { S, I, photos }){
   const pad = 42;
-  g.textAlign = 'left'; g.fillStyle = S.ink; g.font = '900 20px Fraunces, Georgia';
+  g.textAlign = 'left'; g.fillStyle = S.ink; g.font = '800 20px Manrope, system-ui';
   pcTrack(g, 'PASSEPORT · PASSPORT', pad, pad + 24, 4);
   g.strokeStyle = S.ink; g.globalAlpha = .35; g.lineWidth = 2;
   g.beginPath(); g.moveTo(pad, pad + 42); g.lineTo(W - pad, pad + 42); g.stroke(); g.globalAlpha = 1;
@@ -10337,7 +10363,7 @@ function tplMinimal(g, W, H, { S, I, photos, style }){
   g.strokeStyle = S.ink; g.lineWidth = 2; g.strokeRect(px, py, pw, ph);
   g.textAlign = 'center';
   const cy = py + ph + 62;
-  g.fillStyle = S.hlt; g.font = '800 11px Fraunces, Georgia';
+  g.fillStyle = S.hlt; g.font = '800 11px Manrope, system-ui';
   const ew = g.measureText('CARNET DE VOYAGE').width + 15 * 3;
   pcTrack(g, 'CARNET DE VOYAGE', W / 2 - ew / 2, cy - 34, 3);
   pcFit(g, I.nom, W * .8, 52); g.fillStyle = S.ink; g.fillText(I.nom, W / 2, cy);
@@ -10345,7 +10371,7 @@ function tplMinimal(g, W, H, { S, I, photos, style }){
   g.font = '700 20px Inter, Arial'; g.fillStyle = S.sub;
   g.fillText(`${I.pays}  ·  ${I.dates}`, W / 2, cy + 60);
   if(I.hl.length){ g.font = '600 16px Inter, Arial'; g.fillStyle = S.hlt; g.fillText(I.hl.slice(0,3).join('   ·   ').slice(0,56), W / 2, cy + 92); }
-  g.font = '900 15px Fraunces, Georgia'; g.fillStyle = S.ink; g.fillText('ACOLYTE ✈', W / 2, H - 34);
+  g.font = '800 15px Manrope, system-ui'; g.fillStyle = S.ink; g.fillText('ACOLYTE ✈', W / 2, H - 34);
   g.textAlign = 'left';
 }
 
@@ -10355,7 +10381,7 @@ function tplVertical(g, W, H, { S, I, layout, photos, style }){
   pcDrawPhotos(g, pcLayoutRects({ x: pad, y: pad, w: W - 2*pad, h: pzh }, layout), photos, style, S);
   const tx = pad + 8; let y = pad + pzh + 78;
   g.textAlign = 'left';
-  g.font = '800 12px Fraunces, Georgia'; g.fillStyle = S.hlt;
+  g.font = '800 12px Manrope, system-ui'; g.fillStyle = S.hlt;
   pcTrack(g, 'CARNET DE VOYAGE', tx, y - 48, 3);
   const tw = pcFit(g, I.nom, W - 2*pad - 16, 58);
   g.fillStyle = S.ink; g.fillText(I.nom, tx, y);
@@ -10366,7 +10392,7 @@ function tplVertical(g, W, H, { S, I, layout, photos, style }){
   let ly = y + 100;
   I.hl.slice(0, 4).forEach(l => { if(ly < H - 70){ g.fillText('📍 ' + String(l).slice(0, 28), tx, ly); ly += 30; } });
   pcStamp(g, W - pad - 96, pad + pzh + 16);
-  g.textAlign = 'right'; g.font = '900 17px Fraunces, Georgia'; g.fillStyle = S.ink;
+  g.textAlign = 'right'; g.font = '800 17px Manrope, system-ui'; g.fillStyle = S.ink;
   g.fillText('ACOLYTE ✈', W - pad - 8, H - 28); g.textAlign = 'left';
 }
 
@@ -11728,7 +11754,7 @@ function pongInit(){
 
     /* bulle de bande dessinée : c'est la mascotte qui parle */
     if(bulle){
-      g.font = '900 16px Fraunces, Georgia, serif';
+      g.font = '800 16px Manrope, system-ui, sans-serif';
       const w = g.measureText(bulle.txt).width + 22;
       const bx = Math.max(8, Math.min(W - w - 8, ball.x - w / 2));
       const by = Math.max(8, ball.y - ball.r - 42);
@@ -11935,7 +11961,7 @@ function packInit(){
       if(it.pris) continue;
       g.font = '40px serif';
       g.fillText(it.o.ico, it.x, it.y - 6);
-      g.font = '900 12px Fraunces, Georgia, serif';
+      g.font = '800 12px Manrope, system-ui, sans-serif';
       g.fillStyle = '#F4F3EF';
       g.fillText(isEN() ? it.o.en : it.o.fr, it.x, it.y + 26);
     }
@@ -11943,7 +11969,7 @@ function packInit(){
     /* gains et pertes */
     for(const f of flashs){
       g.globalAlpha = Math.max(0, f.t);
-      g.font = '900 20px Fraunces, Georgia, serif';
+      g.font = '800 20px Manrope, system-ui, sans-serif';
       g.fillStyle = f.bon ? '#4ADE80' : '#FF5F5F';
       g.fillText(f.txt, f.x, f.y - 40 - (1 - f.t) * 26);
       g.globalAlpha = 1;
@@ -11957,7 +11983,7 @@ function packInit(){
       g.strokeStyle = '#101010'; g.lineWidth = 4;
       g.strokeRect(0, H / 2 - 42, W, 74);
       g.fillStyle = '#101010';
-      g.font = '900 26px Fraunces, Georgia, serif';
+      g.font = '800 26px Manrope, system-ui, sans-serif';
       g.fillText((isEN() ? 'Now: ' : 'Cap sur : ') + dest.ico + ' ' + destNom(dest), W / 2, H / 2 - 4);
       g.globalAlpha = 1;
     }
