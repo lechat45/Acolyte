@@ -60,7 +60,12 @@
   --danger: #B33023;
 
   --txt:    #17263C;        /* bleu nuit — 14,5:1 sur l'ivoire */
-  --txt-2:  #6A7380;        /* 4,56:1 — ne pas remonter, voir l'avertissement */
+  /* ⚠️ #6A7380 passait sur l'ivoire (4,56) mais PAS sur les surfaces
+     légèrement teintées : 3,87 sur le gris des badges du profil, 4,22 sur
+     le fond rosé de la zone sensible. Le texte secondaire se pose partout,
+     pas seulement sur du blanc. À #5C6573 : 5,60 sur l'ivoire, 5,89 sur
+     blanc, 4,75 sur le gris des badges. */
+  --txt-2:  #5C6573;
   --stroke:   #E9E7E1;
   --stroke-2: #D8D5CC;
 
@@ -6710,3 +6715,28 @@ body::before{
   background:var(--primary);color:var(--primary-ink);
 }
 .ap-env:hover{ background:var(--primary-txt);color:#fff }
+
+/* ============================================================
+   H5. LES APLATS D'ACCENT, RELUS POUR LE TURQUOISE
+   ------------------------------------------------------------
+   Ces cartes étaient jaunes : on y écrivait donc en encre SOMBRE,
+   codée en dur (#101010). Le turquoise est une couleur foncée — la
+   même encre y tombe à 1,0:1, illisible. Elles passent à l'encre de
+   l'accent, qui est blanche.
+============================================================ */
+.ph-card h3,
+.ph-card p{ color:var(--primary-ink) }
+/* ⚠️ PAS D'OPACITÉ SUR CE TEXTE. Je l'avais mise à .92 pour adoucir le
+   blanc : ça suffisait à faire tomber le paragraphe à 4,27:1, sous le
+   seuil. Sur un aplat d'accent, l'encre est pleine ou elle n'est pas. */
+.ph-card p{ opacity:1 }
+/* L'étiquette avait un fond noir codé en dur avec l'accent écrit dessus —
+   lisible sur le jaune d'avant, à 1,08:1 sur le turquoise sombre. Elle
+   prend un fond translucide qui marche sur les deux thèmes. */
+/* Un blanc translucide sur le turquoise clair ne donnait que 3,19:1 —
+   trop peu pour une étiquette de 10 px. On INVERSE : fond plein de
+   l'encre d'accent, texte dans l'accent. Les deux thèmes suivent. */
+.ph-eyebrow{
+  background:var(--primary-ink);
+  color:var(--primary);
+}
