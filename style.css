@@ -107,49 +107,6 @@
 
 /* ---- Thème sombre : le même dessin, retourné. Le bleu nuit de la
    référence devient le fond, le turquoise s'éclaircit juste assez. ---- */
-:root[data-theme="dark"] {
-  --bg:          #101A28;
-  --bg-2:        #152235;
-  --secondary:   #17263C;   /* le bleu nuit de la référence : la carte */
-  --surface-2:   #1E2F49;
-
-  --primary:     #2E9FA4;
-  --primary-ink: #06161B;
-  --primary-txt: #6FD0D4;   /* turquoise écrit sur fond sombre */
-  --on-accent:   #06161B;
-
-  --accent-cyan:   #6FD0D4;
-  --accent-violet: #B49BF0;
-  --accent-orange: #F2954B;
-  --ok:     #5BC98B;
-  --danger: #E9695F;
-
-  --txt:    #EEF2F7;
-  --txt-2:  #9BA7B8;        /* 6,6:1 sur --bg */
-  --stroke:   rgba(255,255,255,.10);
-  --stroke-2: rgba(255,255,255,.20);
-
-  --field-focus: #203450;
-  --card-hover:  #1B2C45;
-  --locked:      #152235;
-  --tab-on:      #1E2F49;
-
-  --shadow:    0 1px 2px rgba(0,0,0,.30), 0 6px 20px rgba(0,0,0,.34);
-  --shadow-lg: 0 2px 4px rgba(0,0,0,.30), 0 18px 48px rgba(0,0,0,.46);
-  --glow:      0 0 0 3px rgba(46,159,164,.30);
-
-  --money:      #1C3B45;
-  --money-ink:  #8FDFE3;
-  --warn:       #F2954B;
-  --paper:      #17263C;
-  --paper-edge: rgba(255,255,255,.10);
-  --ombre-dure:   var(--shadow);
-  --ombre-dure-h: var(--shadow-lg);
-  --ombre-dure-p: 0 1px 2px rgba(0,0,0,.40);
-  --verifie:    #5BC98B;
-
-  color-scheme: dark;
-}
 
 /* ⚠️ L'encre posée sur les aplats jaunes (et les autres aplats vifs) est
    regroupée EN FIN DE FICHIER — chercher « ENCRE SUR LES APLATS VIFS ».
@@ -499,17 +456,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   /* ciel doux du jour, du haut clair vers l'horizon chaud */
   background:linear-gradient(#dff1fb 0%, #eaf6fb 55%, #fdf3d6 100%);
 }
-:root[data-theme="dark"] .travel-scene{
-  background:linear-gradient(#0e1630 0%, #1a2140 55%, #2a2140 100%);
-}
 /* ciel étoilé qui scintille en mode nuit — une petite constellation */
-:root[data-theme="dark"] .travel-scene::after{
-  content:'';position:absolute;top:7px;left:15px;width:2px;height:2px;border-radius:50%;
-  background:#fff;pointer-events:none;
-  box-shadow:18px 5px 0 #fff, 37px -1px 0 rgba(255,255,255,.7), 58px 7px 0 #fff,
-             78px 2px 0 rgba(255,255,255,.6), 30px 12px 0 rgba(255,255,255,.55), 92px 9px 0 #fff;
-  animation:twinkle 3.2s ease-in-out infinite;
-}
 @keyframes twinkle{0%,100%{opacity:.85}50%{opacity:.35}}
 :root.no-motion .travel-scene::after{animation:none}
 /* nuages qui dérivent lentement */
@@ -518,7 +465,6 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   height:6px;box-shadow:0 0 0 3px #fff;
   animation:cloudDrift 14s linear infinite;
 }
-:root[data-theme="dark"] .cloud{background:#c9d2f0;box-shadow:0 0 0 3px #c9d2f0;opacity:.25}
 .cloud.c1{top:9px;width:16px;animation-duration:16s}
 .cloud.c2{top:20px;width:11px;animation-duration:11s;animation-delay:-5s;opacity:.6}
 @keyframes cloudDrift{ from{transform:translateX(120px)} to{transform:translateX(-30px)} }
@@ -531,11 +477,8 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 }
 .mon-svg{height:32px;width:auto;display:block}
 .mon{fill:var(--stroke);opacity:.62}
-:root[data-theme="dark"] .mon{fill:#aeb6e0;opacity:.6}
 .mon-hole{fill:#fdf3d6;opacity:.9}   /* l'horloge de Big Ben : un trou clair */
-:root[data-theme="dark"] .mon-hole{fill:#2a2140}
 .mon-line{stroke:var(--stroke);stroke-width:1.6;fill:none;opacity:.62}  /* bras de la torche */
-:root[data-theme="dark"] .mon-line{stroke:#aeb6e0}
 @keyframes monScroll{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
 /* la mascotte flotte au-dessus de l'horizon, léger balancement de voyage */
 .travel-scene .mascot{
@@ -570,7 +513,6 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 
 /* ===== Skeletons de chargement ===== */
 .skel{background:linear-gradient(90deg,var(--secondary) 25%,rgba(0,0,0,.06) 37%,var(--secondary) 63%);background-size:400% 100%;animation:skelShimmer 1.3s ease infinite;border-radius:var(--r-sm);display:block}
-:root[data-theme="dark"] .skel,html[data-theme="dark"] .skel{background:linear-gradient(90deg,rgba(255,255,255,.06) 25%,rgba(255,255,255,.14) 37%,rgba(255,255,255,.06) 63%);background-size:400% 100%}
 @keyframes skelShimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
 @media (prefers-reduced-motion: reduce){ .skel{animation:none} }
 :root.no-motion .skel{animation:none}
@@ -3985,9 +3927,6 @@ header{position:relative;z-index:5}
    thème sombre. Aucun JavaScript ne synchronise ça : data-theme est déjà posé
    sur <html> par applyTheme(), et un dessin de trop resterait affiché si le
    thème changeait sans repasser par le bouton (réglage système, autre onglet). */
-.nt-moon,.nt-sun{display:none}
-:root[data-theme="light"] .nt-moon{display:block}
-:root[data-theme="dark"]  .nt-sun{display:block}
 
 /* ============================================================
    ÉCRAN DE COMPTE — maquette 1g
@@ -6521,24 +6460,14 @@ body::before{
   position:absolute;inset:0;
   background:linear-gradient(170deg, #DCEDEA 0%, #EAF3F0 42%, #FAF6EE 100%);
 }
-:root[data-theme="dark"] .hhv-ciel{
-  background:linear-gradient(170deg, #16304A 0%, #122840 48%, #0E1E31 100%);
-}
 .hhv-relief{ position:absolute;inset:auto 0 0 0;width:100%;height:72% }
 .hhv-l1{ fill:#9CC5C3 }
 .hhv-l2{ fill:#5FA3A5 }
 .hhv-l3{ fill:var(--primary) }
-:root[data-theme="dark"] .hhv-l1{ fill:#24525C }
-:root[data-theme="dark"] .hhv-l2{ fill:#1C4049 }
-:root[data-theme="dark"] .hhv-l3{ fill:#133038 }
 .hhv-soleil{
   position:absolute;top:16%;right:17%;width:62px;height:62px;border-radius:50%;
   background:radial-gradient(circle at 38% 36%, #FFF4DF 0%, #F6D9A8 62%, #EFC88A 100%);
   box-shadow:0 0 44px rgba(246,217,168,.75);
-}
-:root[data-theme="dark"] .hhv-soleil{
-  background:radial-gradient(circle at 38% 36%, #FFF8EC 0%, #F3E0BC 60%, #E7CE9E 100%);
-  box-shadow:0 0 54px rgba(243,224,188,.38);
 }
 @media (prefers-reduced-motion:reduce){ .hhv-soleil{ box-shadow:none } }
 
@@ -6593,9 +6522,6 @@ body::before{
 .av-photo-vide{
   display:grid;place-items:center;
   background:linear-gradient(145deg, #CFE4E1 0%, #E8F1EE 55%, #F6F1E6 100%);
-}
-:root[data-theme="dark"] .av-photo-vide{
-  background:linear-gradient(145deg, #1B3B4A 0%, #162E42 55%, #122537 100%);
 }
 .av-initiale{
   font-family:var(--font-titre);font-weight:800;font-size:2.4rem;

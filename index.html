@@ -21,8 +21,10 @@
      X-Frame-Options dans le fichier _headers. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://upload.wikimedia.org https://thumb.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://lechat45--2ec0f9a6860b11f183cf1607ee4eb77e.web.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta name="theme-color" content="#F5F4F0" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<!-- Un seul thème, donc une seule couleur de barre système : l'ivoire
+     d'Horizon. (applyTheme la repose au démarrage, pour les navigateurs
+     qui ignorent la balise statique.) -->
+<meta name="theme-color" content="#FAF9F6">
 <link rel="manifest" href="manifest.json">
 <!-- Icône de l'onglet. ⚠️ Il n'y en avait AUCUNE : sans balise `icon`, Chrome
      cherche /favicon.ico à la racine du domaine, pas dans le sous-chemin
@@ -230,20 +232,7 @@
       <button data-cat="ia"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 13.6 8l4.8 1.6-4.8 1.6L12 16l-1.6-4.8L5.6 9.6 10.4 8 12 3.2Z"/><path d="M18.4 14.8l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg>Assistant</button>
     </nav>
 
-    <!-- Le côté droit de la barre du haut (maquette 1b) : le thème,
-         l'installation, le compte.
-         ⚠️ Il n'existe QUE sur ordinateur (display:none en dessous de 900 px).
-         Sur téléphone, la barre du bas n'a de place que pour les quatre
-         onglets, et ces trois réglages sont déjà dans l'onglet Profil : rien
-         n'est perdu, ce n'est pas un raccourci réservé au bureau. -->
-    <div class="navtools">
-      <button id="ntTheme" type="button" title="Changer de thème" aria-label="Changer de thème">
-        <!-- Deux dessins, un seul visible : la LUNE en thème clair (elle
-             annonce où l'on va), le SOLEIL en thème sombre. Le choix se fait
-             en CSS sur :root[data-theme] — aucun JavaScript à synchroniser. -->
-        <svg class="ico nt-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 14.6A8.6 8.6 0 1 1 9.4 3.8a6.7 6.7 0 0 0 10.8 10.8Z"/></svg>
-        <svg class="ico nt-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/></svg>
-      </button>
+    
       <button id="ntInstall" type="button" title="Installer l'application" aria-label="Installer l'application" style="display:none">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11.8"/><path d="m7 10.5 5 5 5-5M4.2 20h15.6"/></svg>
       </button>
@@ -950,11 +939,6 @@
          par défaut » — deux sujets qui n'ont rien à voir. -->
     <div class="pf-panel hidden" id="pfPanLook">
       <div class="card">
-        <h3 style="margin:0 0 6px">Thème</h3>
-        <p class="hint" style="margin:0 0 8px">« Système » suit automatiquement le thème clair/sombre de ton appareil.</p>
-        <div class="chips" id="stTheme"></div>
-
-        <div class="divider"></div>
 
         <h3 style="margin:0 0 6px">Taille du texte</h3>
         <div class="field">
@@ -1076,10 +1060,6 @@
       <!-- ⚠️ « Vol de nuit » bascule le thème : il vit ici pour compatibilité
            (le bouton est câblé dans app.js), mais le vrai réglage de thème est
            dans l'onglet Apparence. -->
-      <div class="item act">
-        <div class="head"><div class="emo" data-ico="monde"></div><h4>Mode "Vol de nuit"</h4></div>
-        <div class="side"><button class="btn sm ghost" id="pfTheme">Activer / désactiver</button></div>
-      </div>
       </div>
     </div>
 

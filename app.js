@@ -8458,7 +8458,7 @@ const OPT = {
   stSurPlace: { key:'surPlace', items: Object.entries(SUR_PLACE).map(([k, v]) => [k, v.nom]) },
   stAcces:  { key:'acces',  items:[['non','Aucun besoin'],['oui','Mobilité réduite']] },
   stEco:    { key:'eviter', multi:true, items:[['avion','Éviter l\'avion'],['train','Éviter le train'],['voiture','Éviter la voiture']] },
-  stTheme:  { key:'theme',  items:[['auto','Système'],['light','Clair'],['dark','Sombre']] },
+
   stIA:     { key:null,     toggles:[['verif','Double vérification du plan'],['reels','Données réelles (météo, trains, fériés)']] },
   stUI:     { key:null,     toggles:[['motion','Animations']] }
 };
@@ -9605,14 +9605,22 @@ const _e27 = $('#pfLogout'); if(_e27) _e27.onclick = async () => {
   toast(isEN() ? 'See you soon 👋' : 'À bientôt 👋');
   requireAuth();
 };
+/* ============================================================
+   LE THÈME — IL N'Y EN A PLUS QU'UN
+   ------------------------------------------------------------
+   Acolyte avait trois modes : système, clair, sombre. Horizon est une
+   direction artistique CLAIRE — ivoire, cartes blanches, bleu nuit à
+   l'encre — et le sombre a été retiré : maintenir deux jeux de couleurs
+   doublait chaque décision et chaque vérification de contraste pour une
+   version que la nouvelle identité ne prévoit pas.
+
+   ⚠️ themeMode() et applyTheme() RESTENT, réduits à « clair ». Une
+   quinzaine d'endroits les appellent encore ; les supprimer aurait
+   demandé de toucher à tout ce code pour rien, et un appel oublié aurait
+   planté le démarrage. Ici, ils ne font plus qu'affirmer le clair.
+============================================================ */
 const LS_THEME = 'acolite_theme';
-const _sysDark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-/* 3 modes : auto (suit le système) · light · dark.
-   On reste compatible avec l'ancien réglage stocké dans LS_THEME. */
-function themeMode(){
-  if(SET?.theme) return SET.theme;
-  return localStorage.getItem(LS_THEME) === 'dark' ? 'dark' : 'auto';
-}
+function themeMode(){ return 'light'; }
 /* ============================================================
    PLATEFORME — POUR QUE LA BARRE ET LES BOUTONS SOIENT « CHEZ EUX »
    ------------------------------------------------------------
@@ -9641,31 +9649,22 @@ function themeMode(){
 })();
 
 function applyTheme(){
-  const mode = themeMode();
-  const dark = mode === 'dark' || (mode === 'auto' && _sysDark());
-  /* ⚠️ Le SOMBRE est désormais le thème par défaut du CSS : c'est donc le
-     CLAIR qui doit être annoncé explicitement. Écrire une chaîne vide, comme
-     avant, laissait le site en sombre alors que l'appareil demandait le clair. */
-  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  /* On continue de POSER data-theme="light" : des règles le nomment encore,
+     et un attribut absent les désactiverait en silence. */
+  document.documentElement.dataset.theme = 'light';
   document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove());
   const m = document.createElement('meta');
   m.name = 'theme-color';
-  m.content = dark ? '#121212' : '#F5F4F0';
+  m.content = '#FAF9F6';
   document.head.appendChild(m);
 }
 /* le mode « Système » réagit en direct au changement de thème de l'appareil */
-window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if(themeMode() === 'auto') applyTheme(); });
+/* Plus d'écoute du thème système : il n'y a plus qu'un thème. */
 /* Une seule bascule pour deux boutons : celui du profil et la lune de la barre
    du haut. Écrite comme fonction nommée, et non recopiée dans le second
    gestionnaire : deux copies, c'est la garantie qu'un jour l'une des deux
    oubliera saveSettings(). */
-function basculeTheme(){
-  const dark = document.documentElement.dataset.theme === 'dark';
-  SET.theme = dark ? 'light' : 'dark';
-  saveSettings(); renderSettings();
-  toast(SET.theme === 'dark' ? '🌙 Vol de nuit activé' : '☀️ Retour au jour');
-}
-const _e28 = $('#pfTheme'); if(_e28) _e28.onclick = basculeTheme;
+
 applyTheme();
 
 /* Changement de mot de passe : on passe par un code envoyé à l'adresse.
@@ -12942,7 +12941,6 @@ function discordURL(){
   return /^https:\/\/(discord\.gg|discord\.com|invite\.gg)\//i.test(u) ? u : '';
 }
 {
-  const t = $('#ntTheme'); if(t) t.onclick = basculeTheme;
   const i = $('#ntInstall'); if(i) i.onclick = () => openInstall();
   const i2 = $('#pfInstTop'); if(i2) i2.onclick = () => openInstall();
   /* Un seul gestionnaire pour les deux boutons : la validation de l'adresse et
