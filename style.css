@@ -6633,3 +6633,80 @@ body::before{
   padding:26px;border:1.5px dashed var(--stroke-2);border-radius:var(--r-lg);
 }
 .av-vide p{ margin:0;max-width:52ch;color:var(--txt-2);line-height:1.55 }
+
+/* ============================================================
+   H4. APERÇU D'ITINÉRAIRE ET COPILOTE
+   ------------------------------------------------------------
+   Deux cartes côte à côte, comme la rangée du bas de la référence.
+   Elles montrent et renvoient : la frise éditable et le fil de
+   conversation vivent ailleurs, une seule fois chacun.
+============================================================ */
+.sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+}
+.ap-rangee{ display:grid;grid-template-columns:1fr;gap:18px;margin-top:18px }
+@media (min-width:860px){ .ap-rangee{ grid-template-columns:1fr 1fr } }
+
+.ap-carte{
+  display:flex;flex-direction:column;gap:10px;padding:18px 20px;
+  background:var(--secondary);border:1px solid var(--stroke);
+  border-radius:var(--r-lg);box-shadow:var(--shadow);
+}
+.ap-carte h3{
+  margin:0;font-family:var(--font-titre);font-weight:700;font-size:1.05rem;
+  letter-spacing:-.015em;color:var(--txt);text-transform:none;
+}
+.ap-jour{ margin:0;font-size:.82rem;color:var(--txt-2) }
+.ap-vide,.ap-note{ margin:0;font-size:.84rem;line-height:1.5;color:var(--txt-2) }
+
+/* --- la frise --- */
+.ap-frise{ list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column }
+.ap-frise li{
+  display:grid;grid-template-columns:54px 14px 1fr;align-items:start;
+  gap:10px;padding:0 0 16px;position:relative;
+}
+.ap-frise li:last-child{ padding-bottom:0 }
+/* le trait qui relie les points, tiré du point courant au suivant */
+.ap-frise li:not(:last-child)::before{
+  content:'';position:absolute;left:60px;top:14px;bottom:0;
+  width:2px;background:var(--stroke);
+}
+.ap-h{
+  font-family:var(--font-texte);font-size:.78rem;font-weight:600;
+  color:var(--txt-2);padding-top:1px;
+}
+.ap-pt{
+  width:10px;height:10px;margin-top:4px;border-radius:50%;
+  background:var(--primary);position:relative;z-index:1;
+  box-shadow:0 0 0 3px var(--secondary);
+}
+.ap-txt{ font-size:.88rem;line-height:1.4;color:var(--txt) }
+.ap-lieux{ list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:7px }
+.ap-lieux li{ display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--txt) }
+.ap-lieux svg{ flex:none;color:var(--primary-txt) }
+
+/* --- le copilote --- */
+.ap-copilote{ justify-content:space-between }
+.ap-fil{ display:flex;flex-direction:column;gap:9px;margin:2px 0 4px }
+.ap-bulle{ display:flex;font-size:.84rem;line-height:1.45 }
+.ap-bulle span{ padding:9px 12px;border-radius:var(--r-md);max-width:92% }
+.ap-moi{ justify-content:flex-end }
+.ap-moi span{ background:var(--surface-2);color:var(--txt);border-bottom-right-radius:4px }
+.ap-aco span{ background:var(--money);color:var(--money-ink);border-bottom-left-radius:4px }
+.ap-saisie{
+  display:flex;align-items:center;gap:8px;margin-top:auto;
+  border:1px solid var(--stroke);border-radius:999px;padding:4px 4px 4px 14px;
+  background:var(--secondary);
+}
+.ap-saisie:focus-within{ border-color:var(--primary);box-shadow:var(--glow) }
+.ap-saisie input{
+  flex:1;min-width:0;border:0;background:none;outline:none;
+  font-family:var(--font-texte);font-size:.86rem;color:var(--txt);padding:8px 0;
+}
+.ap-env{
+  flex:none;display:grid;place-items:center;width:34px;height:34px;
+  border:0;border-radius:50%;cursor:pointer;
+  background:var(--primary);color:var(--primary-ink);
+}
+.ap-env:hover{ background:var(--primary-txt);color:#fff }

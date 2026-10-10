@@ -1827,6 +1827,122 @@ function avCarteHTML(x, i){
   </article>`;
 }
 
+/* ============================================================
+   APERÇU D'ITINÉRAIRE ET COPILOTE — la rangée du bas de la référence
+   ------------------------------------------------------------
+   Deux cartes côte à côte sous les voyages : à gauche une journée en
+   frise, à droite l'assistant.
+
+   ⚠️ CE SONT DES APERÇUS, PAS DES COPIES. La frise complète (timelineHTML)
+   et l'assistant complet (#iaFil) existent déjà et savent éditer. En
+   refaire une seconde version ici aurait dédoublé l'état : deux fils de
+   conversation, deux journées modifiables, et la certitude qu'ils
+   divergent. Ces cartes MONTRENT, et renvoient vers le vrai outil.
+
+   ⚠️ Rien n'est inventé : s'il n'y a pas de journée détaillée, on le dit
+   et on propose de la générer, au lieu d'afficher trois horaires
+   plausibles qui n'existent nulle part.
+============================================================ */
+
+/* La journée à montrer : celle d'aujourd'hui pendant le séjour, la
+   première sinon. */
+function apJourVise(){
+  const prog = state.cache?.plan?.programme || [];
+  if(!prog.length) return null;
+  const d = stayDates();
+  if(d){
+    const dep = new Date(d.in + 'T00:00:00'), now = new Date();
+    const idx = Math.floor((now - dep) / 86400000) + 1;
+    const j = prog.find(x => +x.jour === idx);
+    if(j) return j;
+  }
+  return prog[0];
+}
+
+function apItineraireHTML(){
+  const t = state.trip;
+  if(!t) return '';
+  const jr = apJourVise();
+  if(!jr){
+    return `<section class="ap-carte">
+      <h3>Itinéraire intelligent</h3>
+      <p class="ap-vide">Le programme de ${esc(t.nom)} n'est pas encore généré.</p>
+      <button type="button" class="btn sm" id="apGenere">Voir mon voyage</button>
+    </section>`;
+  }
+  const detail = state.cache?.days?.[jr.jour];
+  const etapes = (detail && detail.etapes) || [];
+  const corps = etapes.length
+    ? `<ol class="ap-frise">${etapes.slice(0, 3).map(e => `<li>
+        <span class="ap-h">${esc(e.heure || '')}</span>
+        <span class="ap-pt" aria-hidden="true"></span>
+        <span class="ap-txt">${esc(e.titre || '')}</span>
+      </li>`).join('')}</ol>`
+    /* Pas de détail heure par heure : on montre les LIEUX du jour, qui
+       eux existent, sans leur inventer d'horaires. */
+    : (jr.lieux || []).length
+      ? `<ul class="ap-lieux">${jr.lieux.slice(0, 3).map(l => `<li>${ICO('epingle', 13)} ${esc(l)}</li>`).join('')}</ul>
+         <p class="ap-note">Les horaires apparaîtront quand tu détailleras la journée.</p>`
+      : `<p class="ap-vide">Cette journée n'a pas encore de contenu.</p>`;
+  return `<section class="ap-carte">
+    <h3>Itinéraire intelligent</h3>
+    <p class="ap-jour">Jour ${esc(String(jr.jour))}${jr.resume ? ' · ' + esc(jr.resume) : ''} — ${esc(t.nom)}</p>
+    ${corps}
+    <button type="button" class="btn sm ghost" id="apOuvrir">Ouvrir le programme</button>
+  </section>`;
+}
+
+function apCopiloteHTML(){
+  if(!state.trip) return '';
+  const fil = Array.isArray(state.chatLog) ? state.chatLog.slice(-2) : [];
+  const bulles = fil.length
+    ? fil.map(m => `<div class="ap-bulle ap-${m.r === 'u' ? 'moi' : 'aco'}">
+        <span>${esc(String(m.t || '').slice(0, 180))}</span></div>`).join('')
+    : `<div class="ap-bulle ap-aco"><span>Dis-moi ce que tu veux changer : une activité trop
+        chargée, un jour à refaire, une envie de calme. Je m'occupe du reste.</span></div>`;
+  return `<section class="ap-carte ap-copilote">
+    <h3>Votre copilote de voyage</h3>
+    <div class="ap-fil">${bulles}</div>
+    <form class="ap-saisie" id="apForm">
+      <label class="sr-only" for="apInp">Demander une modification à Acolyte</label>
+      <input id="apInp" type="text" autocomplete="off"
+        placeholder="Demandez une modification à Acolyte…">
+      <button type="submit" class="ap-env" aria-label="Envoyer">${ICO('envoyer', 17)}</button>
+    </form>
+  </section>`;
+}
+
+function apercusHTML(){
+  const a = apItineraireHTML(), b = apCopiloteHTML();
+  if(!a && !b) return '';
+  return `<div class="ap-rangee">${a}${b}</div>`;
+}
+
+document.addEventListener('click', e => {
+  if(e.target.closest('#apOuvrir') || e.target.closest('#apGenere')){
+    switchCat('trip'); gotoStep(3);
+    try{ goPlanTab('programme'); }catch(err){}
+  }
+});
+/* La saisie du copilote ne tient PAS sa propre conversation : elle passe
+   la demande au vrai assistant et y emmène le voyageur. Un second fil
+   aurait divergé du premier dès le deuxième message. */
+document.addEventListener('submit', e => {
+  const f = e.target.closest('#apForm');
+  if(!f) return;
+  e.preventDefault();
+  const inp = $('#apInp');
+  const texte = (inp && inp.value || '').trim();
+  if(!texte) return;
+  switchCat('ia');
+  setTimeout(() => {
+    const cible = $('#iaInp');
+    if(cible){ cible.value = texte; }
+    if(inp) inp.value = '';
+    try{ iaEnvoie(); }catch(err){}
+  }, 60);
+});
+
 function renderGallery(){
   const box = $('#galleryList'), card = $('#tripGallery');
   if(!box || !card) return;
@@ -1846,7 +1962,8 @@ function renderGallery(){
   const visibles = (trop && !_galExpanded) ? h.slice(0, LIMITE) : h;
   box.innerHTML = `<div class="av-grille">${visibles.map(avCarteHTML).join('')}</div>`
     + (trop ? `<button class="btn ghost sm gal-toggle" id="galToggle">${
-        _galExpanded ? 'Afficher moins' : `Voir tous mes voyages (${h.length}) →`}</button>` : '');
+        _galExpanded ? 'Afficher moins' : `Voir tous mes voyages (${h.length}) →`}</button>` : '')
+    + apercusHTML();
   /* les photos arrivent après, sans retarder l'affichage des cartes */
   try{ avCherchePhotos(visibles.map(x => x.nom)); }catch(e){}
 }
