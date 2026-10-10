@@ -19,7 +19,7 @@
      un en-tête HTTP, le navigateur l'ignore dans une balise <meta> et le
      signale dans la console. La protection contre l'encadrement passe par
      X-Frame-Options dans le fichier _headers. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://upload.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://lechat45--2ec0f9a6860b11f183cf1607ee4eb77e.web.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://pics.avs.io https://upload.wikimedia.org https://thumb.wikimedia.org https://tile.openstreetmap.org https://api.producthunt.com; connect-src 'self' https://generativelanguage.googleapis.com https://api.groq.com https://services-api.ryanair.com https://v6.db.transport.rest https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://fr.wikipedia.org https://fr.wikivoyage.org https://date.nager.at https://overpass-api.de https://overpass.kumi.systems https://api.frankfurter.dev https://api.emailjs.com https://lechat45--2ec0f9a6860b11f183cf1607ee4eb77e.web.val.run; frame-src https://www.openstreetmap.org https://maps.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#F5F4F0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
@@ -334,11 +334,16 @@
         <span class="hhv-soleil"></span>
       </div>
     </section>
-    <div class="card" id="tripGallery" hidden>
-      <h3 style="margin:0 0 4px">Mes voyages</h3>
-      <p class="sub" style="margin:0 0 12px">Reprends un voyage déjà exploré, ou lances-en un nouveau ci-dessous.</p>
-      <div class="gallery" id="galleryList"></div>
-    </div>
+    <!-- La section de la référence : un intertitre, un lien à droite, et
+         des cartes. Elle n'est PAS une carte blanche elle-même — les
+         cartes de voyage le sont, et deux cartes emboîtées se lisent mal. -->
+    <section class="av-sect" id="tripGallery" hidden>
+      <div class="av-tete">
+        <h2>Vos prochaines aventures</h2>
+        <button type="button" class="av-lien" id="avTous">Voir tous mes voyages →</button>
+      </div>
+      <div id="galleryList"></div>
+    </section>
     <!-- ⚠️ TROIS BLOCS AU LIEU D'UNE GRILLE DE QUATORZE CHAMPS.
          Le questionnaire était une seule carte : quatorze champs à la suite,
          sans respiration ni regroupement. On ne savait pas combien il en

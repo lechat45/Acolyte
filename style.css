@@ -6540,3 +6540,96 @@ body::before{
 @media (min-width:900px){
   .hero-h{ grid-template-columns:1.05fr .95fr;gap:40px;margin-bottom:34px }
 }
+
+/* ============================================================
+   H3. VOS PROCHAINES AVENTURES
+   ------------------------------------------------------------
+   Des cartes à photographie, comme la référence. La photo tient dans un
+   rapport fixe pour que la grille reste régulière quelle que soit
+   l'image renvoyée par Wikipédia.
+============================================================ */
+.av-sect{ margin:0 0 30px }
+.av-tete{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;margin:0 0 16px;
+}
+.av-tete h2{
+  font-family:var(--font-titre);font-weight:800;font-size:1.45rem;
+  letter-spacing:-.025em;color:var(--txt);margin:0;border:0;padding:0;
+}
+.av-lien{
+  border:0;background:none;cursor:pointer;padding:4px 2px;
+  font-family:var(--font-texte);font-weight:600;font-size:.88rem;color:var(--primary-txt);
+}
+.av-lien:hover{ text-decoration:underline }
+
+.av-grille{ display:grid;grid-template-columns:1fr;gap:18px }
+@media (min-width:640px){ .av-grille{ grid-template-columns:repeat(2,1fr) } }
+@media (min-width:1000px){ .av-grille{ grid-template-columns:repeat(3,1fr) } }
+
+.av-carte{
+  position:relative;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--secondary);border:1px solid var(--stroke);
+  border-radius:var(--r-lg);box-shadow:var(--shadow);
+  cursor:pointer;text-align:left;
+  transition:transform .18s cubic-bezier(.2,.9,.3,1), box-shadow .18s ease;
+}
+.av-carte:hover{ transform:translateY(-3px);box-shadow:var(--shadow-lg) }
+.av-carte:focus-visible{ outline:3px solid var(--primary);outline-offset:3px }
+@media (prefers-reduced-motion:reduce){
+  .av-carte{ transition:none }
+  .av-carte:hover{ transform:none }
+}
+.av-photo{
+  aspect-ratio:16/10;background-size:cover;background-position:center;
+  background-color:var(--surface-2);
+}
+/* Pas de photo : un aplat dessiné et l'initiale. Jamais un trou blanc. */
+.av-photo-vide{
+  display:grid;place-items:center;
+  background:linear-gradient(145deg, #CFE4E1 0%, #E8F1EE 55%, #F6F1E6 100%);
+}
+:root[data-theme="dark"] .av-photo-vide{
+  background:linear-gradient(145deg, #1B3B4A 0%, #162E42 55%, #122537 100%);
+}
+.av-initiale{
+  font-family:var(--font-titre);font-weight:800;font-size:2.4rem;
+  color:var(--primary-txt);opacity:.55;
+}
+.av-corps{ padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1 }
+.av-corps h4{
+  margin:0;font-family:var(--font-titre);font-weight:700;font-size:1.05rem;
+  line-height:1.25;letter-spacing:-.015em;color:var(--txt);text-transform:none;
+}
+.av-pays{ font-weight:500;color:var(--txt-2) }
+.av-faits{
+  display:flex;flex-direction:column;gap:5px;
+  font-family:var(--font-texte);font-size:.82rem;color:var(--txt-2);
+}
+.av-faits span{ display:flex;align-items:center;gap:7px }
+.av-faits svg{ flex:none;opacity:.8 }
+.av-etat{ margin-top:auto;padding-top:8px;display:flex;flex-direction:column;gap:6px }
+.av-barre{
+  display:block;height:5px;border-radius:999px;background:var(--surface-2);overflow:hidden;
+}
+.av-barre i{ display:block;height:100%;background:var(--primary);border-radius:999px }
+.av-mot{ font-family:var(--font-texte);font-size:.78rem;font-weight:600;color:var(--primary-txt) }
+
+.av-retirer{
+  position:absolute;top:10px;right:10px;z-index:2;
+  display:grid;place-items:center;width:32px;height:32px;
+  border:0;border-radius:50%;cursor:pointer;
+  background:rgba(255,255,255,.88);color:var(--txt-2);
+  opacity:0;transition:opacity .15s ease, color .15s ease;
+}
+.av-carte:hover .av-retirer,
+.av-retirer:focus-visible{ opacity:1 }
+.av-retirer:hover{ color:var(--danger) }
+/* ⚠️ Au toucher il n'y a pas de survol : le bouton resterait invisible. */
+@media (hover:none){ .av-retirer{ opacity:1 } }
+
+.av-vide{
+  display:flex;flex-direction:column;align-items:flex-start;gap:14px;
+  padding:26px;border:1.5px dashed var(--stroke-2);border-radius:var(--r-lg);
+}
+.av-vide p{ margin:0;max-width:52ch;color:var(--txt-2);line-height:1.55 }

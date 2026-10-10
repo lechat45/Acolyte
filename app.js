@@ -1729,30 +1729,141 @@ function pushHistory(t){
 
 /* --- Galerie « Mes voyages » : reprendre un voyage déjà exploré --- */
 let _galExpanded = false;   /* affiche-t-on TOUS les voyages, ou les 3 premiers ? */
+/* ============================================================
+   VOS PROCHAINES AVENTURES — les cartes de la référence
+   ------------------------------------------------------------
+   La galerie était une liste de lignes : un drapeau, un nom, un bouton.
+   La référence en fait des cartes avec une photographie, les dates, la
+   durée, le budget et l'avancement. Rien n'est inventé pour autant :
+   chaque ligne n'apparaît QUE si la donnée existe vraiment.
+
+   ⚠️ LES PHOTOS VIENNENT DE WIKIPÉDIA, PAS D'UNE BANQUE D'IMAGES.
+   fetchWikiThumb() existe déjà dans l'app (il sert à la carte postale) et
+   écarte même les drapeaux et blasons que Wikipédia renvoie parfois pour
+   une ville. On les demande une seule fois et on garde l'adresse dans le
+   cache : les visites suivantes n'ont plus rien à télécharger. Quand il
+   n'y a pas de photo — ou pas de réseau — la carte garde un aplat dessiné
+   et reste lisible. Jamais de trou blanc.
+
+   ⚠️ AUCUN VOYAGE DE DÉMONSTRATION. Lisbonne, les Dolomites et Kyoto sont
+   des exemples dans la maquette, pas des données à imposer. Quand il n'y a
+   rien, on affiche un état vide qui invite à commencer.
+============================================================ */
+
+/* Les dates d'un voyage de l'historique, à partir de l'instantané de ses
+   préférences. Rien n'est affiché si la date de départ manque : une
+   fourchette inventée serait pire qu'une ligne en moins. */
+function avDates(x){
+  const p = x && x.prefs;
+  const dep = p && p.depart;
+  if(!dep) return null;
+  const n = (typeof dureeEnJours === 'function' ? dureeEnJours(p.days) : 0) || 0;
+  const d1 = new Date(dep + 'T00:00:00');
+  if(isNaN(d1)) return null;
+  const d2 = n ? new Date(d1.getTime() + (n - 1) * 86400000) : null;
+  const court = d => d.toLocaleDateString(LOC(), { day:'numeric', month:'short' });
+  return { texte: d2 ? court(d1) + ' – ' + court(d2) : court(d1), jours: n };
+}
+
+/* L'avancement : on ne le connaît QUE pour le voyage en cours, dont on a
+   le plan et les journées détaillées en cache. Pour les voyages passés on
+   ne montre pas de barre plutôt qu'une barre fausse. */
+function avAvancement(x){
+  if(!state.trip || !x || x.nom !== state.trip.nom) return null;
+  const prog = state.cache?.plan?.programme || [];
+  if(!prog.length) return { pct: 0, mot: 'Voyage en préparation' };
+  const detaillees = prog.filter(j => state.cache?.days?.[j.jour]).length;
+  const pct = Math.round(detaillees / prog.length * 100);
+  if(!pct) return { pct: 0, mot: prog.length + ' journée' + (prog.length > 1 ? 's' : '') + ' planifiée' + (prog.length > 1 ? 's' : '') };
+  return { pct, mot: 'Itinéraire prêt à ' + pct + ' %' };
+}
+
+/* Les photos : demandées une fois, gardées dans le cache de l'état. */
+function avPhoto(nom){
+  return (state.cache && state.cache.photos && state.cache.photos[nom]) || null;
+}
+async function avCherchePhotos(noms){
+  if(typeof fetchWikiThumb !== 'function') return;
+  state.cache = state.cache || {};
+  state.cache.photos = state.cache.photos || {};
+  let neuf = false;
+  for(const n of noms){
+    if(!n || state.cache.photos[n] !== undefined) continue;
+    const url = await fetchWikiThumb(n);
+    /* on mémorise AUSSI l'absence (null) : sans ça on redemanderait à chaque
+       rendu une photo qui n'existe pas, à chaque visite. */
+    state.cache.photos[n] = url || null;
+    neuf = true;
+  }
+  if(neuf){ save(); renderGallery(); }
+}
+
+function avCarteHTML(x, i){
+  const d = avDates(x);
+  const av = avAvancement(x);
+  const photo = avPhoto(x.nom);
+  const pays = x.pays ? String(x.pays).split(/[,;]/)[0].trim() : '';
+  const lignes = [];
+  if(d) lignes.push(`<span>${ICO('calendrier', 14)} ${esc(d.texte)}</span>`);
+  if(d && d.jours) lignes.push(`<span>${ICO('horloge', 14)} ${d.jours} jour${d.jours > 1 ? 's' : ''}</span>`);
+  if(x.budget_estime) lignes.push(`<span>${ICO('money', 14)} ${esc(String(x.budget_estime))} estimés</span>`);
+  return `<article class="av-carte" data-gi="${i}" tabindex="0" role="button"
+      aria-label="${esc(x.nom)}${pays ? ', ' + esc(pays) : ''} — ouvrir">
+    <div class="av-photo${photo ? '' : ' av-photo-vide'}"
+      ${photo ? `style="background-image:url('${esc(photo)}')"` : ''}>
+      ${photo ? '' : `<span class="av-initiale" aria-hidden="true">${esc(String(x.nom || '?').trim().slice(0, 1).toUpperCase())}</span>`}
+    </div>
+    <button type="button" class="av-retirer" data-galdel="${i}"
+      title="${isEN() ? 'Remove from my trips' : 'Retirer de mes voyages'}"
+      aria-label="${isEN() ? 'Remove' : 'Retirer'} ${esc(x.nom)}">${ICO('poubelle', 15)}</button>
+    <div class="av-corps">
+      <h4>${esc(x.nom)}${pays ? `<span class="av-pays">, ${esc(pays)}</span>` : ''}</h4>
+      ${lignes.length ? `<div class="av-faits">${lignes.join('')}</div>` : ''}
+      ${av ? `<div class="av-etat">
+        ${av.pct ? `<span class="av-barre"><i style="width:${av.pct}%"></i></span>` : ''}
+        <span class="av-mot">${esc(av.mot)}</span>
+      </div>` : ''}
+    </div>
+  </article>`;
+}
+
 function renderGallery(){
   const box = $('#galleryList'), card = $('#tripGallery');
   if(!box || !card) return;
   const h = getHistory().slice().reverse();
-  if(!h.length){ card.hidden = true; box.innerHTML = ''; return; }
+  if(!h.length){
+    /* État vide : on n'affiche pas une carte creuse, on invite. */
+    card.hidden = false;
+    box.innerHTML = `<div class="av-vide">
+      <p>Tu n'as pas encore de voyage. Dis à Acolyte ce qui te ferait plaisir, il te propose trois itinéraires.</p>
+      <button type="button" class="btn" id="avCommencer">Créer mon voyage</button>
+    </div>`;
+    return;
+  }
   card.hidden = false;
-  /* au-delà de 3 voyages, on n'en montre que 3 — un bouton déplie le reste */
   const LIMITE = 3;
   const trop = h.length > LIMITE;
   const visibles = (trop && !_galExpanded) ? h.slice(0, LIMITE) : h;
-  box.innerHTML = visibles.map((x, i) => `
-    <div class="gal">
-      <div class="gal-flag">${esc(x.drapeau || '📍')}</div>
-      <div class="gal-info">
-        <b>${esc(x.nom)}</b>
-        <span>${esc(x.pays || '')}${x.budget_estime ? ' · ' + esc(x.budget_estime) : ''}</span>
-      </div>
-      <button class="btn sm ghost gal-open" data-gi="${i}">${x.trip ? 'Rouvrir →' : 'Reproposer'}</button>
-      <button class="gal-del" data-galdel="${i}" title="${isEN() ? 'Remove from my trips' : 'Retirer de mes voyages'}"
-        aria-label="${isEN() ? 'Remove' : 'Retirer'} ${esc(x.nom)}">🗑️</button>
-    </div>`).join('')
+  box.innerHTML = `<div class="av-grille">${visibles.map(avCarteHTML).join('')}</div>`
     + (trop ? `<button class="btn ghost sm gal-toggle" id="galToggle">${
-        _galExpanded ? '▲ Afficher moins' : `▼ Voir tous mes voyages (${h.length})`}</button>` : '');
+        _galExpanded ? 'Afficher moins' : `Voir tous mes voyages (${h.length}) →`}</button>` : '');
+  /* les photos arrivent après, sans retarder l'affichage des cartes */
+  try{ avCherchePhotos(visibles.map(x => x.nom)); }catch(e){}
 }
+document.addEventListener('click', e => {
+  if(e.target.closest('#avCommencer')){ switchCat('trip'); gotoStep(1); }
+  /* « Voir tous mes voyages » déplie la liste au lieu de mener à une page
+     qui n'existe pas : les voyages vivent ici, et nulle part ailleurs. */
+  if(e.target.closest('#avTous')){ _galExpanded = true; renderGallery(); }
+});
+/* la carte entière est cliquable, et actionnable au clavier */
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  const c = e.target.closest('.av-carte');
+  if(!c) return;
+  e.preventDefault();
+  c.click();
+});
 document.addEventListener('click', e => {
   if(e.target.id === 'galToggle'){ _galExpanded = !_galExpanded; renderGallery(); }
 });
@@ -1796,7 +1907,10 @@ function reopenTrip(i){
   gotoStep(3);
 }
 document.addEventListener('click', e => {
-  const g = e.target.closest('.gal-open');
+  /* ⚠️ Le bouton de RETRAIT est à l'intérieur de la carte, elle-même
+     cliquable : sans ce garde, retirer un voyage l'aurait d'abord rouvert. */
+  if(e.target.closest('[data-galdel]')) return;
+  const g = e.target.closest('.gal-open, .av-carte');
   if(g){ reopenTrip(+g.dataset.gi); }
 });
 
@@ -10003,16 +10117,45 @@ const PC_STYLES  = [
 const PC_LAYOUTS = [{id:'grande', nom:'Une grande'}, {id:'duo', nom:'Deux'}, {id:'collage', nom:'Collage'}];
 let _pcStyle = 'pop', _pcLayout = 'grande', _pcPhotos = null, _pcTemplate = 'classique';
 
-async function fetchWikiThumb(name){
-  try{
-    const r = await fetchT(`https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`, {}, 8000);
-    if(!r.ok) return null;
-    const d = await r.json();
-    const src = d.thumbnail?.source || d.originalimage?.source || null;
+/* Les mots qui trahissent un drapeau, un blason ou des armoiries : Wikipédia
+   les renvoie souvent comme image principale d'une ville, et ce ne sont pas
+   des photos de voyage. */
+const WIKI_REJET = /flag|drapeau|bandeira|bandera|coat|_coa|\bcoa\b|arms|escudo|escut|wappen|wapen|blason|bras[aã]o|stemma|armoiries|gonfalone|seal|crest|logo|map|carte|localisation|location|svg$/i;
+
+/* ⚠️ CETTE FONCTION RENVOYAIT DES ADRESSES MORTES. Elle lisait la vignette
+   du résumé REST (330 px) puis réécrivait « /330px- » en « /640px- » pour
+   avoir une image plus grande. Or cette taille n'est pas toujours rendue :
+   l'adresse fabriquée répond 404, l'image ne s'affiche jamais, et comme
+   l'erreur est silencieuse (onerror) personne ne le voyait. La carte
+   postale, qui utilise la même fonction, en souffrait aussi.
+
+   On demande donc la taille à l'API prévue pour ça (pageimages +
+   pithumbsize), qui renvoie une adresse RÉELLEMENT servie. Le résumé REST
+   reste le recours si cette API ne répond pas. */
+async function fetchWikiThumb(name, taille = 640){
+  const propre = src => {
     if(!src) return null;
-    /* évite drapeaux / blasons / armoiries (souvent renvoyés pour une ville) — pas des photos de voyage */
-    if(/flag|drapeau|bandeira|bandera|coat|_coa|\bcoa\b|arms|escudo|escut|wappen|wapen|blason|bras[aã]o|stemma|armoiries|gonfalone|seal|crest|emblem|logo|\.svg/i.test(src)) return null;
-    return src.replace(/\/\d+px-/, '/640px-');
+    if(WIKI_REJET.test(src)) return null;
+    return src.split('?')[0];        /* on retire les paramètres de suivi */
+  };
+  try{
+    const r = await fetchT('https://fr.wikipedia.org/w/api.php?action=query&prop=pageimages'
+      + '&piprop=thumbnail&pithumbsize=' + taille + '&format=json&origin=*&titles='
+      + encodeURIComponent(name), {}, 8000);
+    if(r.ok){
+      const d = await r.json();
+      const pages = d?.query?.pages;
+      const p = pages && Object.values(pages)[0];
+      const u = propre(p?.thumbnail?.source);
+      if(u) return u;
+    }
+  }catch(e){}
+  /* recours : le résumé REST, sans réécrire la taille */
+  try{
+    const r2 = await fetchT(`https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`, {}, 8000);
+    if(!r2.ok) return null;
+    const d2 = await r2.json();
+    return propre(d2.thumbnail?.source || d2.originalimage?.source);
   }catch(e){ return null; }
 }
 function pcLoadImg(url){
