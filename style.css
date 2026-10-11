@@ -6770,3 +6770,54 @@ body::before{
   min-height:46px;border-radius:var(--r-md);font-size:.95rem;
 }
 .auth-card .btn:not(.ghost):not(.sm):hover{ background:#2A9398 }
+
+/* ============================================================
+   H8. LE PROFIL — L'EN-TÊTE BLEU NUIT
+   ------------------------------------------------------------
+   La référence fait du passeport une carte sombre : avatar, nom, niveau
+   et actions sur le bleu nuit, puis la rangée de chiffres sur blanc
+   juste en dessous. Le contraste entre les deux moitiés sépare « qui tu
+   es » de « ce que tu as fait », sans ajouter de titre.
+============================================================ */
+.passport{ background:#17263C;border-color:rgba(255,255,255,.10) }
+/* Le bandeau décoratif du haut disparaît : sur un fond déjà sombre, il ne
+   figure plus la tranche d'un passeport, juste une barre en trop. */
+.pp-band{ display:none }
+.pp-main{ padding:22px }
+.pp-nom-l h2{ color:#FFFFFF;font-family:var(--font-titre);font-weight:800 }
+.passport .pp-id .sub,
+.passport .pp-id .hint{ color:#AFBACB }
+.pp-avatar{
+  width:72px;height:72px;
+  background:var(--primary);color:#FFFFFF;
+  box-shadow:0 0 0 3px rgba(255,255,255,.14);
+}
+.pp-avatar:focus-visible{ outline:2px solid #FFFFFF;outline-offset:3px }
+/* Le niveau : un contour clair, pas un aplat — c'est une mention. */
+.pp-niveau{
+  border-color:rgba(255,255,255,.34);color:#FFFFFF;background:transparent;
+}
+/* Les actions de l'en-tête se posent sur le sombre. */
+.passport .pp-main .btn.ghost,
+.passport .pf-inst{
+  background:transparent;color:#FFFFFF;
+  border:1px solid rgba(255,255,255,.34);
+}
+.passport .pp-main .btn.ghost:hover,
+.passport .pf-inst:hover{ background:rgba(255,255,255,.12) }
+
+/* --- La rangée de chiffres : elle revient au blanc --- */
+.pp-stats{
+  background:var(--secondary);
+  border-top:0;
+  border-radius:0 0 calc(var(--r-lg) - 1px) calc(var(--r-lg) - 1px);
+}
+.pp-stat{ border-right-color:var(--stroke) }
+.pp-stat .k{ color:var(--txt-2) }
+.pp-stat .v{ color:var(--txt);font-family:var(--font-titre);font-weight:800 }
+
+/* --- La barre d'onglets du profil, comme la référence --- */
+.pf-tab.on{
+  background:var(--money);color:var(--primary-txt);
+  border-color:transparent;font-weight:700;
+}
