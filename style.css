@@ -6729,3 +6729,44 @@ body::before{
   #catMap .map-head{ padding:14px 16px;grid-template-columns:1fr }
   #catMap .map-acts{ justify-content:flex-start }
 }
+
+/* ============================================================
+   H7. L'AUTHENTIFICATION — LE PANNEAU BLEU NUIT
+   ------------------------------------------------------------
+   La référence coupe l'écran en deux : la promesse sur un aplat bleu
+   nuit à gauche, le formulaire sur blanc à droite. C'est la première
+   page qu'on voit d'Acolyte ; elle doit dire ce qu'il fait avant de
+   demander une adresse.
+============================================================ */
+.auth-brand{
+  background:#17263C;
+  border-right:0;
+  color:#FFFFFF;
+}
+.auth-brand-logo .logo-word{ color:#FFFFFF }
+.auth-brand-logo .logo-word i{ color:#FFFFFF }
+.auth-brand-h{
+  color:#FFFFFF;font-family:var(--font-titre);font-weight:800;
+  font-size:clamp(1.7rem,2.6vw,2.2rem);line-height:1.15;letter-spacing:-.03em;
+  text-transform:none;
+}
+/* 8,3:1 sur le bleu nuit : ce sont les arguments, ils se lisent. */
+.auth-brand-l li{ color:#C2CCDA }
+.auth-brand-l li span{ color:var(--primary-txt) }
+/* Le filigrane doit être CLAIR sur fond sombre — en encre foncée il
+   disparaissait complètement. */
+.auth-brand::after{ color:#FFFFFF;opacity:.045 }
+
+/* --- Le formulaire --- */
+.auth-card{ background:var(--secondary) }
+.auth-h1{
+  font-family:var(--font-titre);font-weight:800;letter-spacing:-.025em;
+  text-transform:none;color:var(--txt);
+}
+/* L'action principale prend toute la largeur, comme la référence. */
+.auth-card .btn:not(.ghost):not(.sm){
+  width:100%;justify-content:center;
+  background:var(--primary);color:var(--primary-ink);
+  min-height:46px;border-radius:var(--r-md);font-size:.95rem;
+}
+.auth-card .btn:not(.ghost):not(.sm):hover{ background:#2A9398 }
