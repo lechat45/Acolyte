@@ -2534,53 +2534,12 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
    écrite qui gagne — la barre du haut doit donc être écrite APRÈS elle. */
 
 /* ---- Bandeau d'accueil ---- */
-.hero{
-  position:relative;overflow:hidden;isolation:isolate;
-  border:1px solid var(--stroke);border-radius:var(--r-lg);
-  padding:34px 30px 30px;margin-bottom:16px;box-shadow:var(--shadow);
-  background:var(--secondary);
-}
 /* Le décor : dégradés superposés qui évoquent une mer vue du ciel. Aucune
    photo — donc rien à télécharger, rien à autoriser dans la CSP. */
-.hero-deco{
-  position:absolute;inset:0;z-index:-1;
-  background:
-    /* écume et hauts-fonds, en haut à droite */
-    radial-gradient(38% 46% at 92% 6%,   rgba(226,248,250,.55) 0%, transparent 70%),
-    radial-gradient(46% 52% at 74% 0%,   rgba(120,225,232,.42) 0%, transparent 72%),
-    /* le grand bleu, qui s'assombrit vers le bord */
-    radial-gradient(78% 96% at 104% 46%, rgba(14,120,142,.78) 0%, transparent 74%),
-    radial-gradient(60% 80% at 88% 96%,  rgba(9,74,92,.62) 0%, transparent 76%),
-    /* un voile turquoise qui relie le tout */
-    radial-gradient(90% 70% at 62% 30%,  rgba(63,186,203,.22) 0%, transparent 78%),
-    linear-gradient(102deg, var(--secondary) 0%, var(--secondary) 40%, rgba(17,88,104,.72) 100%);
-}
 /* Grain très léger : sans lui, les dégradés font « plastique ». Dessiné en
    SVG dans l'URL même, donc aucun fichier à charger. */
-.hero-deco::after{
-  content:'';position:absolute;inset:0;opacity:.32;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.5'/></svg>");
-}
-.hero-in{position:relative;max-width:34rem}
-.hero h1{
-  font-family:var(--font-titre);font-weight:900;
-  font-size:clamp(1.7rem,4.4vw,2.7rem);line-height:1.06;
-  letter-spacing:-.03em;text-transform:none;margin:0;
-}
 /* le souligné jaune tracé à la main sous le titre */
-.hero h1::after{
-  content:'';display:block;width:clamp(90px,26%,190px);height:5px;
-  margin-top:14px;border-radius:4px;background:var(--primary);
-}
-.hero .sub{margin-top:16px;font-size:.92rem;line-height:1.6;max-width:30rem}
-.hero-globe{
-  position:absolute;top:18px;right:26px;width:clamp(64px,9vw,104px);height:auto;
-  color:var(--primary);opacity:.9;pointer-events:none;
-}
 @media (max-width:640px){
-  .hero{padding:24px 20px 22px}
-  .hero-globe{width:56px;top:14px;right:14px;opacity:.75}
-  .hero .sub{font-size:.86rem}
 }
 
 /* ---- Interrupteur (option « plusieurs pays ») ----
@@ -6429,33 +6388,8 @@ body::before{
    octet transféré, net à toutes les tailles, et il s'affiche hors
    connexion comme le reste.
 ============================================================ */
-.hero-h{
-  display:grid;grid-template-columns:1fr;gap:26px;
-  align-items:center;margin:0 0 28px;
-}
-.hero-h h1{
-  font-family:var(--font-titre);font-weight:800;
-  font-size:clamp(2rem,4.6vw,3.1rem);line-height:1.05;letter-spacing:-.035em;
-  color:var(--txt);margin:0;border:0;padding:0;text-transform:none;
-}
-.hero-h h1::after{ content:none }          /* le souligné de l'ancien héros */
-.hero-h-sur{
-  font-family:var(--font-titre);font-weight:700;
-  font-size:clamp(1.05rem,2vw,1.4rem);line-height:1.2;letter-spacing:-.02em;
-  color:var(--txt);margin:10px 0 0;
-}
-.hero-h-desc{
-  margin:14px 0 0;max-width:46ch;
-  font-size:1rem;line-height:1.6;color:var(--txt-2);
-}
-.hero-h-actes{ display:flex;flex-wrap:wrap;gap:12px;margin-top:22px }
 
 /* --- Le paysage --- */
-.hero-h-vue{
-  position:relative;overflow:hidden;
-  border-radius:var(--r-lg);border:1px solid var(--stroke);
-  aspect-ratio:16/10;min-height:200px;background:var(--surface-2);
-}
 .hhv-ciel{
   position:absolute;inset:0;
   background:linear-gradient(170deg, #DCEDEA 0%, #EAF3F0 42%, #FAF6EE 100%);
@@ -6472,7 +6406,6 @@ body::before{
 @media (prefers-reduced-motion:reduce){ .hhv-soleil{ box-shadow:none } }
 
 @media (min-width:900px){
-  .hero-h{ grid-template-columns:1.05fr .95fr;gap:40px;margin-bottom:34px }
 }
 
 /* ============================================================
@@ -6820,4 +6753,52 @@ body::before{
 .pf-tab.on{
   background:var(--money);color:var(--primary-txt);
   border-color:transparent;font-weight:700;
+}
+
+/* ============================================================
+   H9. LA BARRE DU BAS, SUR TÉLÉPHONE
+   ------------------------------------------------------------
+   La référence : une pastille turquoise PLEINE sous l'onglet actif,
+   icône et libellé en blanc dessus ; les autres en bleu nuit sur
+   l'ivoire. La barre elle-même est une grande pastille claire, détachée
+   du bord.
+============================================================ */
+@media (max-width:899px){
+  .catnav{
+    background:var(--secondary);
+    border:1px solid var(--stroke);
+    border-radius:22px 22px 0 0;
+    box-shadow:0 -2px 4px rgba(23,38,60,.04), 0 -10px 28px rgba(23,38,60,.08);
+    padding:8px 10px;
+  }
+  .catnav button{
+    color:var(--txt);border:0;border-radius:16px;
+    font-family:var(--font-texte);font-weight:700;
+  }
+  /* ⚠️ SPÉCIFICITÉ : `:root[data-os="android"] .catnav button.on` (0,3,0)
+     pose l'idiome Material — une pastille derrière l'ICÔNE SEULE — et
+     bat un sélecteur en 0,2,0. Une requête média n'ajoute rien au poids.
+     La référence met la pastille sur TOUT le bouton, libellé compris :
+     on reprend donc le même poids pour la remplacer, sur les deux
+     plateformes comme sur le navigateur nu. */
+  .catnav button.on,
+  :root[data-os] .catnav button.on{
+    background:var(--primary);
+    border-color:transparent;
+    color:var(--primary-ink);
+    box-shadow:none;
+  }
+  /* la pastille d'icône de Material n'a plus lieu d'être : elle ferait
+     un rond dans un rond */
+  :root[data-os="android"] .catnav button.on .ico{
+    background:none;color:var(--primary-ink);border-radius:0;
+  }
+  /* L'icône suivait l'encre du bouton : sur l'aplat turquoise elle doit
+     passer au blanc avec le libellé, sinon elle reste bleu nuit et se
+     perd dans la pastille. */
+  .catnav button.on .ico,
+  .catnav button.on svg.ico,
+  :root[data-os] .catnav button.on .ico,
+  :root[data-os] .catnav button.on svg.ico{ color:var(--primary-ink) }
+  .catnav button:not(.on):hover{ background:var(--surface-2) }
 }
