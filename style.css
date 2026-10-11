@@ -672,17 +672,17 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   font-family:var(--font-titre);font-weight:900;font-size:.8rem;
 }
 .pays-tag .num{
-  background:#101010;color:var(--primary);
+  background:var(--txt);color:#FFFFFF;
   width:18px;height:18px;display:grid;place-items:center;
   border-radius:50%;font-size:.66rem;flex:none;
 }
 .pays-tag button{
   all:unset;cursor:pointer;width:20px;height:20px;
   display:grid;place-items:center;flex:none;
-  border:2px solid #101010;border-radius:var(--r-sm);
+  border:2px solid var(--txt);border-radius:var(--r-sm);
   font-weight:900;font-size:.72rem;line-height:1;color:var(--primary-ink);
 }
-.pays-tag button:hover{background:#101010;color:var(--primary)}
+.pays-tag button:hover{background:var(--txt);color:#FFFFFF}
 
 /* ===== Affinage libre des propositions ===== */
 .refine-bar{display:flex;gap:8px;flex-wrap:wrap}
@@ -847,7 +847,11 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .ph-eyebrow{
   display:inline-block;margin-bottom:8px;padding:3px 10px;
   font:700 .62rem var(--font-texte);text-transform:none;letter-spacing:.1em;
-  background:#101010;color:var(--primary);border-radius:var(--r-md);
+  /* ⚠️ PAS DE fond NI D'ENCRE ICI. Une seconde regle .ph-eyebrow, plus bas
+     dans le fichier (couche H5), pose les deux et gagne a specificite egale.
+     Les declarer ici aussi ne faisait que doubler le selecteur sans rien
+     changer a l'ecran — c'est exactement la dette que compte verifie.js. */
+  border-radius:var(--r-md);
 }
 .ph-card h3{margin:0 0 8px;font-size:1.5rem;line-height:1.1;color:var(--primary-ink)}
 .ph-card p{margin:0;font-size:.9rem;font-weight:600;line-height:1.55;color:var(--primary-ink);opacity:.8}
@@ -1110,7 +1114,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .tc-body{flex:1;min-width:0}
 .tc-body h4{margin:0;font-size:1.15rem}
 .tc-facts{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
-.tc-fact{font:600 .74rem var(--font-texte);background:#101010;color:var(--primary);padding:4px 10px;border-radius:var(--r-lg);white-space:nowrap}
+.tc-fact{font:600 .74rem var(--font-texte);background:var(--money);color:var(--primary-txt);padding:4px 10px;border-radius:var(--r-lg);white-space:nowrap}
 .tc-why{margin:6px 0 0;font-size:.9rem;font-weight:600;line-height:1.5}
 .carbon-card .carbon-big{margin:0;font-size:1rem}
 .carbon-card .carbon-big strong{font-family:var(--font-titre);font-size:1.15rem}
@@ -1173,7 +1177,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .bt-num{font-family:var(--font-titre);font-weight:900;font-size:1.9rem}
 .bt-lbl{font-weight:800;font-size:.72rem;text-transform:none;letter-spacing:.01em;opacity:.75;margin-top:3px}
 .budget-chips{display:flex;flex-wrap:wrap;gap:7px}
-.budget-chip{font:600 .74rem var(--font-texte);background:#101010;color:var(--primary);
+.budget-chip{font:600 .74rem var(--font-texte);background:var(--money);color:var(--primary-txt);
   padding:5px 11px;border-radius:var(--r-lg);white-space:nowrap}
 .budget-breakdown{margin-bottom:4px}
 .budget-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:7px 0}
@@ -1813,7 +1817,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 }
 .pass-route .dash{
   flex:1;min-width:14px;height:0;
-  border-top:2px dashed #101010;opacity:.45;
+  border-top:2px dashed var(--txt);opacity:.45;
 }
 .pass-route .plane{font-size:1.05rem;flex-shrink:0;opacity:.8}
 /* ⚠️ Le bouton « changer de destination » était un carré NOIR de 38 px collé
@@ -1983,12 +1987,12 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .sb-track{
-  height:10px;background:rgba(16,16,16,.14);
-  border:2px solid #101010;overflow:hidden;
+  height:10px;background:rgba(255,255,255,.22);
+  border:1px solid rgba(255,255,255,.4);overflow:hidden;
 }
 .sb-track i{
   display:block;height:100%;width:38%;
-  background:#101010;
+  background:#FFFFFF;
   animation:sbSlide 1.25s ease-in-out infinite;
 }
 @keyframes sbSlide{0%{transform:translateX(-105%)}100%{transform:translateX(275%)}}
@@ -2077,19 +2081,19 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 :root.no-motion .am-tile{transition:none}
 @media(prefers-reduced-motion:reduce){ .am-tile{transition:none} }
 .am-lines{pointer-events:none;overflow:visible}
-.am-line-b{fill:none;stroke:#101010;stroke-width:9;stroke-linejoin:round;stroke-linecap:round}
-.am-line-f{fill:none;stroke:#FFE600;stroke-width:4;stroke-linejoin:round;stroke-linecap:round}
-.am-dash{fill:none;stroke:#101010;stroke-width:3.5;stroke-dasharray:8 7;stroke-linecap:round}
+.am-line-b{fill:none;stroke:var(--txt);stroke-width:9;stroke-linejoin:round;stroke-linecap:round}
+.am-line-f{fill:none;stroke:var(--primary);stroke-width:4;stroke-linejoin:round;stroke-linecap:round}
+.am-dash{fill:none;stroke:var(--txt);stroke-width:3.5;stroke-dasharray:8 7;stroke-linecap:round}
 .am-marks{pointer-events:none}
 .am-mark{
   position:absolute;top:0;left:0;margin:-16px 0 0 -16px;
   width:32px;height:32px;display:grid;place-items:center;padding:0;
-  border:3px solid #101010;box-shadow:2px 2px 0 #101010;border-radius:50%;
+  border:3px solid var(--txt);box-shadow:2px 2px 0 var(--txt);border-radius:50%;
   background:var(--primary);color:var(--primary-ink);
   font-family:var(--font-titre);font-weight:900;font-size:.82rem;line-height:1;
   cursor:pointer;pointer-events:auto;
 }
-.am-mark:active{transform-origin:center;box-shadow:0 0 0 #101010}
+.am-mark:active{transform-origin:center;box-shadow:0 0 0 var(--txt)}
 .am-hotel{background:#22F5FF}
 .am-me{background:#FF5F5F;color:#fff}
 .am-start{background:#fff}
@@ -2099,18 +2103,18 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   position:absolute;bottom:24px;left:0;transform:translateX(-50%);
   display:flex;align-items:center;gap:8px;white-space:nowrap;
   background:#fff;color:var(--primary-ink);
-  border:3px solid #101010;box-shadow:3px 3px 0 #101010;border-radius:var(--r-md);
+  border:3px solid var(--txt);box-shadow:3px 3px 0 var(--txt);border-radius:var(--r-md);
   padding:7px 10px;font-size:.76rem;font-weight:800;
 }
 .am-pop-in a{color:var(--primary-ink);font-weight:900;font-size:.7rem;text-decoration:underline;white-space:nowrap}
 .am-zoom{position:absolute;top:10px;right:10px;z-index:7;display:flex;flex-direction:column;gap:6px}
 .am-zb{
   width:34px;height:34px;display:grid;place-items:center;padding:0;
-  background:#fff;color:var(--primary-ink);border:3px solid #101010;box-shadow:2px 2px 0 #101010;
+  background:#fff;color:var(--txt);border:3px solid var(--txt);box-shadow:2px 2px 0 var(--txt);
   border-radius:9px;font-family:var(--font-titre);font-weight:900;font-size:1.05rem;
   line-height:1;cursor:pointer;
 }
-.am-zb:active{transform:translate(2px,2px);box-shadow:0 0 0 #101010}
+.am-zb:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--txt)}
 /* ⚠️ 24 px de haut, pas 44 — et c'est délibéré. L'attribution OpenStreetMap
    est OBLIGATOIRE (condition d'usage des tuiles) et doit rester cliquable,
    mais elle est posée SUR la carte : la grossir la ferait masquer le terrain
@@ -2323,18 +2327,18 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   }
   /* ---- couverture ---- */
   #dossier .cover{
-    border:2.5pt solid #111;border-radius:6pt;padding:16pt 18pt;margin-bottom:16pt;
-    background:#FFE600;break-inside:avoid;
+    border:2.5pt solid #17263C;border-radius:6pt;padding:16pt 18pt;margin-bottom:16pt;
+    background:#E5F2EF;break-inside:avoid;
   }
   #dossier .cover .brand{font-family:var(--font-titre);font-weight:900;font-size:9pt;letter-spacing:.01em;margin:0 0 6pt}
   #dossier h1{font-family:var(--font-titre);font-weight:900;font-size:27pt;line-height:1.05;margin:0}
   #dossier .cover .meta{margin:10pt 0 0;font-size:11pt;font-weight:600}
-  #dossier .cover .rule{height:3pt;background:#111;width:64pt;margin:9pt 0 0;border-radius:2pt}
+  #dossier .cover .rule{height:3pt;background:#247F83;width:64pt;margin:9pt 0 0;border-radius:2pt}
   /* ---- sections ---- */
   #dossier section{break-inside:avoid;margin-bottom:15pt}
   #dossier h2{
     font-family:var(--font-titre);font-weight:900;font-size:12pt;
-    margin:0 0 7pt;padding:4pt 8pt;background:#111;color:#fff;border-radius:3pt;
+    margin:0 0 7pt;padding:4pt 8pt;background:#17263C;color:#fff;border-radius:3pt;
   }
   #dossier h3{font-family:var(--font-titre);font-size:11pt;margin:0 0 2pt}
   /* ---- tableaux clé/valeur ---- */
@@ -2348,7 +2352,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   #dossier tr:last-child td{border-bottom:0}
   /* ---- journées ---- */
   #dossier .dj{
-    break-inside:avoid;margin-bottom:9pt;padding-left:9pt;border-left:2.5pt solid #FFE600;
+    break-inside:avoid;margin-bottom:9pt;padding-left:9pt;border-left:2.5pt solid #247F83;
   }
   #dossier .dj h3{display:flex;gap:6pt;align-items:baseline}
   #dossier .dj h3 small{font-weight:600;color:#666;font-size:9pt}
@@ -5223,7 +5227,7 @@ html.kio-actif, html.kio-actif body{ overflow:hidden }
 .kiosque{
   position:fixed;inset:0;z-index:120;
   display:none;align-items:center;justify-content:center;
-  background:#121212;
+  background:var(--txt);
   padding:max(24px, env(safe-area-inset-top, 0px)) 24px max(24px, env(safe-area-inset-bottom, 0px));
 }
 .kiosque.on{ display:flex;animation:kioFade .5s ease }
@@ -5232,12 +5236,12 @@ html.kio-actif, html.kio-actif body{ overflow:hidden }
 .kio-n{
   font-family:var(--font-titre);
   font-weight:900;font-size:clamp(5rem, 34vmin, 17rem);line-height:.86;
-  letter-spacing:-.05em;color:#FFE600;
+  letter-spacing:-.05em;color:#FFFFFF;
   font-variant-numeric:tabular-nums;                 /* le chiffre ne danse pas */
 }
 .kio-n small{ font-size:.42em;letter-spacing:-.02em;opacity:.75 }
 .kio-n.kio-go{ font-size:clamp(2.6rem, 13vmin, 7rem);letter-spacing:-.035em }
-.kio-n.kio-vide{ color:#5A5A52 }
+.kio-n.kio-vide{ color:#AFBACB }
 .kio-u{
   font-family:var(--font-texte);
   font-size:clamp(.95rem, 3.1vmin, 1.6rem);font-weight:600;
