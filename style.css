@@ -6923,3 +6923,135 @@ body::before{
 .passport .pp-meta,
 .passport .pp-id small,
 .passport .pp-id em{ color:#AFBACB }
+
+/* ============================================================
+   H13. LA BARRIERE « ORDINATEUR SEULEMENT », ET LA BETA
+   ------------------------------------------------------------
+   Acolyte est en refonte. Horizon tient sur grand ecran ; sur telephone
+   il ne tient pas encore. On le dit, au lieu de le montrer.
+
+   ⚠️ RIEN N'EST RETIRE SOUS CE CALQUE. Les blocs @media (max-width:899px),
+   le bloc (pointer:coarse) et ses cibles de 44 px, la barre du bas en
+   position fixe : tout reste ecrit, intact, plus bas et plus haut dans ce
+   fichier. Ce calque se pose PAR-DESSUS. Le jour ou la version telephone
+   est prete, on retire la requete media qui l'affiche (une ligne) et tout
+   ce qui est dessous remarche sans avoir ete touche.
+============================================================ */
+
+/* Au repos elle n'existe pas : c'est la requete media, plus bas, qui
+   l'allume. Un ordinateur ne la voit jamais, ni dans le DOM rendu ni
+   dans le flux. */
+.gate-pc{ display:none }
+
+/* La mention de beta. Elle est posee DEUX fois dans le balisage et jamais
+   deux fois a l'ecran : l'en-tete porte la sienne entre 900 et 1079 px, la
+   colonne de gauche porte la sienne a partir de 1080 px — largeur a partir
+   de laquelle l'en-tete masque son logo (header .logo{display:none}) pour
+   ne pas faire doublon avec la colonne. Chacune vit donc dans un parent que
+   l'autre breakpoint eteint. */
+.beta-tag{
+  display:inline-block;margin-left:9px;vertical-align:middle;
+  padding:2px 8px;border-radius:999px;
+  background:var(--money);color:var(--primary-txt);
+  font-family:var(--font-texte);font-weight:700;font-size:.62rem;
+  letter-spacing:.06em;text-transform:none;
+  /* le filet evite qu'elle se confonde avec une pastille cliquable */
+  border:1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+/* ---- Le questionnaire, resserre sur ordinateur ----
+   ⚠️ C'EST ICI QUE LE FORMULAIRE DEVENAIT ILLISIBLE. Les champs sont
+   passes du trait a la boite (couche precedente), ce que demande la
+   maquette — mais la maquette pose ce formulaire sur ~620 px a TROIS
+   colonnes, alors que la carte faisait ici 1107 px et tenait CINQ champs
+   de front. Quatre ou cinq boites encadrees cote a cote sur onze cents
+   pixels, ce n'est plus un formulaire, c'est un mur : l'oeil ne sait plus
+   quelle etiquette va avec quel champ, et il doit traverser tout l'ecran
+   entre deux questions liees.
+   Le trait, lui, supportait cette largeur — il ne dessinait pas de boite.
+   C'est le passage a la boite qui rend la largeur intenable, donc c'est la
+   largeur qui cede, pas la boite.
+
+   860 px : trois colonnes de ~261 px, la densite de la maquette. Le heros
+   et la galerie, eux, gardent toute la largeur — ce sont des images et des
+   cartes, elles n'ont pas de probleme de ligne de lecture. */
+@media (min-width:900px){
+  #view1 > .q-bloc{
+    max-width:860px;margin-left:auto;margin-right:auto;
+  }
+  /* minmax 236 plutot que 220 : a 812 px de contenu, 220 laissait passer
+     une quatrieme colonne de justesse et on retombait dans le mur. */
+  #view1 .q-corps{
+    grid-template-columns:repeat(auto-fit, minmax(236px, 1fr));
+  }
+  /* L'etiquette remonte : 12 px tenait sous un trait, elle se perd
+     au-dessus d'une boite de 44 px. La maquette donne ~14 px une fois
+     remise a l'echelle ; 13,6 px garde l'ecart avec le texte du champ. */
+  #catTrip .field > label{ font-size:.85rem }
+}
+
+/* ============================================================
+   L'ALLUMAGE DE LA BARRIERE
+   Deux cas, et le texte de la carte les couvre tous les deux :
+     (hover:none) and (pointer:coarse) → un vrai appareil tactile ;
+     (max-width:899px) → une fenetre trop etroite, meme sur ordinateur,
+     ou il suffit de l'elargir.
+   899 px est deja la frontiere de l'application : c'est exactement sous
+   cette largeur que la barre du bas remplace celle du haut.
+============================================================ */
+@media screen and (max-width:899px), screen and (hover:none) and (pointer:coarse){
+  .gate-pc{
+    display:grid;place-items:center;
+    position:fixed;inset:0;z-index:999;
+    background:var(--bg);
+    padding:24px;
+    /* la carte respire meme sur un petit ecran */
+    overflow-y:auto;
+  }
+  .gate-pc-carte{
+    width:min(420px, 100%);
+    background:var(--paper);
+    border:1px solid var(--stroke);border-radius:var(--r-lg);
+    box-shadow:var(--shadow);
+    padding:28px 24px 24px;
+    text-align:center;
+  }
+  .gate-pc-beta{
+    display:inline-block;margin:0 0 14px;
+    padding:4px 12px;border-radius:999px;
+    background:var(--money);color:var(--primary-txt);
+    font-family:var(--font-texte);font-weight:700;font-size:.72rem;letter-spacing:.04em;
+  }
+  .gate-pc-carte h2{
+    display:block;border:0;padding:0;margin:0 0 14px;
+    font-family:var(--font-titre);font-weight:800;font-size:1.45rem;
+    line-height:1.15;letter-spacing:-.02em;color:var(--txt);
+  }
+  .gate-pc-txt{
+    margin:0 0 12px;font-family:var(--font-texte);font-weight:400;
+    font-size:.95rem;line-height:1.6;color:var(--txt-2);
+  }
+  .gate-pc-txt b{ color:var(--txt);font-weight:700 }
+  .gate-pc-url{
+    margin:18px 0 0;padding:10px 12px;
+    background:var(--surface-2);border-radius:var(--r-sm);
+    font-family:var(--font-texte);font-weight:600;font-size:.84rem;
+    color:var(--txt);word-break:break-all;
+  }
+  /* ⚠️ Sans ca, la page continue de defiler DERRIERE la barriere : on voit
+     le chantier bouger sous le calque, et sur iOS le rebond le decolle du
+     bord. On fige les deux, html ET body — Safari ignore l'un des deux
+     selon la version. */
+  html, body{ overflow:hidden;height:100% }
+}
+
+/* ⚠️ L'IMPRESSION PASSE OUTRE. Le bloc @media print masque deja tout ce
+   qui n'est pas #dossier, barriere comprise : le carnet s'imprime meme
+   depuis un telephone. On ne touche a rien, c'est note pour qu'on ne
+   « corrige » pas ce qui marche. */
+
+/* Dans la colonne de gauche la marque est sur sa propre ligne, suivie de
+   « Ton assistant voyage ». La mention se range sous les deux plutot qu'a
+   cote : la colonne ne fait que 201 px de contenu, une pastille en bout de
+   ligne y serait renvoyee a la ligne toute seule. */
+.beta-tag-rail{ margin:8px 0 0;display:inline-block }

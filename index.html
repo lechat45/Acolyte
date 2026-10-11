@@ -158,6 +158,7 @@
   <div class="rail-logo">
     <span class="logo-word rail-logoword" aria-label="Acolyte"><i>A</i><i>c</i><i class="o-mark">o<span class="logo-mark"></span></i><i>l</i><i>y</i><i>t</i><i>e</i></span>
     <em class="rail-tag">Ton assistant voyage</em>
+    <span class="beta-tag beta-tag-rail" title="Acolyte est en cours de refonte">B&#234;ta</span>
   </div>
 
   <!-- Le titre dit ce que la colonne montre : il change avec la catégorie
@@ -201,11 +202,48 @@
      apparaît dès qu'on tabule : sans lui, quelqu'un au clavier doit traverser
      tout l'en-tête et la navigation avant d'atteindre le contenu, à chaque
      changement d'écran. Premier élément du corps de page, forcément. -->
+<!-- ============================================================
+     LA BARRIERE « ORDINATEUR SEULEMENT »
+     ------------------------------------------------------------
+     Acolyte est en refonte. La mise en page d'Horizon est au point sur
+     grand ecran ; sur telephone et tablette elle ne l'est pas encore.
+     Plutot que de montrer un chantier, on l'annonce.
+
+     ⚠️ RIEN N'EST SUPPRIME. Toutes les regles telephone (la barre du bas,
+     les blocs @media (max-width:899px), le bloc (pointer:coarse) et ses
+     cibles de 44 px) restent dans la feuille, intactes. Cette barriere ne
+     fait que poser un calque par-dessus : le jour ou la version mobile est
+     prete, il suffit de retirer la requete media qui l'affiche, et tout ce
+     qui est dessous remarche sans avoir ete touche.
+
+     ⚠️ ELLE EST EN CSS, PAS EN JAVASCRIPT. Un verrou pose par script tombe
+     si le script echoue — et c'est justement sur un vieux telephone que le
+     script a le plus de chances d'echouer. Une requete media, elle, est
+     appliquee par le navigateur avant le premier pixel.
+
+     Deux cas l'ouvrent, et le texte le dit :
+       (hover:none) and (pointer:coarse) → un vrai appareil tactile ;
+       (max-width:899px) → une fenetre trop etroite pour la mise en page,
+       y compris sur un ordinateur, ou il suffit de l'agrandir.
+============================================================ -->
+<div class="gate-pc" id="gatePC" role="dialog" aria-modal="true" aria-labelledby="gatePCTitre">
+  <div class="gate-pc-carte">
+    <p class="gate-pc-beta">Acolyte est en b&#234;ta</p>
+    <h2 id="gatePCTitre">Pour l&#39;instant, sur ordinateur</h2>
+    <p class="gate-pc-txt">Acolyte est en pleine refonte. Le nouveau dessin est au point
+      sur grand &#233;cran&#160;; sur t&#233;l&#233;phone et tablette, il ne l&#39;est pas encore.
+      Te le montrer &#224; moiti&#233; fini serait pire que de te faire attendre.</p>
+    <p class="gate-pc-txt">Ouvre <b>acolyte</b> depuis un ordinateur&#160;— ou, si tu y es d&#233;j&#224;,
+      &#233;largis la fen&#234;tre&#160;: la mise en page a besoin de 900&#160;pixels.</p>
+    <p class="gate-pc-url">lechat45.github.io/Acolyte</p>
+  </div>
+</div>
+
 <a class="skip" href="#contenu">Aller au contenu</a>
 
 <div class="wrap">
   <header>
-    <div class="logo"><span class="logo-word" aria-label="Acolyte"><i>A</i><i>c</i><i class="o-mark">o<span class="logo-mark"></span></i><i>l</i><i>y</i><i>t</i><i>e</i></span></div>
+    <div class="logo"><span class="logo-word" aria-label="Acolyte"><i>A</i><i>c</i><i class="o-mark">o<span class="logo-mark"></span></i><i>l</i><i>y</i><i>t</i><i>e</i></span><span class="beta-tag" title="Acolyte est en cours de refonte">B&#234;ta</span></div>
     <!-- La nav vit ici dans le HTML, mais sur téléphone elle est en
          position:fixed en bas : le parent n'a alors aucun effet sur elle.
          Sur ordinateur elle repasse en flux et devient la barre du haut. -->
