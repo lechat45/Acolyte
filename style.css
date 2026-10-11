@@ -149,7 +149,7 @@ body{
 .boot-mark .mascot{width:92px;height:92px}
 .boot-mark span{
   font-family:var(--font-titre);font-weight:900;font-size:3rem;line-height:1;
-  color:#101010;letter-spacing:-.04em;
+  color:var(--primary-ink);letter-spacing:-.04em;
 }
 .boot-word{
   font-family:var(--font-titre);font-weight:900;font-size:2.6rem;letter-spacing:-.04em;
@@ -551,7 +551,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .cmp td+td,.cmp th+th{border-left:1px solid var(--stroke)}
 /* en-tête : le drapeau en grand, le nom dessous, bien centré */
 .cmp thead th{
-  background:var(--primary);color:#101010;
+  background:var(--primary);color:var(--primary-ink);
   font-family:var(--font-titre);font-weight:900;text-transform:none;font-size:.76rem;
   cursor:pointer;text-align:center;border-bottom:1px solid var(--stroke);line-height:1.3;
   transition:filter .1s ease;
@@ -653,7 +653,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 /* cochée : l'aplat jaune de la marque, et l'encre repasse en foncé */
 .field label.opt-check:has(input:checked){background:var(--primary)}
 .field label.opt-check:has(input:checked) b,
-.field label.opt-check:has(input:checked) em{color:#101010}
+.field label.opt-check:has(input:checked) em{color:var(--primary-ink)}
 .field label.opt-check:active{transform:translateY(1px);box-shadow:var(--shadow)}
 @media (prefers-reduced-motion:reduce){.field label.opt-check{transition:none}}
 
@@ -673,7 +673,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .pays-tags:empty{display:none}
 .pays-tag{
   display:inline-flex;align-items:center;gap:7px;
-  background:var(--primary);color:#101010;
+  background:var(--primary);color:var(--primary-ink);
   border:1px solid var(--stroke);box-shadow:var(--shadow);
   border-radius:var(--r-md);padding:6px 8px 6px 11px;
   font-family:var(--font-titre);font-weight:900;font-size:.8rem;
@@ -687,7 +687,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   all:unset;cursor:pointer;width:20px;height:20px;
   display:grid;place-items:center;flex:none;
   border:2px solid #101010;border-radius:var(--r-sm);
-  font-weight:900;font-size:.72rem;line-height:1;color:#101010;
+  font-weight:900;font-size:.72rem;line-height:1;color:var(--primary-ink);
 }
 .pays-tag button:hover{background:#101010;color:var(--primary)}
 
@@ -781,7 +781,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   box-shadow:var(--shadow);
 }
 .news-hello .mascot{width:44px;height:44px;flex-shrink:0}
-.news-hello p{margin:0;font-weight:800;font-size:.88rem;line-height:1.45;color:#101010}
+.news-hello p{margin:0;font-weight:800;font-size:.88rem;line-height:1.45;color:var(--primary-ink)}
 .news-intro{margin:0 0 16px;font-size:.84rem;font-weight:600;color:var(--txt-2);line-height:1.5}
 
 /* frise : un rail vertical relie les versions entre elles */
@@ -806,7 +806,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   background:var(--secondary);color:var(--txt);
   padding:2px 9px;border:1px solid var(--stroke);border-radius:var(--r-md);
 }
-.news-entry.latest .news-v{background:var(--primary);color:#101010}
+.news-entry.latest .news-v{background:var(--primary);color:var(--primary-ink)}
 .news-date{font-size:.72rem;font-weight:700;color:var(--txt-2)}
 .news-new{
   font-family:var(--font-texte);font-weight:900;font-size:.6rem;text-transform:none;
@@ -856,8 +856,8 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   font:700 .62rem var(--font-texte);text-transform:none;letter-spacing:.1em;
   background:#101010;color:var(--primary);border-radius:var(--r-md);
 }
-.ph-card h3{margin:0 0 8px;font-size:1.5rem;line-height:1.1;color:#101010}
-.ph-card p{margin:0;font-size:.9rem;font-weight:600;line-height:1.55;color:#101010;opacity:.8}
+.ph-card h3{margin:0 0 8px;font-size:1.5rem;line-height:1.1;color:var(--primary-ink)}
+.ph-card p{margin:0;font-size:.9rem;font-weight:600;line-height:1.55;color:var(--primary-ink);opacity:.8}
 /* le badge officiel est un SVG clair : on lui donne une plaque claire
    pour qu'il reste lisible en « Vol de nuit » aussi */
 .ph-link{
@@ -917,7 +917,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   box-shadow:var(--shadow);
 }
 .key-tip .kt-emo{font-size:1.4rem;line-height:1;flex-shrink:0}
-.key-tip p{margin:0;color:#101010;font-weight:800;font-size:.92rem;line-height:1.45}
+.key-tip p{margin:0;color:var(--primary-ink);font-weight:800;font-size:.92rem;line-height:1.45}
 
 /* --- barre d'onglets --- */
 /* La carte des détails : posée sous « Ton voyage », elle donne à la barre
@@ -1012,7 +1012,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .plan-tab:not(.on):hover{color:var(--txt);background:var(--secondary)}
 .plan-tab:not(.on):hover span{transform:scale(1.15) translateY(-1px)}
 .plan-tab.on{
-  background:var(--primary);color:#101010;
+  background:var(--primary);color:var(--primary-ink);
   border-color:var(--stroke);box-shadow:var(--shadow);
   transform:translate(-1px,-1px);
 }
@@ -1063,12 +1063,12 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   background:var(--secondary);border:1px solid var(--stroke);border-radius:var(--r-md);
   box-shadow:var(--shadow)}
 .day-num{flex-shrink:0;font-family:var(--font-titre);font-weight:900;font-size:.78rem;
-  background:var(--primary);color:#101010;padding:4px 9px;border:1px solid var(--stroke);border-radius:8px}
+  background:var(--primary);color:var(--primary-ink);padding:4px 9px;border:1px solid var(--stroke);border-radius:8px}
 .day-txt{flex:1;min-width:0}
 .day-txt h4{margin:0;font-size:.98rem;line-height:1.3}
 .day-txt p{margin:4px 0 0;font-size:.79rem;color:var(--txt-2);font-weight:600;line-height:1.45}
 .day-base{display:inline-block;margin-top:4px;font-size:.66rem;font-weight:800;
-  background:var(--accent-cyan);color:#101010;padding:1px 7px;border:1.5px solid var(--stroke);border-radius:8px}
+  background:var(--accent-cyan);color:var(--primary-ink);padding:1px 7px;border:1.5px solid var(--stroke);border-radius:8px}
 /* Actions d'une journée : deux boutons EXPLICITES sous le résumé, plutôt
    que des icônes muettes serrées à droite qu'on ne comprenait pas. */
 .day-acts{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 0}
@@ -1105,7 +1105,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .transport-choice{
   display:flex;gap:14px;align-items:flex-start;
   padding:16px;margin-bottom:14px;
-  background:var(--primary);color:#101010;
+  background:var(--primary);color:var(--primary-ink);
   border:1px solid var(--stroke);border-radius:var(--r-md);box-shadow:var(--shadow);
 }
 .tc-ico{font-size:2.2rem;line-height:1;flex-shrink:0}
@@ -1131,7 +1131,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .rc-meta{font-size:.76rem;font-weight:600;color:var(--txt-2);margin-top:3px}
 .rc-price{
   flex-shrink:0;font:700 .76rem var(--font-titre);
-  background:var(--primary);color:#101010;padding:5px 10px;
+  background:var(--primary);color:var(--primary-ink);padding:5px 10px;
   border:1px solid var(--stroke);border-radius:var(--r-md);text-align:center;max-width:130px;line-height:1.25;
 }
 .rc-dish{margin:10px 0 0;font-size:.87rem;line-height:1.45}
@@ -1158,7 +1158,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .hc-note{white-space:nowrap}
 .hc-stars{color:var(--accent-orange);letter-spacing:1px}
 .hc-price{flex-shrink:0;font-family:var(--font-titre);font-weight:900;font-size:1rem;
-  background:var(--primary);color:#101010;padding:5px 10px;border:1px solid var(--stroke);border-radius:var(--r-md);white-space:nowrap}
+  background:var(--primary);color:var(--primary-ink);padding:5px 10px;border:1px solid var(--stroke);border-radius:var(--r-md);white-space:nowrap}
 .hc-price small{font-weight:700;font-size:.62rem;opacity:.75}
 .hc-why{margin:10px 0 0;font-size:.86rem;line-height:1.5;color:var(--txt-2)}
 .hc-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -1167,7 +1167,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 /* ===== Onglet Budget amélioré ===== */
 .budget-head{
   display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;
-  padding:16px;background:var(--primary);color:#101010;
+  padding:16px;background:var(--primary);color:var(--primary-ink);
   border:1px solid var(--stroke);border-radius:var(--r-md);box-shadow:var(--shadow);
   margin-bottom:16px;
 }
@@ -1198,7 +1198,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 }
 .cvote:hover{transform:translate(-1px,-1px);box-shadow:var(--shadow);background:var(--card-hover)}
 .cvote:active{transform:translate(2px,2px);box-shadow:none}
-.cvote.on{background:var(--primary);color:#101010}
+.cvote.on{background:var(--primary);color:var(--primary-ink)}
 .collab-hint{font-size:.68rem;font-weight:700;color:var(--txt-2);margin-left:auto;padding-right:4px}
 .day-comments{
   margin:0 0 12px;padding:12px;border:1px solid var(--stroke);border-radius:var(--r-md);
@@ -1206,7 +1206,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 }
 .day-comments[hidden]{display:none}
 .com-list p{margin:0 0 7px;font-size:.85rem;line-height:1.45}
-.com-list b{font-family:var(--font-titre);font-size:.78rem;background:var(--primary);color:#101010;padding:1px 7px;border:1.5px solid var(--stroke);border-radius:9px;margin-right:5px}
+.com-list b{font-family:var(--font-titre);font-size:.78rem;background:var(--primary);color:var(--primary-ink);padding:1px 7px;border:1.5px solid var(--stroke);border-radius:9px;margin-right:5px}
 .com-bar{display:flex;gap:8px;margin-top:9px}
 .com-inp{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--stroke);border-radius:8px;background:var(--secondary);color:var(--txt);font:600 .85rem inherit}
 .com-inp:focus{outline:none;box-shadow:var(--shadow)}
@@ -1224,7 +1224,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 }
 /* ===== Carte « Aujourd'hui » (mode Jour J) ===== */
 .today-card{background:var(--primary);box-shadow:var(--shadow)}
-.today-card h3,.today-card h4{color:#101010}
+.today-card h3,.today-card h4{color:var(--primary-ink)}
 .today-card .hint,.today-card .sub{color:rgba(16,16,16,.78)}
 /* ⚠️ « :not(.ghost) » n'est pas là pour filtrer : il est là pour la
    SPÉCIFICITÉ. Le bouton de cette carte est posé sur une surface SOMBRE au
@@ -1462,7 +1462,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   font:700 .9rem var(--font-titre);margin:0 0 8px}
 /* multiplicateur de combo : n'apparaît qu'au-delà de ×1 */
 .game-combo{
-  background:var(--primary);color:#101010;padding:2px 10px;border-radius:var(--r-lg);
+  background:var(--primary);color:var(--primary-ink);padding:2px 10px;border-radius:var(--r-lg);
   border:1px solid var(--stroke);font-size:.82rem;
   animation:comboPop .25s cubic-bezier(.2,1.6,.4,1) both;
 }
@@ -1485,7 +1485,7 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .game-lb-title{margin:0 0 6px;font-size:.85rem;color:#fff}
 .game-lb-row{display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:8px;font-weight:700;font-size:.82rem}
 .game-lb-row:nth-child(even){background:rgba(255,255,255,.06)}
-.game-lb-row.me{background:var(--primary);color:#101010}
+.game-lb-row.me{background:var(--primary);color:var(--primary-ink)}
 .game-lb-rank{width:20px;font-weight:900;text-align:center}
 .game-lb-name{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .game-lb-score{font-weight:900}
@@ -1686,7 +1686,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .cat-empty-card p{color:var(--txt-2);font-size:.9rem;margin:0 0 16px;line-height:1.5}
 .cat-empty-banner{
   display:flex;align-items:center;gap:12px;
-  border:1px solid var(--stroke);background:var(--primary);color:#101010;
+  border:1px solid var(--stroke);background:var(--primary);color:var(--primary-ink);
   box-shadow:var(--shadow);border-radius:var(--r-md);
   padding:12px 14px;margin-bottom:14px;
 }
@@ -1817,7 +1817,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .pass-route{
   display:flex;align-items:center;gap:10px;min-width:0;flex:1;
   max-width:420px;
-  color:#101010;
+  color:var(--primary-ink);
 }
 .pass-route .iata{
   font-family:var(--font-titre);font-weight:900;font-size:1.9rem;letter-spacing:-.03em;line-height:1;
@@ -1858,7 +1858,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
      haut pour quatre lignes d'information. Le clamp laisse l'air sur grand
      écran et le reprend là où il coûte une colonne. */
   gap:12px clamp(18px,5vw,40px);
-  padding:0 18px 18px;color:#101010;
+  padding:0 18px 18px;color:var(--primary-ink);
 }
 /* ⚠️ DEUX COLONNES EXPLICITES SUR TÉLÉPHONE. `auto-fit` calcule le nombre de
    pistes sur le minimum, mais avec `max-content` en borne haute il n'en gardait
@@ -1990,7 +1990,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .sb-body{flex:1;min-width:0}
 .sb-text{
   font-family:var(--font-texte);font-weight:900;font-size:.72rem;text-transform:none;
-  letter-spacing:.04em;color:#101010;margin-bottom:5px;
+  letter-spacing:.04em;color:var(--primary-ink);margin-bottom:5px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .sb-track{
@@ -2048,7 +2048,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .geo-name:hover{background:var(--card-hover)}
 .geo-name:active{transform:translate(2px,2px);box-shadow:none}
 .geo-result{
-  border:1px solid var(--stroke);background:var(--primary);color:#101010;
+  border:1px solid var(--stroke);background:var(--primary);color:var(--primary-ink);
   box-shadow:var(--shadow);border-radius:var(--r-md);
   padding:10px;font-size:.84rem;font-weight:700;text-align:center;line-height:1.5;
 }
@@ -2096,7 +2096,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   position:absolute;top:0;left:0;margin:-16px 0 0 -16px;
   width:32px;height:32px;display:grid;place-items:center;padding:0;
   border:3px solid #101010;box-shadow:2px 2px 0 #101010;border-radius:50%;
-  background:var(--primary);color:#101010;
+  background:var(--primary);color:var(--primary-ink);
   font-family:var(--font-titre);font-weight:900;font-size:.82rem;line-height:1;
   cursor:pointer;pointer-events:auto;
 }
@@ -2109,15 +2109,15 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .am-pop-in{
   position:absolute;bottom:24px;left:0;transform:translateX(-50%);
   display:flex;align-items:center;gap:8px;white-space:nowrap;
-  background:#fff;color:#101010;
+  background:#fff;color:var(--primary-ink);
   border:3px solid #101010;box-shadow:3px 3px 0 #101010;border-radius:var(--r-md);
   padding:7px 10px;font-size:.76rem;font-weight:800;
 }
-.am-pop-in a{color:#101010;font-weight:900;font-size:.7rem;text-decoration:underline;white-space:nowrap}
+.am-pop-in a{color:var(--primary-ink);font-weight:900;font-size:.7rem;text-decoration:underline;white-space:nowrap}
 .am-zoom{position:absolute;top:10px;right:10px;z-index:7;display:flex;flex-direction:column;gap:6px}
 .am-zb{
   width:34px;height:34px;display:grid;place-items:center;padding:0;
-  background:#fff;color:#101010;border:3px solid #101010;box-shadow:2px 2px 0 #101010;
+  background:#fff;color:var(--primary-ink);border:3px solid #101010;box-shadow:2px 2px 0 #101010;
   border-radius:9px;font-family:var(--font-titre);font-weight:900;font-size:1.05rem;
   line-height:1;cursor:pointer;
 }
@@ -2132,7 +2132,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 .am-credit{
   position:absolute;right:8px;bottom:6px;z-index:7;
   display:inline-flex;align-items:center;min-height:24px;
-  background:rgba(255,255,255,.82);color:#101010;
+  background:rgba(255,255,255,.82);color:var(--primary-ink);
   font-size:.6rem;font-weight:700;text-decoration:none;
   padding:2px 8px;border-radius:var(--r-sm);
 }
@@ -2176,7 +2176,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
   transition:transform .1s,box-shadow .1s,background .1s;
 }
 .close-btn:active{transform:translate(3px,3px);box-shadow:none}
-.close-btn:hover{background:var(--accent-orange);color:#101010}
+.close-btn:hover{background:var(--accent-orange);color:var(--primary-ink)}
 /* Bouton "Fermer" large, collé en bas des longues modales défilantes */
 .modal-close{
   position:sticky;bottom:0;
@@ -2214,7 +2214,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;margin
 
 
 .stop b{
-  background:var(--primary);color:#101010;
+  background:var(--primary);color:var(--primary-ink);
   width:20px;height:20px;display:grid;place-items:center;
   border:1px solid var(--stroke);font-size:.68rem;
 }
@@ -6802,3 +6802,98 @@ body::before{
   :root[data-os] .catnav button.on svg.ico{ color:var(--primary-ink) }
   .catnav button:not(.on):hover{ background:var(--surface-2) }
 }
+
+/* ============================================================
+   H10. L'ASSISTANT — LES SUGGESTIONS EN TURQUOISE
+   ------------------------------------------------------------
+   Dans la référence, les trois exemples sont des aplats turquoise
+   pleins : ce sont les seules choses à presser sur un écran par
+   ailleurs vide, et ils le disent. Le nom de la destination, dans la
+   question, reprend l'accent.
+============================================================ */
+.ia-ex-b{
+  background:var(--primary);color:var(--primary-ink);
+  border:0;box-shadow:none;
+  font-weight:600;
+}
+.ia-ex-b svg{ color:var(--primary-ink);opacity:.85 }
+.ia-ex-b:hover{ background:#2A9398;transform:none;box-shadow:var(--shadow) }
+.ia-ex-b:active{ transform:none;box-shadow:none }
+.ia-ex-b:focus-visible{ outline:3px solid var(--primary-txt);outline-offset:3px }
+.ia-vide-t{
+  font-family:var(--font-titre);font-weight:800;
+  font-size:clamp(1.15rem,2.2vw,1.5rem);line-height:1.25;letter-spacing:-.02em;
+  color:var(--txt);
+}
+
+/* ============================================================
+   H11. LE JOURNAL
+   ------------------------------------------------------------
+   La référence pose l'article en tête dans une VRAIE carte blanche —
+   bordée, légèrement ombrée — avec l'image à gauche et le texte à
+   droite. L'ancienne version laissait l'image flotter sur l'ivoire : le
+   bloc n'avait pas de contour et se confondait avec la grille en
+   dessous.
+============================================================ */
+.blog-une{
+  background:var(--secondary);
+  border:1px solid var(--stroke);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow);
+  padding:16px;gap:20px;
+  transition:transform .18s cubic-bezier(.2,.9,.3,1), box-shadow .18s ease;
+}
+.blog-une:hover{ transform:translateY(-2px);box-shadow:var(--shadow-lg) }
+.blog-une:focus-visible{ outline:3px solid var(--primary);outline-offset:3px }
+@media (prefers-reduced-motion:reduce){
+  .blog-une{ transition:none }
+  .blog-une:hover{ transform:none }
+}
+.blog-une .bu-img{ border:0;border-radius:var(--r-md) }
+.blog-une .bu-txt{ padding-right:6px }
+@media (min-width:820px){ .blog-une{ padding:18px;gap:28px } }
+
+/* L'étiquette de rubrique prend le turquoise pâle : c'est un repère de
+   lecture, pas une action — d'où le pâle plutôt que l'aplat plein. */
+.bc-cat{
+  background:var(--money);color:var(--money-ink);
+  border-color:transparent;font-size:.68rem;
+}
+
+/* Les cartes de la grille retrouvent un cadre, comme la référence. */
+.blog-card{
+  background:var(--secondary);
+  border:1px solid var(--stroke);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow);
+  overflow:hidden;padding:0;
+}
+.blog-card .bc-img{ border:0;border-radius:0 }
+.blog-card .bc-txt,
+.blog-card > *:not(.bc-img){ padding-left:14px;padding-right:14px }
+.blog-card > *:last-child{ padding-bottom:14px }
+
+/* Le titre de la page, à l'échelle d'Horizon. */
+#catBlog > .blog-tete h2,
+#catBlog h2:first-of-type{
+  font-family:var(--font-titre);font-weight:800;
+  font-size:1.6rem;letter-spacing:-.03em;text-transform:none;
+  border:0;padding:0;
+}
+
+/* ============================================================
+   H12. DEUX ENCRES HÉRITÉES DU JAUNE
+   ------------------------------------------------------------
+   1. #101010 était codé en dur 34 fois : l'encre sombre qu'on posait
+      sur les aplats JAUNES. Sur le turquoise elle tombe à 4,0:1 —
+      l'onglet actif du voyage et les pastilles « J1 / J2 / J3 » en
+      souffraient. Elles passent toutes par --primary-ink, qui suit
+      l'accent au lieu de le contredire.
+   2. Sur l'en-tête bleu nuit du profil, deux textes restaient en gris
+      secondaire : 2,58:1, illisibles. Ils prennent l'encre claire,
+      comme leurs voisins.
+============================================================ */
+.passport .pp-prochain,
+.passport .pp-meta,
+.passport .pp-id small,
+.passport .pp-id em{ color:#AFBACB }
