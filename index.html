@@ -232,7 +232,16 @@
       <button data-cat="ia"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 13.6 8l4.8 1.6-4.8 1.6L12 16l-1.6-4.8L5.6 9.6 10.4 8 12 3.2Z"/><path d="M18.4 14.8l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg>Assistant</button>
     </nav>
 
-    
+    <!-- ⚠️ CETTE BALISE AVAIT DISPARU. En retirant le bouton de bascule du
+         thème (commit « Le theme sombre est retire »), le <div class="navtools">
+         ouvrant est parti avec lui : les cinq boutons de droite se sont
+         retrouvés enfants directs de <header>, et TOUTES les règles
+         `.navtools button` sont devenues muettes. Ils s'affichaient donc en
+         boutons natifs du navigateur — fond gris #F0F0F0, texte et contour
+         noirs — en haut de chaque page, dans une refonte où plus rien d'autre
+         n'est noir. Le `</div>` fermant, lui, était resté : le navigateur
+         l'ignore sans rien dire, et la page reste « valide » à l'œil. -->
+    <div class="navtools">
       <button id="ntInstall" type="button" title="Installer l'application" aria-label="Installer l'application" style="display:none">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11.8"/><path d="m7 10.5 5 5 5-5M4.2 20h15.6"/></svg>
       </button>

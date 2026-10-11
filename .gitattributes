@@ -1,0 +1,10 @@
+# Git convertissait les fins de ligne a chaque « git add » : il normalisait
+# en LF alors que les fichiers du depot sont en CRLF, parce qu ils ont ete
+# televerses depuis Windows par l interface web de GitHub. Resultat : un
+# commit qui touche 80 lignes en reecrivait 8 558, et le vrai changement
+# devenait illisible dans l historique.
+#
+# -text : git stocke les octets tels quels, dans les deux sens. Les fichiers
+# deposes par l interface web gardent leurs fins de ligne, ceux ecrits ici
+# aussi, et plus aucun diff ne churn.
+* -text

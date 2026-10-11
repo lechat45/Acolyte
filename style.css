@@ -857,6 +857,11 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
   position:relative;z-index:1;
   align-self:flex-start;display:inline-flex;padding:8px 10px;
   background:var(--tab-on);border:1px solid var(--stroke);border-radius:var(--r-sm);
+  /* Le lien n'avait pas de couleur d'encre : il gardait le bleu #0000EE du
+     navigateur. Invisible tant que l'image charge — elle est seule dedans —
+     mais c'est le texte de remplacement qui s'affiche quand elle echoue, et
+     il sortait en bleu souligne au milieu d'Horizon. */
+  color:var(--txt);
   box-shadow:var(--shadow);transition:all .1s ease;
 }
 .ph-link:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow)}
@@ -1386,7 +1391,12 @@ textarea:focus-visible,[tabindex]:focus-visible,.chip:focus-visible{
 .subtab.on{background:var(--primary);transform:translate(-1px,-1px);box-shadow:var(--shadow)}
 
 /* ===== Modal ===== */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;place-items:center;z-index:50;padding:18px}
+/* ⚠️ Le voile etait du NOIR pur a 60 %. C'etait la derniere surface de
+   l'application a ignorer la palette : partout ailleurs le fonce est le
+   bleu nuit #17263C (la barre de la carte, l'en-tete du profil, l'ecran
+   d'authentification). Un noir neutre pose sur un fond ivoire tire vers
+   le gris sale ; le bleu nuit garde la temperature du reste. */
+.overlay{position:fixed;inset:0;background:rgba(23,38,60,.58);display:none;place-items:center;z-index:50;padding:18px}
 .overlay.show{display:grid}
 .modal{
   width:min(480px,100%);background:var(--secondary);border:1px solid var(--stroke);
@@ -3577,7 +3587,16 @@ header{position:relative;z-index:5}
    propriété. (C'est la dette que compte le contrôle n°6 de verifie.js.) */
 .map-src{
   position:absolute;top:10px;left:10px;z-index:5;display:flex;gap:3px;
-  background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.22);
+  /* ⚠️ Noir pur, heritage d'avant Horizon. C'etait le dernier aplat
+     fonce de l'application a ne pas etre le bleu nuit — et il est pose
+     juste au-dessus du bandeau de la carte, qui l'est. Deux fonces
+     differents a vingt pixels l'un de l'autre, ca se voit. */
+  /* ⚠️ .62 NE SUFFIT PAS AVEC LE BLEU NUIT. Le noir a 62 % composait un
+     fond a L=0,12 ; le bleu nuit, plus clair, remonte a L=0,18 et
+     l'etiquette inactive tombait de 6,2:1 a 4,44:1 — sous le seuil, a
+     cause du seul changement de teinte. On rend la densite perdue : a
+     .78 le verre revient a 5,9:1, et il reste du bleu, pas du gris. */
+  background:rgba(23,38,60,.78);border:1px solid rgba(255,255,255,.22);
   border-radius:999px;padding:3px;
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
 }
@@ -4093,28 +4112,46 @@ header{position:relative;z-index:5}
 /* ---- Le questionnaire n'est plus une carte ---- */
 #view1 > .card{background:none;border:0;box-shadow:none;padding:0;border-radius:0}
 
-/* ---- Les champs : un trait dessous, pas un cadre autour ----
-   C'est le trait le plus caractéristique de 1b. Un cadre complet autour de
-   quatorze champs, ça fait quatorze boîtes ; un trait, ça fait une ligne
-   d'écriture — et le regard descend au lieu de sauter de boîte en boîte. */
-/* ⚠️ LE PADDING FAIT LA CIBLE, PAS SEULEMENT LA MARGE.
-   Cette règle retire le cadre — c'est le trait voulu. Mais elle écrasait aussi
-   le `padding:12px` de la règle de base par `padding:0 0 8px`, et c'est LUI qui
-   donnait sa hauteur au champ. Résultat mesuré sur iPhone : 26px de haut au
-   lieu de 44, sur les onze champs du questionnaire — le formulaire principal du
-   site. Le trait ne coûtait rien ; le padding retiré avec, si.
-   On garde donc le dessin (aucun cadre, un trait dessous) et on rend la
-   hauteur : padding vertical restauré, seul le padding HORIZONTAL reste à 0,
-   puisque c'est lui qui alignerait le texte sur une boîte invisible. */
+/* ---- Les champs : encadrés, comme la maquette Horizon ----
+   Ils étaient soulignés d'un seul trait — le formulaire « papier » de l'ère
+   jaune. La maquette Horizon les dessine en boîtes : fond blanc, filet
+   complet, petit rayon, étiquette grise au-dessus. Relevé au pixel sur la
+   référence, qui est un dessin 1440 exporté en 1024 (le bouton « Nouveau
+   voyage » y fait 27px pour 38px réels, soit un facteur 1,406) : filet sur
+   les quatre côtés, arc de coin d'environ 5,7px dans l'image — c'est-à-dire
+   8px une fois remis à l'échelle, donc --r-sm, le rayon que portent déjà les
+   pastilles et les onglets livrés.
+
+   ⚠️ DEUX COTES DE LA MAQUETTE NE SONT PAS REPRISES, ET C'EST VOULU.
+   Le champ y mesure 32px de haut avec un texte d'environ 13px. Ces deux
+   valeurs sont intenables ici :
+
+     16px est un SEUIL DE SAFARI, pas un choix de style. Sous iOS, poser le
+     doigt dans un champ dont le texte fait moins de 16px zoome la page
+     entière, et Safari ne dézoome jamais tout seul. Le visiteur reste coincé
+     en gros plan, à chaque champ. Ne repasse jamais sous 16px, quelle que
+     soit la maquette.
+
+     44px est la cible tactile. Un champ de 32px se rate au doigt. Le padding
+     vertical fait la cible autant que la marge : c'est en l'écrasant qu'une
+     version précédente avait ramené les onze champs du questionnaire à 26px
+     de haut sur iPhone.
+
+   Le dessin de la maquette est donc respecté — la boîte, le filet, le rayon,
+   le fond, l'étiquette — et sa hauteur est celle qu'un doigt peut viser. */
 #catTrip .field input:not([type="checkbox"]):not([type="range"]),
 #catTrip .field select,
 #catTrip .field textarea{
-  background:none;border:0;border-radius:0;box-shadow:none;
-  border-bottom:1px solid var(--stroke-2);
-  padding:10px 0;
+  background:var(--paper);border:1px solid var(--stroke);border-radius:var(--r-sm);
+  box-shadow:none;
+  padding:10px 12px;
   font-family:var(--font-texte);font-weight:500;font-size:16px;
-  transition:border-color .14s ease;
+  transition:border-color .14s ease, box-shadow .14s ease;
 }
+/* Le texte d'invite ne descend PAS sous le gris secondaire : en l'atténuant
+   avec une opacité il tombait sous le seuil de lecture. */
+#catTrip .field input::placeholder,
+#catTrip .field textarea::placeholder{color:var(--txt-2);opacity:1}
 /* ⚠️ Le plancher de 44px vise les champs d'UNE ligne, et le textarea en est
    EXCLU volontairement. Posé sur lui aussi, il devenait plus spécifique que le
    `textarea{min-height:80px}` de la règle de base, le battait, et la zone de
@@ -4126,9 +4163,17 @@ header{position:relative;z-index:5}
 /* ⚠️ Sans cadre, le focus n'a plus de boîte à colorer : le trait DOIT réagir,
    sinon on ne sait plus dans quel champ on écrit. Le contour global du focus
    reste par-dessus, celui-ci s'adresse à la souris comme au clavier. */
+/* ⚠️ Le champ a de nouveau un cadre : c'est LUI qui doit reagir au focus.
+   L'ancienne regle ne colorait que le bord du bas — sur une boite, ca donne
+   un trait turquoise sous trois bords gris, et on ne sait plus ou on ecrit.
+   Le halo reprend le turquoise de la marque a 15 %, assez pour se voir sans
+   couvrir le contour global du focus clavier qui passe par-dessus. */
 #catTrip .field input:not([type="checkbox"]):not([type="range"]):focus,
 #catTrip .field select:focus,
-#catTrip .field textarea:focus{border-bottom-color:var(--primary)}
+#catTrip .field textarea:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
+}
 /* Le libellé passe en micro-étiquette, comme dans la maquette. */
 /* ⚠️ .66rem faisait 10,6px, en gris atténué. Ce sont ces mots-là qui portent le
    sens de chaque champ (« Budget total / personne ») : sous ~12px et en couleur
@@ -5030,7 +5075,10 @@ body{ min-height:100dvh }
 @keyframes chipPris{ 0%{transform:scale(1)} 45%{transform:scale(1.07)} 100%{transform:scale(1)} }
 .chip.vient-de-changer{animation:chipPris .22s cubic-bezier(.2,.7,.3,1)}
 /* Un champ qu'on vient de renseigner : son trait s'allume brièvement. */
-@keyframes champOk{ 0%{border-bottom-color:var(--stroke-2)} 40%{border-bottom-color:var(--primary)} 100%{border-bottom-color:var(--stroke-2)} }
+/* Le champ confirme qu'il a enregistre. Il animait border-BOTTOM-color,
+   du temps ou il n'avait qu'un trait dessous ; sur une boite encadree
+   ca ne colore qu'un bord sur quatre et le clin d'oeil passe inapercu. */
+@keyframes champOk{ 0%{border-color:var(--stroke)} 40%{border-color:var(--primary)} 100%{border-color:var(--stroke)} }
 #catTrip .field input.vient-de-changer,
 #catTrip .field select.vient-de-changer{animation:champOk .6s ease}
 :root.no-motion .chip.vient-de-changer,
