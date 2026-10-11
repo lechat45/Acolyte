@@ -6666,3 +6666,66 @@ body::before{
   background:var(--primary-ink);
   color:var(--primary);
 }
+
+/* ============================================================
+   H6. LA CARTE — LE BANDEAU BLEU NUIT
+   ------------------------------------------------------------
+   La référence pose un bandeau sombre AU-DESSUS du terrain : il se
+   détache de n'importe quelle tuile, claire ou boisée, là où une carte
+   blanche se confondait avec les routes. Le titre et le résumé du trajet
+   à gauche, les deux actions à droite.
+
+   ⚠️ La carte elle-même reste le FOND de la page (position:fixed, voir
+   plus haut) : on ne touche pas à ça, c'est ce qui permet de voir la
+   journée entière plutôt qu'un rectangle de 620 px.
+============================================================ */
+#catMap .map-head{
+  position:relative;z-index:2;
+  background:#17263C;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:var(--r-lg);
+  box-shadow:0 2px 4px rgba(23,38,60,.10), 0 14px 34px rgba(23,38,60,.18);
+  padding:16px 20px;margin-bottom:14px;
+  grid-template-columns:1fr auto;align-items:center;
+}
+#catMap .map-title h2{
+  color:#FFFFFF;font-family:var(--font-titre);font-weight:800;
+  font-size:1.3rem;letter-spacing:-.02em;text-transform:none;
+  border:0;padding:0;margin:0;
+}
+#catMap .map-title h2::after{ content:none }
+/* 7,1:1 sur le bleu nuit — le résumé du trajet se lit, il n'est pas un
+   murmure décoratif. */
+#catMap .map-title .sub{ color:#AFBACB }
+#catMap .mapnote-warn{ color:#F2B98B }
+
+/* « Où je suis » : contour clair sur le sombre. */
+#catMap #mapLocate{
+  background:transparent;color:#FFFFFF;
+  border:1px solid rgba(255,255,255,.34);
+  box-shadow:none;
+}
+#catMap #mapLocate:hover{ background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.55) }
+/* « M'y guider » : l'action, donc le turquoise. */
+#catMap #projOpen{
+  background:var(--primary);color:var(--primary-ink);
+  border:0;box-shadow:none;
+}
+#catMap #projOpen:hover{ background:#2A9398 }
+#catMap .map-head :is(#mapLocate,#projOpen):focus-visible{
+  outline:3px solid #FFFFFF;outline-offset:2px;
+}
+/* Les pastilles de journée, quand la colonne de gauche n'existe pas :
+   elles vivent maintenant SUR le bandeau sombre. */
+#catMap .mapbar{ grid-column:1 / -1;margin-top:12px }
+#catMap .mapbar .rt{
+  background:rgba(255,255,255,.10);color:#D4DCE8;
+  border-color:rgba(255,255,255,.16);
+}
+#catMap .mapbar .rt:hover:not(.on){ color:#FFFFFF;border-color:rgba(255,255,255,.4) }
+#catMap .mapbar .rt.on{ background:var(--primary);color:var(--primary-ink);border-color:transparent }
+
+@media (max-width:620px){
+  #catMap .map-head{ padding:14px 16px;grid-template-columns:1fr }
+  #catMap .map-acts{ justify-content:flex-start }
+}
